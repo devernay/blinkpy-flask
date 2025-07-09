@@ -144,6 +144,7 @@ class StreamInfo(TypedDict):
     process: subprocess.Popen
     hls_dir: str
     playlist_path: str
+    last_accessed: float  # Timestamp for cleanup
 
 class ApiResponse(TypedDict):
     success: bool
@@ -182,6 +183,7 @@ class Config:
     FFPROBE_TIMEOUT = 10
     HLS_SEGMENT_TIME = 2
     HLS_LIST_SIZE = 3
+    STREAM_IDLE_TIMEOUT = 300  # 5 minutes
     
     # Process settings
     PROCESS_TERMINATE_TIMEOUT = 5
@@ -343,9 +345,10 @@ downloaded_clips_cache: Dict[ClipId, ClipCacheEntry] = {}  # {clip_id: {'filepat
 downloaded_clips_order: List[str] = []  # FIFO order for downloaded clips
 downloaded_clips_lock: Lock = Lock()  # Thread safety for downloaded clips cache
 
-# Live stream processes
+# Live stream processes with automatic cleanup
 live_streams: Dict[CameraId, StreamInfo] = {}  # {camera_id: {'process': subprocess, 'hls_dir': path}}
 live_streams_lock: Lock = Lock()  # Thread safety for live streams
+stream_cleanup_timer: Optional[threading.Timer] = None  # Automatic cleanup timer
 
 def run_blink_thread() -> None:
     """Run Blink operations in dedicated thread with persistent event loop.
@@ -359,24 +362,30 @@ def run_blink_thread() -> None:
     asyncio.set_event_loop(blink_loop)
     blink_loop.run_forever()
 
-def run_in_blink_thread(coro: Any) -> Any:
-    """Execute coroutine in the Blink thread and return result.
+def execute_blink_operation(coro: Any) -> Any:
+    """Execute async blinkpy operation in dedicated thread.
+    
+    All blinkpy API calls must use this function to ensure thread safety.
     
     Args:
-        coro: Coroutine to execute in the Blink event loop
+        coro: Async blinkpy operation to execute
         
     Returns:
-        Result of the coroutine execution, or None if loop unavailable
+        Result of the operation, or None if unavailable
         
     Raises:
-        TimeoutError: If operation exceeds configured timeout
-        Exception: Any exception raised by the coroutine
+        TimeoutError: If operation exceeds timeout
+        BlinkError: If blinkpy operation fails
     """
     global blink_loop
     if not blink_loop:
-        return None
-    future = asyncio.run_coroutine_threadsafe(coro, blink_loop)
-    return future.result(timeout=Config.BLINK_OPERATION_TIMEOUT)
+        raise BlinkError("Blink thread not available")
+    
+    try:
+        future = asyncio.run_coroutine_threadsafe(coro, blink_loop)
+        return future.result(timeout=Config.BLINK_OPERATION_TIMEOUT)
+    except Exception as e:
+        raise BlinkError(f"Blink operation failed: {str(e)}") from e
 
 
 
@@ -506,14 +515,14 @@ def login() -> Response:
             time.sleep(0.1)  # Give thread time to start
         
         try:
-            success = run_in_blink_thread(initialize_blink(username, password))
+            success = execute_blink_operation(initialize_blink(username, password))
             
             if success == '2fa_required':
                 session['temp_username'] = username
                 session['temp_password'] = password
                 return redirect(url_for('two_factor'))
             elif success:
-                run_in_blink_thread(blink.save(CREDENTIALS_FILE))
+                execute_blink_operation(blink.save(CREDENTIALS_FILE))
                 session['authenticated'] = True
                 return redirect(url_for('index'))
             else:
@@ -550,7 +559,7 @@ def two_factor() -> Response:
         
         try:
             logger.debug("Running 2FA verification in Blink thread")
-            success = run_in_blink_thread(verify_2fa_and_save(username, password, key))
+            success = execute_blink_operation(verify_2fa_and_save(username, password, key))
             
             if success:
                 logger.debug("2FA successful, clearing session and redirecting")
@@ -752,9 +761,9 @@ def get_devices(network_id_str: str) -> Response:
                                 old_filepath.unlink()
                                 logger.debug(f"Removed old thumbnail file: {old_filename}")
                 
-                thumbnail_response = run_in_blink_thread(camera.get_thumbnail())
+                thumbnail_response = execute_blink_operation(camera.get_thumbnail())
                 if thumbnail_response and thumbnail_response.status == 200:
-                    image_data = run_in_blink_thread(thumbnail_response.read())
+                    image_data = execute_blink_operation(thumbnail_response.read())
                     
                     # Save to file with new timestamp
                     filename = f"{cache_key}_{current_ts}.jpg"
@@ -835,7 +844,7 @@ def arm_system(network_id_str: str) -> Response:
         return jsonify(response), status_code
     
     with error_context("arm/disarm system"):
-        run_in_blink_thread(sync_module.async_arm(armed))
+        execute_blink_operation(sync_module.async_arm(armed))
         response, status_code = create_api_response(success=True, data={'armed': armed})
         return jsonify(response), status_code
 
@@ -871,7 +880,7 @@ def refresh_camera(camera_id_str: str):
                 # Remove from cache
                 del thumbnail_cache[cache_key]
         
-        run_in_blink_thread(camera.snap_picture())
+        execute_blink_operation(camera.snap_picture())
         response, status_code = create_api_response(success=True, data={'message': 'Thumbnail refresh initiated'})
         return jsonify(response), status_code
 
@@ -901,8 +910,8 @@ def get_clips():
     
     with error_context(f"get {storage_type} clips"):
         if storage_type == 'cloud':
-            # Get cloud clips in Blink thread
-            videos_metadata = run_in_blink_thread(blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE))
+            # Get cloud clips via blink operation
+            videos_metadata = execute_blink_operation(blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE))
             
             # Group clips by day
             clips_by_day = {}
@@ -954,7 +963,7 @@ def get_clips():
             for sync_name, sync_module in blink.sync.items():
                 try:
                     # Refresh sync module to update local storage manifest
-                    run_in_blink_thread(sync_module.refresh())
+                    execute_blink_operation(sync_module.refresh())
                     
                     # Get clips from local storage manifest if ready
                     if sync_module.local_storage and sync_module.local_storage_manifest_ready:
@@ -1046,7 +1055,7 @@ def refresh_system():
         return jsonify(response), status_code
     
     try:
-        success = run_in_blink_thread(blink.refresh(force=True))
+        success = execute_blink_operation(blink.refresh(force=True))
         
         if success:
             response, status_code = create_api_response(success=True, data={'message': 'System refreshed successfully'})
@@ -1092,8 +1101,8 @@ def download_cloud_clip(clip_id: ClipId):
             if os.path.exists(cached_clip['filepath']):
                 return send_file(cached_clip['filepath'], as_attachment=True)
     
-    # Get clip metadata from cache or API
-    videos_metadata = run_in_blink_thread(blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA))
+    # Get clip metadata via blink operation
+    videos_metadata = execute_blink_operation(blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA))
     
     clip_info = None
     for video in videos_metadata:
@@ -1184,8 +1193,8 @@ def download_local_clip(sync_name: str, item_id: int):
     if not filepath.exists():
         try:
             # Use blinkpy methods as specified
-            run_in_blink_thread(item.prepare_download(blink))
-            success = run_in_blink_thread(item.download_video(blink, str(filepath)))
+            execute_blink_operation(item.prepare_download(blink))
+            success = execute_blink_operation(item.download_video(blink, str(filepath)))
             if not success:
                 response, status_code = create_api_response(success=False, error='Failed to download local clip', status_code=500)
                 return jsonify(response), status_code
@@ -1257,13 +1266,18 @@ def start_hls_stream(camera_id: CameraId, rtsp_url: str) -> Tuple[Optional[str],
             logger.error(f"FFmpeg failed to start: {error_msg}")
             return None, error_msg
         
-        # Store process info
+        # Store process info with timestamp
+        import time
         with live_streams_lock:
             live_streams[camera_id] = {
                 'process': process,
                 'hls_dir': str(hls_dir),
-                'playlist_path': str(playlist_path)
+                'playlist_path': str(playlist_path),
+                'last_accessed': time.time()
             }
+        
+        # Start cleanup timer if not already running
+        schedule_stream_cleanup()
         
         logger.info(f"HLS stream started successfully for camera {camera_id}")
         return f'/api/hls/{camera_id}/playlist.m3u8', None
@@ -1287,28 +1301,29 @@ def stop_hls_stream(camera_id: CameraId) -> None:
             
             # Terminate FFmpeg process gracefully
             if stream_info['process']:
-                try:
+                with error_context(f"stop FFmpeg process for camera {camera_id}", StreamError):
                     # Try graceful termination first
                     stream_info['process'].terminate()
-                    stream_info['process'].wait(timeout=Config.PROCESS_TERMINATE_TIMEOUT)
-                except subprocess.TimeoutExpired:
-                    # Force kill if graceful termination fails
-                    logger.warning(f"Force killing FFmpeg process for camera {camera_id}")
-                    stream_info['process'].kill()
-                    stream_info['process'].wait()
-                except Exception as e:
-                    logger.error(f"Error stopping FFmpeg process: {e}")
+                    try:
+                        stream_info['process'].wait(timeout=Config.PROCESS_TERMINATE_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        # Force kill if graceful termination fails
+                        logger.warning(f"Force killing FFmpeg process for camera {camera_id}")
+                        stream_info['process'].kill()
+                        stream_info['process'].wait()
             
             # Clean up temporary directory
-            try:
-                hls_path = Path(stream_info['hls_dir'])
-                if hls_path.exists():
-                    import shutil
-                    shutil.rmtree(hls_path)
-            except Exception as e:
-                logger.error(f"Error cleaning up HLS directory: {e}")
+            safe_execute(lambda: _cleanup_hls_directory(stream_info['hls_dir']), log_error=True)
             
             del live_streams[camera_id]
+            logger.debug(f"Cleaned up stream for camera {camera_id}")
+
+def _cleanup_hls_directory(hls_dir: str) -> None:
+    """Clean up HLS directory safely."""
+    hls_path = Path(hls_dir)
+    if hls_path.exists():
+        import shutil
+        shutil.rmtree(hls_path)
 
 @app.route('/api/camera/<camera_id_str>/liveview')
 def get_camera_liveview(camera_id_str: str):
@@ -1329,8 +1344,8 @@ def get_camera_liveview(camera_id_str: str):
         return jsonify(response), status_code
     
     try:
-        # Get RTSP stream URL
-        rtsp_url = run_in_blink_thread(camera.get_liveview())
+        # Get RTSP stream URL via blink operation
+        rtsp_url = execute_blink_operation(camera.get_liveview())
         
         if rtsp_url:
             # Start HLS transcoding
@@ -1360,6 +1375,9 @@ def serve_hls_file(camera_id_str: str, filename: str):
             response, status_code = create_api_response(success=False, error='Stream not found', status_code=404)
             return jsonify(response), status_code
         
+        # Update last accessed time
+        import time
+        live_streams[camera_id]['last_accessed'] = time.time()
         hls_dir = live_streams[camera_id]['hls_dir']
     
     file_path = Path(hls_dir) / filename
@@ -1423,10 +1441,10 @@ def get_camera_thumbnail(camera_id_str: str):
                     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
                     return response
         
-        # If not cached, fetch from Blink
-        response = run_in_blink_thread(camera.get_thumbnail())
+        # If not cached, fetch via blink operation
+        response = execute_blink_operation(camera.get_thumbnail())
         if response and response.status == 200:
-            image_data = run_in_blink_thread(response.read())
+            image_data = execute_blink_operation(response.read())
             return FlaskResponse(image_data, mimetype='image/jpeg')
         else:
             response, status_code = create_api_response(success=False, error='Failed to fetch thumbnail', status_code=500)
@@ -1497,7 +1515,7 @@ def startup() -> None:
             time.sleep(0.1)  # Give thread time to start
         
         try:
-            success = run_in_blink_thread(load_saved_blink())
+            success = execute_blink_operation(load_saved_blink())
             if not success:
                 logger.info("No valid saved credentials found - user will need to login")
         except Exception as e:
@@ -1638,8 +1656,8 @@ def generate_thumbnail_async(clip_id: ClipId, item: Any, sync_module: Any) -> No
             filepath = Path(CLIPS_CACHE_DIR) / filename
             
             # Use blinkpy methods to download
-            run_in_blink_thread(item.prepare_download(blink))
-            success = run_in_blink_thread(item.download_video(blink, str(filepath)))
+            execute_blink_operation(item.prepare_download(blink))
+            success = execute_blink_operation(item.download_video(blink, str(filepath)))
             
             if success and filepath.exists():
                 # Generate thumbnail
@@ -1669,6 +1687,39 @@ def check_clip_thumbnail(clip_id_str: str):
     response, status_code = create_api_response(success=True, data={'available': False})
     return jsonify(response), status_code
 
+def schedule_stream_cleanup() -> None:
+    """Schedule automatic cleanup of idle streams."""
+    global stream_cleanup_timer
+    
+    # Cancel existing timer
+    if stream_cleanup_timer:
+        stream_cleanup_timer.cancel()
+    
+    # Schedule new cleanup
+    stream_cleanup_timer = threading.Timer(60.0, cleanup_idle_streams)
+    stream_cleanup_timer.daemon = True
+    stream_cleanup_timer.start()
+
+def cleanup_idle_streams() -> None:
+    """Clean up streams that have been idle for too long."""
+    import time
+    current_time = time.time()
+    idle_cameras = []
+    
+    with live_streams_lock:
+        for camera_id, stream_info in live_streams.items():
+            if current_time - stream_info['last_accessed'] > Config.STREAM_IDLE_TIMEOUT:
+                idle_cameras.append(camera_id)
+    
+    for camera_id in idle_cameras:
+        logger.info(f"Cleaning up idle stream for camera {camera_id}")
+        safe_execute(lambda: stop_hls_stream(camera_id), log_error=True)
+    
+    # Reschedule if there are still active streams
+    with live_streams_lock:
+        if live_streams:
+            schedule_stream_cleanup()
+
 def cleanup_resources() -> None:
     """Clean up all resources on application shutdown.
     
@@ -1678,15 +1729,17 @@ def cleanup_resources() -> None:
     """
     logger.info("Cleaning up resources...")
     
+    # Cancel cleanup timer
+    global stream_cleanup_timer
+    if stream_cleanup_timer:
+        stream_cleanup_timer.cancel()
+    
     # Stop all live streams
     with live_streams_lock:
         camera_ids = list(live_streams.keys())
     
     for camera_id in camera_ids:
-        try:
-            stop_hls_stream(camera_id)
-        except Exception as e:
-            logger.error(f"Error stopping stream for camera {camera_id}: {e}")
+        safe_execute(lambda: stop_hls_stream(camera_id), log_error=True)
     
     # Close Blink session before stopping loop
     global blink, blink_loop
