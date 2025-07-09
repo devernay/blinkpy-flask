@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Blink Camera System{% endblock %}
+
+{% block content %}
+<div class="login-form">
+    <h1 class="login-title">Blink Camera System</h1>
+    
+    <form method="POST" data-form-type="login">
+        <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <input type="email" id="username" name="username" class="form-input" value="{{ username or '' }}" autocomplete="username" data-lpignore="false" placeholder="Blink account email" required>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-input" value="{{ password or '' }}" autocomplete="current-password" data-lpignore="false" placeholder="Blink account password" required>
+        </div>
+        
+        <button type="submit" class="login-btn">Sign In</button>
+        
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
