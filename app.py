@@ -11,10 +11,11 @@ import tempfile
 import atexit
 import signal
 from datetime import datetime
-from typing import Optional, Union, TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import Optional, Union, TYPE_CHECKING, Any, Dict, List, Tuple, Protocol, TypedDict, Literal
 from threading import Lock
 import re
 from functools import wraps
+from pathlib import Path
 
 # Add the blinkpy directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'blinkpy'))
@@ -34,11 +35,146 @@ except ImportError:
     Blink = None  # type: ignore
     Auth = None  # type: ignore
 import logging
+import traceback
+from contextlib import contextmanager
+
+# Centralized error handling
+class BlinkError(Exception):
+    """Base exception for Blink-related errors."""
+    pass
+
+class AuthenticationError(BlinkError):
+    """Authentication-related errors."""
+    pass
+
+class CameraError(BlinkError):
+    """Camera-related errors."""
+    pass
+
+class StreamError(BlinkError):
+    """Streaming-related errors."""
+    pass
+
+class CacheError(BlinkError):
+    """Cache-related errors."""
+    pass
+
+@contextmanager
+def error_context(operation: str, reraise_as: type = BlinkError):
+    """Context manager for consistent error handling."""
+    try:
+        yield
+    except Exception as e:
+        logger.error(f"Error during {operation}: {e}")
+        logger.debug(f"Full traceback for {operation}: {traceback.format_exc()}")
+        if isinstance(e, BlinkError):
+            raise
+        raise reraise_as(f"Failed to {operation}: {str(e)}") from e
+
+def safe_execute(func, default=None, log_error=True):
+    """Execute function safely with error logging."""
+    try:
+        return func()
+    except Exception as e:
+        if log_error:
+            logger.error(f"Safe execution failed: {e}")
+            logger.debug(f"Full traceback: {traceback.format_exc()}")
+        return default
+
+# Base ID class with common functionality
+class BaseId:
+    def __init__(self, value: str):
+        self.value = self._validate(value)
+    
+    def _validate(self, value: str) -> str:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{self._get_type_name()} cannot be empty")
+        value = value.strip()
+        if not re.match(self._get_pattern(), value):
+            raise ValueError(f"Invalid {self._get_type_name()} format")
+        return value
+    
+    def _get_pattern(self) -> str:
+        raise NotImplementedError("Subclasses must implement _get_pattern")
+    
+    def _get_type_name(self) -> str:
+        raise NotImplementedError("Subclasses must implement _get_type_name")
+    
+    def __str__(self) -> str:
+        return self.value
+    
+    def __eq__(self, other) -> bool:
+        return isinstance(other, self.__class__) and self.value == other.value
+    
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+# ID classes with validation
+class CameraId(BaseId):
+    def _get_pattern(self) -> str:
+        return Config.VALID_CAMERA_ID_PATTERN
+    
+    def _get_type_name(self) -> str:
+        return "Camera ID"
+
+class NetworkId(BaseId):
+    def _get_pattern(self) -> str:
+        return Config.VALID_NETWORK_ID_PATTERN
+    
+    def _get_type_name(self) -> str:
+        return "Network ID"
+
+class ClipId(BaseId):
+    def _get_pattern(self) -> str:
+        return Config.VALID_CLIP_ID_PATTERN
+    
+    def _get_type_name(self) -> str:
+        return "Clip ID"
+
+# Typed dictionaries for structured data
+class ThumbnailCacheEntry(TypedDict):
+    timestamp: int
+    filename: str
+
+class ClipCacheEntry(TypedDict):
+    filepath: Path
+    thumbnail: Optional[Path]
+
+class StreamInfo(TypedDict):
+    process: subprocess.Popen
+    hls_dir: str
+    playlist_path: str
+
+class ApiResponse(TypedDict):
+    success: bool
+    timestamp: str
+    data: Optional[Any]
+    error: Optional[str]
+
+# Protocol for Blink objects
+class BlinkCamera(Protocol):
+    camera_id: str
+    name: str
+    thumbnail: Optional[str]
+    motion_enabled: bool
+    battery: Optional[str]
+    temperature: Optional[str]
+    wifi_strength: Optional[int]
+    last_record: Optional[str]
+
+class BlinkSync(Protocol):
+    network_id: int
+    sync_id: str
+    arm: bool
+    online: bool
+    cameras: Dict[str, BlinkCamera]
+    local_storage: Optional[Any]
+    local_storage_manifest_ready: bool
 
 # Configuration constants
 class Config:
     # Cache settings
-    CLIPS_CACHE_SIZE = 50
+    CLIPS_CACHE_SIZE = 100
     THUMBNAIL_CACHE_TIMEOUT = 3600  # 1 hour
     
     # FFmpeg settings
@@ -113,7 +249,7 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
     
     return value
 
-def create_api_response(success: bool = True, data: Any = None, error: str = None, status_code: int = 200) -> Tuple[Dict[str, Any], int]:
+def create_api_response(success: bool = True, data: Any = None, error: Optional[str] = None, status_code: int = 200) -> Tuple[ApiResponse, int]:
     """Create standardized API response format.
     
     Args:
@@ -125,19 +261,16 @@ def create_api_response(success: bool = True, data: Any = None, error: str = Non
     Returns:
         Tuple of (response_dict, status_code)
     """
-    response = {
+    response: ApiResponse = {
         'success': success,
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now().isoformat(),
+        'data': data if success else None,
+        'error': error if not success else None
     }
-    
-    if success and data is not None:
-        response['data'] = data
-    elif not success and error:
-        response['error'] = error
     
     return response, status_code
 
-def find_camera_by_id(camera_id: str) -> Optional[Any]:
+def find_camera_by_id(camera_id: CameraId) -> Optional[BlinkCamera]:
     """Find camera by ID across all sync modules.
     
     Args:
@@ -155,7 +288,7 @@ def find_camera_by_id(camera_id: str) -> Optional[Any]:
                 return cam
     return None
 
-def handle_api_error(error: Exception, operation: str, status_code: int = 500) -> Tuple[Dict[str, Any], int]:
+def handle_api_error(error: Exception, operation: str, status_code: int = 500) -> Tuple[ApiResponse, int]:
     """Handle API errors consistently.
     
     Args:
@@ -169,28 +302,7 @@ def handle_api_error(error: Exception, operation: str, status_code: int = 500) -
     logger.error(f"Error {operation}: {error}")
     return create_api_response(success=False, error=str(error), status_code=status_code)
 
-def validate_id_format(value: str, pattern: str, field_name: str) -> str:
-    """Validate ID format against regex pattern.
-    
-    Args:
-        value: ID string to validate
-        pattern: Regex pattern to match
-        field_name: Name of field for error messages
-        
-    Returns:
-        Validated ID string
-        
-    Raises:
-        ValueError: If validation fails
-    """
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field_name} cannot be empty")
-    
-    value = value.strip()
-    if not re.match(pattern, value):
-        raise ValueError(f"Invalid {field_name} format")
-    
-    return value
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', Config.SECRET_KEY)
@@ -204,7 +316,7 @@ CACHE_DIR = 'cache'  # Default, overridden by Flask config
 CREDENTIALS_FILE = None  # Set in get_cache_paths()
 THUMBNAIL_CACHE_DIR = None  # Set in get_cache_paths()
 CLIPS_CACHE_DIR = None  # Set in get_cache_paths()
-thumbnail_cache: Dict[str, Dict[str, Union[int, str]]] = {}  # {camera_id: {'timestamp': int, 'filename': str}}
+thumbnail_cache: Dict[CameraId, ThumbnailCacheEntry] = {}  # {camera_id: {'timestamp': int, 'filename': str}}
 thumbnail_cache_lock: Lock = Lock()  # Thread safety for thumbnail cache
 
 def get_cache_paths() -> None:
@@ -214,10 +326,11 @@ def get_cache_paths() -> None:
     Uses Flask app config 'CACHE_DIR' or defaults to 'cache'.
     """
     global CACHE_DIR, CREDENTIALS_FILE, THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR
-    CACHE_DIR = app.config.get('CACHE_DIR', 'cache')
-    CREDENTIALS_FILE = os.path.join(CACHE_DIR, 'blink.json')
-    THUMBNAIL_CACHE_DIR = os.path.join(CACHE_DIR, 'thumbnails')
-    CLIPS_CACHE_DIR = os.path.join(CACHE_DIR, 'clips')
+    cache_dir = Path(app.config.get('CACHE_DIR', 'cache'))
+    CACHE_DIR = str(cache_dir)
+    CREDENTIALS_FILE = str(cache_dir / 'blink.json')
+    THUMBNAIL_CACHE_DIR = str(cache_dir / 'thumbnails')
+    CLIPS_CACHE_DIR = str(cache_dir / 'clips')
 
 # Clips cache configuration
 CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
@@ -226,12 +339,12 @@ clips_cache_order: List[str] = []  # FIFO order tracking
 clips_cache_lock: Lock = Lock()  # Thread safety for clips cache
 
 # Downloaded clips cache
-downloaded_clips_cache: Dict[str, Dict[str, str]] = {}  # {clip_id: {'filepath': str, 'thumbnail': str}}
+downloaded_clips_cache: Dict[ClipId, ClipCacheEntry] = {}  # {clip_id: {'filepath': str, 'thumbnail': str}}
 downloaded_clips_order: List[str] = []  # FIFO order for downloaded clips
 downloaded_clips_lock: Lock = Lock()  # Thread safety for downloaded clips cache
 
 # Live stream processes
-live_streams: Dict[str, Dict[str, Any]] = {}  # {camera_id: {'process': subprocess, 'hls_dir': path}}
+live_streams: Dict[CameraId, StreamInfo] = {}  # {camera_id: {'process': subprocess, 'hls_dir': path}}
 live_streams_lock: Lock = Lock()  # Thread safety for live streams
 
 def run_blink_thread() -> None:
@@ -246,7 +359,7 @@ def run_blink_thread() -> None:
     asyncio.set_event_loop(blink_loop)
     blink_loop.run_forever()
 
-def run_in_blink_thread(coro) -> Any:
+def run_in_blink_thread(coro: Any) -> Any:
     """Execute coroutine in the Blink thread and return result.
     
     Args:
@@ -267,7 +380,7 @@ def run_in_blink_thread(coro) -> Any:
 
 
 
-async def initialize_blink(username: str, password: str) -> Union[bool, str]:
+async def initialize_blink(username: str, password: str) -> Union[bool, Literal['2fa_required']]:
     """Initialize Blink system following blinkpy README.
     
     Args:
@@ -278,7 +391,7 @@ async def initialize_blink(username: str, password: str) -> Union[bool, str]:
         True if successful, '2fa_required' if 2FA needed, False if failed
     """
     global blink
-    try:
+    with error_context("initialize Blink system", AuthenticationError):
         blink = Blink()
         auth = Auth({"username": username, "password": password}, no_prompt=True)
         blink.auth = auth
@@ -291,9 +404,6 @@ async def initialize_blink(username: str, password: str) -> Union[bool, str]:
         
         logger.info("Blink system initialized successfully")
         return True
-    except Exception as e:
-        logger.error(f"Error initializing Blink: {e}")
-        return False
 
 async def verify_2fa_and_save(username: str, password: str, two_fa_key: str) -> bool:
     """Verify 2FA code and save credentials in same thread as Blink creation.
@@ -307,7 +417,7 @@ async def verify_2fa_and_save(username: str, password: str, two_fa_key: str) -> 
         True if verification successful, False otherwise
     """
     global blink
-    try:
+    with error_context("verify 2FA and save credentials", AuthenticationError):
         logger.debug(f"Starting 2FA verification with key: {two_fa_key[:2]}***")
         
         # Send 2FA key using same session/thread
@@ -322,13 +432,8 @@ async def verify_2fa_and_save(username: str, password: str, two_fa_key: str) -> 
         
         logger.info("2FA verification and save completed successfully")
         return True
-    except Exception as e:
-        logger.error(f"Error verifying 2FA: {e}")
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
-        return False
 
-def format_time_ago(timestamp_str: Optional[str]) -> str:
+def format_time_ago(timestamp_str: Optional[Union[str, int]]) -> str:
     """Format timestamp as 'Xd ago' format.
     
     Args:
@@ -413,8 +518,10 @@ def login() -> Response:
                 return redirect(url_for('index'))
             else:
                 return render_template('login.html', error='Invalid credentials')
+        except AuthenticationError as e:
+            return render_template('login.html', error=str(e))
         except Exception as e:
-            logger.error(f"Login error: {e}")
+            logger.error(f"Unexpected login error: {e}")
             return render_template('login.html', error='Login failed. Please try again.')
     
     return render_template('login.html')
@@ -454,10 +561,10 @@ def two_factor() -> Response:
             else:
                 logger.debug("2FA failed, showing error")
                 return render_template('2fa.html', error='Invalid 2FA code')
+        except AuthenticationError as e:
+            return render_template('2fa.html', error=str(e))
         except Exception as e:
-            logger.error(f"2FA route error: {e}")
-            import traceback
-            logger.error(f"Full traceback: {traceback.format_exc()}")
+            logger.error(f"Unexpected 2FA error: {e}")
             return render_template('2fa.html', error='2FA verification failed')
     
     return render_template('2fa.html', email=session.get('temp_username', ''))
@@ -465,7 +572,7 @@ def two_factor() -> Response:
 @app.route('/api/clear-cache', methods=['POST'])
 def clear_cache():
     """Clear all caches except credentials."""
-    try:
+    with error_context("clear cache", CacheError):
         # Clear thumbnail cache
         global thumbnail_cache
         if os.path.exists(THUMBNAIL_CACHE_DIR):
@@ -494,10 +601,6 @@ def clear_cache():
         logger.info("All caches cleared successfully")
         response, status_code = create_api_response(success=True, data={'message': 'Cache cleared successfully'})
         return jsonify(response), status_code
-    except Exception as e:
-        logger.error(f"Error clearing cache: {e}")
-        response, status_code = create_api_response(success=False, error=str(e), status_code=500)
-        return jsonify(response), status_code
 
 @app.route('/logout', methods=['POST'])
 def logout() -> Response:
@@ -509,16 +612,14 @@ def logout() -> Response:
     global blink
     
     # Clear caches first
-    try:
-        clear_cache()
-    except Exception as e:
-        logger.warning(f"Error clearing cache during logout: {e}")
+    safe_execute(clear_cache, log_error=True)
     
     # Clear session and credentials
     session.clear()
     blink = None
-    if os.path.exists(CREDENTIALS_FILE):
-        os.remove(CREDENTIALS_FILE)
+    cred_file = Path(CREDENTIALS_FILE)
+    if cred_file.exists():
+        cred_file.unlink()
     
     response, status_code = create_api_response(success=True, data={'message': 'Logged out successfully'})
     return jsonify(response), status_code
@@ -540,7 +641,7 @@ def get_systems() -> Response:
         response, status_code = create_api_response(success=False, error='Blink not available - please login', status_code=401)
         return jsonify(response), status_code
     
-    try:
+    with error_context("get systems"):
         logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
         systems = []
         for name, sync in blink.sync.items():
@@ -554,17 +655,11 @@ def get_systems() -> Response:
         
         response, status_code = create_api_response(success=True, data=systems)
         return jsonify(response), status_code
-    except Exception as e:
-        logger.error(f"Error getting systems: {e}")
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
-        response, status_code = create_api_response(success=False, error=f'Error: {str(e)}', status_code=500)
-        return jsonify(response), status_code
 
-@app.route('/api/devices/<network_id>')
-def get_devices(network_id: str) -> Response:
+@app.route('/api/devices/<network_id_str>')
+def get_devices(network_id_str: str) -> Response:
     try:
-        network_id = validate_id_format(network_id, Config.VALID_NETWORK_ID_PATTERN, 'Network ID')
+        network_id = NetworkId(network_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -617,7 +712,7 @@ def get_devices(network_id: str) -> Response:
                 logger.debug(f"Could not parse thumbnail timestamp for {camera.name}: {e}")
         
         # Check if we need to update cached thumbnail
-        cache_key = camera.camera_id
+        cache_key = CameraId(camera.camera_id)
         
         # Format last updated time from cached or current timestamp
         with thumbnail_cache_lock:
@@ -646,15 +741,15 @@ def get_devices(network_id: str) -> Response:
         
         if current_ts > cached_ts:
             logger.debug(f"Updating thumbnail cache for {camera.name} (ts: {current_ts} > {cached_ts})")
-            try:
+            def update_thumbnail():
                 # Remove old cached file if exists
                 with thumbnail_cache_lock:
                     if cache_key in thumbnail_cache:
                         old_filename = thumbnail_cache[cache_key].get('filename')
                         if old_filename:
-                            old_filepath = os.path.join(THUMBNAIL_CACHE_DIR, old_filename)
-                            if os.path.exists(old_filepath):
-                                os.remove(old_filepath)
+                            old_filepath = Path(THUMBNAIL_CACHE_DIR) / old_filename
+                            if old_filepath.exists():
+                                old_filepath.unlink()
                                 logger.debug(f"Removed old thumbnail file: {old_filename}")
                 
                 thumbnail_response = run_in_blink_thread(camera.get_thumbnail())
@@ -663,13 +758,8 @@ def get_devices(network_id: str) -> Response:
                     
                     # Save to file with new timestamp
                     filename = f"{cache_key}_{current_ts}.jpg"
-                    filepath = os.path.join(THUMBNAIL_CACHE_DIR, filename)
-                    try:
-                        with open(filepath, 'wb') as f:
-                            f.write(image_data)
-                    except IOError as e:
-                        logger.error(f"Error writing thumbnail file {filepath}: {e}")
-                        raise
+                    filepath = Path(THUMBNAIL_CACHE_DIR) / filename
+                    filepath.write_bytes(image_data)
                     
                     # Update cache info
                     with thumbnail_cache_lock:
@@ -678,8 +768,8 @@ def get_devices(network_id: str) -> Response:
                             'filename': filename
                         }
                     logger.debug(f"Cached thumbnail for {camera.name} with timestamp {current_ts}")
-            except Exception as e:
-                logger.warning(f"Could not cache thumbnail for {camera.name}: {e}")
+            
+            safe_execute(update_thumbnail, log_error=True)
         else:
             logger.debug(f"Using cached thumbnail for {camera.name} (ts: {current_ts} <= {cached_ts})")
         
@@ -700,10 +790,10 @@ def get_devices(network_id: str) -> Response:
     response, status_code = create_api_response(success=True, data=devices)
     return jsonify(response), status_code
 
-@app.route('/api/system/<network_id>/arm', methods=['POST'])
-def arm_system(network_id: str) -> Response:
+@app.route('/api/system/<network_id_str>/arm', methods=['POST'])
+def arm_system(network_id_str: str) -> Response:
     try:
-        network_id = validate_id_format(network_id, Config.VALID_NETWORK_ID_PATTERN, 'Network ID')
+        network_id = NetworkId(network_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -744,18 +834,15 @@ def arm_system(network_id: str) -> Response:
         response, status_code = create_api_response(success=False, error='System not found', status_code=404)
         return jsonify(response), status_code
     
-    try:
+    with error_context("arm/disarm system"):
         run_in_blink_thread(sync_module.async_arm(armed))
         response, status_code = create_api_response(success=True, data={'armed': armed})
         return jsonify(response), status_code
-    except Exception as e:
-        response, status_code = handle_api_error(e, 'arming/disarming system')
-        return jsonify(response), status_code
 
-@app.route('/api/camera/<camera_id>/refresh', methods=['POST'])
-def refresh_camera(camera_id: str):
+@app.route('/api/camera/<camera_id_str>/refresh', methods=['POST'])
+def refresh_camera(camera_id_str: str):
     try:
-        camera_id = validate_id_format(camera_id, Config.VALID_CAMERA_ID_PATTERN, 'Camera ID')
+        camera_id = CameraId(camera_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -770,25 +857,22 @@ def refresh_camera(camera_id: str):
         response, status_code = create_api_response(success=False, error='Camera not found', status_code=404)
         return jsonify(response), status_code
     
-    try:
+    with error_context("refresh camera thumbnail", CameraError):
         # Remove camera thumbnail from cache
-        cache_key = camera.camera_id
+        cache_key = CameraId(camera.camera_id)
         with thumbnail_cache_lock:
             if cache_key in thumbnail_cache:
                 cached_info = thumbnail_cache[cache_key]
                 # Remove cached file
                 if 'filename' in cached_info:
-                    cached_file = os.path.join(THUMBNAIL_CACHE_DIR, cached_info['filename'])
-                    if os.path.exists(cached_file):
-                        os.remove(cached_file)
+                    cached_file = Path(THUMBNAIL_CACHE_DIR) / cached_info['filename']
+                    if cached_file.exists():
+                        cached_file.unlink()
                 # Remove from cache
                 del thumbnail_cache[cache_key]
         
         run_in_blink_thread(camera.snap_picture())
         response, status_code = create_api_response(success=True, data={'message': 'Thumbnail refresh initiated'})
-        return jsonify(response), status_code
-    except Exception as e:
-        response, status_code = handle_api_error(e, 'refreshing camera')
         return jsonify(response), status_code
 
 @app.route('/api/clips')
@@ -815,7 +899,7 @@ def get_clips():
     
     clips = []
     
-    try:
+    with error_context(f"get {storage_type} clips"):
         if storage_type == 'cloud':
             # Get cloud clips in Blink thread
             videos_metadata = run_in_blink_thread(blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE))
@@ -852,7 +936,7 @@ def get_clips():
                         'media_url': video.get('media')
                     })
                 except Exception as e:
-                    logger.error(f"Error processing video metadata: {e}")
+                    logger.warning(f"Skipping invalid video metadata: {e}")
                     continue
             
             # Convert to list format expected by frontend
@@ -918,7 +1002,7 @@ def get_clips():
                                     'media_url': item.url(sync_module._local_storage['last_manifest_id'])
                                 })
                             except Exception as e:
-                                logger.error(f"Error processing local clip metadata: {e}")
+                                logger.warning(f"Skipping invalid local clip metadata: {e}")
                                 continue
                 except Exception as e:
                     logger.warning(f"Could not get local storage manifest for {sync_name}: {e}")
@@ -932,10 +1016,7 @@ def get_clips():
                 day_data['count'] = len(day_data['clips'])
                 clips.append(day_data)
             
-    except Exception as e:
-        logger.error(f"Error retrieving clips: {e}")
-        response, status_code = create_api_response(success=False, error=str(e), status_code=500)
-        return jsonify(response), status_code
+        # This is handled by the error_context above
     
     # Cache the results with thread safety
     cache_key = storage_type
@@ -978,10 +1059,10 @@ def refresh_system():
         response, status_code = create_api_response(success=False, error=str(e), status_code=500)
         return jsonify(response), status_code
 
-@app.route('/api/clip/<clip_id>/download')
-def download_clip(clip_id: str):
+@app.route('/api/clip/<clip_id_str>/download')
+def download_clip(clip_id_str: str):
     try:
-        clip_id = validate_id_format(clip_id, Config.VALID_CLIP_ID_PATTERN, 'Clip ID')
+        clip_id = ClipId(clip_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -992,8 +1073,8 @@ def download_clip(clip_id: str):
     
     try:
         # Check if it's a local storage clip (format: sync_name:item_id)
-        if ':' in clip_id:
-            sync_name, item_id = clip_id.split(':', 1)
+        if ':' in str(clip_id):
+            sync_name, item_id = str(clip_id).split(':', 1)
             return download_local_clip(sync_name, int(item_id))
         else:
             return download_cloud_clip(clip_id)
@@ -1002,7 +1083,7 @@ def download_clip(clip_id: str):
         response, status_code = create_api_response(success=False, error=str(e), status_code=500)
         return jsonify(response), status_code
 
-def download_cloud_clip(clip_id):
+def download_cloud_clip(clip_id: ClipId):
     """Download cloud storage clip."""
     # Check if already cached
     with downloaded_clips_lock:
@@ -1029,18 +1110,17 @@ def download_cloud_clip(clip_id):
     camera_name = clip_info.get('device_name', 'unknown')
     iso_date = created_at.strftime('%Y-%m-%dT%H-%M-%S')
     filename = f"{camera_name}_{iso_date}.mp4"
-    filepath = os.path.join(CLIPS_CACHE_DIR, filename)
+    filepath = Path(CLIPS_CACHE_DIR) / filename
     
     # Download clip if not already cached
-    if not os.path.exists(filepath):
+    if not filepath.exists():
         media_url = clip_info.get('media')
         if media_url:
             import requests
             response = requests.get(media_url)
             if response.status_code == 200:
                 try:
-                    with open(filepath, 'wb') as f:
-                        f.write(response.content)
+                    filepath.write_bytes(response.content)
                 except IOError as e:
                     logger.error(f"Error writing clip file {filepath}: {e}")
                     response, status_code = create_api_response(success=False, error='Failed to save clip', status_code=500)
@@ -1055,9 +1135,9 @@ def download_cloud_clip(clip_id):
                 response, status_code = create_api_response(success=False, error='Failed to download clip', status_code=500)
                 return jsonify(response), status_code
     
-    return send_file(filepath, as_attachment=True, download_name=filename)
+    return send_file(str(filepath), as_attachment=True, download_name=filename)
 
-def download_local_clip(sync_name, item_id):
+def download_local_clip(sync_name: str, item_id: int):
     """Download local storage clip using blinkpy methods."""
     clip_id = f"{sync_name}:{item_id}"
     
@@ -1098,14 +1178,14 @@ def download_local_clip(sync_name, item_id):
     # Generate filename
     iso_date = item.created_at.strftime('%Y-%m-%dT%H-%M-%S')
     filename = f"{item.name}_{iso_date}.mp4"
-    filepath = os.path.join(CLIPS_CACHE_DIR, filename)
+    filepath = Path(CLIPS_CACHE_DIR) / filename
     
     # Download using blinkpy methods if not cached
-    if not os.path.exists(filepath):
+    if not filepath.exists():
         try:
             # Use blinkpy methods as specified
             run_in_blink_thread(item.prepare_download(blink))
-            success = run_in_blink_thread(item.download_video(blink, filepath))
+            success = run_in_blink_thread(item.download_video(blink, str(filepath)))
             if not success:
                 response, status_code = create_api_response(success=False, error='Failed to download local clip', status_code=500)
                 return jsonify(response), status_code
@@ -1120,9 +1200,9 @@ def download_local_clip(sync_name, item_id):
             response, status_code = create_api_response(success=False, error=f'Download failed: {str(e)}', status_code=500)
             return jsonify(response), status_code
     
-    return send_file(filepath, as_attachment=True, download_name=filename)
+    return send_file(str(filepath), as_attachment=True, download_name=filename)
 
-def start_hls_stream(camera_id: str, rtsp_url: str) -> Tuple[Optional[str], Optional[str]]:
+def start_hls_stream(camera_id: CameraId, rtsp_url: str) -> Tuple[Optional[str], Optional[str]]:
     """Start HLS transcoding for RTSP stream.
     
     Args:
@@ -1143,8 +1223,8 @@ def start_hls_stream(camera_id: str, rtsp_url: str) -> Tuple[Optional[str], Opti
     stop_hls_stream(camera_id)
     
     # Create temporary directory for HLS files
-    hls_dir = tempfile.mkdtemp(prefix=f'hls_{camera_id}_')
-    playlist_path = os.path.join(hls_dir, 'playlist.m3u8')
+    hls_dir = Path(tempfile.mkdtemp(prefix=f'hls_{camera_id}_'))
+    playlist_path = hls_dir / 'playlist.m3u8'
     
     # FFmpeg command for RTSP to HLS transcoding
     ffmpeg_cmd = [
@@ -1158,7 +1238,7 @@ def start_hls_stream(camera_id: str, rtsp_url: str) -> Tuple[Optional[str], Opti
         '-hls_time', str(Config.HLS_SEGMENT_TIME),
         '-hls_list_size', str(Config.HLS_LIST_SIZE),
         '-hls_flags', 'delete_segments',
-        playlist_path
+        str(playlist_path)
     ]
     
     try:
@@ -1181,8 +1261,8 @@ def start_hls_stream(camera_id: str, rtsp_url: str) -> Tuple[Optional[str], Opti
         with live_streams_lock:
             live_streams[camera_id] = {
                 'process': process,
-                'hls_dir': hls_dir,
-                'playlist_path': playlist_path
+                'hls_dir': str(hls_dir),
+                'playlist_path': str(playlist_path)
             }
         
         logger.info(f"HLS stream started successfully for camera {camera_id}")
@@ -1192,7 +1272,7 @@ def start_hls_stream(camera_id: str, rtsp_url: str) -> Tuple[Optional[str], Opti
         logger.error(error_msg)
         return None, error_msg
 
-def stop_hls_stream(camera_id: str) -> None:
+def stop_hls_stream(camera_id: CameraId) -> None:
     """Stop HLS transcoding for camera and clean up resources.
     
     Args:
@@ -1220,19 +1300,20 @@ def stop_hls_stream(camera_id: str) -> None:
                     logger.error(f"Error stopping FFmpeg process: {e}")
             
             # Clean up temporary directory
-            import shutil
             try:
-                if os.path.exists(stream_info['hls_dir']):
-                    shutil.rmtree(stream_info['hls_dir'])
+                hls_path = Path(stream_info['hls_dir'])
+                if hls_path.exists():
+                    import shutil
+                    shutil.rmtree(hls_path)
             except Exception as e:
                 logger.error(f"Error cleaning up HLS directory: {e}")
             
             del live_streams[camera_id]
 
-@app.route('/api/camera/<camera_id>/liveview')
-def get_camera_liveview(camera_id: str):
+@app.route('/api/camera/<camera_id_str>/liveview')
+def get_camera_liveview(camera_id_str: str):
     try:
-        camera_id = validate_id_format(camera_id, Config.VALID_CAMERA_ID_PATTERN, 'Camera ID')
+        camera_id = CameraId(camera_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -1270,9 +1351,10 @@ def get_camera_liveview(camera_id: str):
         response, status_code = handle_api_error(e, f'getting live view for camera {camera_id}')
         return jsonify(response), status_code
 
-@app.route('/api/hls/<camera_id>/<path:filename>')
-def serve_hls_file(camera_id: str, filename: str):
+@app.route('/api/hls/<camera_id_str>/<path:filename>')
+def serve_hls_file(camera_id_str: str, filename: str):
     """Serve HLS playlist and segment files."""
+    camera_id = CameraId(camera_id_str)
     with live_streams_lock:
         if camera_id not in live_streams:
             response, status_code = create_api_response(success=False, error='Stream not found', status_code=404)
@@ -1280,24 +1362,24 @@ def serve_hls_file(camera_id: str, filename: str):
         
         hls_dir = live_streams[camera_id]['hls_dir']
     
-    file_path = os.path.join(hls_dir, filename)
+    file_path = Path(hls_dir) / filename
     
-    if not os.path.exists(file_path):
+    if not file_path.exists():
         response, status_code = create_api_response(success=False, error='File not found', status_code=404)
         return jsonify(response), status_code
     
     if filename.endswith('.m3u8'):
-        return send_file(file_path, mimetype='application/vnd.apple.mpegurl')
+        return send_file(str(file_path), mimetype='application/vnd.apple.mpegurl')
     elif filename.endswith('.ts'):
-        return send_file(file_path, mimetype='video/mp2t')
+        return send_file(str(file_path), mimetype='video/mp2t')
     else:
         response, status_code = create_api_response(success=False, error='Invalid file type', status_code=400)
         return jsonify(response), status_code
 
-@app.route('/api/clip/<clip_id>/thumbnail')
-def get_clip_thumbnail(clip_id: str):
+@app.route('/api/clip/<clip_id_str>/thumbnail')
+def get_clip_thumbnail(clip_id_str: str):
     try:
-        clip_id = validate_id_format(clip_id, Config.VALID_CLIP_ID_PATTERN, 'Clip ID')
+        clip_id = ClipId(clip_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -1305,16 +1387,16 @@ def get_clip_thumbnail(clip_id: str):
     with downloaded_clips_lock:
         if clip_id in downloaded_clips_cache:
             thumbnail_path = downloaded_clips_cache[clip_id]['thumbnail']
-            if thumbnail_path and os.path.exists(thumbnail_path):
-                return send_file(thumbnail_path, mimetype='image/jpeg')
+            if thumbnail_path and thumbnail_path.exists():
+                return send_file(str(thumbnail_path), mimetype='image/jpeg')
     
     response, status_code = create_api_response(success=False, error='Thumbnail not found', status_code=404)
     return jsonify(response), status_code
 
-@app.route('/api/media/thumbnail/<camera_id>')
-def get_camera_thumbnail(camera_id: str):
+@app.route('/api/media/thumbnail/<camera_id_str>')
+def get_camera_thumbnail(camera_id_str: str):
     try:
-        camera_id = validate_id_format(camera_id, Config.VALID_CAMERA_ID_PATTERN, 'Camera ID')
+        camera_id = CameraId(camera_id_str)
     except ValueError as e:
         response, status_code = create_api_response(success=False, error=str(e), status_code=400)
         return jsonify(response), status_code
@@ -1335,9 +1417,9 @@ def get_camera_thumbnail(camera_id: str):
             if camera_id in thumbnail_cache:
                 logger.debug(f"Serving cached thumbnail for camera {camera_id}")
                 filename = thumbnail_cache[camera_id]['filename']
-                filepath = os.path.join(THUMBNAIL_CACHE_DIR, filename)
-                if os.path.exists(filepath):
-                    response = send_file(filepath, mimetype='image/jpeg')
+                filepath = Path(THUMBNAIL_CACHE_DIR) / filename
+                if filepath.exists():
+                    response = send_file(str(filepath), mimetype='image/jpeg')
                     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
                     return response
         
@@ -1362,7 +1444,8 @@ def placeholder():
 async def load_saved_blink():
     """Load Blink system from saved credentials file."""
     global blink
-    if os.path.exists(CREDENTIALS_FILE):
+    cred_file = Path(CREDENTIALS_FILE)
+    if cred_file.exists():
         try:
             from blinkpy.helpers.util import json_load
             auth_data = await json_load(CREDENTIALS_FILE)
@@ -1375,12 +1458,12 @@ async def load_saved_blink():
                 return True
             else:
                 logger.warning("Failed to load Blink system from saved credentials - removing invalid file")
-                os.remove(CREDENTIALS_FILE)
+                cred_file.unlink()
                 return False
         except Exception as e:
             logger.warning(f"Could not load Blink system from saved credentials: {e} - removing invalid file")
-            if os.path.exists(CREDENTIALS_FILE):
-                os.remove(CREDENTIALS_FILE)
+            if cred_file.exists():
+                cred_file.unlink()
             return False
     return False
 
@@ -1398,9 +1481,9 @@ def startup() -> None:
         get_cache_paths()
         
         # Create cache directories if they don't exist
-        os.makedirs(CACHE_DIR, exist_ok=True)
-        os.makedirs(THUMBNAIL_CACHE_DIR, exist_ok=True)
-        os.makedirs(CLIPS_CACHE_DIR, exist_ok=True)
+        Path(CACHE_DIR).mkdir(exist_ok=True)
+        Path(THUMBNAIL_CACHE_DIR).mkdir(exist_ok=True)
+        Path(CLIPS_CACHE_DIR).mkdir(exist_ok=True)
         
         # Scan and load existing thumbnails from cache
         scan_thumbnail_cache()
@@ -1420,13 +1503,14 @@ def startup() -> None:
         except Exception as e:
             logger.error(f"Error loading saved Blink credentials: {e}")
             # Clear invalid credentials file
-            if os.path.exists(CREDENTIALS_FILE):
-                os.remove(CREDENTIALS_FILE)
+            cred_file = Path(CREDENTIALS_FILE)
+            if cred_file.exists():
+                cred_file.unlink()
                 logger.info("Removed invalid credentials file")
     except Exception as e:
         logger.warning(f"Could not initialize Blink system on startup: {e}")
 
-def generate_clip_thumbnail(video_path: str, filename: str, middle_frame: bool = False) -> Optional[str]:
+def generate_clip_thumbnail(video_path: Path, filename: str, middle_frame: bool = False) -> Optional[Path]:
     """Generate thumbnail image from video clip.
     
     Args:
@@ -1441,9 +1525,9 @@ def generate_clip_thumbnail(video_path: str, filename: str, middle_frame: bool =
     first determines video duration with ffprobe.
     """
     thumbnail_filename = filename.replace('.mp4', '.jpg')
-    thumbnail_path = os.path.join(CLIPS_CACHE_DIR, thumbnail_filename)
+    thumbnail_path = Path(CLIPS_CACHE_DIR) / thumbnail_filename
     
-    if os.path.exists(thumbnail_path):
+    if thumbnail_path.exists():
         return thumbnail_path
     
     try:
@@ -1451,13 +1535,13 @@ def generate_clip_thumbnail(video_path: str, filename: str, middle_frame: bool =
         # Use ffmpeg to extract frame (middle frame for local clips, first frame for cloud)
         if middle_frame:
             # Get video duration and extract middle frame
-            duration_cmd = ['ffprobe', '-v', 'quiet', '-show_entries', 'format=duration', '-of', 'csv=p=0', video_path]
+            duration_cmd = ['ffprobe', '-v', 'quiet', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(video_path)]
             duration_result = subprocess.run(duration_cmd, capture_output=True, text=True, timeout=Config.FFPROBE_TIMEOUT)
             duration = float(duration_result.stdout.strip()) / 2  # Middle timestamp
-            cmd = ['ffmpeg', '-i', video_path, '-ss', str(duration), '-vframes', '1', '-f', 'image2', thumbnail_path]
+            cmd = ['ffmpeg', '-i', str(video_path), '-ss', str(duration), '-vframes', '1', '-f', 'image2', str(thumbnail_path)]
         else:
             # Extract first frame
-            cmd = ['ffmpeg', '-i', video_path, '-ss', '00:00:01', '-vframes', '1', '-f', 'image2', thumbnail_path]
+            cmd = ['ffmpeg', '-i', str(video_path), '-ss', '00:00:01', '-vframes', '1', '-f', 'image2', str(thumbnail_path)]
         
         result = subprocess.run(cmd, capture_output=True, check=True, timeout=Config.FFMPEG_TIMEOUT)
         return thumbnail_path
@@ -1471,7 +1555,7 @@ def generate_clip_thumbnail(video_path: str, filename: str, middle_frame: bool =
         logger.error(f"Error generating thumbnail: {e}")
         return None
 
-def cache_downloaded_clip(clip_id: str, filepath: str, thumbnail_path: Optional[str]) -> None:
+def cache_downloaded_clip(clip_id: ClipId, filepath: Path, thumbnail_path: Optional[Path]) -> None:
     """Cache downloaded clip with FIFO management.
     
     Args:
@@ -1501,10 +1585,10 @@ def cache_downloaded_clip(clip_id: str, filepath: str, thumbnail_path: Optional[
                 # Clean up files
                 old_clip = downloaded_clips_cache[oldest_clip_id]
                 try:
-                    if os.path.exists(old_clip['filepath']):
-                        os.remove(old_clip['filepath'])
-                    if old_clip['thumbnail'] and os.path.exists(old_clip['thumbnail']):
-                        os.remove(old_clip['thumbnail'])
+                    if old_clip['filepath'].exists():
+                        old_clip['filepath'].unlink()
+                    if old_clip['thumbnail'] and old_clip['thumbnail'].exists():
+                        old_clip['thumbnail'].unlink()
                 except Exception as e:
                     logger.warning(f"Error cleaning up old clip files: {e}")
                 
@@ -1518,46 +1602,46 @@ def scan_thumbnail_cache() -> None:
     Handles camera IDs containing underscores and logs parsing errors.
     Thread-safe operation using thumbnail_cache_lock.
     """
-    if not os.path.exists(THUMBNAIL_CACHE_DIR):
+    cache_dir = Path(THUMBNAIL_CACHE_DIR)
+    if not cache_dir.exists():
         return
     
     try:
         with thumbnail_cache_lock:
-            for filename in os.listdir(THUMBNAIL_CACHE_DIR):
-                if filename.endswith('.jpg'):
-                    # Parse filename format: camera_id_timestamp.jpg
-                    parts = filename.replace('.jpg', '').split('_')
-                    if len(parts) >= 2:
-                        try:
-                            camera_id = '_'.join(parts[:-1])  # Handle camera IDs with underscores
-                            timestamp = int(parts[-1])
-                            
-                            filepath = os.path.join(THUMBNAIL_CACHE_DIR, filename)
-                            if os.path.exists(filepath):
-                                thumbnail_cache[camera_id] = {
-                                    'timestamp': timestamp,
-                                    'filename': filename
-                                }
-                                logger.debug(f"Loaded cached thumbnail for camera {camera_id} with timestamp {timestamp}")
-                        except (ValueError, IndexError) as e:
-                            logger.warning(f"Could not parse thumbnail filename {filename}: {e}")
+            for file_path in cache_dir.glob('*.jpg'):
+                filename = file_path.name
+                # Parse filename format: camera_id_timestamp.jpg
+                parts = filename.replace('.jpg', '').split('_')
+                if len(parts) >= 2:
+                    try:
+                        camera_id = '_'.join(parts[:-1])  # Handle camera IDs with underscores
+                        timestamp = int(parts[-1])
+                        
+                        if file_path.exists():
+                            thumbnail_cache[camera_id] = {
+                                'timestamp': timestamp,
+                                'filename': filename
+                            }
+                            logger.debug(f"Loaded cached thumbnail for camera {camera_id} with timestamp {timestamp}")
+                    except (ValueError, IndexError) as e:
+                        logger.warning(f"Could not parse thumbnail filename {filename}: {e}")
     except Exception as e:
         logger.error(f"Error scanning thumbnail cache: {e}")
 
-def generate_thumbnail_async(clip_id, item, sync_module):
+def generate_thumbnail_async(clip_id: ClipId, item: Any, sync_module: Any) -> None:
     """Generate thumbnail for local clip in background."""
     def background_task():
         try:
             # Download clip to generate thumbnail
             iso_date = item.created_at.strftime('%Y-%m-%dT%H-%M-%S')
             filename = f"{item.name}_{iso_date}.mp4"
-            filepath = os.path.join(CLIPS_CACHE_DIR, filename)
+            filepath = Path(CLIPS_CACHE_DIR) / filename
             
             # Use blinkpy methods to download
             run_in_blink_thread(item.prepare_download(blink))
-            success = run_in_blink_thread(item.download_video(blink, filepath))
+            success = run_in_blink_thread(item.download_video(blink, str(filepath)))
             
-            if success and os.path.exists(filepath):
+            if success and filepath.exists():
                 # Generate thumbnail
                 thumbnail_path = generate_clip_thumbnail(filepath, filename, middle_frame=True)
                 if thumbnail_path:
@@ -1571,13 +1655,14 @@ def generate_thumbnail_async(clip_id, item, sync_module):
     thread = threading.Thread(target=background_task, daemon=True)
     thread.start()
 
-@app.route('/api/clip/<clip_id>/thumbnail/check')
-def check_clip_thumbnail(clip_id: str):
+@app.route('/api/clip/<clip_id_str>/thumbnail/check')
+def check_clip_thumbnail(clip_id_str: str):
     """Check if thumbnail is available for clip."""
+    clip_id = ClipId(clip_id_str)
     with downloaded_clips_lock:
         if clip_id in downloaded_clips_cache:
             thumbnail_path = downloaded_clips_cache[clip_id]['thumbnail']
-            if thumbnail_path and os.path.exists(thumbnail_path):
+            if thumbnail_path and thumbnail_path.exists():
                 response, status_code = create_api_response(success=True, data={'available': True, 'url': f'/api/clip/{clip_id}/thumbnail'})
                 return jsonify(response), status_code
     

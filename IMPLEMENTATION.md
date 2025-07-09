@@ -108,7 +108,8 @@ The "Settings" view should have:
 
 # Code quality improvements
 
-Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, re-read IMPLEMENTATION.md, and make sure that everything is implemented as described.
+Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
+- Memory leaks in stream management
 - Mixed sync/async patterns causing complexity. Remember that all blinkpy API calls must run in the blink thread.
 - Thread management scattered throughout
 - Blocking operations in main thread
@@ -119,15 +120,18 @@ Fix the following without any regression on the behavior or functionalities. Mak
 - Race conditions in cache access
 - Blocking I/O operations
 
-Verify that the following have been fixed already:
+Verify that the following issues have been fixed already:
 - Missing type safety in many places
+- Use pathlib rather than a custom FilePath type
+- Use classes for CameraId, ClipId and NetworkId, and move validation using VALID_*_ID_PATTERN to a class member function. Use these validation functions everywhere validation is needed.
+- Rather than using camera_id as the untyped camera ID and camera_id_typed as the typed camera ID, use camera_id_str for the untyped version, and camera_id for the typed version. Same for network_id and clip_id.
+- CameraId, ClipId and NetworkId have a lot of code and methods in common. Could they inherit from the same parent class, since only the pattern and the type name differ?
 - Error handling:
    - Inconsistent patterns across functions
    - Silent failures in many places
    - Poor exception context preservation
    - No centralized error handling
-- Memory leaks in stream management
 
-Re-read IMPLEMENTATION.md, and make sure that everything is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
+Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
 Read the whole code again. How would you rate the code quality? Is there room for improvement?
