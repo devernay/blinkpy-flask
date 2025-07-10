@@ -2032,7 +2032,7 @@ def scan_thumbnail_cache() -> None:
 
     Parses cached thumbnail filenames in format 'camera_id_timestamp.jpg'
     and populates the thumbnail_cache dictionary with metadata.
-    Handles camera IDs containing underscores and logs parsing errors.
+    Removes duplicate thumbnails and invalid camera IDs.
     Thread-safe operation using thumbnail_cache_lock.
     """
     cache_dir = Path(THUMBNAIL_CACHE_DIR)
@@ -2040,6 +2040,17 @@ def scan_thumbnail_cache() -> None:
         return
 
     try:
+        # Get valid camera IDs from current system
+        valid_camera_ids = set()
+        if blink and blink.available:
+            for sync_name, sync in blink.sync.items():
+                for cam_name, cam in sync.cameras.items():
+                    valid_camera_ids.add(cam.camera_id)
+
+        # Group thumbnails by camera ID
+        camera_thumbnails = {}
+        files_to_remove = []
+        
         with thumbnail_cache_lock:
             for file_path in cache_dir.glob("*.jpg"):
                 filename = file_path.name
@@ -2047,23 +2058,50 @@ def scan_thumbnail_cache() -> None:
                 parts = filename.replace(".jpg", "").split("_")
                 if len(parts) >= 2:
                     try:
-                        camera_id = "_".join(
-                            parts[:-1]
-                        )  # Handle camera IDs with underscores
+                        camera_id = "_".join(parts[:-1])  # Handle camera IDs with underscores
                         timestamp = int(parts[-1])
-
-                        if file_path.exists():
-                            thumbnail_cache[CameraId(camera_id)] = {
-                                "timestamp": timestamp,
-                                "filename": filename,
-                            }
-                            logger.debug(
-                                f"Loaded cached thumbnail for camera {camera_id} with timestamp {timestamp}"
-                            )
+                        
+                        # Check if camera ID is valid for current system
+                        if valid_camera_ids and camera_id not in valid_camera_ids:
+                            logger.debug(f"Removing thumbnail for invalid camera {camera_id}")
+                            files_to_remove.append(file_path)
+                            continue
+                        
+                        # Group by camera ID
+                        if camera_id not in camera_thumbnails:
+                            camera_thumbnails[camera_id] = []
+                        camera_thumbnails[camera_id].append((timestamp, filename, file_path))
+                        
                     except (ValueError, IndexError) as e:
-                        logger.warning(
-                            f"Could not parse thumbnail filename {filename}: {e}"
-                        )
+                        logger.warning(f"Could not parse thumbnail filename {filename}: {e}")
+                        files_to_remove.append(file_path)
+            
+            # Keep only the newest thumbnail per camera
+            for camera_id, thumbnails in camera_thumbnails.items():
+                # Sort by timestamp (newest first)
+                thumbnails.sort(key=lambda x: x[0], reverse=True)
+                
+                # Keep the newest, mark others for removal
+                if thumbnails:
+                    newest_ts, newest_filename, newest_path = thumbnails[0]
+                    thumbnail_cache[CameraId(camera_id)] = {
+                        "timestamp": newest_ts,
+                        "filename": newest_filename,
+                    }
+                    logger.debug(f"Loaded cached thumbnail for camera {camera_id} with timestamp {newest_ts}")
+                    
+                    # Mark older thumbnails for removal
+                    for old_ts, old_filename, old_path in thumbnails[1:]:
+                        logger.debug(f"Removing old thumbnail {old_filename} for camera {camera_id}")
+                        files_to_remove.append(old_path)
+            
+            # Remove invalid/old files
+            for file_path in files_to_remove:
+                try:
+                    file_path.unlink()
+                except Exception as e:
+                    logger.warning(f"Could not remove thumbnail file {file_path}: {e}")
+                    
     except Exception as e:
         logger.error(f"Error scanning thumbnail cache: {e}")
 
