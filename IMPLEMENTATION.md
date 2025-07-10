@@ -109,11 +109,6 @@ The "Settings" view should have:
 # Code quality improvements
 
 Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
-- Blocking operations in main thread
-- Caching:
-  - Inefficient caching strategies (no TTL, no LRU eviction)
-  - Cache eviction strategies could be more sophisticated
-  - Some duplicate logic in caching
 - No connection pooling for HTTP requests
 - Duplicate logic throughout
 - Poor naming conventions
@@ -135,6 +130,11 @@ Verify that the following issues have been fixed already:
 - Memory leaks in stream management
 - Mixed sync/async patterns causing complexity. Remember that all blinkpy API calls must run in the blink thread.
 - Thread management scattered throughout
+- Blocking operations in main thread
+- Caching:
+  - Inefficient caching strategies (no TTL, no LRU eviction)
+  - Cache eviction strategies could be more sophisticated
+  - Some duplicate logic in caching
 
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
