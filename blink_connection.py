@@ -16,9 +16,9 @@ Usage:
 """
 
 import asyncio
-import threading
 import logging
-from typing import Optional, Any
+import threading
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 

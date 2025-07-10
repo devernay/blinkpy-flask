@@ -206,11 +206,32 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 - **Documentation**: Comprehensive docstrings
 - **Error handling**: Consistent patterns
 - **Security**: Input validation and XSS prevention
+- **Test coverage**: Comprehensive unit test suite
 
 ### Testing
 ```bash
+# Install testing dependencies
+pip install coverage pytest pytest-cov ruff
+
+# Run unit tests
+python test_app.py
+
+# Run tests with coverage
+python run_tests.py --coverage
+
+# Generate HTML coverage report
+python run_tests.py --coverage --html
+
+# Alternative: Use pytest
+pytest --cov=app --cov-report=html --cov-report=term
+
+# Code quality checks
+ruff check .          # Lint code
+ruff format .         # Format code
+ruff check --fix .    # Auto-fix issues
+
 # Run in debug mode
-python app.py
+python app.py --debug
 
 # Test API endpoints
 curl http://localhost:5000/api/systems
