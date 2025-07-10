@@ -18,7 +18,7 @@ A professional-grade Flask web application providing comprehensive access to Bli
 - **Responsive design** - Mobile and desktop optimized
 - **System management** - Arm/disarm, device status
 - **Camera controls** - Thumbnail refresh, motion detection
-- **Clip browser** - Organized by date with thumbnails
+- **Clip browser** - Organized by date with auto-updating thumbnails
 - **Live view** - Real-time camera streaming
 
 ### Security & Performance
@@ -189,7 +189,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 
 ### Performance Features
 - **Intelligent caching**: 80% reduction in API calls
-- **Background processing**: Async thumbnail generation
+- **Background processing**: Async thumbnail generation with polling updates
 - **FIFO management**: Automatic cache cleanup
 - **Connection pooling**: Efficient HTTP requests
 

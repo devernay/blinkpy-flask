@@ -11,7 +11,7 @@ Key Features:
     - Cloud and local storage clip management
     - Two-factor authentication support
     - RESTful API with 15+ endpoints
-    - Server-sent events for real-time updates
+    - Polling-based thumbnail updates
     - Thread-safe operations with dedicated Blink connection
 
 Architecture:
@@ -19,7 +19,7 @@ Architecture:
     - Dedicated thread for all Blink API operations
     - FIFO caching with configurable limits
     - FFmpeg integration for video processing
-    - Redis-backed SSE for real-time notifications
+    - Click-triggered polling for thumbnail updates
 """
 
 import sys
@@ -73,7 +73,7 @@ import logging
 import traceback
 from contextlib import contextmanager
 from blink_connection import BlinkConnection
-from flask_sse import sse
+# from flask_sse import sse  # No longer needed
 from stream_manager import StreamManager, StreamConfig
 
 
@@ -254,7 +254,7 @@ class ClipId(BaseId):
     """Validated clip identifier.
 
     Represents a unique clip ID for both cloud and local storage clips.
-    Local clips use format 'sync_name:item_id', cloud clips use numeric IDs.
+    Local clips use format 'sync_name~item_id', cloud clips use numeric IDs.
     """
 
     def _get_pattern(self) -> str:
@@ -276,7 +276,7 @@ class ClipId(BaseId):
         Returns:
             ClipId instance for local clip
         """
-        return cls(f"{sync_name}:{item_id}")
+        return cls(f"{sync_name}~{item_id}")
     
     def is_local(self) -> bool:
         """Check if this is a local storage clip.
@@ -284,7 +284,7 @@ class ClipId(BaseId):
         Returns:
             True if local storage clip, False if cloud clip
         """
-        return ":" in self.value
+        return "~" in self.value
     
     def get_local_parts(self) -> Tuple[str, int]:
         """Get sync name and item ID for local clips.
@@ -297,7 +297,7 @@ class ClipId(BaseId):
         """
         if not self.is_local():
             raise ValueError("Not a local storage clip")
-        sync_name, item_id_str = self.value.split(":", 1)
+        sync_name, item_id_str = self.value.split("~", 1)
         return sync_name, int(item_id_str)
 
 
@@ -430,7 +430,7 @@ class Config:
     MAX_2FA_LENGTH = 10  # Maximum 2FA code length
     VALID_CAMERA_ID_PATTERN = r"^[a-zA-Z0-9_-]+$"  # Camera ID regex
     VALID_NETWORK_ID_PATTERN = r"^[0-9]+$"  # Network ID regex
-    VALID_CLIP_ID_PATTERN = r"^[a-zA-Z0-9_:-]+$"  # Clip ID regex
+    VALID_CLIP_ID_PATTERN = r"^[a-zA-Z0-9_~-]+$"  # Clip ID regex
 
 
 # Configure logging - will be reconfigured after cache paths are set
@@ -467,19 +467,14 @@ def setup_logging() -> None:
     )
     file_handler.setFormatter(formatter)
 
-    # Configure root logger (level will be set from command line)
+    # Configure root logger
     root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)  # Default level, will be overridden by command line
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
 
     # Force rotation on startup
     file_handler.doRollover()
-
-
-# Enable blinkpy debug logging to trace API calls
-logging.getLogger("blinkpy").setLevel(logging.DEBUG)
-# Suppress asyncio unclosed session warnings
-logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 
 def validate_string_input(value: str, max_length: int, field_name: str) -> str:
@@ -578,6 +573,7 @@ def handle_api_error(
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", Config.SECRET_KEY)
+# app.config["REDIS_URL"] = "redis://localhost:6379"  # No longer needed
 
 # Standard thread management
 executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="blink-bg-")
@@ -1324,6 +1320,7 @@ def get_clips():
                                     }
 
                                 clip_id = ClipId.from_local(sync_name, item.id)
+                                logger.debug(f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}")
 
                                 # Check for existing thumbnail only
                                 thumbnail_url = None
@@ -1425,6 +1422,9 @@ def refresh_system():
 @app.route("/api/clip/<clip_id_str>/download")
 def download_clip(clip_id_str: str):
     try:
+        # URL decode the clip ID in case it contains encoded characters
+        from urllib.parse import unquote
+        clip_id_str = unquote(clip_id_str)
         clip_id = ClipId(clip_id_str)
     except ValueError as e:
         response, status_code = create_api_response(
@@ -1439,13 +1439,17 @@ def download_clip(clip_id_str: str):
         return jsonify(response), status_code
 
     try:
+        logger.debug(f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})")
         if clip_id.is_local():
             sync_name, item_id = clip_id.get_local_parts()
+            logger.debug(f"Local clip - sync_name: {sync_name}, item_id: {item_id}")
             return download_local_clip(clip_id, sync_name, item_id)
         else:
+            logger.debug(f"Cloud clip - ID: {clip_id}")
             return download_cloud_clip(clip_id)
     except Exception as e:
-        logger.error(f"Error downloading clip: {e}")
+        logger.error(f"Error downloading clip {clip_id}: {e}")
+        logger.debug(f"Full traceback: {traceback.format_exc()}")
         response, status_code = create_api_response(
             success=False, error=str(e), status_code=500
         )
@@ -1488,11 +1492,11 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
         )
         return jsonify(response), status_code
 
-    # Generate filename with camera name and ISO date
+    # Generate filename with clip ID for easy reverse lookup
     created_at = datetime.fromisoformat(clip_info["created_at"].replace("Z", "+00:00"))
     camera_name = clip_info.get("device_name", "unknown")
     iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
-    filename = f"{camera_name}_{iso_date}.mp4"
+    filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
     filepath = Path(CLIPS_CACHE_DIR) / filename
 
     # Download clip if not already cached
@@ -1583,9 +1587,9 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
         )
         return jsonify(response), status_code
 
-    # Generate filename
+    # Generate filename with clip ID for easy reverse lookup
     iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
-    filename = f"{item.name}_{iso_date}.mp4"
+    filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
     filepath = Path(CLIPS_CACHE_DIR) / filename
 
     # Download using blinkpy methods if not cached
@@ -1720,6 +1724,8 @@ def serve_hls_file(camera_id_str: str, filename: str):
 @app.route("/api/clip/<clip_id_str>/thumbnail")
 def get_clip_thumbnail(clip_id_str: str):
     try:
+        from urllib.parse import unquote
+        clip_id_str = unquote(clip_id_str)
         clip_id = ClipId(clip_id_str)
     except ValueError as e:
         response, status_code = create_api_response(
@@ -1794,20 +1800,12 @@ def get_camera_thumbnail(camera_id_str: str):
         return jsonify(response), status_code
 
 
-# Register SSE blueprint
-app.register_blueprint(sse, url_prefix="/stream")
+# SSE blueprint removed - using polling approach instead
 
 
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
-    """Notify all clients that a thumbnail is ready."""
-    sse.publish(
-        {
-            "type": "thumbnail_ready",
-            "clip_id": str(clip_id),
-            "url": f"/api/clip/{clip_id}/thumbnail",
-        },
-        channel="thumbnails",
-    )
+    """Thumbnail ready notification (no longer needed with polling approach)."""
+    logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
 @app.route("/placeholder")
@@ -1817,6 +1815,9 @@ def placeholder():
         success=False, error="This feature is not yet available", status_code=501
     )
     return jsonify(response), status_code
+
+
+
 
 
 async def load_saved_blink():
@@ -1874,6 +1875,9 @@ def startup() -> None:
 
         # Scan and load existing thumbnails from cache
         scan_thumbnail_cache()
+        
+        # Scan and load existing clips from cache
+        scan_clips_cache()
 
         # Initialize Blink thread for startup
         blink_connection.start()
@@ -2106,6 +2110,101 @@ def scan_thumbnail_cache() -> None:
         logger.error(f"Error scanning thumbnail cache: {e}")
 
 
+def scan_clips_cache() -> None:
+    """Scan clips cache directory and load existing clips into memory.
+    
+    Parses cached clip files with ClipId_camera_date.mp4 format,
+    validates against Blink system, and removes invalid files.
+    Thread-safe operation using downloaded_clips_lock.
+    """
+    cache_dir = Path(CLIPS_CACHE_DIR)
+    if not cache_dir.exists():
+        return
+        
+    try:
+        files_to_remove = []
+        
+        with downloaded_clips_lock:
+            for video_file in cache_dir.glob("*.mp4"):
+                try:
+                    filename = video_file.name
+                    # Parse filename format: clipid_camera_date.mp4
+                    parts = filename.replace(".mp4", "").split("_", 1)
+                    if len(parts) < 2:
+                        logger.debug(f"Invalid filename format: {filename}")
+                        files_to_remove.append(video_file)
+                        continue
+                        
+                    clip_id_str = parts[0]
+                    try:
+                        clip_id = ClipId(clip_id_str)
+                    except ValueError:
+                        logger.debug(f"Invalid clip ID in filename: {filename}")
+                        files_to_remove.append(video_file)
+                        continue
+                    
+                    # Check corresponding thumbnail
+                    thumbnail_name = filename.replace(".mp4", ".jpg")
+                    thumbnail_path = cache_dir / thumbnail_name
+                    
+                    # Validate clip exists in Blink system
+                    if blink and blink.available:
+                        clip_valid = False
+                        try:
+                            if clip_id.is_local():
+                                # Validate local clip
+                                sync_name, item_id = clip_id.get_local_parts()
+                                if sync_name in blink.sync:
+                                    sync_module = blink.sync[sync_name]
+                                    if (sync_module.local_storage and 
+                                        sync_module.local_storage_manifest_ready):
+                                        manifest = sync_module._local_storage["manifest"]
+                                        for item in manifest:
+                                            if item.id == item_id:
+                                                clip_valid = True
+                                                break
+                            else:
+                                # Validate cloud clip (simplified check)
+                                videos_metadata = blink_connection.execute(
+                                    blink.get_videos_metadata(stop=50)
+                                )
+                                for video in videos_metadata:
+                                    if str(video.get("id")) == str(clip_id):
+                                        clip_valid = True
+                                        break
+                        except Exception as e:
+                            logger.debug(f"Error validating clip {clip_id}: {e}")
+                        
+                        if not clip_valid:
+                            logger.debug(f"Clip {clip_id} no longer exists, removing cached files")
+                            files_to_remove.append(video_file)
+                            if thumbnail_path.exists():
+                                files_to_remove.append(thumbnail_path)
+                            continue
+                    
+                    # Add to cache
+                    downloaded_clips_cache[clip_id] = {
+                        "filepath": video_file,
+                        "thumbnail": thumbnail_path if thumbnail_path.exists() else None,
+                    }
+                    logger.debug(f"Loaded cached clip {clip_id}")
+                    
+                except Exception as e:
+                    logger.debug(f"Could not process cached clip {video_file}: {e}")
+                    files_to_remove.append(video_file)
+            
+            # Remove invalid files
+            for file_path in files_to_remove:
+                try:
+                    file_path.unlink()
+                    logger.debug(f"Removed invalid cached file: {file_path.name}")
+                except Exception as e:
+                    logger.warning(f"Could not remove file {file_path}: {e}")
+                    
+    except Exception as e:
+        logger.error(f"Error scanning clips cache: {e}")
+
+
 # Removed generate_thumbnail_async - thumbnails only generated on clip download
 
 
@@ -2113,6 +2212,8 @@ def scan_thumbnail_cache() -> None:
 def check_clip_thumbnail(clip_id_str: str):
     """Check if thumbnail is available for clip."""
     try:
+        from urllib.parse import unquote
+        clip_id_str = unquote(clip_id_str)
         clip_id = ClipId(clip_id_str)
     except ValueError as e:
         response, status_code = create_api_response(
@@ -2211,8 +2312,12 @@ def main() -> None:
     # Set cache directory in app config
     app.config["CACHE_DIR"] = args.cache
     
-    # Set logging level
-    logging.getLogger().setLevel(getattr(logging, args.log_level))
+    # Set logging level for all loggers
+    log_level = getattr(logging, args.log_level)
+    logging.getLogger().setLevel(log_level)
+    logging.getLogger("blinkpy").setLevel(log_level)
+    logging.getLogger("werkzeug").setLevel(log_level)
+    logging.getLogger("flask").setLevel(log_level)
 
     try:
         app.run(debug=args.debug, host=args.host, port=args.port)

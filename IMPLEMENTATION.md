@@ -87,7 +87,7 @@ Each day consists in:
   - The name of the camera (boldface), and below it the name of the system.
   - The time of the event (in the time zone of the server), and below it the kind of event (which is usually "Motion")
 
-Clicking on a clip will download a clip to the directory `<cache>/clips` with a filename that contains the camera name and the ISO date (in server timezone) of the clip.
+Clicking on a clip will download a clip to the directory `<cache>/clips` with a filename that contains the clip id, the camera name and the ISO date (in server timezone) of the clip.
 
 While loading the clip, the player window should be shown with a dark gray background and a spinning wheel icon, and the following text in white: "Just a moment..." (boldface), and on the next line "We're retrieving your clip.". If the clip is from local storage, it should also say "Hang tight, USB clips take a little longer to load.".
 
@@ -110,10 +110,14 @@ The "Settings" view should have:
 
 Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
 - Blocking operations in main thread
-- Inefficient caching strategies (no TTL, no LRU eviction)
+- Caching:
+  - Inefficient caching strategies (no TTL, no LRU eviction)
+  - Cache eviction strategies could be more sophisticated
+  - Some duplicate logic in caching
 - No connection pooling for HTTP requests
 - Duplicate logic throughout
 - Poor naming conventions
+- Some naming could be more consistent
 - Race conditions in cache access
 - Blocking I/O operations
 

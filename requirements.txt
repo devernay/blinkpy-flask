@@ -1,3 +1,2 @@
 Flask>=2.0.0
 blinkpy
-Flask-SSE>=0.2.1

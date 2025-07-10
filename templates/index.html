@@ -558,13 +558,58 @@ async function playClip(clip) {
                         <h2>${clip.camera_name} - ${clip.time}</h2>
                         <button class="close-btn" onclick="closeVideoModal(this)">&times;</button>
                     </div>
-                    <video controls autoplay style="width: 100%; border-radius: 8px;">
+                    <video controls style="width: 100%; border-radius: 8px;">
                         <source src="${videoUrl}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                 </div>
             `;
             document.body.appendChild(modal);
+            // Start thumbnail polling for this clip
+            console.log('Attempting to start thumbnail polling for:', clip.id);
+            if (window.startClipThumbnailPolling) {
+                console.log('startClipThumbnailPolling function found, calling it');
+                window.startClipThumbnailPolling(clip.id);
+            } else {
+                console.log('startClipThumbnailPolling function not found');
+                // Define polling inline since clips.html isn't loaded
+                setTimeout(() => {
+                    console.log('Starting inline polling for:', clip.id);
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    const interval = setInterval(() => {
+                        attempts++;
+                        console.log(`Polling attempt ${attempts}/${maxAttempts} for clip:`, clip.id);
+                        fetch(`/api/clip/${clip.id}/thumbnail/check`)
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log('Thumbnail check result:', data);
+                                if (data.success && data.data.available) {
+                                    console.log('Thumbnail available, updating UI');
+                                    // Find and update thumbnail
+                                    const clipElement = document.querySelector(`[data-clip-id="${clip.id}"]`);
+                                    if (clipElement && clipElement.tagName === 'IMG') {
+                                        clipElement.src = data.data.url;
+                                    } else if (clipElement && clipElement.classList.contains('clip-placeholder')) {
+                                        const img = document.createElement('img');
+                                        img.src = data.data.url;
+                                        img.className = 'clip-thumbnail';
+                                        img.setAttribute('data-clip-id', clip.id);
+                                        clipElement.parentNode.replaceChild(img, clipElement);
+                                    }
+                                    clearInterval(interval);
+                                } else if (attempts >= maxAttempts) {
+                                    console.log('Max polling attempts reached');
+                                    clearInterval(interval);
+                                }
+                            })
+                            .catch(error => {
+                                console.log('Polling error:', error);
+                                if (attempts >= maxAttempts) clearInterval(interval);
+                            });
+                    }, 2000);
+                }, 1000);
+            }
         } else {
             loadingModal.remove();
             const error = await response.json();
