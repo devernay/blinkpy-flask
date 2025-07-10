@@ -71,6 +71,9 @@ from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.auth import Auth  # type: ignore
 import logging
 import traceback
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from contextlib import contextmanager
 from blink_connection import BlinkConnection
 # from flask_sse import sse  # No longer needed
@@ -591,7 +594,7 @@ def find_camera_by_id(camera_id: CameraId) -> Optional[BlinkCamera]:
     Returns:
         Camera object if found, None otherwise
     """
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         return None
 
     for sync_name, sync in blink.sync.items():
@@ -621,6 +624,17 @@ def handle_api_error(
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", Config.SECRET_KEY)
 # app.config["REDIS_URL"] = "redis://localhost:6379"  # No longer needed
+
+# HTTP session with connection pooling
+http_session = requests.Session()
+retry_strategy = Retry(
+    total=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+)
+adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=20)
+http_session.mount("http://", adapter)
+http_session.mount("https://", adapter)
 
 # Standard thread management
 executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="blink-bg-")
@@ -743,7 +757,7 @@ def format_time_ago(timestamp_str: Optional[Union[str, int]]) -> str:
         Formatted time string like '5d ago', '2h ago', '30m ago', or 'Unknown'
     """
     try:
-        if not timestamp_str:
+        if timestamp_str is None:
             return "Unknown"
         # Parse the timestamp
         timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
@@ -933,7 +947,7 @@ def get_systems() -> Response:
     Returns:
         JSON response with list of systems or error message
     """
-    if not blink:
+    if blink is None:
         logger.debug("Blink object is None")
         response, status_code = create_api_response(
             success=False, error="Blink not available - please login", status_code=401
@@ -984,7 +998,7 @@ def get_devices(network_id_str: str) -> Response:
     Returns:
         JSON response with list of devices or error message
     """
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available - please login", status_code=401
         )
@@ -999,7 +1013,7 @@ def get_devices(network_id_str: str) -> Response:
             sync_module = sync
             break
 
-    if not sync_module:
+    if sync_module is None:
         response, status_code = create_api_response(
             success=False, error="System not found", status_code=404
         )
@@ -1144,7 +1158,7 @@ def arm_system(network_id_str: str) -> Response:
     Returns:
         JSON response with success status or error message
     """
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
@@ -1177,7 +1191,7 @@ def arm_system(network_id_str: str) -> Response:
             sync_module = sync
             break
 
-    if not sync_module:
+    if sync_module is None:
         response, status_code = create_api_response(
             success=False, error="System not found", status_code=404
         )
@@ -1200,7 +1214,7 @@ def refresh_camera(camera_id_str: str):
         return jsonify(response), status_code
 
     """Refresh camera thumbnail."""
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
@@ -1217,7 +1231,7 @@ def refresh_camera(camera_id_str: str):
         # Remove camera thumbnail from cache
         cache_key = CameraId(camera.camera_id)
         cached_info = thumbnail_cache.get(cache_key)
-        if cached_info:
+        if cached_info is not None:
             # Remove cached file
             if "filename" in cached_info:
                 cached_file = Path(THUMBNAIL_CACHE_DIR) / cached_info["filename"]
@@ -1236,7 +1250,7 @@ def refresh_camera(camera_id_str: str):
 @app.route("/api/clips")
 def get_clips():
     """Get clips from cloud or local storage."""
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
@@ -1402,7 +1416,7 @@ def get_clips():
 @app.route("/api/refresh", methods=["POST"])
 def refresh_system():
     """Manually refresh the Blink system."""
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
@@ -1442,7 +1456,7 @@ def download_clip(clip_id_str: str):
         )
         return jsonify(response), status_code
     """Download a specific clip."""
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
@@ -1518,14 +1532,13 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
     # Download if not cached
     if not filepath.exists():
         media_url = clip_info.get("media")
-        if not media_url:
+        if media_url is None:
             response, status_code = create_api_response(
                 success=False, error="No media URL found", status_code=404
             )
             return jsonify(response), status_code
         
-        import requests
-        response = requests.get(media_url)
+        response = http_session.get(media_url)
         if response.status_code != 200:
             response, status_code = create_api_response(
                 success=False, error="Failed to download clip", status_code=500
@@ -1553,7 +1566,7 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
 
     # Find sync module and clip item
     sync_module = blink.sync.get(sync_name)
-    if not sync_module:
+    if sync_module is None:
         response, status_code = create_api_response(
             success=False, error="Sync module not found", status_code=404
         )
@@ -1612,14 +1625,14 @@ def get_camera_liveview(camera_id_str: str):
         return jsonify(response), status_code
 
     """Get live view stream for camera."""
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
         return jsonify(response), status_code
 
     camera = find_camera_by_id(camera_id)
-    if not camera:
+    if camera is None:
         response, status_code = create_api_response(
             success=False, error="Camera not found", status_code=404
         )
@@ -1661,7 +1674,7 @@ def serve_hls_file(camera_id_str: str, filename: str):
     """Serve HLS playlist and segment files."""
     file_path = stream_manager.get_stream_file(camera_id_str, filename)
     
-    if not file_path:
+    if file_path is None:
         response, status_code = create_api_response(
             success=False, error="Stream or file not found", status_code=404
         )
@@ -1691,9 +1704,9 @@ def get_clip_thumbnail(clip_id_str: str):
         return jsonify(response), status_code
     """Serve clip thumbnail."""
     cached_clip = downloaded_clips_cache.get(clip_id)
-    if cached_clip:
+    if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
-        if thumbnail_path and thumbnail_path.exists():
+        if thumbnail_path is not None and thumbnail_path.exists():
             return send_file(str(thumbnail_path), mimetype="image/jpeg")
 
     response, status_code = create_api_response(
@@ -1713,14 +1726,14 @@ def get_camera_thumbnail(camera_id_str: str):
         return jsonify(response), status_code
 
     """Proxy camera thumbnail with authentication."""
-    if not blink or not blink.available:
+    if blink is None or not blink.available:
         response, status_code = create_api_response(
             success=False, error="Blink not available", status_code=500
         )
         return jsonify(response), status_code
 
     camera = find_camera_by_id(camera_id)
-    if not camera or not camera.thumbnail:
+    if camera is None or camera.thumbnail is None:
         response, status_code = create_api_response(
             success=False, error="Camera or thumbnail not found", status_code=404
         )
@@ -1729,7 +1742,7 @@ def get_camera_thumbnail(camera_id_str: str):
     try:
         # Check cache first
         cached_thumbnail = thumbnail_cache.get(camera_id)
-        if cached_thumbnail:
+        if cached_thumbnail is not None:
             logger.debug(f"Serving cached thumbnail for camera {camera_id}")
             filename = cached_thumbnail["filename"]
             filepath = Path(THUMBNAIL_CACHE_DIR) / filename
@@ -2138,9 +2151,9 @@ def check_clip_thumbnail(clip_id_str: str):
         return jsonify(response), status_code
         
     cached_clip = downloaded_clips_cache.get(clip_id)
-    if cached_clip:
+    if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
-        if thumbnail_path and thumbnail_path.exists():
+        if thumbnail_path is not None and thumbnail_path.exists():
             response, status_code = create_api_response(
                 success=True,
                 data={"available": True, "url": f"/api/clip/{clip_id}/thumbnail"},
@@ -2171,6 +2184,9 @@ def cleanup_resources() -> None:
 
     # Shutdown Blink connection
     blink_connection.shutdown()
+
+    # Close HTTP session
+    http_session.close()
 
     logger.info("Resource cleanup completed")
 

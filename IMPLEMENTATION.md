@@ -109,7 +109,6 @@ The "Settings" view should have:
 # Code quality improvements
 
 Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
-- No connection pooling for HTTP requests
 - Duplicate logic throughout
 - Poor naming conventions
 - Some naming could be more consistent
@@ -135,6 +134,8 @@ Verify that the following issues have been fixed already:
   - Inefficient caching strategies (no TTL, no LRU eviction)
   - Cache eviction strategies could be more sophisticated
   - Some duplicate logic in caching
+- No connection pooling for HTTP requests
+- Some places in the code seem to use "if e:" instead of "if e is None:" to test if e is None, which is bad practice, because values such as 0 or the empty string also evaluate to False.
 
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
