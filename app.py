@@ -34,14 +34,9 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Literal,
-    Optional,
     Protocol,
-    Tuple,
     TypedDict,
-    Union,
 )
 
 # Add the blinkpy directory to the Python path
@@ -290,7 +285,7 @@ class ClipId(BaseId):
         """
         return "~" in self.value
 
-    def get_local_parts(self) -> Tuple[str, int]:
+    def get_local_parts(self) -> tuple[str, int]:
         """Get sync name and item ID for local clips.
 
         Returns:
@@ -371,7 +366,7 @@ class ClipCacheEntry(TypedDict):
     """
 
     filepath: Path
-    thumbnail: Optional[Path]
+    thumbnail: Path | None
 
 
 # StreamInfo TypedDict removed - now handled by HLSStream class
@@ -389,8 +384,8 @@ class ApiResponse(TypedDict):
 
     success: bool
     timestamp: str
-    data: Optional[Any]
-    error: Optional[str]
+    data: Any | None
+    error: str | None
 
 
 # Protocol for Blink objects
@@ -410,12 +405,12 @@ class BlinkCamera(Protocol):
 
     camera_id: str
     name: str
-    thumbnail: Optional[str]
+    thumbnail: str | None
     motion_enabled: bool
-    battery: Optional[str]
-    temperature: Optional[str]
-    wifi_strength: Optional[int]
-    last_record: Optional[str]
+    battery: str | None
+    temperature: str | None
+    wifi_strength: int | None
+    last_record: str | None
 
 
 class BlinkSync(Protocol):
@@ -435,8 +430,8 @@ class BlinkSync(Protocol):
     sync_id: str
     arm: bool
     online: bool
-    cameras: Dict[str, BlinkCamera]
-    local_storage: Optional[Any]
+    cameras: dict[str, BlinkCamera]
+    local_storage: Any | None
     local_storage_manifest_ready: bool
 
 
@@ -577,9 +572,9 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
 def create_api_response(
     success: bool = True,
     data: Any = None,
-    error: Optional[str] = None,
+    error: str | None = None,
     status_code: int = 200,
-) -> Tuple[ApiResponse, int]:
+) -> tuple[ApiResponse, int]:
     """Create standardized API response format.
 
     Args:
@@ -601,7 +596,7 @@ def create_api_response(
     return response, status_code
 
 
-def find_camera_by_id(camera_id: CameraId) -> Optional[BlinkCamera]:
+def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
     """Find camera by ID across all sync modules.
 
     Args:
@@ -622,7 +617,7 @@ def find_camera_by_id(camera_id: CameraId) -> Optional[BlinkCamera]:
 
 def handle_api_error(
     error: Exception, operation: str, status_code: int = 500
-) -> Tuple[ApiResponse, int]:
+) -> tuple[ApiResponse, int]:
     """Handle API errors consistently.
 
     Args:
@@ -637,7 +632,7 @@ def handle_api_error(
     return create_api_response(success=False, error=str(error), status_code=status_code)
 
 
-def require_blink() -> Optional[Tuple[ApiResponse, int]]:
+def require_blink() -> tuple[ApiResponse, int] | None:
     """Check if Blink is available, return error response if not.
 
     Returns:
@@ -652,7 +647,7 @@ def require_blink() -> Optional[Tuple[ApiResponse, int]]:
 
 def require_camera(
     camera_id: CameraId,
-) -> Tuple[Optional[BlinkCamera], Optional[Tuple[ApiResponse, int]]]:
+) -> tuple[BlinkCamera | None, tuple[ApiResponse, int] | None]:
     """Find camera by ID, return error response if not found.
 
     Args:
@@ -672,7 +667,7 @@ def require_camera(
 
 def require_sync_module(
     network_id: NetworkId,
-) -> Tuple[Optional[BlinkSync], Optional[Tuple[ApiResponse, int]]]:
+) -> tuple[BlinkSync | None, tuple[ApiResponse, int] | None]:
     """Find sync module by network ID, return error response if not found.
 
     Args:
@@ -693,7 +688,7 @@ def require_sync_module(
 
 def parse_clip_id(
     clip_id_str: str,
-) -> Tuple[Optional[ClipId], Optional[Tuple[ApiResponse, int]]]:
+) -> tuple[ClipId | None, tuple[ApiResponse, int] | None]:
     """Parse and validate clip ID from URL parameter.
 
     Args:
@@ -744,7 +739,7 @@ stream_manager = StreamManager(stream_config)
 
 # Blink connection and SSE imports moved to top
 blink_connection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
-blink: Optional[Blink] = None
+blink: Blink | None = None
 # Cache configuration - will be set from command line
 CACHE_DIR = "cache"  # Default cache directory, overridden by Flask config
 CREDENTIALS_FILE = None  # Path to encrypted credentials file, set in get_cache_paths()
@@ -787,7 +782,7 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 
 async def initialize_blink(
     username: str, password: str
-) -> Union[bool, Literal["2fa_required"]]:
+) -> bool | Literal["2fa_required"]:
     """Initialize Blink system following blinkpy README.
 
     Args:
@@ -843,7 +838,7 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         return True
 
 
-def extract_thumbnail_timestamp(thumbnail_url: Optional[str]) -> int:
+def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
     """Extract timestamp from thumbnail URL.
 
     Args:
@@ -865,7 +860,7 @@ def extract_thumbnail_timestamp(thumbnail_url: Optional[str]) -> int:
 
 def create_device_data(
     camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create device data dictionary for camera.
 
     Args:
@@ -975,7 +970,7 @@ def update_camera_thumbnail(
     executor.submit(update_thumbnail)
 
 
-def process_cloud_clips(videos_metadata: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def process_cloud_clips(videos_metadata: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Process cloud storage clips into day-grouped format.
 
     Args:
@@ -1026,7 +1021,7 @@ def process_cloud_clips(videos_metadata: List[Dict[str, Any]]) -> List[Dict[str,
     return format_clips_by_day(clips_by_day)
 
 
-def process_local_clips() -> List[Dict[str, Any]]:
+def process_local_clips() -> list[dict[str, Any]]:
     """Process local storage clips into day-grouped format.
 
     Returns:
@@ -1090,8 +1085,8 @@ def process_local_clips() -> List[Dict[str, Any]]:
 
 
 def format_clips_by_day(
-    clips_by_day: Dict[str, Dict[str, Any]],
-) -> List[Dict[str, Any]]:
+    clips_by_day: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Format clips by day into sorted list.
 
     Args:
@@ -1109,7 +1104,7 @@ def format_clips_by_day(
     return clips
 
 
-def format_time_ago(timestamp_str: Optional[Union[str, int]]) -> str:
+def format_time_ago(timestamp_str: str | int | None) -> str:
     """Format timestamp as 'Xd ago' format.
 
     Args:
@@ -2046,7 +2041,7 @@ def startup() -> None:
 
 def generate_clip_thumbnail(
     video_path: Path, filename: str, middle_frame: bool = False
-) -> Optional[Path]:
+) -> Path | None:
     """Generate thumbnail image from video clip using FFmpeg.
 
     Extracts a single frame from video file and saves as JPEG thumbnail.

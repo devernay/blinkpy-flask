@@ -29,7 +29,7 @@ A professional-grade Flask web application providing comprehensive access to Bli
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.10+
 - FFmpeg (for live streaming)
 - Flask and dependencies (see requirements.txt)
 
@@ -211,7 +211,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ### Testing
 ```bash
 # Install testing dependencies
-pip install coverage pytest pytest-cov ruff
+pip install coverage pytest pytest-cov ruff pre-commit
 
 # Run unit tests
 python test_app.py
@@ -229,6 +229,10 @@ pytest --cov=app --cov-report=html --cov-report=term
 ruff check .          # Lint code
 ruff format .         # Format code
 ruff check --fix .    # Auto-fix issues
+
+# Pre-commit hooks
+pre-commit install    # Install git hooks
+pre-commit run --all-files  # Run on all files
 
 # Run in debug mode
 python app.py --debug

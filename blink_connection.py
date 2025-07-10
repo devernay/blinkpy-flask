@@ -18,7 +18,7 @@ Usage:
 import asyncio
 import logging
 import threading
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,9 @@ class BlinkConnection:
             timeout: Default timeout in seconds for Blink operations
         """
         self.timeout: int = timeout
-        self.thread: Optional[threading.Thread] = None
-        self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.blink: Optional[Any] = None
+        self.thread: threading.Thread | None = None
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self.blink: Any | None = None
         self._started: bool = False
 
     def start(self) -> None:
@@ -75,7 +75,7 @@ class BlinkConnection:
             time.sleep(0.1)
             self._started = True
 
-    def execute(self, coro: Any, timeout: Optional[int] = None) -> Any:
+    def execute(self, coro: Any, timeout: int | None = None) -> Any:
         """Execute async Blink operation in dedicated thread.
 
         Args:

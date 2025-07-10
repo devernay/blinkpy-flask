@@ -16,7 +16,7 @@
             <div class="nav-text">Settings</div>
         </button>
     </div>
-    
+
     <div id="home-header" class="system-selector">
         <select id="system-select" class="system-name" onchange="loadDevices()">
             <option value="">Loading systems...</option>
@@ -34,7 +34,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Clips View -->
     <div id="clips-view" class="view" style="display: none;">
         <div id="clips-list" class="clips-list">
@@ -44,13 +44,13 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Storage Selector (bottom, non-scrollable) -->
     <div id="clips-storage-selector" class="clips-storage-selector" style="display: none;">
         <button class="storage-btn active" onclick="selectStorage('cloud')">Cloud storage</button>
         <button class="storage-btn" onclick="selectStorage('local')">Local storage</button>
     </div>
-    
+
     <!-- Settings View -->
     <div id="settings-view" class="view" style="display: none;">
         <div class="settings-list">
@@ -58,7 +58,7 @@
             <button class="settings-item danger" onclick="confirmLogout()">Log Out</button>
         </div>
     </div>
-    
+
     <!-- Live View -->
     <div id="live-view" class="view" style="display: none;">
         <div class="live-view-header">
@@ -88,11 +88,11 @@
             <h2 id="camera-modal-title" class="modal-title">Camera Name</h2>
             <button class="close-btn" onclick="hideModal('camera-modal')">&times;</button>
         </div>
-        
+
         <div class="modal-section">
             <div id="camera-status">Camera is online</div>
         </div>
-        
+
         <div class="modal-section">
             <div class="toggle-switch">
                 <span>Motion Detection</span>
@@ -104,14 +104,14 @@
                 <!-- Status will be updated dynamically -->
             </div>
         </div>
-        
+
         <div class="modal-section">
             <button class="action-btn" onclick="refreshThumbnail()">
                 <span>📷</span>
                 <span>Refresh thumbnail</span>
             </button>
         </div>
-        
+
         <div class="modal-section">
             <button class="action-btn" onclick="showPlaceholder()">
                 <span>⚙️</span>
@@ -128,9 +128,9 @@
             <h2 class="modal-title">Confirm Logout</h2>
             <button class="close-btn" onclick="hideModal('logout-modal')">&times;</button>
         </div>
-        
+
         <p style="margin-bottom: 20px;">Are you sure you want to log out? This will clear your saved credentials.</p>
-        
+
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button style="padding: 10px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;" onclick="hideModal('logout-modal')">Cancel</button>
             <button style="padding: 10px 20px; border: none; background: #d32f2f; color: white; border-radius: 6px; cursor: pointer;" onclick="performLogout()">Log Out</button>
@@ -157,15 +157,15 @@ function showView(viewName) {
     document.querySelectorAll('.view').forEach(view => {
         view.style.display = 'none';
     });
-    
+
     // Show selected view
     document.getElementById(viewName + '-view').style.display = 'block';
-    
+
     // Update nav buttons
     document.querySelectorAll('.nav-button').forEach(btn => {
         btn.classList.remove('active');
     });
-    
+
     // Only update nav button if called from nav button click
     if (event && event.target) {
         const navButton = event.target.closest('.nav-button');
@@ -184,7 +184,7 @@ function showView(viewName) {
             }
         });
     }
-    
+
     // Show/hide header elements
     if (viewName === 'home') {
         document.getElementById('home-header').style.display = 'flex';
@@ -199,9 +199,9 @@ function showView(viewName) {
         document.getElementById('bottom-controls').style.display = 'none';
         document.getElementById('clips-storage-selector').style.display = 'none';
     }
-    
+
     currentView = viewName;
-    
+
     // Load view-specific data
     if (viewName === 'clips') {
         loadClips();
@@ -215,19 +215,19 @@ async function loadSystems() {
     try {
         const response = await fetch('/api/systems');
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             systems = data.data;
             const select = document.getElementById('system-select');
             select.innerHTML = '';
-            
+
             systems.forEach(system => {
                 const option = document.createElement('option');
                 option.value = system.network_id;
                 option.textContent = system.name;
                 select.appendChild(option);
             });
-            
+
             if (systems.length > 0) {
                 currentSystem = systems[0];
                 select.value = currentSystem.network_id;
@@ -258,17 +258,17 @@ async function loadSystems() {
 async function loadDevices() {
     const select = document.getElementById('system-select');
     const networkId = select.value;
-    
+
     if (!networkId) return;
-    
+
     // Find the selected system
     currentSystem = systems.find(s => s.network_id == networkId);
     updateArmButton();
-    
+
     try {
         const response = await fetch(`/api/devices/${networkId}`);
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             devices = data.data;
             renderDevices();
@@ -283,7 +283,7 @@ async function loadDevices() {
 function renderDevices() {
     const container = document.getElementById('device-list');
     container.innerHTML = '';
-    
+
     devices.forEach(device => {
         if (device.type === 'camera') {
             const cameraCard = createCameraCard(device);
@@ -298,7 +298,7 @@ function renderDevices() {
 function createCameraCard(camera) {
     const card = document.createElement('div');
     card.className = 'device-card camera-card';
-    
+
     card.innerHTML = `
         ${camera.thumbnail ? `<img src="${camera.thumbnail}" class="camera-thumbnail" alt="${camera.name}">` : ''}
         <div class="camera-overlay">
@@ -310,21 +310,21 @@ function createCameraCard(camera) {
             </div>
         </div>
     `;
-    
+
     return card;
 }
 
 function createSyncModuleCard(sync) {
     const card = document.createElement('div');
     card.className = 'device-card sync-module-card';
-    
+
     card.innerHTML = `
         <div class="sync-module-name">Sync Module</div>
         <div class="status-badge ${sync.online ? 'status-online' : 'status-offline'}">
             ${sync.online ? 'Online' : 'Offline'}
         </div>
     `;
-    
+
     return card;
 }
 
@@ -333,18 +333,18 @@ async function showLiveView(cameraId, cameraName) {
         console.log('Starting live view for camera:', cameraId);
         const response = await fetch(`/api/camera/${cameraId}/liveview`);
         const data = await response.json();
-        
+
         console.log('Live view response:', data);
-        
+
         if (response.ok && data.success) {
             // Show live view
             document.getElementById('live-view-title').textContent = `${cameraName} Live View`;
             const video = document.getElementById('live-video');
-            
+
             console.log('HLS URL:', data.data.hls_url);
-            
+
             showView('live');
-            
+
             // Wait for HLS stream to be ready and check if playlist exists
             let attempts = 0;
             const maxAttempts = 10;
@@ -373,7 +373,7 @@ async function showLiveView(cameraId, cameraName) {
                     }
                 }
             };
-            
+
             // Start checking after 2 seconds
             setTimeout(checkStream, 2000);
         } else {
@@ -389,7 +389,7 @@ async function showLiveView(cameraId, cameraName) {
 function toggleMute() {
     const video = document.getElementById('live-video');
     const muteBtn = document.querySelector('.mute-btn');
-    
+
     if (video.muted) {
         video.muted = false;
         muteBtn.textContent = '🔊';
@@ -402,16 +402,16 @@ function toggleMute() {
 function showCameraPane(cameraId, cameraName) {
     currentCameraId = cameraId;
     document.getElementById('camera-modal-title').textContent = cameraName;
-    
+
     // Update motion detection status
     const camera = devices.find(d => d.id === cameraId && d.type === 'camera');
     const motionStatus = document.getElementById('motion-status');
     const motionSwitch = document.querySelector('#camera-modal .switch');
-    
+
     if (camera) {
         const isArmed = currentSystem && currentSystem.armed;
         const motionEnabled = camera.motion_enabled;
-        
+
         if (motionEnabled && isArmed) {
             motionStatus.textContent = 'On (System Armed)';
             motionSwitch.classList.add('on');
@@ -423,24 +423,24 @@ function showCameraPane(cameraId, cameraName) {
             motionSwitch.classList.remove('on');
         }
     }
-    
+
     showModal('camera-modal');
 }
 
 async function refreshThumbnail() {
     if (!currentCameraId) return;
-    
+
     // Close camera pane immediately
     hideModal('camera-modal');
-    
+
     // Show refreshing banner
     showThumbnailBanner(currentCameraId, 'Refreshing thumbnail...', 'refreshing');
-    
+
     try {
         const response = await fetch(`/api/camera/${currentCameraId}/refresh`, {
             method: 'POST'
         });
-        
+
         if (response.ok) {
             // Poll for updated thumbnail
             pollForThumbnailUpdate(currentCameraId);
@@ -459,7 +459,7 @@ async function refreshThumbnail() {
 function updateArmButton() {
     const disarmedBtn = document.getElementById('disarmed-btn');
     const armedBtn = document.getElementById('armed-btn');
-    
+
     if (currentSystem && currentSystem.armed) {
         disarmedBtn.classList.remove('active');
         armedBtn.classList.add('active');
@@ -471,7 +471,7 @@ function updateArmButton() {
 
 async function setArmState(armed) {
     if (!currentSystem || currentSystem.armed === armed) return;
-    
+
     try {
         const response = await fetch(`/api/system/${currentSystem.network_id}/arm`, {
             method: 'POST',
@@ -480,7 +480,7 @@ async function setArmState(armed) {
             },
             body: JSON.stringify({ armed: armed })
         });
-        
+
         if (response.ok) {
             currentSystem.armed = armed;
             updateArmButton();
@@ -496,9 +496,9 @@ async function setArmState(armed) {
 
 async function toggleArm() {
     if (!currentSystem) return;
-    
+
     const newArmedState = !currentSystem.armed;
-    
+
     try {
         const response = await fetch(`/api/system/${currentSystem.network_id}/arm`, {
             method: 'POST',
@@ -507,7 +507,7 @@ async function toggleArm() {
             },
             body: JSON.stringify({ armed: newArmedState })
         });
-        
+
         if (response.ok) {
             currentSystem.armed = newArmedState;
             updateArmButton();
@@ -524,7 +524,7 @@ async function toggleArm() {
 async function loadClips() {
     const storageType = document.querySelector('.storage-btn.active').textContent.toLowerCase().includes('cloud') ? 'cloud' : 'local';
     const container = document.getElementById('clips-list');
-    
+
     // Show loading spinner
     container.innerHTML = `
         <div class="loading-state">
@@ -532,11 +532,11 @@ async function loadClips() {
             <p>Loading clips...</p>
         </div>
     `;
-    
+
     try {
         const response = await fetch(`/api/clips?storage=${storageType}`);
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             if (data.data.length === 0) {
                 // If cloud storage is empty, try local storage
@@ -544,7 +544,7 @@ async function loadClips() {
                     selectStorage('local');
                     return;
                 }
-                
+
                 container.innerHTML = `
                     <div class="empty-state">
                         <h3><strong>No Recent Activity</strong></h3>
@@ -577,22 +577,22 @@ async function loadClips() {
 function renderClips(clipsData) {
     const container = document.getElementById('clips-list');
     container.innerHTML = '';
-    
+
     clipsData.forEach(dayGroup => {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day-group';
-        
+
         dayDiv.innerHTML = `
             <div class="day-header">
                 <strong>${dayGroup.date}</strong> - ${dayGroup.count} event${dayGroup.count !== 1 ? 's' : ''}
             </div>
         `;
-        
+
         dayGroup.clips.forEach(clip => {
             const clipDiv = document.createElement('div');
             clipDiv.className = 'clip-item';
             clipDiv.onclick = () => playClip(clip);
-            
+
             clipDiv.innerHTML = `
                 ${clip.thumbnail ? `<img src="${clip.thumbnail}" class="clip-thumbnail" alt="${clip.camera_name}" data-clip-id="${clip.id}">` : `<div class="clip-thumbnail clip-placeholder" data-clip-id="${clip.id}"><div class="play-icon">▶</div></div>`}
                 <div class="clip-info">
@@ -602,17 +602,17 @@ function renderClips(clipsData) {
                     <div class="clip-event">${clip.event_type}</div>
                 </div>
             `;
-            
+
             dayDiv.appendChild(clipDiv);
         });
-        
+
         container.appendChild(dayDiv);
     });
 }
 
 async function playClip(clip) {
     const isLocalClip = clip.id.includes(':');
-    
+
     // Show loading modal
     const loadingModal = document.createElement('div');
     loadingModal.className = 'modal';
@@ -626,17 +626,17 @@ async function playClip(clip) {
         </div>
     `;
     document.body.appendChild(loadingModal);
-    
+
     try {
         // Download and play clip
         const response = await fetch(`/api/clip/${clip.id}/download`);
         if (response.ok) {
             const blob = await response.blob();
             const videoUrl = URL.createObjectURL(blob);
-            
+
             // Remove loading modal
             loadingModal.remove();
-            
+
             // Create video player modal
             const modal = document.createElement('div');
             modal.className = 'modal';
@@ -727,7 +727,7 @@ function selectStorage(type) {
             btn.classList.add('active');
         }
     });
-    
+
     // Reload clips for selected storage type
     loadClips();
 }
@@ -741,7 +741,7 @@ async function clearCache() {
         const response = await fetch('/api/clear-cache', {
             method: 'POST'
         });
-        
+
         if (response.ok) {
             // Invalidate images and videos by adding timestamp to force reload
             const timestamp = Date.now();
@@ -750,14 +750,14 @@ async function clearCache() {
                 url.searchParams.set('_t', timestamp);
                 media.src = url.toString();
             });
-            
+
             // Reload current view to refresh data
             if (currentView === 'home') {
                 loadDevices();
             } else if (currentView === 'clips') {
                 loadClips();
             }
-            
+
             alert('Cache cleared successfully');
         } else {
             const data = await response.json();
@@ -774,7 +774,7 @@ async function performLogout() {
         const response = await fetch('/logout', {
             method: 'POST'
         });
-        
+
         if (response.ok) {
             window.location.href = '/login';
         } else {
@@ -790,16 +790,16 @@ let thumbnailPollingInterval = null;
 
 function startThumbnailPolling() {
     if (thumbnailPollingInterval) return;
-    
+
     thumbnailPollingInterval = setInterval(async () => {
         const placeholders = document.querySelectorAll('.clip-placeholder[data-clip-id]');
-        
+
         for (const placeholder of placeholders) {
             const clipId = placeholder.getAttribute('data-clip-id');
             try {
                 const response = await fetch(`/api/clip/${clipId}/thumbnail/check`);
                 const data = await response.json();
-                
+
                 if (data.available) {
                     // Replace placeholder with thumbnail
                     const img = document.createElement('img');
@@ -807,14 +807,14 @@ function startThumbnailPolling() {
                     img.className = 'clip-thumbnail';
                     img.alt = 'Clip thumbnail';
                     img.setAttribute('data-clip-id', clipId);
-                    
+
                     placeholder.parentNode.replaceChild(img, placeholder);
                 }
             } catch (error) {
                 console.error('Error checking thumbnail:', error);
             }
         }
-        
+
         // Stop polling if no more placeholders
         if (placeholders.length === 0) {
             stopThumbnailPolling();
@@ -852,23 +852,23 @@ function toggleSwitch(switchElement) {
 function showThumbnailBanner(cameraId, message, type) {
     const cameraCard = document.querySelector(`[onclick*="${cameraId}"]`)?.closest('.camera-card');
     if (!cameraCard) return;
-    
+
     // Remove existing banner
     const existingBanner = cameraCard.querySelector('.thumbnail-banner');
     if (existingBanner) existingBanner.remove();
-    
+
     // Create banner
     const banner = document.createElement('div');
     banner.className = `thumbnail-banner ${type}`;
     banner.textContent = message;
-    
+
     cameraCard.appendChild(banner);
 }
 
 function hideThumbnailBanner(cameraId) {
     const cameraCard = document.querySelector(`[onclick*="${cameraId}"]`)?.closest('.camera-card');
     if (!cameraCard) return;
-    
+
     const banner = cameraCard.querySelector('.thumbnail-banner');
     if (banner) banner.remove();
 }
@@ -876,15 +876,15 @@ function hideThumbnailBanner(cameraId) {
 function pollForThumbnailUpdate(cameraId) {
     let pollCount = 0;
     const maxPolls = 15; // 30 seconds max
-    
+
     const pollInterval = setInterval(async () => {
         pollCount++;
-        
+
         try {
             // Reload devices to check for updated thumbnail
             const response = await fetch(`/api/devices/${currentSystem.network_id}`);
             const data = await response.json();
-            
+
             if (response.ok) {
                 const camera = data.find(d => d.id === cameraId && d.type === 'camera');
                 if (camera) {
@@ -894,10 +894,10 @@ function pollForThumbnailUpdate(cameraId) {
                         // Thumbnail updated!
                         devices = data;
                         renderDevices();
-                        
+
                         showThumbnailBanner(cameraId, 'Thumbnail updated!', 'success');
                         setTimeout(() => hideThumbnailBanner(cameraId), 1000);
-                        
+
                         clearInterval(pollInterval);
                         return;
                     }
@@ -906,7 +906,7 @@ function pollForThumbnailUpdate(cameraId) {
         } catch (error) {
             console.error('Error polling for thumbnail update:', error);
         }
-        
+
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
             clearInterval(pollInterval);

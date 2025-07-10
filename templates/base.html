@@ -10,13 +10,13 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f5f5f5;
             color: #333;
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -24,7 +24,7 @@
             min-height: 100vh;
             position: relative;
         }
-        
+
         .header {
             background: white;
             border-bottom: 1px solid #e0e0e0;
@@ -33,14 +33,14 @@
             top: 0;
             z-index: 100;
         }
-        
+
         .nav-buttons {
             display: flex;
             justify-content: center;
             gap: 40px;
             margin-bottom: 20px;
         }
-        
+
         .nav-button {
             display: flex;
             flex-direction: column;
@@ -52,36 +52,36 @@
             border-radius: 8px;
             transition: background-color 0.2s;
         }
-        
+
         .nav-button:hover {
             background-color: #f0f0f0;
         }
-        
+
         .nav-button.active {
             color: #007AFF;
         }
-        
+
         .nav-icon {
             font-size: 24px;
             margin-bottom: 5px;
         }
-        
+
         .nav-text {
             font-size: 12px;
             font-weight: 500;
         }
-        
+
         .system-selector {
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        
+
         .system-name {
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .add-device-btn {
             background: none;
             border: none;
@@ -91,22 +91,22 @@
             border-radius: 50%;
             color: #007AFF;
         }
-        
+
         .add-device-btn:hover {
             background-color: #f0f0f0;
         }
-        
+
         .content {
             padding: 20px;
             padding-bottom: 100px;
         }
-        
+
         .device-list {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-        
+
         .device-card {
             background: white;
             border-radius: 12px;
@@ -114,19 +114,19 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             position: relative;
         }
-        
+
         .camera-card {
             aspect-ratio: 16/9;
             background: #000;
             position: relative;
         }
-        
+
         .camera-thumbnail {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        
+
         .camera-overlay {
             position: absolute;
             top: 0;
@@ -139,24 +139,24 @@
             justify-content: space-between;
             padding: 15px;
         }
-        
+
         .camera-name {
             color: white;
             font-weight: 600;
             font-size: 16px;
         }
-        
+
         .camera-bottom {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
         }
-        
+
         .camera-time {
             color: white;
             font-size: 12px;
         }
-        
+
         .kebab-btn {
             background: rgba(255,255,255,0.2);
             border: none;
@@ -166,36 +166,36 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        
+
         .sync-module-card {
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .sync-module-name {
             font-weight: 600;
             font-size: 16px;
         }
-        
+
         .status-badge {
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
         }
-        
+
         .status-online {
             background: #e8f5e8;
             color: #2d7d2d;
         }
-        
+
         .status-offline {
             background: #ffe8e8;
             color: #d32f2f;
         }
-        
+
         .bottom-controls {
             position: fixed;
             bottom: 0;
@@ -209,7 +209,7 @@
             display: flex;
             justify-content: center;
         }
-        
+
         .arm-selector {
             background: white;
             border: 1px solid #ddd;
@@ -218,7 +218,7 @@
             display: flex;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         .arm-btn {
             background: none;
             border: none;
@@ -229,12 +229,12 @@
             font-weight: 500;
             transition: background-color 0.2s;
         }
-        
+
         .arm-btn.active {
             background: #007AFF;
             color: white;
         }
-        
+
         .modal {
             display: none;
             position: fixed;
@@ -245,7 +245,7 @@
             background: rgba(0,0,0,0.5);
             z-index: 1000;
         }
-        
+
         .modal-content {
             background: white;
             margin: 50px auto;
@@ -254,19 +254,19 @@
             max-width: 400px;
             width: 90%;
         }
-        
+
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
-        
+
         .modal-title {
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .close-btn {
             background: none;
             border: none;
@@ -274,24 +274,24 @@
             cursor: pointer;
             padding: 5px;
         }
-        
+
         .modal-section {
             margin-bottom: 20px;
         }
-        
+
         .modal-section h3 {
             margin-bottom: 10px;
             font-size: 14px;
             font-weight: 600;
         }
-        
+
         .toggle-switch {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 10px 0;
         }
-        
+
         .switch {
             position: relative;
             width: 50px;
@@ -301,11 +301,11 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .switch.on {
             background: #007AFF;
         }
-        
+
         .switch-handle {
             position: absolute;
             top: 2px;
@@ -316,11 +316,11 @@
             border-radius: 50%;
             transition: transform 0.2s;
         }
-        
+
         .switch.on .switch-handle {
             transform: translateX(20px);
         }
-        
+
         .action-btn {
             display: flex;
             align-items: center;
@@ -333,11 +333,11 @@
             width: 100%;
             margin-bottom: 10px;
         }
-        
+
         .action-btn:hover {
             background: #e8e8e8;
         }
-        
+
         .login-form {
             max-width: 400px;
             margin: 100px auto;
@@ -346,24 +346,24 @@
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        
+
         .login-title {
             text-align: center;
             margin-bottom: 30px;
             font-size: 24px;
             font-weight: 600;
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-label {
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
         }
-        
+
         .form-input {
             width: 100%;
             padding: 12px;
@@ -371,12 +371,12 @@
             border-radius: 8px;
             font-size: 16px;
         }
-        
+
         .form-input:focus {
             outline: none;
             border-color: #007AFF;
         }
-        
+
         .login-btn {
             width: 100%;
             background: #007AFF;
@@ -388,69 +388,69 @@
             font-weight: 600;
             cursor: pointer;
         }
-        
+
         .login-btn:hover {
             background: #0056b3;
         }
-        
+
         .error-message {
             color: #d32f2f;
             text-align: center;
             margin-top: 15px;
         }
-        
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #666;
         }
-        
+
         .empty-state h3 {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 10px;
         }
-        
+
         .empty-state p {
             font-size: 14px;
             line-height: 1.5;
         }
-        
+
         .clips-list {
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
-        
+
         .day-group {
             background: white;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
+
         .day-header {
             background: #f8f8f8;
             padding: 15px 20px;
             font-weight: 600;
             border-bottom: 1px solid #e0e0e0;
         }
-        
+
         .clip-item {
             display: flex;
             padding: 15px 20px;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
         }
-        
+
         .clip-item:last-child {
             border-bottom: none;
         }
-        
+
         .clip-item:hover {
             background: #f8f8f8;
         }
-        
+
         .clip-thumbnail {
             width: 80px;
             height: 60px;
@@ -459,32 +459,32 @@
             margin-right: 15px;
             object-fit: cover;
         }
-        
+
         .clip-info {
             flex: 1;
         }
-        
+
         .clip-camera {
             font-weight: 600;
             margin-bottom: 5px;
         }
-        
+
         .clip-system {
             font-size: 12px;
             color: #666;
             margin-bottom: 5px;
         }
-        
+
         .clip-time {
             font-size: 12px;
             color: #666;
         }
-        
+
         .clip-event {
             font-size: 12px;
             color: #666;
         }
-        
+
         .storage-selector {
             position: fixed;
             bottom: 20px;
@@ -497,7 +497,7 @@
             display: flex;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         .storage-btn {
             background: none;
             border: none;
@@ -508,12 +508,12 @@
             font-weight: 500;
             transition: background-color 0.2s;
         }
-        
+
         .storage-btn.active {
             background: #007AFF;
             color: white;
         }
-        
+
         .settings-list {
             display: flex;
             flex-direction: column;
@@ -522,7 +522,7 @@
             border-radius: 12px;
             overflow: hidden;
         }
-        
+
         .settings-item {
             background: white;
             border: none;
@@ -531,15 +531,15 @@
             cursor: pointer;
             font-size: 16px;
         }
-        
+
         .settings-item:hover {
             background: #f8f8f8;
         }
-        
+
         .settings-item.danger {
             color: #d32f2f;
         }
-        
+
         .clips-storage-selector {
             position: fixed;
             bottom: 0;
@@ -552,7 +552,7 @@
             justify-content: center;
             z-index: 100;
         }
-        
+
         .system-selector {
             position: sticky;
             top: 0;
@@ -560,7 +560,7 @@
             z-index: 50;
             border-bottom: 1px solid #e0e0e0;
         }
-        
+
         .play-btn {
             position: absolute;
             top: 50%;
@@ -575,11 +575,11 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .play-btn:hover {
             background: rgba(0,0,0,0.9);
         }
-        
+
         .live-view-header {
             display: flex;
             justify-content: space-between;
@@ -588,7 +588,7 @@
             background: white;
             border-bottom: 1px solid #e0e0e0;
         }
-        
+
         .back-btn, .mute-btn {
             background: none;
             border: none;
@@ -597,33 +597,33 @@
             padding: 10px;
             border-radius: 8px;
         }
-        
+
         .back-btn:hover, .mute-btn:hover {
             background: #f0f0f0;
         }
-        
+
         .live-view-container {
             padding: 20px;
             display: flex;
             justify-content: center;
         }
-        
+
         #live-video {
             width: 100%;
             max-width: 800px;
             border-radius: 12px;
         }
-        
+
         .spinner {
             font-size: 24px;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         .clip-placeholder {
             display: flex;
             align-items: center;
@@ -631,23 +631,23 @@
             background: #f0f0f0;
             border: 1px solid #ddd;
         }
-        
+
         .play-icon {
             font-size: 24px;
             color: #666;
         }
-        
+
         .loading-state {
             text-align: center;
             padding: 40px;
             color: #666;
         }
-        
+
         .loading-state .spinner {
             font-size: 32px;
             margin-bottom: 10px;
         }
-        
+
         .thumbnail-banner {
             position: absolute;
             top: 10px;
@@ -661,15 +661,15 @@
             text-align: center;
             z-index: 10;
         }
-        
+
         .thumbnail-banner.refreshing {
             background: #4caf50;
         }
-        
+
         .thumbnail-banner.success {
             background: #4caf50;
         }
-        
+
         .thumbnail-banner.error {
             background: #f44336;
         }
@@ -679,40 +679,40 @@
     <div class="container">
         {% block content %}{% endblock %}
     </div>
-    
+
     <script>
         // Global JavaScript functions
         function showModal(modalId) {
             document.getElementById(modalId).style.display = 'block';
         }
-        
+
         function hideModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
-        
+
         function toggleSwitch(element) {
             element.classList.toggle('on');
         }
-        
+
         function showPlaceholder() {
             alert('This feature is not yet available');
         }
-        
+
         function showAddDevicePlaceholder() {
             alert('Add new device feature is not yet available');
         }
-        
+
         function showLiveView(cameraId, cameraName) {
             document.getElementById('live-view-title').textContent = `${cameraName} - Live View`;
             showView('live');
             startLiveStream(cameraId);
         }
-        
+
         async function startLiveStream(cameraId) {
             try {
                 const response = await fetch(`/api/camera/${cameraId}/liveview`);
                 const data = await response.json();
-                
+
                 if (response.ok && data.hls_url) {
                     const video = document.getElementById('live-video');
                     video.src = data.hls_url;
@@ -724,11 +724,11 @@
                 alert('Error starting live view');
             }
         }
-        
+
         function toggleMute() {
             const video = document.getElementById('live-video');
             const muteBtn = document.querySelector('.mute-btn');
-            
+
             if (video.muted) {
                 video.muted = false;
                 muteBtn.textContent = '🔊';
@@ -738,7 +738,7 @@
             }
         }
     </script>
-    
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

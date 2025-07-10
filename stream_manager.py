@@ -12,7 +12,6 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +40,13 @@ class HLSStream:
         self.stream_id = stream_id
         self.rtsp_url = rtsp_url
         self.config = config
-        self.process: Optional[subprocess.Popen] = None
-        self.hls_dir: Optional[Path] = None
-        self.playlist_path: Optional[Path] = None
+        self.process: subprocess.Popen | None = None
+        self.hls_dir: Path | None = None
+        self.playlist_path: Path | None = None
         self.last_accessed = time.time()
         self._lock = threading.Lock()
 
-    def start(self) -> Tuple[Optional[str], Optional[str]]:
+    def start(self) -> tuple[str | None, str | None]:
         """Start HLS transcoding.
 
         Returns:
@@ -151,7 +150,7 @@ class HLSStream:
         with self._lock:
             return self.process is not None and self.process.poll() is None
 
-    def get_file_path(self, filename: str) -> Optional[Path]:
+    def get_file_path(self, filename: str) -> Path | None:
         """Get path to HLS file.
 
         Args:
@@ -184,21 +183,21 @@ class HLSStream:
 class StreamManager:
     """Manages multiple RTSP to HLS streams."""
 
-    def __init__(self, config: Optional[StreamConfig] = None):
+    def __init__(self, config: StreamConfig | None = None):
         """Initialize stream manager.
 
         Args:
             config: Default stream configuration
         """
         self.config = config or StreamConfig()
-        self.streams: Dict[str, HLSStream] = {}
+        self.streams: dict[str, HLSStream] = {}
         self._lock = threading.Lock()
-        self._cleanup_timer: Optional[threading.Timer] = None
+        self._cleanup_timer: threading.Timer | None = None
         self._start_cleanup_timer()
 
     def start_stream(
         self, stream_id: str, rtsp_url: str
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Start or get existing HLS stream.
 
         Args:
@@ -240,7 +239,7 @@ class StreamManager:
                 self.streams[stream_id].stop()
                 del self.streams[stream_id]
 
-    def get_stream_file(self, stream_id: str, filename: str) -> Optional[Path]:
+    def get_stream_file(self, stream_id: str, filename: str) -> Path | None:
         """Get HLS file path for stream.
 
         Args:
