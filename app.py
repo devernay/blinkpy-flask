@@ -650,7 +650,7 @@ stream_manager = StreamManager(stream_config)
 
 # Blink connection and SSE imports moved to top
 blink_connection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
-blink: Optional["Blink"] = None
+blink: Optional[Blink] = None
 # Cache configuration - will be set from command line
 CACHE_DIR = "cache"  # Default cache directory, overridden by Flask config
 CREDENTIALS_FILE = None  # Path to encrypted credentials file, set in get_cache_paths()

@@ -1,10 +1,10 @@
 Write an http server running the flask Python framework, which allows full access to a Blink camera system, through the blinkpy python package (available on github as https://github.com/fronzbot/blinkpy, which is cloned in the `blinkpy` subdirectory). The blinkpy package is meant to be run in a signe thread, so make sure that every call to the blinkpy If some of the functionality described below is not accessible through the blinkpy package, please use placeholders. When pressed, a placeholder should pop up a text which says that the feature is not yet available, with a "close" button to dismiss the popup.
 
-The script to run the server is `run.py`, and `run.py -h` should show help and command-line parameters.
+The script to run the server is `app.py`, and `app.py -h` should show help and command-line parameters.
 
 The first time the server is accessed, or if saved credentials are not available, it should ask for Blink credentials (username and password), and login using the procedure described in the blinkpy documentation (`blinkpy/README.md`, section "Starting blink without a prompt"). It should then present a page to ask for the 2FA token sent by email or SMS, and after the 2FA key is sent, it should save the credentials to `<cache>/blink.json` using the procedure described in the section "Saving credentials" of `blinkpy/README.md`.
 
-The `<cache>` directory, which is used for caching credentials, camera thumbnails, and downloaded clips, should be a command-line parameter of the main script `run.py`.
+The `<cache>` directory, which is used for caching credentials, camera thumbnails, and downloaded clips, should be a command-line parameter of the main script `app.py`.
 
 If saved credentials are available from `<cache>/blink.json`, they should be loaded using the procedure described in the section "Supplying credentials from file" in `blinkpy/README.md`.
 

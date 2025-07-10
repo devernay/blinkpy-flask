@@ -165,7 +165,25 @@ function showView(viewName) {
     document.querySelectorAll('.nav-button').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.closest('.nav-button').classList.add('active');
+    
+    // Only update nav button if called from nav button click
+    if (event && event.target) {
+        const navButton = event.target.closest('.nav-button');
+        if (navButton) {
+            navButton.classList.add('active');
+        }
+    } else {
+        // Find and activate the correct nav button based on viewName
+        const navButtons = document.querySelectorAll('.nav-button');
+        navButtons.forEach(btn => {
+            const text = btn.querySelector('.nav-text').textContent.toLowerCase();
+            if ((viewName === 'home' && text === 'home') ||
+                (viewName === 'clips' && text === 'clips') ||
+                (viewName === 'settings' && text === 'settings')) {
+                btn.classList.add('active');
+            }
+        });
+    }
     
     // Show/hide header elements
     if (viewName === 'home') {
@@ -308,6 +326,77 @@ function createSyncModuleCard(sync) {
     `;
     
     return card;
+}
+
+async function showLiveView(cameraId, cameraName) {
+    try {
+        console.log('Starting live view for camera:', cameraId);
+        const response = await fetch(`/api/camera/${cameraId}/liveview`);
+        const data = await response.json();
+        
+        console.log('Live view response:', data);
+        
+        if (response.ok && data.success) {
+            // Show live view
+            document.getElementById('live-view-title').textContent = `${cameraName} Live View`;
+            const video = document.getElementById('live-video');
+            
+            console.log('HLS URL:', data.data.hls_url);
+            
+            showView('live');
+            
+            // Wait for HLS stream to be ready and check if playlist exists
+            let attempts = 0;
+            const maxAttempts = 10;
+            const checkStream = async () => {
+                attempts++;
+                try {
+                    const streamResponse = await fetch(data.data.hls_url);
+                    if (streamResponse.ok) {
+                        console.log('HLS playlist ready, loading video');
+                        video.src = data.data.hls_url;
+                        video.load();
+                    } else if (attempts < maxAttempts) {
+                        console.log(`HLS playlist not ready (attempt ${attempts}/${maxAttempts}), retrying...`);
+                        setTimeout(checkStream, 1000);
+                    } else {
+                        console.error('HLS playlist failed to become ready after', maxAttempts, 'attempts');
+                        alert('Live stream failed to start. Please try again.');
+                    }
+                } catch (error) {
+                    if (attempts < maxAttempts) {
+                        console.log(`Error checking HLS playlist (attempt ${attempts}/${maxAttempts}):`, error);
+                        setTimeout(checkStream, 1000);
+                    } else {
+                        console.error('Failed to load HLS stream after', maxAttempts, 'attempts:', error);
+                        alert('Live stream failed to start. Please try again.');
+                    }
+                }
+            };
+            
+            // Start checking after 2 seconds
+            setTimeout(checkStream, 2000);
+        } else {
+            console.error('Live view API error:', data);
+            alert('Error starting live view: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error starting live view:', error);
+        alert('Error starting live view');
+    }
+}
+
+function toggleMute() {
+    const video = document.getElementById('live-video');
+    const muteBtn = document.querySelector('.mute-btn');
+    
+    if (video.muted) {
+        video.muted = false;
+        muteBtn.textContent = '🔊';
+    } else {
+        video.muted = true;
+        muteBtn.textContent = '🔇';
+    }
 }
 
 function showCameraPane(cameraId, cameraName) {
@@ -738,6 +827,26 @@ function stopThumbnailPolling() {
         clearInterval(thumbnailPollingInterval);
         thumbnailPollingInterval = null;
     }
+}
+
+function showModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showAddDevicePlaceholder() {
+    showPlaceholder();
+}
+
+function showPlaceholder() {
+    alert('This feature is not yet available');
+}
+
+function toggleSwitch(switchElement) {
+    switchElement.classList.toggle('on');
 }
 
 function showThumbnailBanner(cameraId, message, type) {
