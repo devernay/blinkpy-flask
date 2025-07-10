@@ -834,25 +834,22 @@ def two_factor() -> Response:
     return render_template("2fa.html", email=session.get("temp_username", ""))
 
 
-@app.route("/api/clear-cache", methods=["POST"])
-def clear_cache():
-    """Clear all caches except credentials."""
+def clear_all_caches():
+    """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
+        global thumbnail_cache, downloaded_clips_cache, downloaded_clips_order, clips_cache, clips_cache_order
+        
         # Clear thumbnail cache
-        global thumbnail_cache
         if os.path.exists(THUMBNAIL_CACHE_DIR):
             import shutil
-
             shutil.rmtree(THUMBNAIL_CACHE_DIR)
             os.makedirs(THUMBNAIL_CACHE_DIR, exist_ok=True)
         with thumbnail_cache_lock:
             thumbnail_cache.clear()
 
         # Clear downloaded clips cache
-        global downloaded_clips_cache, downloaded_clips_order
         if os.path.exists(CLIPS_CACHE_DIR):
             import shutil
-
             shutil.rmtree(CLIPS_CACHE_DIR)
             os.makedirs(CLIPS_CACHE_DIR, exist_ok=True)
         with downloaded_clips_lock:
@@ -860,16 +857,21 @@ def clear_cache():
             downloaded_clips_order.clear()
 
         # Clear clips metadata cache
-        global clips_cache, clips_cache_order
         with clips_cache_lock:
             clips_cache.clear()
             clips_cache_order.clear()
 
         logger.info("All caches cleared successfully")
-        response, status_code = create_api_response(
-            success=True, data={"message": "Cache cleared successfully"}
-        )
-        return jsonify(response), status_code
+
+
+@app.route("/api/clear-cache", methods=["POST"])
+def clear_cache():
+    """Clear all caches except credentials."""
+    executor.submit(clear_all_caches)
+    response, status_code = create_api_response(
+        success=True, data={"message": "Cache clearing initiated"}
+    )
+    return jsonify(response), status_code
 
 
 @app.route("/logout", methods=["POST"])
@@ -881,8 +883,8 @@ def logout() -> Response:
     """
     global blink
 
-    # Clear caches first
-    safe_execute(clear_cache, log_error=True)
+    # Clear caches first in background
+    executor.submit(clear_all_caches)
 
     # Clear session and credentials
     session.clear()
@@ -1075,7 +1077,8 @@ def get_devices(network_id_str: str) -> Response:
                         f"Cached thumbnail for {camera.name} with timestamp {current_ts}"
                     )
 
-            safe_execute(update_thumbnail, log_error=True)
+            # Execute thumbnail update in background thread
+            executor.submit(update_thumbnail)
         else:
             logger.debug(
                 f"Using cached thumbnail for {camera.name} (ts: {current_ts} <= {cached_ts})"
@@ -1516,15 +1519,21 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
                     )
                     return jsonify(response), status_code
 
-                # Generate thumbnail from cloud clip
-                thumbnail_path = generate_clip_thumbnail(filepath, filename)
+                # Cache the clip first (without thumbnail)
+                cache_downloaded_clip(clip_id, filepath, None)
 
-                # Cache the clip
-                cache_downloaded_clip(clip_id, filepath, thumbnail_path)
-
-                # Notify clients that thumbnail is ready
-                if thumbnail_path:
-                    notify_thumbnail_ready(clip_id)
+                # Generate thumbnail in background
+                def generate_thumbnail_bg():
+                    thumbnail_path = generate_clip_thumbnail(filepath, filename)
+                    if thumbnail_path:
+                        # Update cache with thumbnail
+                        with downloaded_clips_lock:
+                            if clip_id in downloaded_clips_cache:
+                                downloaded_clips_cache[clip_id]["thumbnail"] = thumbnail_path
+                        # Notify clients that thumbnail is ready
+                        notify_thumbnail_ready(clip_id)
+                
+                executor.submit(generate_thumbnail_bg)
             else:
                 response, status_code = create_api_response(
                     success=False, error="Failed to download clip", status_code=500
