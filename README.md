@@ -57,6 +57,13 @@ pip install -r requirements.txt
 python app.py
 ```
 
+**Command line options:**
+```bash
+python app.py --help
+python app.py --host 127.0.0.1 --port 8080 --debug
+python app.py --cache /custom/cache/path
+```
+
 4. **Access the interface:**
    - Web UI: `http://localhost:5000`
    - API: `http://localhost:5000/api/`
@@ -118,7 +125,9 @@ CACHE_DIR=cache  # Default cache directory
 
 ```
 blinkpy-flask/
-├── app.py              # Main Flask application (1300+ lines)
+├── app.py              # Main Flask application with CLI (1400+ lines)
+├── blink_connection.py # Blink thread management
+├── stream_manager.py   # RTSP to HLS stream management
 ├── requirements.txt    # Python dependencies
 ├── templates/          # HTML templates
 │   ├── base.html      # Base template with CSS
@@ -127,6 +136,7 @@ blinkpy-flask/
 │   └── 2fa.html       # 2FA verification page
 ├── cache/             # Application cache (auto-created)
 │   ├── blink.json     # Encrypted credentials
+│   ├── blink_app.log  # Application logs (rotated)
 │   ├── thumbnails/    # Camera thumbnail cache
 │   └── clips/         # Downloaded clips cache
 ├── blinkpy/           # Blink Python package
