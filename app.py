@@ -473,11 +473,26 @@ class Config:
     LOG_FILE = "blink_app.log"  # Application log file (relative to cache dir)
     LOG_BACKUP_COUNT = 5  # Number of rotated log files to keep
     SECRET_KEY = "your-secret-key-here"  # Flask session secret
+    
+    # HTTP settings
+    HTTP_TIMEOUT = 30  # HTTP request timeout
+    DOWNLOAD_TIMEOUT = 60  # File download timeout
+    
+    # Polling settings
+    THUMBNAIL_POLL_INTERVAL = 2  # Thumbnail polling interval in seconds
+    THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max polling attempts for thumbnail updates
+    CACHE_CLEAR_TIMEOUT = 30  # Cache clearing operation timeout
+    
+    # Log settings
+    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit
+    
+    # System name fallback
+    DEFAULT_SYSTEM_NAME = "Blink System"  # Default system name for cloud clips
 
     # Validation settings
     MAX_USERNAME_LENGTH = 100  # Maximum username length
     MAX_PASSWORD_LENGTH = 100  # Maximum password length
-    MAX_2FA_LENGTH = 10  # Maximum 2FA code length
+    MAX_TFA_LENGTH = 10  # Maximum 2FA code length
     VALID_CAMERA_ID_PATTERN = r"^[a-zA-Z0-9_-]+$"  # Camera ID regex
     VALID_NETWORK_ID_PATTERN = r"^[0-9]+$"  # Network ID regex
     VALID_CLIP_ID_PATTERN = r"^[a-zA-Z0-9_~-]+$"  # Clip ID regex
@@ -512,7 +527,7 @@ def setup_logging() -> None:
     log_file_path = Path(CACHE_DIR) / Config.LOG_FILE
     file_handler = RotatingFileHandler(
         log_file_path,
-        maxBytes=10 * 1024 * 1024,  # 10MB
+        maxBytes=Config.LOG_MAX_BYTES,
         backupCount=Config.LOG_BACKUP_COUNT,
     )
     file_handler.setFormatter(formatter)
@@ -621,6 +636,77 @@ def handle_api_error(
     return create_api_response(success=False, error=str(error), status_code=status_code)
 
 
+def require_blink() -> Optional[Tuple[ApiResponse, int]]:
+    """Check if Blink is available, return error response if not.
+    
+    Returns:
+        None if Blink is available, error response tuple if not
+    """
+    if blink is None or not blink.available:
+        return create_api_response(
+            success=False, error="Blink not available", status_code=500
+        )
+    return None
+
+
+def require_camera(camera_id: CameraId) -> Tuple[Optional[BlinkCamera], Optional[Tuple[ApiResponse, int]]]:
+    """Find camera by ID, return error response if not found.
+    
+    Args:
+        camera_id: Camera ID to find
+        
+    Returns:
+        Tuple of (camera, error_response). One will be None.
+    """
+    camera = find_camera_by_id(camera_id)
+    if camera is None:
+        error_response = create_api_response(
+            success=False, error="Camera not found", status_code=404
+        )
+        return None, error_response
+    return camera, None
+
+
+def require_sync_module(network_id: NetworkId) -> Tuple[Optional[BlinkSync], Optional[Tuple[ApiResponse, int]]]:
+    """Find sync module by network ID, return error response if not found.
+    
+    Args:
+        network_id: Network ID to find
+        
+    Returns:
+        Tuple of (sync_module, error_response). One will be None.
+    """
+    for name, sync in blink.sync.items():
+        if str(sync.network_id) == str(network_id):
+            return sync, None
+    
+    error_response = create_api_response(
+        success=False, error="System not found", status_code=404
+    )
+    return None, error_response
+
+
+def parse_clip_id(clip_id_str: str) -> Tuple[Optional[ClipId], Optional[Tuple[ApiResponse, int]]]:
+    """Parse and validate clip ID from URL parameter.
+    
+    Args:
+        clip_id_str: URL-encoded clip ID string
+        
+    Returns:
+        Tuple of (clip_id, error_response). One will be None.
+    """
+    try:
+        from urllib.parse import unquote
+        clip_id_str = unquote(clip_id_str)
+        clip_id = ClipId(clip_id_str)
+        return clip_id, None
+    except ValueError as e:
+        error_response = create_api_response(
+            success=False, error=str(e), status_code=400
+        )
+        return None, error_response
+
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", Config.SECRET_KEY)
 # app.config["REDIS_URL"] = "redis://localhost:6379"  # No longer needed
@@ -660,10 +746,10 @@ CLIPS_CACHE_DIR = None  # Directory for cached clips, set in get_cache_paths()
 # Standard cache instances using cachetools
 thumbnail_cache = ThreadSafeCache(LRUCache(maxsize=Config.THUMBNAIL_CACHE_SIZE))
 clips_metadata_cache = ThreadSafeCache(LRUCache(maxsize=Config.CLIPS_METADATA_CACHE_SIZE))
-downloaded_clips_cache = ThreadSafeCache(LRUCache(maxsize=Config.CLIPS_CACHE_SIZE))
+clips_download_cache = ThreadSafeCache(LRUCache(maxsize=Config.CLIPS_CACHE_SIZE))
 
 
-def get_cache_paths() -> None:
+def initialize_cache_paths() -> None:
     """Initialize cache directory paths from Flask config or defaults.
 
     Sets global path variables for cache directories and credential file.
@@ -718,24 +804,24 @@ async def initialize_blink(
         return True
 
 
-async def verify_2fa_and_save(username: str, password: str, two_fa_key: str) -> bool:
+async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> bool:
     """Verify 2FA code and save credentials in same thread as Blink creation.
 
     Args:
         username: Blink account username (unused but kept for consistency)
         password: Blink account password (unused but kept for consistency)
-        two_fa_key: 2FA verification code from email/SMS
+        tfa_key: 2FA verification code from email/SMS
 
     Returns:
         True if verification successful, False otherwise
     """
     global blink
     with error_context("verify 2FA and save credentials", AuthenticationError):
-        logger.debug(f"Starting 2FA verification with key: {two_fa_key[:2]}***")
+        logger.debug(f"Starting 2FA verification with key: {tfa_key[:2]}***")
 
         # Send 2FA key using same session/thread
         logger.debug("Sending 2FA key...")
-        await blink.auth.send_auth_key(blink, two_fa_key)
+        await blink.auth.send_auth_key(blink, tfa_key)
 
         logger.debug("Setting up post verification...")
         await blink.setup_post_verify()
@@ -745,6 +831,249 @@ async def verify_2fa_and_save(username: str, password: str, two_fa_key: str) -> 
 
         logger.info("2FA verification and save completed successfully")
         return True
+
+
+def extract_thumbnail_timestamp(thumbnail_url: Optional[str]) -> int:
+    """Extract timestamp from thumbnail URL.
+    
+    Args:
+        thumbnail_url: URL containing ts parameter
+        
+    Returns:
+        Timestamp as integer, 0 if not found
+    """
+    if not thumbnail_url:
+        return 0
+    try:
+        import re
+        match = re.search(r"ts=([0-9]+)", thumbnail_url)
+        return int(match.group(1)) if match else 0
+    except Exception:
+        return 0
+
+
+def create_device_data(camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int) -> Dict[str, Any]:
+    """Create device data dictionary for camera.
+    
+    Args:
+        camera: Camera object from blinkpy
+        cache_key: Validated camera ID
+        current_ts: Current thumbnail timestamp
+        cached_ts: Cached thumbnail timestamp
+        
+    Returns:
+        Device data dictionary for API response
+    """
+    # Format last updated time
+    display_ts = max(cached_ts, current_ts)
+    last_updated = "Never"
+    if display_ts > 0:
+        try:
+            thumbnail_time = datetime.fromtimestamp(display_ts)
+            now = datetime.now()
+            diff = now - thumbnail_time
+            days = diff.days
+            if days == 0:
+                hours = diff.seconds // 3600
+                if hours == 0:
+                    minutes = diff.seconds // 60
+                    last_updated = f"{minutes}m ago"
+                else:
+                    last_updated = f"{hours}h ago"
+            else:
+                last_updated = f"{days}d ago"
+        except Exception:
+            last_updated = format_time_ago(camera.last_record) if camera.last_record else "Never"
+    
+    return {
+        "type": "camera",
+        "name": camera.name,
+        "id": camera.camera_id,
+        "thumbnail": f"/api/media/thumbnail/{camera.camera_id}",
+        "last_updated": last_updated,
+        "motion_enabled": camera.motion_enabled,
+        "battery": camera.battery,
+        "temperature": camera.temperature,
+        "wifi_strength": camera.wifi_strength,
+    }
+
+
+def update_camera_thumbnail(camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int) -> None:
+    """Update camera thumbnail in background if needed.
+    
+    Args:
+        camera: Camera object from blinkpy
+        cache_key: Validated camera ID
+        current_ts: Current thumbnail timestamp
+        cached_ts: Cached thumbnail timestamp
+    """
+    if current_ts <= cached_ts:
+        return
+        
+    logger.debug(f"Updating thumbnail cache for {camera.name} (ts: {current_ts} > {cached_ts})")
+    
+    def update_thumbnail():
+        # Double-check timestamp to prevent race condition
+        current_entry = thumbnail_cache.get(cache_key)
+        current_cached_ts = current_entry.get("timestamp", 0) if current_entry else 0
+        if current_ts <= current_cached_ts:
+            logger.debug(f"Thumbnail already updated for {camera.name}, skipping")
+            return
+
+        # Remove old cached file if exists
+        old_entry = thumbnail_cache.get(cache_key)
+        if old_entry:
+            old_filename = old_entry.get("filename")
+            if old_filename:
+                old_filepath = Path(THUMBNAIL_CACHE_DIR) / old_filename
+                try:
+                    if old_filepath.exists():
+                        old_filepath.unlink()
+                        logger.debug(f"Removed old thumbnail file: {old_filename}")
+                except OSError as e:
+                    logger.debug(f"Could not remove old thumbnail: {e}")
+
+        thumbnail_response = blink_connection.execute(camera.get_thumbnail())
+        if thumbnail_response and thumbnail_response.status == 200:
+            image_data = blink_connection.execute(thumbnail_response.read())
+
+            # Save to file with new timestamp
+            filename = f"{cache_key}_{current_ts}.jpg"
+            filepath = Path(THUMBNAIL_CACHE_DIR) / filename
+            try:
+                filepath.write_bytes(image_data)
+                # Update cache info atomically
+                thumbnail_cache[cache_key] = {
+                    "timestamp": current_ts,
+                    "filename": filename,
+                }
+                logger.debug(f"Cached thumbnail for {camera.name} with timestamp {current_ts}")
+            except OSError as e:
+                logger.error(f"Failed to write thumbnail file {filepath}: {e}")
+    
+    executor.submit(update_thumbnail)
+
+
+def process_cloud_clips(videos_metadata: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Process cloud storage clips into day-grouped format.
+    
+    Args:
+        videos_metadata: Raw video metadata from Blink API
+        
+    Returns:
+        List of day groups with clips
+    """
+    clips_by_day = {}
+    for video in videos_metadata:
+        try:
+            created_at = datetime.fromisoformat(video["created_at"].replace("Z", "+00:00"))
+            day_key = created_at.strftime("%Y-%m-%d")
+
+            if day_key not in clips_by_day:
+                clips_by_day[day_key] = {
+                    "date": created_at.strftime("%B %d, %Y"),
+                    "clips": [],
+                }
+
+            clip_id = ClipId(str(video.get("id")))
+            thumbnail_url = video.get("thumbnail")
+
+            # Check if we have a cached thumbnail for cloud clips
+            cached_clip = clips_download_cache.get(clip_id)
+            if cached_clip is not None:
+                cached_thumbnail = cached_clip.get("thumbnail")
+                if cached_thumbnail and cached_thumbnail.exists():
+                    thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+
+            clips_by_day[day_key]["clips"].append({
+                "id": str(clip_id),
+                "camera_name": video.get("device_name", "Unknown"),
+                "system_name": Config.DEFAULT_SYSTEM_NAME,
+                "time": created_at.astimezone().strftime("%I:%M %p"),
+                "event_type": "Motion",
+                "thumbnail": thumbnail_url,
+                "media_url": video.get("media"),
+            })
+        except Exception as e:
+            logger.warning(f"Skipping invalid video metadata: {e}")
+            continue
+    
+    return format_clips_by_day(clips_by_day)
+
+
+def process_local_clips() -> List[Dict[str, Any]]:
+    """Process local storage clips into day-grouped format.
+    
+    Returns:
+        List of day groups with clips
+    """
+    clips_by_day = {}
+    
+    for sync_name, sync_module in blink.sync.items():
+        try:
+            # Refresh sync module to update local storage manifest
+            blink_connection.execute(sync_module.refresh())
+
+            # Get clips from local storage manifest if ready
+            if (sync_module.local_storage and sync_module.local_storage_manifest_ready):
+                manifest = sync_module._local_storage["manifest"]
+                for item in manifest:
+                    try:
+                        created_at = item.created_at
+                        day_key = created_at.strftime("%Y-%m-%d")
+
+                        if day_key not in clips_by_day:
+                            clips_by_day[day_key] = {
+                                "date": created_at.strftime("%B %d, %Y"),
+                                "clips": [],
+                            }
+
+                        clip_id = ClipId.from_local(sync_name, item.id)
+                        logger.debug(f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}")
+
+                        # Check for existing thumbnail only
+                        thumbnail_url = None
+                        cached_clip = clips_download_cache.get(clip_id)
+                        if cached_clip is not None:
+                            cached_thumbnail = cached_clip.get("thumbnail")
+                            if cached_thumbnail and cached_thumbnail.exists():
+                                thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+
+                        clips_by_day[day_key]["clips"].append({
+                            "id": str(clip_id),
+                            "camera_name": item.name,
+                            "system_name": sync_name,
+                            "time": created_at.astimezone().strftime("%I:%M %p"),
+                            "event_type": "Motion",
+                            "thumbnail": thumbnail_url,
+                            "media_url": item.url(sync_module._local_storage["last_manifest_id"]),
+                        })
+                    except Exception as e:
+                        logger.warning(f"Skipping invalid local clip metadata: {e}")
+                        continue
+        except Exception as e:
+            logger.warning(f"Could not get local storage manifest for {sync_name}: {e}")
+            continue
+    
+    return format_clips_by_day(clips_by_day)
+
+
+def format_clips_by_day(clips_by_day: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Format clips by day into sorted list.
+    
+    Args:
+        clips_by_day: Dictionary of clips grouped by day
+        
+    Returns:
+        Sorted list of day groups
+    """
+    clips = []
+    for day_key in sorted(clips_by_day.keys(), reverse=True):
+        day_data = clips_by_day[day_key]
+        day_data["clips"].sort(key=lambda x: x["time"], reverse=True)
+        day_data["count"] = len(day_data["clips"])
+        clips.append(day_data)
+    return clips
 
 
 def format_time_ago(timestamp_str: Optional[Union[str, int]]) -> str:
@@ -849,7 +1178,7 @@ def two_factor() -> Response:
     if request.method == "POST":
         try:
             key = validate_string_input(
-                request.form.get("key", ""), Config.MAX_2FA_LENGTH, "2FA code"
+                request.form.get("key", ""), Config.MAX_TFA_LENGTH, "2FA code"
             )
             username = session["temp_username"]
             password = session["temp_password"]
@@ -885,24 +1214,33 @@ def two_factor() -> Response:
 def clear_all_caches():
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
-        # Clear thumbnail cache
-        if os.path.exists(THUMBNAIL_CACHE_DIR):
-            import shutil
-            shutil.rmtree(THUMBNAIL_CACHE_DIR)
-            os.makedirs(THUMBNAIL_CACHE_DIR, exist_ok=True)
+        # Clear memory caches first (fast operation)
         thumbnail_cache.clear()
-
-        # Clear downloaded clips cache
-        if os.path.exists(CLIPS_CACHE_DIR):
-            import shutil
-            shutil.rmtree(CLIPS_CACHE_DIR)
-            os.makedirs(CLIPS_CACHE_DIR, exist_ok=True)
-        downloaded_clips_cache.clear()
-
-        # Clear clips metadata cache
+        clips_download_cache.clear()
         clips_metadata_cache.clear()
-
-        logger.info("All caches cleared successfully")
+        
+        # Clear file caches (slow I/O operations)
+        def clear_file_cache(cache_dir, cache_name):
+            try:
+                if os.path.exists(cache_dir):
+                    import shutil
+                    shutil.rmtree(cache_dir)
+                    os.makedirs(cache_dir, exist_ok=True)
+                    logger.debug(f"Cleared {cache_name} directory")
+            except OSError as e:
+                logger.warning(f"Could not clear {cache_name} directory: {e}")
+        
+        # Execute file operations in parallel
+        thumbnail_future = executor.submit(clear_file_cache, THUMBNAIL_CACHE_DIR, "thumbnail")
+        clips_future = executor.submit(clear_file_cache, CLIPS_CACHE_DIR, "clips")
+        
+        # Wait for completion with timeout
+        try:
+            thumbnail_future.result(timeout=Config.CACHE_CLEAR_TIMEOUT)
+            clips_future.result(timeout=Config.CACHE_CLEAR_TIMEOUT)
+            logger.info("All caches cleared successfully")
+        except Exception as e:
+            logger.warning(f"Cache clearing completed with errors: {e}")
 
 
 @app.route("/api/clear-cache", methods=["POST"])
@@ -947,20 +1285,9 @@ def get_systems() -> Response:
     Returns:
         JSON response with list of systems or error message
     """
-    if blink is None:
-        logger.debug("Blink object is None")
-        response, status_code = create_api_response(
-            success=False, error="Blink not available - please login", status_code=401
-        )
-        return jsonify(response), status_code
-
-    if not blink.available:
-        logger.debug(
-            f"Blink not available - auth: {blink.auth}, networks: {len(blink.networks) if hasattr(blink, 'networks') else 'N/A'}"
-        )
-        response, status_code = create_api_response(
-            success=False, error="Blink not available - please login", status_code=401
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     with error_context("get systems"):
@@ -998,25 +1325,17 @@ def get_devices(network_id_str: str) -> Response:
     Returns:
         JSON response with list of devices or error message
     """
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available - please login", status_code=401
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     devices = []
 
     # Find the sync module for this network
-    sync_module = None
-    for name, sync in blink.sync.items():
-        if str(sync.network_id) == str(network_id):
-            sync_module = sync
-            break
-
-    if sync_module is None:
-        response, status_code = create_api_response(
-            success=False, error="System not found", status_code=404
-        )
+    sync_module, error_response = require_sync_module(network_id)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     # Add sync module
@@ -1031,109 +1350,18 @@ def get_devices(network_id_str: str) -> Response:
 
     # Add cameras - refresh thumbnails in Blink thread
     for camera_name, camera in sync_module.cameras.items():
-        logger.debug(
-            f"Processing camera: {camera.name}, current thumbnail: {camera.thumbnail}"
-        )
-
-        # Extract timestamp from thumbnail URL
-        current_ts = 0
-        if camera.thumbnail:
-            try:
-                import re
-
-                match = re.search(r"ts=([0-9]+)", camera.thumbnail)
-                if match:
-                    current_ts = int(match.group(1))
-            except Exception as e:
-                logger.debug(
-                    f"Could not parse thumbnail timestamp for {camera.name}: {e}"
-                )
-
-        # Check if we need to update cached thumbnail
+        logger.debug(f"Processing camera: {camera.name}, current thumbnail: {camera.thumbnail}")
+        
         cache_key = CameraId(camera.camera_id)
-
-        # Format last updated time from cached or current timestamp
+        current_ts = extract_thumbnail_timestamp(camera.thumbnail)
         cached_entry = thumbnail_cache.get(cache_key)
-        display_ts = cached_entry.get("timestamp", current_ts) if cached_entry else current_ts
-        last_updated = "Never"
-        if display_ts > 0:
-            try:
-                thumbnail_time = datetime.fromtimestamp(display_ts)
-                now = datetime.now()
-                diff = now - thumbnail_time
-                days = diff.days
-                if days == 0:
-                    hours = diff.seconds // 3600
-                    if hours == 0:
-                        minutes = diff.seconds // 60
-                        last_updated = f"{minutes}m ago"
-                    else:
-                        last_updated = f"{hours}h ago"
-                else:
-                    last_updated = f"{days}d ago"
-            except Exception as e:
-                logger.debug(f"Could not format timestamp for {camera.name}: {e}")
-                last_updated = (
-                    format_time_ago(camera.last_record)
-                    if camera.last_record
-                    else "Never"
-                )
         cached_ts = cached_entry.get("timestamp", 0) if cached_entry else 0
-
-        if current_ts > cached_ts:
-            logger.debug(
-                f"Updating thumbnail cache for {camera.name} (ts: {current_ts} > {cached_ts})"
-            )
-
-            def update_thumbnail():
-                # Remove old cached file if exists
-                old_entry = thumbnail_cache.get(cache_key)
-                if old_entry:
-                    old_filename = old_entry.get("filename")
-                    if old_filename:
-                        old_filepath = Path(THUMBNAIL_CACHE_DIR) / old_filename
-                        if old_filepath.exists():
-                            old_filepath.unlink()
-                            logger.debug(
-                                f"Removed old thumbnail file: {old_filename}"
-                            )
-
-                thumbnail_response = blink_connection.execute(camera.get_thumbnail())
-                if thumbnail_response and thumbnail_response.status == 200:
-                    image_data = blink_connection.execute(thumbnail_response.read())
-
-                    # Save to file with new timestamp
-                    filename = f"{cache_key}_{current_ts}.jpg"
-                    filepath = Path(THUMBNAIL_CACHE_DIR) / filename
-                    filepath.write_bytes(image_data)
-
-                    # Update cache info
-                    thumbnail_cache[cache_key] = {
-                        "timestamp": current_ts,
-                        "filename": filename,
-                    }
-                    logger.debug(
-                        f"Cached thumbnail for {camera.name} with timestamp {current_ts}"
-                    )
-
-            # Execute thumbnail update in background thread
-            executor.submit(update_thumbnail)
-        else:
-            logger.debug(
-                f"Using cached thumbnail for {camera.name} (ts: {current_ts} <= {cached_ts})"
-            )
-
-        device_data = {
-            "type": "camera",
-            "name": camera.name,
-            "id": camera.camera_id,
-            "thumbnail": f"/api/media/thumbnail/{camera.camera_id}",  # Use proxy URL
-            "last_updated": last_updated,
-            "motion_enabled": camera.motion_enabled,
-            "battery": camera.battery,
-            "temperature": camera.temperature,
-            "wifi_strength": camera.wifi_strength,
-        }
+        
+        # Update thumbnail if needed
+        update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
+        
+        # Create device data
+        device_data = create_device_data(camera, cache_key, current_ts, cached_ts)
         logger.debug(f"Camera device data for {camera.name}: {device_data}")
         devices.append(device_data)
 
@@ -1158,10 +1386,9 @@ def arm_system(network_id_str: str) -> Response:
     Returns:
         JSON response with success status or error message
     """
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     try:
@@ -1185,16 +1412,9 @@ def arm_system(network_id_str: str) -> Response:
         return jsonify(response), status_code
 
     # Find the sync module
-    sync_module = None
-    for name, sync in blink.sync.items():
-        if str(sync.network_id) == str(network_id):
-            sync_module = sync
-            break
-
-    if sync_module is None:
-        response, status_code = create_api_response(
-            success=False, error="System not found", status_code=404
-        )
+    sync_module, error_response = require_sync_module(network_id)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     with error_context("arm/disarm system"):
@@ -1214,31 +1434,34 @@ def refresh_camera(camera_id_str: str):
         return jsonify(response), status_code
 
     """Refresh camera thumbnail."""
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
-    camera = find_camera_by_id(camera_id)
-    if not camera:
-        response, status_code = create_api_response(
-            success=False, error="Camera not found", status_code=404
-        )
+    camera, error_response = require_camera(camera_id)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     with error_context("refresh camera thumbnail", CameraError):
-        # Remove camera thumbnail from cache
-        cache_key = CameraId(camera.camera_id)
-        cached_info = thumbnail_cache.get(cache_key)
-        if cached_info is not None:
-            # Remove cached file
-            if "filename" in cached_info:
-                cached_file = Path(THUMBNAIL_CACHE_DIR) / cached_info["filename"]
-                if cached_file.exists():
-                    cached_file.unlink()
-            # Remove from cache
-            thumbnail_cache.pop(cache_key, None)
+        # Remove camera thumbnail from cache in background
+        def remove_thumbnail_cache():
+            cache_key = CameraId(camera.camera_id)
+            cached_info = thumbnail_cache.get(cache_key)
+            if cached_info is not None:
+                # Remove cached file
+                if "filename" in cached_info:
+                    cached_file = Path(THUMBNAIL_CACHE_DIR) / cached_info["filename"]
+                    try:
+                        if cached_file.exists():
+                            cached_file.unlink()
+                    except OSError as e:
+                        logger.debug(f"Could not remove cached thumbnail: {e}")
+                # Remove from cache
+                thumbnail_cache.pop(cache_key, None)
+        
+        executor.submit(remove_thumbnail_cache)
 
         blink_connection.execute(camera.snap_picture())
         response, status_code = create_api_response(
@@ -1250,10 +1473,9 @@ def refresh_camera(camera_id_str: str):
 @app.route("/api/clips")
 def get_clips():
     """Get clips from cloud or local storage."""
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     storage_type = request.args.get("storage", "cloud")
@@ -1268,13 +1490,11 @@ def get_clips():
     # Check cache first for performance
     cache_key = storage_type
     cached_clips = clips_metadata_cache.get(cache_key)
-    if cached_clips:
+    if cached_clips is not None:
         response, status_code = create_api_response(
             success=True, data=cached_clips
         )
         return jsonify(response), status_code
-
-    clips = []
 
     with error_context(f"get {storage_type} clips"):
         if storage_type == "cloud":
@@ -1282,129 +1502,9 @@ def get_clips():
             videos_metadata = blink_connection.execute(
                 blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
             )
-
-            # Group clips by day
-            clips_by_day = {}
-            for video in videos_metadata:
-                try:
-                    created_at = datetime.fromisoformat(
-                        video["created_at"].replace("Z", "+00:00")
-                    )
-                    day_key = created_at.strftime("%Y-%m-%d")
-
-                    if day_key not in clips_by_day:
-                        clips_by_day[day_key] = {
-                            "date": created_at.strftime("%B %d, %Y"),
-                            "clips": [],
-                        }
-
-                    clip_id = ClipId(str(video.get("id")))
-                    thumbnail_url = video.get("thumbnail")
-
-                    # Check if we have a cached thumbnail for cloud clips
-                    cached_clip = downloaded_clips_cache.get(clip_id)
-                    if cached_clip:
-                        cached_thumbnail = cached_clip.get("thumbnail")
-                        if cached_thumbnail and cached_thumbnail.exists():
-                            thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
-
-                    clips_by_day[day_key]["clips"].append(
-                        {
-                            "id": str(clip_id),
-                            "camera_name": video.get("device_name", "Unknown"),
-                            "system_name": "Blink System",  # Could be enhanced to get actual system name
-                            "time": created_at.astimezone().strftime("%I:%M %p"),
-                            "event_type": "Motion",
-                            "thumbnail": thumbnail_url,
-                            "media_url": video.get("media"),
-                        }
-                    )
-                except Exception as e:
-                    logger.warning(f"Skipping invalid video metadata: {e}")
-                    continue
-
-            # Convert to list format expected by frontend
-            clips = []
-            for day_key in sorted(clips_by_day.keys(), reverse=True):
-                day_data = clips_by_day[day_key]
-                day_data["clips"].sort(key=lambda x: x["time"], reverse=True)
-                day_data["count"] = len(day_data["clips"])
-                clips.append(day_data)
-
+            clips = process_cloud_clips(videos_metadata)
         else:
-            # Get local storage clips from sync modules
-            clips_by_day = {}
-
-            for sync_name, sync_module in blink.sync.items():
-                try:
-                    # Refresh sync module to update local storage manifest
-                    blink_connection.execute(sync_module.refresh())
-
-                    # Get clips from local storage manifest if ready
-                    if (
-                        sync_module.local_storage
-                        and sync_module.local_storage_manifest_ready
-                    ):
-                        manifest = sync_module._local_storage["manifest"]
-                        for item in manifest:
-                            try:
-                                created_at = item.created_at
-                                day_key = created_at.strftime("%Y-%m-%d")
-
-                                if day_key not in clips_by_day:
-                                    clips_by_day[day_key] = {
-                                        "date": created_at.strftime("%B %d, %Y"),
-                                        "clips": [],
-                                    }
-
-                                clip_id = ClipId.from_local(sync_name, item.id)
-                                logger.debug(f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}")
-
-                                # Check for existing thumbnail only
-                                thumbnail_url = None
-                                cached_clip = downloaded_clips_cache.get(clip_id)
-                                if cached_clip:
-                                    cached_thumbnail = cached_clip.get("thumbnail")
-                                    if cached_thumbnail and cached_thumbnail.exists():
-                                        thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
-
-                                clips_by_day[day_key]["clips"].append(
-                                    {
-                                        "id": str(clip_id),
-                                        "camera_name": item.name,
-                                        "system_name": sync_name,
-                                        "time": created_at.astimezone().strftime(
-                                            "%I:%M %p"
-                                        ),
-                                        "event_type": "Motion",
-                                        "thumbnail": thumbnail_url,
-                                        "media_url": item.url(
-                                            sync_module._local_storage[
-                                                "last_manifest_id"
-                                            ]
-                                        ),
-                                    }
-                                )
-                            except Exception as e:
-                                logger.warning(
-                                    f"Skipping invalid local clip metadata: {e}"
-                                )
-                                continue
-                except Exception as e:
-                    logger.warning(
-                        f"Could not get local storage manifest for {sync_name}: {e}"
-                    )
-                    continue
-
-            # Convert to list format expected by frontend
-            clips = []
-            for day_key in sorted(clips_by_day.keys(), reverse=True):
-                day_data = clips_by_day[day_key]
-                day_data["clips"].sort(key=lambda x: x["time"], reverse=True)
-                day_data["count"] = len(day_data["clips"])
-                clips.append(day_data)
-
-        # This is handled by the error_context above
+            clips = process_local_clips()
 
     # Cache the results
     clips_metadata_cache[storage_type] = clips
@@ -1416,16 +1516,15 @@ def get_clips():
 @app.route("/api/refresh", methods=["POST"])
 def refresh_system():
     """Manually refresh the Blink system."""
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     try:
         success = blink_connection.execute(blink.refresh(force=True))
 
-        if success:
+        if success is True:
             response, status_code = create_api_response(
                 success=True, data={"message": "System refreshed successfully"}
             )
@@ -1445,21 +1544,14 @@ def refresh_system():
 
 @app.route("/api/clip/<clip_id_str>/download")
 def download_clip(clip_id_str: str):
-    try:
-        # URL decode the clip ID in case it contains encoded characters
-        from urllib.parse import unquote
-        clip_id_str = unquote(clip_id_str)
-        clip_id = ClipId(clip_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
+    clip_id, error_response = parse_clip_id(clip_id_str)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
     """Download a specific clip."""
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     try:
@@ -1483,7 +1575,7 @@ def download_clip(clip_id_str: str):
 def _download_clip_common(clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False) -> Response:
     """Common clip download logic after file is downloaded."""
     # Cache the clip first (without thumbnail)
-    downloaded_clips_cache[clip_id] = {
+    clips_download_cache[clip_id] = {
         "filepath": filepath,
         "thumbnail": None,
     }
@@ -1492,11 +1584,13 @@ def _download_clip_common(clip_id: ClipId, filepath: Path, filename: str, middle
     def generate_thumbnail_bg():
         thumbnail_path = generate_clip_thumbnail(filepath, filename, middle_frame=middle_frame)
         if thumbnail_path:
-            # Update cache with thumbnail
-            cached_clip = downloaded_clips_cache.get(clip_id)
-            if cached_clip:
-                cached_clip["thumbnail"] = thumbnail_path
-                downloaded_clips_cache[clip_id] = cached_clip
+            # Update cache with thumbnail atomically
+            cached_clip = clips_download_cache.get(clip_id)
+            if cached_clip is not None:
+                # Create new dict to avoid race conditions
+                updated_clip = cached_clip.copy()
+                updated_clip["thumbnail"] = thumbnail_path
+                clips_download_cache[clip_id] = updated_clip
             # Notify clients that thumbnail is ready
             notify_thumbnail_ready(clip_id)
     
@@ -1507,16 +1601,22 @@ def _download_clip_common(clip_id: ClipId, filepath: Path, filename: str, middle
 def download_cloud_clip(clip_id: ClipId) -> Response:
     """Download cloud storage clip."""
     # Check if already cached
-    cached_clip = downloaded_clips_cache.get(clip_id)
-    if cached_clip and os.path.exists(cached_clip["filepath"]):
-        return send_file(cached_clip["filepath"], as_attachment=True)
+    cached_clip = clips_download_cache.get(clip_id)
+    if cached_clip is not None:
+        try:
+            # Quick existence check - if it fails, we'll re-download
+            if cached_clip["filepath"].exists():
+                return send_file(str(cached_clip["filepath"]), as_attachment=True)
+        except (OSError, AttributeError):
+            # File doesn't exist or path is invalid, continue to download
+            pass
 
     # Get clip metadata
     videos_metadata = blink_connection.execute(
         blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
     )
     clip_info = next((v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None)
-    if not clip_info:
+    if clip_info is None:
         response, status_code = create_api_response(
             success=False, error="Clip not found", status_code=404
         )
@@ -1538,19 +1638,33 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
             )
             return jsonify(response), status_code
         
-        response = http_session.get(media_url)
-        if response.status_code != 200:
-            response, status_code = create_api_response(
-                success=False, error="Failed to download clip", status_code=500
-            )
-            return jsonify(response), status_code
+        # Download in executor to avoid blocking
+        def download_file():
+            try:
+                response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
+                if response.status_code == 200:
+                    filepath.write_bytes(response.content)
+                    return True
+                else:
+                    logger.error(f"HTTP {response.status_code} downloading clip {clip_id}")
+                    return False
+            except Exception as e:
+                logger.error(f"Error downloading clip {clip_id}: {e}")
+                return False
         
+        # Execute download synchronously since we need the file immediately
+        future = executor.submit(download_file)
         try:
-            filepath.write_bytes(response.content)
-        except IOError as e:
-            logger.error(f"Error writing clip file {filepath}: {e}")
+            success = future.result(timeout=Config.DOWNLOAD_TIMEOUT)
+            if not success:
+                response, status_code = create_api_response(
+                    success=False, error="Failed to download clip", status_code=500
+                )
+                return jsonify(response), status_code
+        except Exception as e:
+            logger.error(f"Download timeout or error for clip {clip_id}: {e}")
             response, status_code = create_api_response(
-                success=False, error="Failed to save clip", status_code=500
+                success=False, error="Download failed or timed out", status_code=500
             )
             return jsonify(response), status_code
 
@@ -1560,9 +1674,15 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
 def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Response:
     """Download local storage clip using blinkpy methods."""
     # Check if already cached
-    cached_clip = downloaded_clips_cache.get(clip_id)
-    if cached_clip and os.path.exists(cached_clip["filepath"]):
-        return send_file(cached_clip["filepath"], as_attachment=True)
+    cached_clip = clips_download_cache.get(clip_id)
+    if cached_clip is not None:
+        try:
+            # Quick existence check - if it fails, we'll re-download
+            if cached_clip["filepath"].exists():
+                return send_file(str(cached_clip["filepath"]), as_attachment=True)
+        except (OSError, AttributeError):
+            # File doesn't exist or path is invalid, continue to download
+            pass
 
     # Find sync module and clip item
     sync_module = blink.sync.get(sync_name)
@@ -1580,7 +1700,7 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
 
     manifest = sync_module._local_storage["manifest"]
     item = next((i for i in manifest if i.id == item_id), None)
-    if not item:
+    if item is None:
         response, status_code = create_api_response(
             success=False, error="Local clip not found", status_code=404
         )
@@ -1596,7 +1716,7 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
         try:
             blink_connection.execute(item.prepare_download(blink))
             success = blink_connection.execute(item.download_video(blink, str(filepath)))
-            if not success:
+            if success is not True:
                 response, status_code = create_api_response(
                     success=False, error="Failed to download local clip", status_code=500
                 )
@@ -1625,27 +1745,24 @@ def get_camera_liveview(camera_id_str: str):
         return jsonify(response), status_code
 
     """Get live view stream for camera."""
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
-    camera = find_camera_by_id(camera_id)
-    if camera is None:
-        response, status_code = create_api_response(
-            success=False, error="Camera not found", status_code=404
-        )
+    camera, error_response = require_camera(camera_id)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     try:
         # Get RTSP stream URL via blink operation
         rtsp_url = blink_connection.execute(camera.get_liveview())
 
-        if rtsp_url:
+        if rtsp_url is not None:
             # Start HLS transcoding
             hls_url, error_msg = stream_manager.start_stream(str(camera_id), rtsp_url)
-            if hls_url:
+            if hls_url is not None:
                 response, status_code = create_api_response(
                     success=True, data={"rtsp_url": rtsp_url, "hls_url": hls_url}
                 )
@@ -1693,17 +1810,12 @@ def serve_hls_file(camera_id_str: str, filename: str):
 
 @app.route("/api/clip/<clip_id_str>/thumbnail")
 def get_clip_thumbnail(clip_id_str: str):
-    try:
-        from urllib.parse import unquote
-        clip_id_str = unquote(clip_id_str)
-        clip_id = ClipId(clip_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
+    clip_id, error_response = parse_clip_id(clip_id_str)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
     """Serve clip thumbnail."""
-    cached_clip = downloaded_clips_cache.get(clip_id)
+    cached_clip = clips_download_cache.get(clip_id)
     if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
         if thumbnail_path is not None and thumbnail_path.exists():
@@ -1726,10 +1838,9 @@ def get_camera_thumbnail(camera_id_str: str):
         return jsonify(response), status_code
 
     """Proxy camera thumbnail with authentication."""
-    if blink is None or not blink.available:
-        response, status_code = create_api_response(
-            success=False, error="Blink not available", status_code=500
-        )
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
 
     camera = find_camera_by_id(camera_id)
@@ -1755,7 +1866,7 @@ def get_camera_thumbnail(camera_id_str: str):
 
         # If not cached, fetch via blink operation
         response = blink_connection.execute(camera.get_thumbnail())
-        if response and response.status == 200:
+        if response is not None and response.status == 200:
             image_data = blink_connection.execute(response.read())
             return FlaskResponse(image_data, mimetype="image/jpeg")
         else:
@@ -1803,7 +1914,7 @@ async def load_saved_blink():
             blink = Blink(session=None)
             blink.auth = auth
             success = await blink.start()
-            if success:
+            if success is True:
                 logger.info("Blink system loaded from saved credentials")
                 return True
             else:
@@ -1825,15 +1936,32 @@ async def load_saved_blink():
 def startup() -> None:
     """Initialize application on startup.
 
-    Creates cache directories, scans existing thumbnails, starts Blink thread,
-    and attempts to load saved credentials. If no valid credentials found,
-    user will need to login through web interface.
-
-    Handles initialization errors gracefully and logs appropriate messages.
+    Performs complete application initialization including:
+    1. Cache directory setup and path initialization
+    2. Logging configuration with file rotation
+    3. Existing cache scanning and validation
+    4. Blink connection thread startup
+    5. Saved credentials loading and validation
+    
+    Error Handling:
+        - Invalid cache directories: Creates new ones
+        - Corrupted credentials: Removes and logs warning
+        - Blink connection failures: Logs error, continues startup
+        - File system errors: Graceful degradation
+    
+    Side Effects:
+        - Creates cache directories if missing
+        - Starts background thread pool
+        - Initializes global Blink connection
+        - Sets up rotating log files
+    
+    Note:
+        If no valid credentials found, user must login via web interface.
+        All errors are logged but don't prevent application startup.
     """
     try:
         # Initialize cache paths
-        get_cache_paths()
+        initialize_cache_paths()
 
         # Create cache directories if they don't exist
         Path(CACHE_DIR).mkdir(exist_ok=True)
@@ -1843,18 +1971,18 @@ def startup() -> None:
         # Setup logging with rotation in cache directory
         setup_logging()
 
-        # Scan and load existing thumbnails from cache
-        scan_thumbnail_cache()
+        # Load existing thumbnails from cache
+        load_thumbnail_cache()
         
-        # Scan and load existing clips from cache
-        scan_clips_cache()
+        # Load existing clips from cache
+        load_clips_cache()
 
         # Initialize Blink thread for startup
         blink_connection.start()
 
         try:
             success = blink_connection.execute(load_saved_blink())
-            if not success:
+            if success is not True:
                 logger.info(
                     "No valid saved credentials found - user will need to login"
                 )
@@ -1872,18 +2000,42 @@ def startup() -> None:
 def generate_clip_thumbnail(
     video_path: Path, filename: str, middle_frame: bool = False
 ) -> Optional[Path]:
-    """Generate thumbnail image from video clip.
+    """Generate thumbnail image from video clip using FFmpeg.
+
+    Extracts a single frame from video file and saves as JPEG thumbnail.
+    Uses different extraction strategies based on clip type:
+    - Cloud clips: First frame (fast, consistent)
+    - Local clips: Middle frame (better representation)
 
     Args:
-        video_path: Path to the video file
-        filename: Original filename for thumbnail naming
-        middle_frame: If True, extract middle frame; if False, extract first frame
+        video_path: Path to source video file (must exist)
+        filename: Original video filename for thumbnail naming
+        middle_frame: If True, extract middle frame; if False, first frame
 
     Returns:
         Path to generated thumbnail file, or None if generation failed
 
-    Uses FFmpeg to extract frame from video. For middle frame extraction,
-    first determines video duration with ffprobe.
+    Process:
+        1. Check if thumbnail already exists (skip if found)
+        2. For middle frame: Use ffprobe to get duration, calculate midpoint
+        3. For first frame: Extract frame at 1 second mark
+        4. Use FFmpeg to extract frame as JPEG
+        5. Save with same base name as video but .jpg extension
+    
+    FFmpeg Commands:
+        - First frame: ffmpeg -i video.mp4 -ss 00:00:01 -vframes 1 -f image2 thumb.jpg
+        - Middle frame: ffmpeg -i video.mp4 -ss {duration/2} -vframes 1 -f image2 thumb.jpg
+    
+    Error Handling:
+        - Missing FFmpeg: Returns None, logs error
+        - Corrupted video: Returns None, logs error
+        - Timeout: Returns None after configured timeout
+        - File system errors: Returns None, logs error
+    
+    Performance:
+        - Respects configured timeouts (FFmpeg: 30s, FFprobe: 10s)
+        - Skips generation if thumbnail exists
+        - Runs in background thread to avoid blocking
     """
     thumbnail_filename = filename.replace(".mp4", ".jpg")
     thumbnail_path = Path(CLIPS_CACHE_DIR) / thumbnail_filename
@@ -1962,13 +2114,33 @@ def generate_clip_thumbnail(
 
 
 
-def scan_thumbnail_cache() -> None:
-    """Scan thumbnail cache directory and load existing thumbnails into memory.
+def load_thumbnail_cache() -> None:
+    """Load and validate thumbnail cache from disk.
 
-    Parses cached thumbnail filenames in format 'camera_id_timestamp.jpg'
-    and populates the thumbnail_cache dictionary with metadata.
-    Removes duplicate thumbnails and invalid camera IDs.
-    Thread-safe operation using thumbnail_cache_lock.
+    Scans thumbnail cache directory for existing files and populates
+    the in-memory cache with validated entries. Performs cleanup of
+    invalid, duplicate, and orphaned thumbnail files.
+    
+    Process:
+        1. Scans cache directory for .jpg files
+        2. Parses filenames (format: camera_id_timestamp.jpg)
+        3. Validates camera IDs against current Blink system
+        4. Keeps only newest thumbnail per camera
+        5. Removes invalid/old files in background
+    
+    File Format:
+        - Valid: "camera123_1642459551.jpg"
+        - Invalid: "invalid_format.jpg" (removed)
+    
+    Thread Safety:
+        - Uses thread-safe cache operations
+        - File removal happens in background thread
+        - Race conditions prevented with proper error handling
+    
+    Error Handling:
+        - Invalid filenames: Logged and removed
+        - Missing cameras: Files removed if system available
+        - File system errors: Logged, operation continues
     """
     cache_dir = Path(THUMBNAIL_CACHE_DIR)
     if not cache_dir.exists():
@@ -2029,23 +2201,28 @@ def scan_thumbnail_cache() -> None:
                     logger.debug(f"Removing old thumbnail {old_filename} for camera {camera_id}")
                     files_to_remove.append(old_path)
             
-            # Remove invalid/old files
-            for file_path in files_to_remove:
+        # Remove invalid/old files in background
+        def remove_files(files_list):
+            for file_path in files_list:
                 try:
                     file_path.unlink()
+                    logger.debug(f"Removed invalid thumbnail: {file_path.name}")
                 except Exception as e:
                     logger.warning(f"Could not remove thumbnail file {file_path}: {e}")
+        
+        if files_to_remove:
+            executor.submit(remove_files, files_to_remove)
                     
     except Exception as e:
         logger.error(f"Error scanning thumbnail cache: {e}")
 
 
-def scan_clips_cache() -> None:
-    """Scan clips cache directory and load existing clips into memory.
+def load_clips_cache() -> None:
+    """Load clips cache directory and populate memory cache.
     
     Parses cached clip files with ClipId_camera_date.mp4 format,
     validates against Blink system, and removes invalid files.
-    Thread-safe operation using downloaded_clips_lock.
+    Thread-safe operation.
     """
     cache_dir = Path(CLIPS_CACHE_DIR)
     if not cache_dir.exists():
@@ -2112,7 +2289,7 @@ def scan_clips_cache() -> None:
                         continue
                 
                 # Add to cache
-                downloaded_clips_cache[clip_id] = {
+                clips_download_cache[clip_id] = {
                     "filepath": video_file,
                     "thumbnail": thumbnail_path if thumbnail_path.exists() else None,
                 }
@@ -2122,13 +2299,17 @@ def scan_clips_cache() -> None:
                 logger.debug(f"Could not process cached clip {video_file}: {e}")
                 files_to_remove.append(video_file)
             
-            # Remove invalid files
-            for file_path in files_to_remove:
+        # Remove invalid files in background
+        def remove_files(files_list):
+            for file_path in files_list:
                 try:
                     file_path.unlink()
                     logger.debug(f"Removed invalid cached file: {file_path.name}")
                 except Exception as e:
                     logger.warning(f"Could not remove file {file_path}: {e}")
+        
+        if files_to_remove:
+            executor.submit(remove_files, files_to_remove)
                     
     except Exception as e:
         logger.error(f"Error scanning clips cache: {e}")
@@ -2140,17 +2321,12 @@ def scan_clips_cache() -> None:
 @app.route("/api/clip/<clip_id_str>/thumbnail/check")
 def check_clip_thumbnail(clip_id_str: str):
     """Check if thumbnail is available for clip."""
-    try:
-        from urllib.parse import unquote
-        clip_id_str = unquote(clip_id_str)
-        clip_id = ClipId(clip_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
+    clip_id, error_response = parse_clip_id(clip_id_str)
+    if error_response is not None:
+        response, status_code = error_response
         return jsonify(response), status_code
         
-    cached_clip = downloaded_clips_cache.get(clip_id)
+    cached_clip = clips_download_cache.get(clip_id)
     if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
         if thumbnail_path is not None and thumbnail_path.exists():

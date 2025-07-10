@@ -109,11 +109,7 @@ The "Settings" view should have:
 # Code quality improvements
 
 Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
-- Duplicate logic throughout
-- Poor naming conventions
-- Some naming could be more consistent
-- Race conditions in cache access
-- Blocking I/O operations
+- Testing and test coverage: No unit tests present
 
 Verify that the following issues have been fixed already:
 - Missing type safety in many places
@@ -136,7 +132,15 @@ Verify that the following issues have been fixed already:
   - Some duplicate logic in caching
 - No connection pooling for HTTP requests
 - Some places in the code seem to use "if e:" instead of "if e is None:" to test if e is None, which is bad practice, because values such as 0 or the empty string also evaluate to False.
+- Duplicate logic throughout
+- Poor naming conventions
+- Some naming could be more consistent
+- Race conditions in cache access
+- Blocking I/O operations
+- Code Organization: Some functions are quite long (e.g., get_devices(), get_clips()) - could benefit from extraction into smaller helper functions
+- Configuration: Some hardcoded values could be moved to Config class
+- Documentation: While comprehensive, some complex functions could use more detailed docstrings
 
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
-Read the whole code again. How would you rate the code quality? Is there room for improvement?
+Read the whole code again, including the python code and the HTML templates. How would you rate the code quality? Is there room for improvement?
