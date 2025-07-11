@@ -1,0 +1,499 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Blink Camera Flask Web Interface API",
+    "description": "RESTful API for managing Blink camera systems with live streaming, clip management, and settings",
+    "version": "1.0.0",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/system/list": {
+      "get": {
+        "summary": "Get list of available Blink systems",
+        "operationId": "getSystemList",
+        "responses": {
+          "200": {
+            "description": "List of systems retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/refresh": {
+      "post": {
+        "summary": "Manually refresh the Blink system data",
+        "operationId": "refreshSystem",
+        "responses": {
+          "200": {
+            "description": "System refresh initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/{network_id}/devices": {
+      "get": {
+        "summary": "Get devices for a specific Blink system",
+        "operationId": "getDevices",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Network ID of the Blink system"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Devices retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/{network_id}/arm": {
+      "post": {
+        "summary": "Arm or disarm a Blink system",
+        "operationId": "armSystem",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["armed"],
+                "properties": {
+                  "armed": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Arm status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/camera/{camera_id}/thumbnail": {
+      "get": {
+        "summary": "Get camera thumbnail image",
+        "operationId": "getCameraThumbnail",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Camera thumbnail image",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/camera/{camera_id}/thumbnail/timestamp": {
+      "get": {
+        "summary": "Get camera thumbnail timestamp for polling",
+        "operationId": "getThumbnailTimestamp",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail timestamp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/camera/{camera_id}/refresh": {
+      "post": {
+        "summary": "Refresh camera thumbnail",
+        "operationId": "refreshCamera",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail refresh initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/camera/{camera_id}/liveview": {
+      "get": {
+        "summary": "Start live stream for camera",
+        "operationId": "getLiveView",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live stream URLs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clips": {
+      "get": {
+        "summary": "Get clips from cloud or local storage",
+        "operationId": "getClips",
+        "parameters": [
+          {
+            "name": "storage",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["cloud", "local"],
+              "default": "cloud"
+            },
+            "description": "Storage type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clips retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clip/{clip_id}/download": {
+      "get": {
+        "summary": "Download a specific clip",
+        "operationId": "downloadClip",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Clip ID (cloud ID or local sync~item format)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video clip file",
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clip/{clip_id}/process": {
+      "post": {
+        "summary": "Process clip on server (download and generate thumbnail)",
+        "operationId": "processClip",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Processing initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clip/{clip_id}/thumbnail": {
+      "get": {
+        "summary": "Get clip thumbnail image",
+        "operationId": "getClipThumbnail",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clip thumbnail image",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clip/{clip_id}/thumbnail/check": {
+      "get": {
+        "summary": "Check if thumbnail is available for clip",
+        "operationId": "checkClipThumbnail",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail availability status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "summary": "Get user settings",
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "description": "User settings retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Save user settings",
+        "operationId": "saveSettings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "temperatureUnits": {
+                    "type": "string",
+                    "enum": ["celsius", "fahrenheit"]
+                  },
+                  "cloudClipRetention": {"type": "string"},
+                  "localClipRetention": {"type": "string"},
+                  "clipThumbnailSize": {
+                    "type": "string",
+                    "enum": ["small", "medium", "large"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings saved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clear-cache": {
+      "post": {
+        "summary": "Clear all caches",
+        "operationId": "clearCache",
+        "responses": {
+          "200": {
+            "description": "Cache clearing initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hls/{camera_id}/{filename}": {
+      "get": {
+        "summary": "Serve HLS playlist and segment files",
+        "operationId": "getHLSFile",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "HLS playlist (.m3u8) or segment (.ts) filename"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HLS file content",
+            "content": {
+              "application/vnd.apple.mpegurl": {
+                "schema": {"type": "string"}
+              },
+              "video/mp2t": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "required": ["success", "timestamp"],
+        "properties": {
+          "success": {"type": "boolean"},
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "data": {
+            "type": "object",
+            "description": "Response data (success only)"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message (failure only)"
+          }
+        }
+      }
+    }
+  }
+}
