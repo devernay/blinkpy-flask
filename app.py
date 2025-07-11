@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
-"""Flask web server for Blink camera system.
+"""
+Blink Camera Flask Web Interface
 
-This module provides a comprehensive web interface for managing Blink camera systems,
-including live streaming, clip management, thumbnail caching, and real-time notifications.
+A comprehensive web application for managing Blink camera systems with features including:
+- Multi-system support with real-time camera thumbnails
+- Live streaming via RTSP to HLS transcoding
+- Cloud and local clip management with thumbnail generation
+- User settings (temperature units, clip retention, thumbnail sizes)
+- Mobile-optimized responsive interface
+- Background processing for clip downloads and thumbnail generation
 
-Key Features:
-    - Multi-system Blink camera management
-    - Real-time camera thumbnails with intelligent caching
-    - Live streaming via RTSP to HLS transcoding
-    - Cloud and local storage clip management
-    - Two-factor authentication support
-    - RESTful API with 15+ endpoints
-    - Polling-based thumbnail updates
-    - Thread-safe operations with dedicated Blink connection
+Main components:
+- Flask web server with RESTful API
+- Async Blink connection management
+- HLS stream manager for live video
+- Intelligent caching with configurable retention
+- Thread-safe operations with proper cleanup
 
-Architecture:
-    - Flask web framework with responsive templates
-    - Dedicated thread for all Blink API operations
-    - FIFO caching with configurable limits
-    - FFmpeg integration for video processing
-    - Click-triggered polling for thumbnail updates
+Author: Fredderic Devernay
+License: MIT
 """
 
 import atexit
@@ -38,9 +37,6 @@ from typing import (
     Protocol,
     TypedDict,
 )
-
-# Add the blinkpy directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "blinkpy"))
 
 from flask import (
     Flask,
@@ -638,9 +634,17 @@ def require_blink() -> tuple[ApiResponse, int] | None:
     Returns:
         None if Blink is available, error response tuple if not
     """
-    if blink is None or not blink.available:
+    if blink is None:
         return create_api_response(
-            success=False, error="Blink not available", status_code=500
+            success=False,
+            error="Blink system not initialized. Log out if error persists.",
+            status_code=500,
+        )
+    if not blink.available:
+        return create_api_response(
+            success=False,
+            error="Authentication failed. Log out if error persists.",
+            status_code=401,
         )
     return None
 
@@ -728,18 +732,12 @@ http_session.mount("https://", adapter)
 # Standard thread management
 executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="blink-bg-")
 
-# Stream management
-stream_config = StreamConfig(
-    segment_time=Config.HLS_SEGMENT_TIME,
-    list_size=Config.HLS_LIST_SIZE,
-    timeout=Config.FFMPEG_TIMEOUT,
-    idle_timeout=Config.STREAM_IDLE_TIMEOUT,
-)
-stream_manager = StreamManager(stream_config)
-
-# Blink connection and SSE imports moved to top
+# Blink connection - always needed
 blink_connection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
 blink: Blink | None = None
+
+# Stream management - only initialized when running server
+stream_manager = None
 # Cache configuration - will be set from command line
 CACHE_DIR = "cache"  # Default cache directory, overridden by Flask config
 CREDENTIALS_FILE = None  # Path to encrypted credentials file, set in get_cache_paths()
@@ -762,18 +760,25 @@ def initialize_cache_paths() -> None:
 
     Side Effects:
         Updates global variables: CACHE_DIR, CREDENTIALS_FILE,
-        THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR
+        THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR, SETTINGS_FILE
     """
-    global CACHE_DIR, CREDENTIALS_FILE, THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR
+    global \
+        CACHE_DIR, \
+        CREDENTIALS_FILE, \
+        THUMBNAIL_CACHE_DIR, \
+        CLIPS_CACHE_DIR, \
+        SETTINGS_FILE
     cache_dir = Path(app.config.get("CACHE_DIR", "cache"))
     CACHE_DIR = str(cache_dir)
     CREDENTIALS_FILE = str(cache_dir / "blink.json")
     THUMBNAIL_CACHE_DIR = str(cache_dir / "thumbnails")
     CLIPS_CACHE_DIR = str(cache_dir / "clips")
+    SETTINGS_FILE = str(cache_dir / "settings.json")
 
 
-# Legacy cache size constant for reference
+# Cache configuration
 CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
+SETTINGS_FILE = None  # Path to settings file, set in initialize_cache_paths()
 
 # Legacy stream variables removed - now handled by StreamManager
 
@@ -794,9 +799,16 @@ async def initialize_blink(
     """
     global blink
     with error_context("initialize Blink system", AuthenticationError):
-        blink = Blink()
+        from aiohttp import ClientSession
+
+        session = ClientSession()
+        blink = Blink(session=session)
         blink_connection.blink = blink  # Set reference in connection
-        auth = Auth({"username": username, "password": password}, no_prompt=True)
+        auth = Auth(
+            {"username": username, "password": password},
+            no_prompt=True,
+            session=session,
+        )
         blink.auth = auth
         await blink.start()
 
@@ -899,7 +911,7 @@ def create_device_data(
         "type": "camera",
         "name": camera.name,
         "id": camera.camera_id,
-        "thumbnail": f"/api/media/thumbnail/{camera.camera_id}",
+        "thumbnail": f"/api/camera/{camera.camera_id}/thumbnail",
         "last_updated": last_updated,
         "motion_enabled": camera.motion_enabled,
         "battery": camera.battery,
@@ -1143,8 +1155,11 @@ def index() -> Response:
         # Check if Blink is available from saved credentials
         if blink and blink.available:
             session["authenticated"] = True
+            return render_template("index.html")
         else:
             return redirect(url_for("login"))
+    # Clear initializing flag if set
+    session.pop("initializing", None)
     return render_template("index.html")
 
 
@@ -1164,7 +1179,7 @@ def login() -> Response:
                 request.form.get("password", ""), Config.MAX_PASSWORD_LENGTH, "Password"
             )
         except ValueError as e:
-            return render_template("login.html", error=str(e))
+            return render_template("auth.html", is_2fa=False, error=str(e))
 
         # Initialize Blink thread if needed
         blink_connection.start()
@@ -1181,16 +1196,18 @@ def login() -> Response:
                 session["authenticated"] = True
                 return redirect(url_for("index"))
             else:
-                return render_template("login.html", error="Invalid credentials")
+                return render_template(
+                    "auth.html", is_2fa=False, error="Invalid credentials"
+                )
         except AuthenticationError as e:
             return render_template("login.html", error=str(e))
         except Exception as e:
             logger.error(f"Unexpected login error: {e}")
             return render_template(
-                "login.html", error="Login failed. Please try again."
+                "auth.html", is_2fa=False, error="Login failed. Please try again."
             )
 
-    return render_template("login.html")
+    return render_template("auth.html", is_2fa=False)
 
 
 @app.route("/2fa", methods=["GET", "POST"])
@@ -1212,7 +1229,10 @@ def two_factor() -> Response:
             password = session["temp_password"]
         except ValueError as e:
             return render_template(
-                "2fa.html", error=str(e), email=session.get("temp_username", "")
+                "auth.html",
+                is_2fa=True,
+                error=str(e),
+                email=session.get("temp_username", ""),
             )
 
         try:
@@ -1229,14 +1249,31 @@ def two_factor() -> Response:
                 return redirect(url_for("index"))
             else:
                 logger.debug("2FA failed, showing error")
-                return render_template("2fa.html", error="Invalid 2FA code")
+                return render_template(
+                    "auth.html",
+                    is_2fa=True,
+                    error="Invalid 2FA code",
+                    email=session.get("temp_username", ""),
+                )
         except AuthenticationError as e:
-            return render_template("2fa.html", error=str(e))
+            return render_template(
+                "auth.html",
+                is_2fa=True,
+                error=str(e),
+                email=session.get("temp_username", ""),
+            )
         except Exception as e:
             logger.error(f"Unexpected 2FA error: {e}")
-            return render_template("2fa.html", error="2FA verification failed")
+            return render_template(
+                "auth.html",
+                is_2fa=True,
+                error="2FA verification failed",
+                email=session.get("temp_username", ""),
+            )
 
-    return render_template("2fa.html", email=session.get("temp_username", ""))
+    return render_template(
+        "auth.html", is_2fa=True, email=session.get("temp_username", "")
+    )
 
 
 def clear_all_caches():
@@ -1309,7 +1346,7 @@ def logout() -> Response:
     return jsonify(response), status_code
 
 
-@app.route("/api/systems")
+@app.route("/api/system/list")
 def get_systems() -> Response:
     """Get list of available Blink systems.
 
@@ -1339,7 +1376,7 @@ def get_systems() -> Response:
         return jsonify(response), status_code
 
 
-@app.route("/api/devices/<network_id_str>")
+@app.route("/api/system/<network_id_str>/devices")
 def get_devices(network_id_str: str) -> Response:
     try:
         network_id = NetworkId(network_id_str)
@@ -1497,6 +1534,10 @@ def refresh_camera(camera_id_str: str):
         executor.submit(remove_thumbnail_cache)
 
         blink_connection.execute(camera.snap_picture())
+
+        # Refresh camera data to get updated thumbnail URL
+        blink_connection.execute(blink.refresh())
+
         response, status_code = create_api_response(
             success=True, data={"message": "Thumbnail refresh initiated"}
         )
@@ -1544,7 +1585,7 @@ def get_clips():
     return jsonify(response), status_code
 
 
-@app.route("/api/refresh", methods=["POST"])
+@app.route("/api/system/refresh", methods=["POST"])
 def refresh_system():
     """Manually refresh the Blink system."""
     error_response = require_blink()
@@ -1570,6 +1611,45 @@ def refresh_system():
         response, status_code = create_api_response(
             success=False, error=str(e), status_code=500
         )
+        return jsonify(response), status_code
+
+
+@app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
+def process_clip(clip_id_str: str):
+    """Process clip on server (download and generate thumbnail) without sending to client.
+
+    Initiates background processing of clip for thumbnail generation.
+    Used by "Update All" functionality to process clips sequentially.
+
+    Args:
+        clip_id_str: String representation of clip ID (cloud ID or local sync~item format)
+
+    Returns:
+        JSON response indicating processing has started
+    """
+    clip_id, error_response = parse_clip_id(clip_id_str)
+    if error_response is not None:
+        response, status_code = error_response
+        return jsonify(response), status_code
+
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
+        return jsonify(response), status_code
+
+    try:
+        if clip_id.is_local():
+            sync_name, item_id = clip_id.get_local_parts()
+            process_local_clip_background(clip_id, sync_name, item_id)
+        else:
+            process_cloud_clip_background(clip_id)
+
+        response, status_code = create_api_response(
+            success=True, data={"message": "Clip processing initiated"}
+        )
+        return jsonify(response), status_code
+    except Exception as e:
+        response, status_code = handle_api_error(e, f"processing clip {clip_id}")
         return jsonify(response), status_code
 
 
@@ -1776,6 +1856,132 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
     return _download_clip_common(clip_id, filepath, filename, middle_frame=True)
 
 
+def process_local_clip_background(
+    clip_id: ClipId, sync_name: str, item_id: int
+) -> None:
+    """Process local clip in background (download and generate thumbnail).
+
+    Downloads clip from USB storage and generates thumbnail for web interface.
+    Runs in background thread to avoid blocking API responses.
+
+    Args:
+        clip_id: Unique identifier for the clip
+        sync_name: Name of the sync module containing the clip
+        item_id: Local storage item ID
+    """
+
+    def process():
+        try:
+            # Check if already cached
+            cached_clip = clips_download_cache.get(clip_id)
+            if cached_clip is not None and cached_clip["filepath"].exists():
+                return
+
+            # Find sync module and clip item
+            sync_module = blink.sync.get(sync_name)
+            if (
+                not sync_module
+                or not sync_module.local_storage
+                or not sync_module.local_storage_manifest_ready
+            ):
+                return
+
+            manifest = sync_module._local_storage["manifest"]
+            item = next((i for i in manifest if i.id == item_id), None)
+            if not item:
+                return
+
+            # Generate filename and download
+            iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
+            filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
+            filepath = Path(CLIPS_CACHE_DIR) / filename
+
+            if not filepath.exists():
+                blink_connection.execute(item.prepare_download(blink))
+                success = blink_connection.execute(
+                    item.download_video(blink, str(filepath))
+                )
+                if success is not True:
+                    return
+
+            # Cache the clip and generate thumbnail
+            clips_download_cache[clip_id] = {"filepath": filepath, "thumbnail": None}
+            thumbnail_path = generate_clip_thumbnail(
+                filepath, filename, middle_frame=True
+            )
+            if thumbnail_path:
+                cached_clip = clips_download_cache.get(clip_id)
+                if cached_clip is not None:
+                    updated_clip = cached_clip.copy()
+                    updated_clip["thumbnail"] = thumbnail_path
+                    clips_download_cache[clip_id] = updated_clip
+        except Exception as e:
+            logger.error(f"Error processing local clip {clip_id}: {e}")
+
+    executor.submit(process)
+
+
+def process_cloud_clip_background(clip_id: ClipId) -> None:
+    """Process cloud clip in background (download and generate thumbnail).
+
+    Downloads clip from Blink cloud storage and generates thumbnail for web interface.
+    Runs in background thread to avoid blocking API responses.
+
+    Args:
+        clip_id: Unique identifier for the cloud clip
+    """
+
+    def process():
+        try:
+            # Check if already cached
+            cached_clip = clips_download_cache.get(clip_id)
+            if cached_clip is not None and cached_clip["filepath"].exists():
+                return
+
+            # Get clip metadata
+            videos_metadata = blink_connection.execute(
+                blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+            )
+            clip_info = next(
+                (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
+            )
+            if not clip_info:
+                return
+
+            # Generate filename and download
+            created_at = datetime.fromisoformat(
+                clip_info["created_at"].replace("Z", "+00:00")
+            )
+            camera_name = clip_info.get("device_name", "unknown")
+            iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
+            filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
+            filepath = Path(CLIPS_CACHE_DIR) / filename
+
+            if not filepath.exists():
+                media_url = clip_info.get("media")
+                if not media_url:
+                    return
+                response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
+                if response.status_code == 200:
+                    filepath.write_bytes(response.content)
+
+            # Cache the clip and generate thumbnail
+            clips_download_cache[clip_id] = {"filepath": filepath, "thumbnail": None}
+            thumbnail_path = generate_clip_thumbnail(
+                filepath, filename, middle_frame=False
+            )
+            if thumbnail_path:
+                cached_clip = clips_download_cache.get(clip_id)
+                if cached_clip is not None:
+                    updated_clip = cached_clip.copy()
+                    updated_clip["thumbnail"] = thumbnail_path
+                    clips_download_cache[clip_id] = updated_clip
+        except Exception as e:
+            logger.error(f"Error processing cloud clip {clip_id}: {e}")
+
+    executor.submit(process)
+
+
 # Stream management functions moved to StreamManager class
 
 
@@ -1806,7 +2012,12 @@ def get_camera_liveview(camera_id_str: str):
 
         if rtsp_url is not None:
             # Start HLS transcoding
-            hls_url, error_msg = stream_manager.start_stream(str(camera_id), rtsp_url)
+            if stream_manager:
+                hls_url, error_msg = stream_manager.start_stream(
+                    str(camera_id), rtsp_url
+                )
+            else:
+                hls_url, error_msg = None, "Stream manager not initialized"
             if hls_url is not None:
                 response, status_code = create_api_response(
                     success=True, data={"rtsp_url": rtsp_url, "hls_url": hls_url}
@@ -1834,6 +2045,12 @@ def get_camera_liveview(camera_id_str: str):
 @app.route("/api/hls/<camera_id_str>/<path:filename>")
 def serve_hls_file(camera_id_str: str, filename: str):
     """Serve HLS playlist and segment files."""
+    if not stream_manager:
+        response, status_code = create_api_response(
+            success=False, error="Stream manager not available", status_code=503
+        )
+        return jsonify(response), status_code
+
     file_path = stream_manager.get_stream_file(camera_id_str, filename)
 
     if file_path is None:
@@ -1872,7 +2089,40 @@ def get_clip_thumbnail(clip_id_str: str):
     return jsonify(response), status_code
 
 
-@app.route("/api/media/thumbnail/<camera_id_str>")
+@app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
+def get_camera_thumbnail_timestamp(camera_id_str: str):
+    try:
+        camera_id = CameraId(camera_id_str)
+    except ValueError as e:
+        response, status_code = create_api_response(
+            success=False, error=str(e), status_code=400
+        )
+        return jsonify(response), status_code
+
+    """Get camera thumbnail timestamp for polling."""
+    error_response = require_blink()
+    if error_response is not None:
+        response, status_code = error_response
+        return jsonify(response), status_code
+
+    camera = find_camera_by_id(camera_id)
+    if camera is None:
+        response, status_code = create_api_response(
+            success=False, error="Camera not found", status_code=404
+        )
+        return jsonify(response), status_code
+
+    timestamp = extract_thumbnail_timestamp(camera.thumbnail)
+    logger.info(
+        f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
+    )
+    response, status_code = create_api_response(
+        success=True, data={"timestamp": timestamp}
+    )
+    return jsonify(response), status_code
+
+
+@app.route("/api/camera/<camera_id_str>/thumbnail")
 def get_camera_thumbnail(camera_id_str: str):
     try:
         camera_id = CameraId(camera_id_str)
@@ -1949,30 +2199,102 @@ async def load_saved_blink():
     cred_file = Path(CREDENTIALS_FILE)
     if cred_file.exists():
         try:
+            from aiohttp import ClientSession
+
             from blinkpy.helpers.util import json_load
 
             auth_data = await json_load(CREDENTIALS_FILE)
-            auth = Auth(auth_data)
-            blink = Blink(session=None)
+            session = ClientSession()
+            auth = Auth(auth_data, session=session)
+            blink = Blink(session=session)
             blink.auth = auth
             success = await blink.start()
             if success is True:
                 logger.info("Blink system loaded from saved credentials")
                 return True
             else:
-                logger.warning(
-                    "Failed to load Blink system from saved credentials - removing invalid file"
-                )
-                cred_file.unlink()
+                logger.warning("Failed to load Blink system from saved credentials")
+                await session.close()
                 return False
         except Exception as e:
-            logger.warning(
-                f"Could not load Blink system from saved credentials: {e} - removing invalid file"
-            )
-            if cred_file.exists():
-                cred_file.unlink()
+            logger.warning(f"Could not load Blink system from saved credentials: {e}")
+            if "session" in locals():
+                await session.close()
             return False
     return False
+
+
+def dump_cloud_videos(videos):
+    """Dump cloud videos information."""
+    print("\n=== CLOUD VIDEOS ===")
+    try:
+        print(f"Found {len(videos)} cloud videos:")
+        for video in videos:
+            print(f"  - {video}")
+    except Exception as e:
+        print(f"Error processing cloud videos: {e}")
+
+
+def dump_blink_system_info():
+    """Dump comprehensive Blink system information."""
+    if not blink or not blink.available:
+        print("ERROR: Blink system not available")
+        return
+
+    print("=== BLINK SYSTEM DUMP ===")
+
+    # Basic system info
+    print(f"Account ID: {blink.account_id}")
+    print(f"Client ID: {blink.client_id}")
+    print(f"Available: {blink.available}")
+    print(f"Auth data: {blink.auth.data}")
+    print(f"Last refresh: {blink.last_refresh}")
+    print(f"Refresh rate: {blink.refresh_rate}")
+    print(f"Motion interval: {blink.motion_interval}")
+    print(f"Key required: {blink.key_required}")
+    print(f"Network IDs: {blink.network_ids}")
+    print(f"Networks: {blink.networks}")
+    print(f"Version: {blink.version}")
+    print("Homescreen:")
+    import json
+
+    print(json.dumps(blink.homescreen, indent=2))
+
+    # Sync modules
+    print(f"\n=== SYNC MODULES ({len(blink.sync)}) ===")
+    for sync_name, sync in blink.sync.items():
+        print(f"\n--- Sync Module: {sync_name} ---")
+        print(f"Attributes: {sync.attributes}")
+        print(f"Network Info: {sync.network_info}")
+        print(f"Summary: {sync.summary}")
+        print(f"Status: {sync.status}")
+        print(f"Online: {sync.online}")
+        print(f"Armed: {sync.arm}")
+        print(f"Cameras: {list(sync.cameras.keys())}")
+
+        # Local storage info
+        print(f"Local storage enabled: {sync._local_storage['enabled']}")
+        print(f"Local storage compatible: {sync._local_storage['compatible']}")
+        print(f"Local storage status: {sync._local_storage['status']}")
+        print(f"Local storage manifest ready: {sync.local_storage_manifest_ready}")
+
+        if sync.local_storage and sync.local_storage_manifest_ready:
+            manifest = sync._local_storage.get("manifest", [])
+            print(f"Local storage clips ({len(manifest)}):")
+            for item in manifest:
+                print(
+                    f"  - ID: {item.id}, Camera: {item.name}, Created: {item.created_at}, Size: {item.size}"
+                )
+
+    # All cameras
+    print(f"\n=== CAMERAS ({len(blink.cameras)}) ===")
+    for camera_name, camera in blink.cameras.items():
+        print(f"\n--- Camera: {camera_name} ---")
+        print(f"Attributes: {camera.attributes}")
+
+    print("\n=== CLOUD VIDEOS (see separate dump) ===")
+
+    print("\n=== END DUMP ===")
 
 
 def startup() -> None:
@@ -2001,6 +2323,8 @@ def startup() -> None:
         If no valid credentials found, user must login via web interface.
         All errors are logged but don't prevent application startup.
     """
+    global stream_manager
+
     try:
         # Initialize cache paths
         initialize_cache_paths()
@@ -2012,6 +2336,15 @@ def startup() -> None:
 
         # Setup logging with rotation in cache directory
         setup_logging()
+
+        # Initialize stream manager for server mode
+        stream_config = StreamConfig(
+            segment_time=Config.HLS_SEGMENT_TIME,
+            list_size=Config.HLS_LIST_SIZE,
+            timeout=Config.FFMPEG_TIMEOUT,
+            idle_timeout=Config.STREAM_IDLE_TIMEOUT,
+        )
+        stream_manager = StreamManager(stream_config)
 
         # Load existing thumbnails from cache
         load_thumbnail_cache()
@@ -2028,13 +2361,12 @@ def startup() -> None:
                 logger.info(
                     "No valid saved credentials found - user will need to login"
                 )
+            elif logger.isEnabledFor(logging.INFO):
+                # Dump system info if info logging is enabled
+                blink_connection.execute(dump_blink_system_info())
         except Exception as e:
             logger.error(f"Error loading saved Blink credentials: {e}")
-            # Clear invalid credentials file
-            cred_file = Path(CREDENTIALS_FILE)
-            if cred_file.exists():
-                cred_file.unlink()
-                logger.info("Removed invalid credentials file")
+            logger.info("Credentials preserved - log out if error persists")
     except Exception as e:
         logger.warning(f"Could not initialize Blink system on startup: {e}")
 
@@ -2373,6 +2705,76 @@ def load_clips_cache() -> None:
 # Removed generate_thumbnail_async - thumbnails only generated on clip download
 
 
+@app.route("/api/settings", methods=["GET", "POST"])
+def settings():
+    """Get or save application settings.
+
+    GET: Returns current user settings (temperature units, clip retention, etc.)
+    POST: Updates settings with provided JSON data
+
+    Settings are persisted to cache/settings.json and survive logout/restart.
+    """
+    if request.method == "GET":
+        try:
+            settings_file = Path(SETTINGS_FILE)
+            if settings_file.exists():
+                import json
+
+                with open(settings_file) as f:
+                    settings_data = json.load(f)
+            else:
+                settings_data = {
+                    "temperatureUnits": "celsius",
+                    "cloudClipRetention": "30",
+                    "localClipRetention": "never",
+                    "clipThumbnailSize": "medium",
+                }
+
+            response, status_code = create_api_response(
+                success=True, data=settings_data
+            )
+            return jsonify(response), status_code
+        except Exception as e:
+            response, status_code = handle_api_error(e, "loading settings")
+            return jsonify(response), status_code
+
+    else:  # POST
+        try:
+            data = request.get_json()
+            if not isinstance(data, dict):
+                response, status_code = create_api_response(
+                    success=False, error="Invalid JSON data", status_code=400
+                )
+                return jsonify(response), status_code
+
+            # Load existing settings
+            settings_file = Path(SETTINGS_FILE)
+            if settings_file.exists():
+                import json
+
+                with open(settings_file) as f:
+                    settings_data = json.load(f)
+            else:
+                settings_data = {}
+
+            # Update settings
+            settings_data.update(data)
+
+            # Save settings
+            import json
+
+            with open(settings_file, "w") as f:
+                json.dump(settings_data, f, indent=2)
+
+            response, status_code = create_api_response(
+                success=True, data={"message": "Settings saved"}
+            )
+            return jsonify(response), status_code
+        except Exception as e:
+            response, status_code = handle_api_error(e, "saving settings")
+            return jsonify(response), status_code
+
+
 @app.route("/api/clip/<clip_id_str>/thumbnail/check")
 def check_clip_thumbnail(clip_id_str: str):
     """Check if thumbnail is available for clip."""
@@ -2398,6 +2800,16 @@ def check_clip_thumbnail(clip_id_str: str):
 # Stream cleanup functions moved to StreamManager class
 
 
+async def cleanup_blink_session():
+    """Clean up Blink aiohttp session."""
+    global blink
+    if blink and hasattr(blink, "auth") and hasattr(blink.auth, "session"):
+        try:
+            await blink.auth.session.close()
+        except Exception as e:
+            logger.debug(f"Error closing Blink session: {e}")
+
+
 def cleanup_resources() -> None:
     """Clean up all resources on application shutdown.
 
@@ -2405,21 +2817,77 @@ def cleanup_resources() -> None:
     Terminates the Blink event loop gracefully.
     Called automatically on exit via atexit handler and signal handlers.
     """
-    logger.info("Cleaning up resources...")
+    try:
+        logger.info("Cleaning up resources...")
 
-    # Shutdown executor
-    executor.shutdown(wait=False)
+        # Shutdown executor
+        executor.shutdown(wait=False)
 
-    # Shutdown stream manager
-    stream_manager.shutdown()
+        # Shutdown stream manager if initialized
+        if stream_manager:
+            stream_manager.shutdown()
 
-    # Shutdown Blink connection
-    blink_connection.shutdown()
+        # Clean up Blink session only if connection is active
+        if blink and blink_connection.is_running():
+            try:
+                blink_connection.execute(cleanup_blink_session())
+            except Exception:
+                pass  # Ignore cleanup errors
 
-    # Close HTTP session
-    http_session.close()
+        # Shutdown Blink connection
+        blink_connection.shutdown()
 
-    logger.info("Resource cleanup completed")
+        # Close HTTP session
+        try:
+            http_session.close()
+        except Exception:
+            pass  # Ignore close errors
+
+        logger.info("Resource cleanup completed")
+    except Exception:
+        pass  # Ignore all cleanup errors during shutdown
+
+
+def handle_dump_system() -> None:
+    """Handle dump-system command line option."""
+    initialize_cache_paths()
+
+    cred_file = Path(CREDENTIALS_FILE)
+    if not cred_file.exists():
+        print("ERROR: No saved credentials found.")
+        print("Please start the server and login first to save credentials.")
+        sys.exit(1)
+
+    blink_connection.start()
+    try:
+        success = blink_connection.execute(load_saved_blink())
+        if success:
+            # Update local storage manifests first
+            for sync_name, sync in blink.sync.items():
+                if sync.local_storage:
+                    blink_connection.execute(sync.update_local_storage_manifest())
+
+            # Get cloud videos in blink thread
+            videos = blink_connection.execute(blink.get_videos_metadata(stop=50))
+
+            # Dump system info (non-async)
+            dump_blink_system_info()
+
+            # Dump cloud videos
+            dump_cloud_videos(videos)
+
+            print("System dump completed successfully.")
+        else:
+            print("ERROR: Failed to load Blink system from saved credentials.")
+            sys.exit(1)
+    except Exception as e:
+        print(f"ERROR: {e}")
+        sys.exit(1)
+    finally:
+        # Clean up Blink session and shutdown connection
+        if blink:
+            blink_connection.execute(cleanup_blink_session())
+        blink_connection.shutdown()
 
 
 def signal_handler(signum: int, frame: Any) -> None:
@@ -2437,15 +2905,7 @@ def signal_handler(signum: int, frame: Any) -> None:
     sys.exit(0)
 
 
-# Register cleanup handlers
-atexit.register(cleanup_resources)
-signal.signal(signal.SIGTERM, signal_handler)
-signal.signal(signal.SIGINT, signal_handler)
-
 # LRUCache automatically handles eviction, no manual cleanup needed
-
-# Initialize on startup
-startup()
 
 
 def main() -> None:
@@ -2457,7 +2917,7 @@ def main() -> None:
         "--host", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)"
     )
     parser.add_argument(
-        "--port", type=int, default=5000, help="Port to bind to (default: 5000)"
+        "--port", type=int, default=5001, help="Port to bind to (default: 5001)"
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument(
@@ -2471,6 +2931,11 @@ def main() -> None:
         default="cache",
         help="Cache directory for credentials, thumbnails, and clips (default: cache)",
     )
+    parser.add_argument(
+        "--dump-system",
+        action="store_true",
+        help="Dump Blink system information and exit (requires saved credentials)",
+    )
 
     args = parser.parse_args()
 
@@ -2483,6 +2948,18 @@ def main() -> None:
     logging.getLogger("blinkpy").setLevel(log_level)
     logging.getLogger("werkzeug").setLevel(log_level)
     logging.getLogger("flask").setLevel(log_level)
+
+    # Handle dump-system option
+    if args.dump_system:
+        handle_dump_system()
+        sys.exit(0)
+
+    # Register cleanup handlers and initialize for server mode
+    atexit.register(cleanup_resources)
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    startup()
 
     try:
         app.run(debug=args.debug, host=args.host, port=args.port)

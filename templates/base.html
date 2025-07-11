@@ -28,7 +28,7 @@
         .header {
             background: white;
             border-bottom: 1px solid #e0e0e0;
-            padding: 20px;
+            padding: 12px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -37,8 +37,8 @@
         .nav-buttons {
             display: flex;
             justify-content: center;
-            gap: 40px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 12px;
         }
 
         .nav-button {
@@ -48,8 +48,8 @@
             background: none;
             border: none;
             cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 6px;
+            border-radius: 6px;
             transition: background-color 0.2s;
         }
 
@@ -62,12 +62,12 @@
         }
 
         .nav-icon {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            margin-bottom: 3px;
         }
 
         .nav-text {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 500;
         }
 
@@ -97,14 +97,14 @@
         }
 
         .content {
-            padding: 20px;
-            padding-bottom: 100px;
+            padding: 12px;
+            padding-bottom: 80px;
         }
 
         .device-list {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
 
         .device-card {
@@ -137,13 +137,13 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 15px;
+            padding: 10px;
         }
 
         .camera-name {
             color: white;
             font-weight: 600;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .camera-bottom {
@@ -154,7 +154,7 @@
 
         .camera-time {
             color: white;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .kebab-btn {
@@ -168,7 +168,7 @@
         }
 
         .sync-module-card {
-            padding: 20px;
+            padding: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -176,7 +176,7 @@
 
         .sync-module-name {
             font-weight: 600;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .status-badge {
@@ -205,7 +205,7 @@
             max-width: 800px;
             background: white;
             border-top: 1px solid #e0e0e0;
-            padding: 20px;
+            padding: 12px;
             display: flex;
             justify-content: center;
         }
@@ -222,10 +222,10 @@
         .arm-btn {
             background: none;
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 16px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
             transition: background-color 0.2s;
         }
@@ -419,7 +419,7 @@
         .clips-list {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 12px;
         }
 
         .day-group {
@@ -431,14 +431,15 @@
 
         .day-header {
             background: #f8f8f8;
-            padding: 15px 20px;
+            padding: 10px 12px;
             font-weight: 600;
+            font-size: 14px;
             border-bottom: 1px solid #e0e0e0;
         }
 
         .clip-item {
             display: flex;
-            padding: 15px 20px;
+            padding: 10px 15px;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
         }
@@ -452,13 +453,31 @@
         }
 
         .clip-thumbnail {
-            width: 80px;
-            height: 60px;
+            width: 60px;
+            height: 45px;
             background: #000;
-            border-radius: 8px;
-            margin-right: 15px;
+            border-radius: 6px;
+            margin-right: 12px;
             object-fit: cover;
+            transition: all 0.2s ease;
         }
+
+        .clip-thumbnail.size-small {
+            width: 60px;
+            height: 45px;
+        }
+
+        .clip-thumbnail.size-medium {
+            width: 120px;
+            height: 90px;
+        }
+
+        .clip-thumbnail.size-large {
+            width: 240px;
+            height: 180px;
+        }
+
+
 
         .clip-info {
             flex: 1;
@@ -466,22 +485,23 @@
 
         .clip-camera {
             font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 14px;
+            margin-bottom: 3px;
         }
 
         .clip-system {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .clip-time {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
         }
 
         .clip-event {
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
         }
 
@@ -501,10 +521,10 @@
         .storage-btn {
             background: none;
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 16px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
             transition: background-color 0.2s;
         }
@@ -546,7 +566,7 @@
             left: 0;
             right: 0;
             background: white;
-            padding: 20px;
+            padding: 12px;
             border-top: 1px solid #e0e0e0;
             display: flex;
             justify-content: center;

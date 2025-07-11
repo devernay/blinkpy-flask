@@ -54,6 +54,42 @@
     <!-- Settings View -->
     <div id="settings-view" class="view" style="display: none;">
         <div class="settings-list">
+            <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Temperature Units</span>
+                <select id="temperature-units" onchange="saveSetting('temperatureUnits', this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                    <option value="celsius">Celsius (°C)</option>
+                    <option value="fahrenheit">Fahrenheit (°F)</option>
+                </select>
+            </div>
+            <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Auto Delete Cloud Clips After</span>
+                <select id="cloud-clip-retention" onchange="saveSetting('cloudClipRetention', this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                    <option value="60">60 days</option>
+                    <option value="30">30 days</option>
+                    <option value="14">14 days</option>
+                    <option value="7">7 days</option>
+                    <option value="3">3 days</option>
+                </select>
+            </div>
+            <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Auto Delete Local Clips After</span>
+                <select id="local-clip-retention" onchange="saveSetting('localClipRetention', this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                    <option value="never">Never</option>
+                    <option value="60">60 days</option>
+                    <option value="30">30 days</option>
+                    <option value="14">14 days</option>
+                    <option value="7">7 days</option>
+                    <option value="3">3 days</option>
+                </select>
+            </div>
+            <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Clip Thumbnail Size</span>
+                <select id="clip-thumbnail-size" onchange="saveSetting('clipThumbnailSize', this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                </select>
+            </div>
             <button class="settings-item" onclick="clearCache()">Clear Cache</button>
             <button class="settings-item danger" onclick="confirmLogout()">Log Out</button>
         </div>
@@ -150,6 +186,7 @@ let currentCameraId = null;
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     loadSystems();
+    loadSettings();
 });
 
 function showView(viewName) {
@@ -209,11 +246,18 @@ function showView(viewName) {
     } else {
         stopThumbnailPolling();
     }
+
+    // Start age updates for home view
+    if (viewName === 'home') {
+        startAgeUpdates();
+    } else {
+        stopAgeUpdates();
+    }
 }
 
 async function loadSystems() {
     try {
-        const response = await fetch('/api/systems');
+        const response = await fetch('/api/system/list');
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -241,7 +285,7 @@ async function loadSystems() {
             console.error('Failed to load systems:', data.error);
             document.getElementById('device-list').innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #d32f2f;">
-                    Error: ${data.error}
+                    ${data.error}
                 </div>
             `;
         }
@@ -266,7 +310,7 @@ async function loadDevices() {
     updateArmButton();
 
     try {
-        const response = await fetch(`/api/devices/${networkId}`);
+        const response = await fetch(`/api/system/${networkId}/devices`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -280,27 +324,40 @@ async function loadDevices() {
     }
 }
 
-function renderDevices() {
+async function renderDevices() {
     const container = document.getElementById('device-list');
     container.innerHTML = '';
 
-    devices.forEach(device => {
+    for (const device of devices) {
         if (device.type === 'camera') {
-            const cameraCard = createCameraCard(device);
+            const cameraCard = await createCameraCard(device);
             container.appendChild(cameraCard);
         } else if (device.type === 'sync_module') {
             const syncCard = createSyncModuleCard(device);
             container.appendChild(syncCard);
         }
-    });
+    }
 }
 
-function createCameraCard(camera) {
+async function createCameraCard(camera) {
     const card = document.createElement('div');
     card.className = 'device-card camera-card';
 
+    let thumbnailUrl = camera.thumbnail;
+    if (thumbnailUrl) {
+        try {
+            const response = await fetch(`/api/camera/${camera.id}/thumbnail/timestamp`);
+            const data = await response.json();
+            if (response.ok && data.success) {
+                thumbnailUrl = `${camera.thumbnail}?ts=${data.data.timestamp}`;
+            }
+        } catch (error) {
+            console.error('Error fetching timestamp for camera', camera.id, error);
+        }
+    }
+
     card.innerHTML = `
-        ${camera.thumbnail ? `<img src="${camera.thumbnail}" class="camera-thumbnail" alt="${camera.name}">` : ''}
+        ${thumbnailUrl ? `<img src="${thumbnailUrl}" class="camera-thumbnail" alt="${camera.name}">` : ''}
         <div class="camera-overlay">
             <div class="camera-name">${camera.name}</div>
             <button class="play-btn" onclick="showLiveView('${camera.id}', '${camera.name}')">▶</button>
@@ -578,6 +635,39 @@ function renderClips(clipsData) {
     const container = document.getElementById('clips-list');
     container.innerHTML = '';
 
+    // Add Update button for local storage
+    const storageType = document.querySelector('.storage-btn.active').textContent.toLowerCase().includes('local') ? 'local' : 'cloud';
+    if (storageType === 'local' && clipsData.length > 0) {
+        // Count clips without thumbnails
+        let missingCount = 0;
+        clipsData.forEach(dayGroup => {
+            dayGroup.clips.forEach(clip => {
+                if (!clip.thumbnail && clip.id.includes('~')) {
+                    missingCount++;
+                }
+            });
+        });
+
+        if (missingCount > 0) {
+            const downloadAllBtn = document.createElement('div');
+            downloadAllBtn.innerHTML = `
+                <button class="download-all-btn" onclick="downloadAllLocalClips()" style="
+                    width: 100%;
+                    padding: 15px;
+                    background: #007AFF;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    margin-bottom: 20px;
+                ">Update ${missingCount} Clip${missingCount !== 1 ? 's' : ''}</button>
+            `;
+            container.appendChild(downloadAllBtn);
+        }
+    }
+
     clipsData.forEach(dayGroup => {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day-group';
@@ -593,8 +683,11 @@ function renderClips(clipsData) {
             clipDiv.className = 'clip-item';
             clipDiv.onclick = () => playClip(clip);
 
+            // Apply current thumbnail size setting to new elements
+            // Size classes: size-small (60x45), size-medium (120x90), size-large (240x180)
+            const thumbnailSize = getCurrentThumbnailSize();
             clipDiv.innerHTML = `
-                ${clip.thumbnail ? `<img src="${clip.thumbnail}" class="clip-thumbnail" alt="${clip.camera_name}" data-clip-id="${clip.id}">` : `<div class="clip-thumbnail clip-placeholder" data-clip-id="${clip.id}"><div class="play-icon">▶</div></div>`}
+                ${clip.thumbnail ? `<img src="${clip.thumbnail}" class="clip-thumbnail size-${thumbnailSize}" alt="${clip.camera_name}" data-clip-id="${clip.id}">` : `<div class="clip-thumbnail clip-placeholder size-${thumbnailSize}" data-clip-id="${clip.id}"><div class="play-icon">▶</div></div>`}
                 <div class="clip-info">
                     <div class="clip-camera">${clip.camera_name}</div>
                     <div class="clip-system">${clip.system_name}</div>
@@ -611,7 +704,7 @@ function renderClips(clipsData) {
 }
 
 async function playClip(clip) {
-    const isLocalClip = clip.id.includes(':');
+    const isLocalClip = clip.id.includes('~');
 
     // Show loading modal
     const loadingModal = document.createElement('div');
@@ -644,7 +737,7 @@ async function playClip(clip) {
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
-                        <h2>${clip.camera_name} - ${clip.time}</h2>
+                        <h2 style="font-size: 16px; font-weight: 600;">${clip.camera_name} - ${formatClipDate(clip)} - ${clip.time}</h2>
                         <button class="close-btn" onclick="closeVideoModal(this)">&times;</button>
                     </div>
                     <video controls style="width: 100%; border-radius: 8px;">
@@ -654,51 +747,8 @@ async function playClip(clip) {
                 </div>
             `;
             document.body.appendChild(modal);
-            // Start thumbnail polling for this clip
-            console.log('Attempting to start thumbnail polling for:', clip.id);
-            if (window.startClipThumbnailPolling) {
-                console.log('startClipThumbnailPolling function found, calling it');
-                window.startClipThumbnailPolling(clip.id);
-            } else {
-                console.log('startClipThumbnailPolling function not found');
-                // Define polling inline since clips.html isn't loaded
-                setTimeout(() => {
-                    console.log('Starting inline polling for:', clip.id);
-                    let attempts = 0;
-                    const maxAttempts = 10;
-                    const interval = setInterval(() => {
-                        attempts++;
-                        console.log(`Polling attempt ${attempts}/${maxAttempts} for clip:`, clip.id);
-                        fetch(`/api/clip/${clip.id}/thumbnail/check`)
-                            .then(response => response.json())
-                            .then(data => {
-                                console.log('Thumbnail check result:', data);
-                                if (data.success && data.data.available) {
-                                    console.log('Thumbnail available, updating UI');
-                                    // Find and update thumbnail
-                                    const clipElement = document.querySelector(`[data-clip-id="${clip.id}"]`);
-                                    if (clipElement && clipElement.tagName === 'IMG') {
-                                        clipElement.src = data.data.url;
-                                    } else if (clipElement && clipElement.classList.contains('clip-placeholder')) {
-                                        const img = document.createElement('img');
-                                        img.src = data.data.url;
-                                        img.className = 'clip-thumbnail';
-                                        img.setAttribute('data-clip-id', clip.id);
-                                        clipElement.parentNode.replaceChild(img, clipElement);
-                                    }
-                                    clearInterval(interval);
-                                } else if (attempts >= maxAttempts) {
-                                    console.log('Max polling attempts reached');
-                                    clearInterval(interval);
-                                }
-                            })
-                            .catch(error => {
-                                console.log('Polling error:', error);
-                                if (attempts >= maxAttempts) clearInterval(interval);
-                            });
-                    }, 2000);
-                }, 1000);
-            }
+            // Start thumbnail polling for this specific clip
+            startClipThumbnailPolling(clip.id);
         } else {
             loadingModal.remove();
             const error = await response.json();
@@ -745,7 +795,7 @@ async function clearCache() {
         if (response.ok) {
             // Invalidate images and videos by adding timestamp to force reload
             const timestamp = Date.now();
-            document.querySelectorAll('img[src*="/api/media/thumbnail/"], img[src*="/api/clip/"], video[src*="/api/clip/"]').forEach(media => {
+            document.querySelectorAll('img[src*="/api/camera/"], img[src*="/api/clip/"], video[src*="/api/clip/"]').forEach(media => {
                 const url = new URL(media.src, window.location.origin);
                 url.searchParams.set('_t', timestamp);
                 media.src = url.toString();
@@ -787,39 +837,63 @@ async function performLogout() {
 }
 
 let thumbnailPollingInterval = null;
+let ageUpdateInterval = null;
+
+// Track clips that are being processed for thumbnails
+let clipsBeingProcessed = new Set();
+
+function extractTimestamp(url) {
+    if (!url) return 0;
+    const match = url.match(/[?&]ts=([0-9]+)/);
+    return match ? parseInt(match[1]) : 0;
+}
 
 function startThumbnailPolling() {
-    if (thumbnailPollingInterval) return;
+    // Don't start general polling - only poll for specific clips after download
+    // This prevents unnecessary API calls for clips that haven't been downloaded
+}
 
-    thumbnailPollingInterval = setInterval(async () => {
-        const placeholders = document.querySelectorAll('.clip-placeholder[data-clip-id]');
+function startClipThumbnailPolling(clipId) {
+    if (clipsBeingProcessed.has(clipId)) return;
 
-        for (const placeholder of placeholders) {
-            const clipId = placeholder.getAttribute('data-clip-id');
-            try {
-                const response = await fetch(`/api/clip/${clipId}/thumbnail/check`);
-                const data = await response.json();
+    clipsBeingProcessed.add(clipId);
+    let attempts = 0;
+    const maxAttempts = 15;
 
-                if (data.available) {
-                    // Replace placeholder with thumbnail
+    const pollInterval = setInterval(async () => {
+        attempts++;
+
+        try {
+            const response = await fetch(`/api/clip/${clipId}/thumbnail/check`);
+            const data = await response.json();
+
+            if (data.success && data.data.available) {
+                // Replace placeholder with thumbnail
+                const placeholder = document.querySelector(`[data-clip-id="${clipId}"]`);
+                if (placeholder && placeholder.classList.contains('clip-placeholder')) {
                     const img = document.createElement('img');
-                    img.src = data.url;
+                    img.src = data.data.url;
                     img.className = 'clip-thumbnail';
                     img.alt = 'Clip thumbnail';
                     img.setAttribute('data-clip-id', clipId);
 
                     placeholder.parentNode.replaceChild(img, placeholder);
                 }
-            } catch (error) {
-                console.error('Error checking thumbnail:', error);
+
+                clearInterval(pollInterval);
+                clipsBeingProcessed.delete(clipId);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                clipsBeingProcessed.delete(clipId);
+            }
+        } catch (error) {
+            console.error('Error checking thumbnail:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                clipsBeingProcessed.delete(clipId);
             }
         }
-
-        // Stop polling if no more placeholders
-        if (placeholders.length === 0) {
-            stopThumbnailPolling();
-        }
-    }, 2000); // Check every 2 seconds
+    }, 2000);
 }
 
 function stopThumbnailPolling() {
@@ -827,6 +901,271 @@ function stopThumbnailPolling() {
         clearInterval(thumbnailPollingInterval);
         thumbnailPollingInterval = null;
     }
+}
+
+function startAgeUpdates() {
+    // Start periodic updates of thumbnail age displays ("5m ago", "2h ago", etc.)
+    // Only runs on home view to show how old camera thumbnails are
+    if (ageUpdateInterval) return;
+
+    ageUpdateInterval = setInterval(() => {
+        updateAllThumbnailAges();
+    }, 60000); // Update every minute
+}
+
+function stopAgeUpdates() {
+    if (ageUpdateInterval) {
+        clearInterval(ageUpdateInterval);
+        ageUpdateInterval = null;
+    }
+}
+
+function updateAllThumbnailAges() {
+    document.querySelectorAll('.camera-time').forEach(timeElement => {
+        const cameraCard = timeElement.closest('.camera-card');
+        if (cameraCard) {
+            const img = cameraCard.querySelector('.camera-thumbnail');
+            if (img && img.src) {
+                const timestamp = extractTimestamp(img.src);
+                if (timestamp > 0) {
+                    const age = formatTimestampAge(timestamp);
+                    timeElement.textContent = age;
+                }
+            }
+        }
+    });
+}
+
+function formatTimestampAge(timestamp) {
+    const now = Date.now() / 1000;
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60);
+    const hours = Math.floor(diff / 3600);
+    const days = Math.floor(diff / 86400);
+
+    if (days > 0) {
+        return `${days}d ago`;
+    } else if (hours > 0) {
+        return `${hours}h ago`;
+    } else if (minutes > 0) {
+        return `${minutes}m ago`;
+    } else {
+        return 'Just now';
+    }
+}
+
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const settings = data.data;
+                document.getElementById('temperature-units').value = settings.temperatureUnits || 'celsius';
+                document.getElementById('cloud-clip-retention').value = settings.cloudClipRetention || '30';
+                document.getElementById('local-clip-retention').value = settings.localClipRetention || 'never';
+                document.getElementById('clip-thumbnail-size').value = settings.clipThumbnailSize || 'medium';
+                applyThumbnailSize(settings.clipThumbnailSize || 'medium');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+}
+
+async function saveSetting(key, value) {
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ [key]: value })
+        });
+
+        if (response.ok) {
+            console.log(`Setting ${key} saved:`, value);
+
+            // Apply thumbnail size immediately
+            if (key === 'clipThumbnailSize') {
+                applyThumbnailSize(value);
+            }
+        } else {
+            console.error(`Failed to save setting ${key}`);
+        }
+    } catch (error) {
+        console.error(`Error saving setting ${key}:`, error);
+    }
+}
+
+function getCurrentThumbnailSize() {
+    // Get current thumbnail size setting from dropdown
+    // Used when creating new clip elements to apply correct size class
+    const select = document.getElementById('clip-thumbnail-size');
+    return select ? select.value : 'medium';
+}
+
+function applyThumbnailSize(size) {
+    document.querySelectorAll('.clip-thumbnail').forEach(thumbnail => {
+        // Remove existing size classes
+        thumbnail.classList.remove('size-small', 'size-medium', 'size-large');
+        // Add new size class
+        thumbnail.classList.add(`size-${size}`);
+    });
+}
+
+function formatClipDate(clip) {
+    // Extract date from clip data - clips are grouped by day
+    // Find the day group this clip belongs to
+    const dayGroups = document.querySelectorAll('.day-group');
+    for (const dayGroup of dayGroups) {
+        const clipItems = dayGroup.querySelectorAll('.clip-item');
+        for (const clipItem of clipItems) {
+            const clipThumbnail = clipItem.querySelector('.clip-thumbnail');
+            if (clipThumbnail && clipThumbnail.getAttribute('data-clip-id') === clip.id) {
+                const dayHeader = dayGroup.querySelector('.day-header');
+                if (dayHeader) {
+                    // Extract just the date part (before the dash)
+                    const headerText = dayHeader.textContent.trim();
+                    const datePart = headerText.split(' - ')[0];
+                    return datePart;
+                }
+            }
+        }
+    }
+    return 'Unknown Date';
+}
+
+let downloadQueue = [];
+let isDownloading = false;
+
+async function downloadAllLocalClips() {
+    // Scan DOM for local clips missing thumbnails (placeholders)
+    // Local clips are identified by '~' in their ID (sync_name~item_id format)
+    const clipsToDownload = [];
+    document.querySelectorAll('.clip-item').forEach(clipItem => {
+        const thumbnail = clipItem.querySelector('.clip-thumbnail');
+        const clipId = thumbnail?.getAttribute('data-clip-id');
+
+        if (clipId && clipId.includes('~') && thumbnail?.classList.contains('clip-placeholder')) {
+            // Extract clip data from DOM
+            const clipInfo = clipItem.querySelector('.clip-info');
+            const cameraName = clipInfo?.querySelector('.clip-camera')?.textContent;
+            const time = clipInfo?.querySelector('.clip-time')?.textContent;
+
+            clipsToDownload.push({
+                id: clipId,
+                camera_name: cameraName,
+                time: time
+            });
+        }
+    });
+
+    if (clipsToDownload.length === 0) {
+        alert('All local clips are already updated.');
+        return;
+    }
+
+    // Add to download queue
+    downloadQueue = [...clipsToDownload];
+
+    // Update button text
+    const btn = document.querySelector('.download-all-btn');
+    if (btn) {
+        btn.textContent = `Updating ${downloadQueue.length} clips...`;
+        btn.disabled = true;
+    }
+
+    // Start background downloading
+    processDownloadQueue();
+}
+
+async function processDownloadQueue() {
+    if (isDownloading || downloadQueue.length === 0) return;
+
+    isDownloading = true;
+
+    // Process clips sequentially to avoid overwhelming server
+    // Each clip must complete before starting the next one
+    while (downloadQueue.length > 0) {
+        const clip = downloadQueue.shift();
+
+        try {
+            // Trigger server-side processing (download + thumbnail generation)
+            const response = await fetch(`/api/clip/${clip.id}/process`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                // Wait for thumbnail to be generated before continuing
+                await waitForThumbnail(clip.id);
+            }
+        } catch (error) {
+            console.error(`Error processing clip ${clip.id}:`, error);
+        }
+
+        // Update button text
+        const btn = document.querySelector('.download-all-btn');
+        if (btn) {
+            if (downloadQueue.length > 0) {
+                btn.textContent = `Updating ${downloadQueue.length} clips...`;
+            } else {
+                // Recalculate missing clips count
+                let missingCount = 0;
+                document.querySelectorAll('.clip-item').forEach(clipItem => {
+                    const thumbnail = clipItem.querySelector('.clip-thumbnail');
+                    const clipId = thumbnail?.getAttribute('data-clip-id');
+                    if (clipId && clipId.includes('~') && thumbnail?.classList.contains('clip-placeholder')) {
+                        missingCount++;
+                    }
+                });
+
+                if (missingCount > 0) {
+                    btn.textContent = `Update ${missingCount} Clip${missingCount !== 1 ? 's' : ''}`;
+                } else {
+                    btn.style.display = 'none';
+                }
+                btn.disabled = false;
+            }
+        }
+    }
+
+    isDownloading = false;
+}
+
+async function waitForThumbnail(clipId) {
+    return new Promise((resolve) => {
+        const checkThumbnail = async () => {
+            try {
+                const response = await fetch(`/api/clip/${clipId}/thumbnail/check`);
+                const data = await response.json();
+
+                if (data.success && data.data.available) {
+                    // Replace placeholder with thumbnail
+                    const placeholder = document.querySelector(`[data-clip-id="${clipId}"]`);
+                    if (placeholder && placeholder.classList.contains('clip-placeholder')) {
+                        const img = document.createElement('img');
+                        img.src = `/api/clip/${clipId}/thumbnail`;
+                        const thumbnailSize = getCurrentThumbnailSize();
+                        img.className = `clip-thumbnail size-${thumbnailSize}`;
+                        img.alt = 'Clip thumbnail';
+                        img.setAttribute('data-clip-id', clipId);
+
+                        placeholder.parentNode.replaceChild(img, placeholder);
+                    }
+                    resolve();
+                } else {
+                    // Retry after a delay
+                    setTimeout(checkThumbnail, 2000);
+                }
+            } catch (error) {
+                console.error('Error checking thumbnail:', error);
+                resolve(); // Continue even if error
+            }
+        };
+
+        checkThumbnail();
+    });
 }
 
 function showModal(modalId) {
@@ -875,45 +1214,57 @@ function hideThumbnailBanner(cameraId) {
 
 function pollForThumbnailUpdate(cameraId) {
     let pollCount = 0;
-    const maxPolls = 15; // 30 seconds max
+    const maxPolls = 15;
+
+    // Get initial timestamp from thumbnail URL
+    const img = document.querySelector(`[onclick*="${cameraId}"]`)?.closest('.camera-card')?.querySelector('.camera-thumbnail');
+    const lastTimestamp = extractTimestamp(img?.src || '');
 
     const pollInterval = setInterval(async () => {
         pollCount++;
 
         try {
-            // Reload devices to check for updated thumbnail
-            const response = await fetch(`/api/devices/${currentSystem.network_id}`);
+            const response = await fetch(`/api/camera/${cameraId}/thumbnail/timestamp`);
             const data = await response.json();
 
-            if (response.ok) {
-                const camera = data.find(d => d.id === cameraId && d.type === 'camera');
-                if (camera) {
-                    // Check if thumbnail timestamp changed
-                    const currentCamera = devices.find(d => d.id === cameraId);
-                    if (currentCamera && camera.last_updated !== currentCamera.last_updated) {
-                        // Thumbnail updated!
-                        devices = data;
-                        renderDevices();
+            if (response.ok && data.success) {
+                const currentTimestamp = data.data.timestamp;
+                console.log(`Camera ${cameraId} polling - Current: ${lastTimestamp}, Received: ${currentTimestamp}`);
 
-                        showThumbnailBanner(cameraId, 'Thumbnail updated!', 'success');
-                        setTimeout(() => hideThumbnailBanner(cameraId), 1000);
+                if (currentTimestamp > lastTimestamp) {
+                    // Thumbnail updated!
+                    const cameraCard = document.querySelector(`[onclick*="${cameraId}"]`)?.closest('.camera-card');
+                    if (cameraCard) {
+                        const img = cameraCard.querySelector('.camera-thumbnail');
+                        if (img) {
+                            const baseUrl = img.src.split('?')[0];
+                            img.src = `${baseUrl}?ts=${currentTimestamp}`;
+                        }
 
-                        clearInterval(pollInterval);
-                        return;
+                        // Update timestamp display
+                        const timeElement = cameraCard.querySelector('.camera-time');
+                        if (timeElement) {
+                            timeElement.textContent = 'Just now';
+                        }
                     }
+
+                    showThumbnailBanner(cameraId, 'Thumbnail updated!', 'success');
+                    setTimeout(() => hideThumbnailBanner(cameraId), 1000);
+
+                    clearInterval(pollInterval);
+                    return;
                 }
             }
         } catch (error) {
             console.error('Error polling for thumbnail update:', error);
         }
 
-        // Stop polling after max attempts
         if (pollCount >= maxPolls) {
             clearInterval(pollInterval);
             showThumbnailBanner(cameraId, 'Thumbnail refresh timeout', 'error');
             setTimeout(() => hideThumbnailBanner(cameraId), 3000);
         }
-    }, 2000); // Poll every 2 seconds
+    }, 2000);
 }
 </script>
 {% endblock %}

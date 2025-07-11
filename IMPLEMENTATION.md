@@ -93,23 +93,43 @@ While loading the clip, the player window should be shown with a dark gray backg
 
 The full player interface should be shown when the clip is loaded, with a timeline that allows scrubbing the clip, but the video should not play right away: the user has to click on the play button to start it.
 
+On top of the video player it should show the camera name, the date and the time, in a font that has the same size as the font used in the clips list.
+
 The clips (either cloud based or local) should be cached by the server in a FIFO cache, and the cache size should have a default size of 100 clips. Identify clearly the clips cache size in the code. For each clip, a thumbnail should be shown if it is available from the clip cache. The thumbnail for downloaded clips is the middle frame from the clip. Clip thumbnails should be cached in the same directory as the clips. When a thumbnail is not available for a given clip, the thumbnail should show a "play" button. As soon as a clip thumbnail is cached, the "Clips" view should display that thumbnail without having to reload the page.
 
 See blinkpy/blinksync/blinksync.py for the correct way to get the list of local storage clips. Whenever needed, local storage clips can be downloaded using item.prepare_download() followed by item.download_video(), as in blinkpy/blinksync/blinksync.py
 
+On the top of the local storage clips list, there should be a "Update xx Clips" button,  where xx is the number of clip thumbnails missing. Pressing this button will trigger downloading all clips that are not in the server cache, and updating their thumbnails. Those updates should be done in the background (The GUI should remain usable), and thumbnails should be updated as they become available. When all local clip thumbnails are already available, the "Update xx Clips" button should be hidden.
 
-
+When all local clip thumbnails are already available, the "Update All" button should be hidden. When some local clip thumbnails are not available, the text should not say "Update All" but "Update xx Clips", where xx is the number of clip thumbnails missing.
 
 # "Settings" view
 
 The "Settings" view should have:
-- a "Clear cache" button, which will clear the on-disk and in-memory caches for device thumbnails, clips, and clips thumbnails. The corresponding images in the web pages should be invalidated. Stored credentials should not be cleared.
+- "Temperature Units" with the choces "Celsius" or "Fahrenheit".
+- "Auto Delete Cloud Clips After..." with the following choices: 60 days (default), 30 days, 14 days, 7 days, 3 days.
+- "Auto Delete Local Clips After..." with the following choices: Never (default), 60 days, 30 days, 14 days, 7 days, 3 days.
+- "Clip Thumbnail Size" with the following choices: Small, Medium (default), Large.
+- a "Clear Cache" button, which will clear the on-disk and in-memory caches for device thumbnails, clips, and clips thumbnails. The corresponding images in the web pages should be invalidated. Stored credentials should not be cleared.
 - a "Log out" button, which shows a confirmation dialog, and if confirmed resets the stored credential and also executes the same actions as "Clear cache". Once the credentials are reset, the server should show the login page.
+
+The settings should be saved in a settings.json file in the cache. settings.json should not be removed when logging out.
+
+# TODO
+
+- Fix live view
+- add motion_enabled button to each camera in Home view
+- Add camera properties
+  - temperature (celcius or f)
+  - battery voltage
+  - wifi_strength (may be None)
+  - sync_signal_strength (may be None)
+- Continuous live view using a strategy similar to blinkbridge https://github.com/roger-/blinkbridge
+- Pan/tilt control, if it becomes available https://github.com/MattTW/BlinkMonitorProtocol/issues/69
 
 # Code quality improvements
 
 Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
-- Testing and test coverage: No unit tests present
 
 Verify that the following issues have been fixed already:
 - Missing type safety in many places
@@ -140,6 +160,7 @@ Verify that the following issues have been fixed already:
 - Code Organization: Some functions are quite long (e.g., get_devices(), get_clips()) - could benefit from extraction into smaller helper functions
 - Configuration: Some hardcoded values could be moved to Config class
 - Documentation: While comprehensive, some complex functions could use more detailed docstrings
+- Testing and test coverage: No unit tests present
 
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 

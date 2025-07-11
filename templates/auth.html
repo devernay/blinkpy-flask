@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_2fa %}2FA Verification{% else %}Login{% endif %} - Blink Camera System{% endblock %}
+
+{% block content %}
+<div class="login-form">
+    <h1 class="login-title">Blink Camera System</h1>
+
+    {% if is_2fa %}
+    <p style="text-align: center; margin-bottom: 30px; color: #666;">
+        A verification code has been sent to <strong>{{ email }}</strong> or the account's phone number
+    </p>
+    {% endif %}
+
+    <form method="POST">
+        {% if not is_2fa %}
+        <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <input type="email" id="username" name="username" class="form-input" value="{{ username or '' }}" autocomplete="username" data-lpignore="false" placeholder="Blink account email" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-input" value="{{ password or '' }}" autocomplete="current-password" data-lpignore="false" placeholder="Blink account password" required>
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label class="form-label" for="key">Verification Code</label>
+            <input type="text" id="key" name="key" class="form-input" placeholder="Enter code from email or SMS" autocomplete="off" spellcheck="false" required autofocus>
+            <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                Check your email or SMS for the verification code
+            </small>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="login-btn" onclick="showInitializing()">
+            {% if is_2fa %}Verify Code{% else %}Sign In{% endif %}
+        </button>
+
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+    </form>
+
+    {% if is_2fa %}
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="/login" style="color: #007AFF; text-decoration: none; font-size: 14px;">← Back to Login</a>
+    </div>
+    {% endif %}
+</div>
+
+<div id="initializing-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="text-align: center;">
+        <div class="spinner" style="font-size: 48px; margin-bottom: 20px;">⟳</div>
+        <h2>Initializing...</h2>
+        <p style="color: #666;">Please wait while we connect to your Blink system.</p>
+    </div>
+</div>
+
+<script>
+function showInitializing() {
+    document.getElementById('initializing-overlay').style.display = 'flex';
+}
+</script>
+{% endblock %}

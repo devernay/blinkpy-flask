@@ -288,7 +288,7 @@ class TestFlaskApp(unittest.TestCase):
     def test_placeholder_endpoint(self):
         """Test placeholder endpoint."""
         response = self.client.get("/placeholder")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 501)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
         self.assertIn("not yet available", data["error"])
@@ -296,11 +296,11 @@ class TestFlaskApp(unittest.TestCase):
     @patch("app.blink", None)
     def test_api_systems_no_blink(self):
         """Test systems API when Blink not available."""
-        response = self.client.get("/api/systems")
-        self.assertEqual(response.status_code, 200)
+        response = self.client.get("/api/system/list")
+        self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
-        self.assertIn("not available", data["error"])
+        self.assertIn("not initialized", data["error"])
 
     @patch("app.blink")
     @patch("app.blink_connection")
@@ -315,7 +315,7 @@ class TestFlaskApp(unittest.TestCase):
         mock_blink.available = True
         mock_blink.sync = {"Test System": mock_sync}
 
-        response = self.client.get("/api/systems")
+        response = self.client.get("/api/system/list")
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertTrue(data["success"])
@@ -324,8 +324,8 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_api_devices_invalid_network_id(self):
         """Test devices API with invalid network ID."""
-        response = self.client.get("/api/devices/invalid_id")
-        self.assertEqual(response.status_code, 200)
+        response = self.client.get("/api/system/invalid_id/devices")
+        self.assertEqual(response.status_code, 400)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
         self.assertIn("Invalid Network ID format", data["error"])
