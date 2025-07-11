@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Blink Camera Flask Web Interface API",
+    "title": "Blink Flask Web Interface API",
     "description": "RESTful API for managing Blink camera systems with live streaming, clip management, and settings",
     "version": "1.0.0",
     "license": {
@@ -11,12 +11,12 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5000/api",
+      "url": "http://localhost:5000",
       "description": "Local development server"
     }
   ],
   "paths": {
-    "/system/list": {
+    "/api/system/list": {
       "get": {
         "summary": "Get list of available Blink systems",
         "operationId": "getSystemList",
@@ -34,7 +34,7 @@
         }
       }
     },
-    "/system/refresh": {
+    "/api/system/refresh": {
       "post": {
         "summary": "Manually refresh the Blink system data",
         "operationId": "refreshSystem",
@@ -52,7 +52,7 @@
         }
       }
     },
-    "/system/{network_id}/devices": {
+    "/api/system/{network_id}/devices": {
       "get": {
         "summary": "Get devices for a specific Blink system",
         "operationId": "getDevices",
@@ -79,7 +79,7 @@
         }
       }
     },
-    "/system/{network_id}/arm": {
+    "/api/system/{network_id}/arm": {
       "post": {
         "summary": "Arm or disarm a Blink system",
         "operationId": "armSystem",
@@ -119,7 +119,7 @@
         }
       }
     },
-    "/camera/{camera_id}/thumbnail": {
+    "/api/camera/{camera_id}/thumbnail": {
       "get": {
         "summary": "Get camera thumbnail image",
         "operationId": "getCameraThumbnail",
@@ -146,7 +146,7 @@
         }
       }
     },
-    "/camera/{camera_id}/thumbnail/timestamp": {
+    "/api/camera/{camera_id}/thumbnail/timestamp": {
       "get": {
         "summary": "Get camera thumbnail timestamp for polling",
         "operationId": "getThumbnailTimestamp",
@@ -172,7 +172,7 @@
         }
       }
     },
-    "/camera/{camera_id}/refresh": {
+    "/api/camera/{camera_id}/refresh": {
       "post": {
         "summary": "Refresh camera thumbnail",
         "operationId": "refreshCamera",
@@ -198,7 +198,7 @@
         }
       }
     },
-    "/camera/{camera_id}/liveview": {
+    "/api/camera/{camera_id}/liveview": {
       "get": {
         "summary": "Start live stream for camera",
         "operationId": "getLiveView",
@@ -224,7 +224,7 @@
         }
       }
     },
-    "/clips": {
+    "/api/clips": {
       "get": {
         "summary": "Get clips from cloud or local storage",
         "operationId": "getClips",
@@ -254,7 +254,7 @@
         }
       }
     },
-    "/clip/{clip_id}/download": {
+    "/api/clip/{clip_id}/download": {
       "get": {
         "summary": "Download a specific clip",
         "operationId": "downloadClip",
@@ -282,7 +282,7 @@
         }
       }
     },
-    "/clip/{clip_id}/process": {
+    "/api/clip/{clip_id}/process": {
       "post": {
         "summary": "Process clip on server (download and generate thumbnail)",
         "operationId": "processClip",
@@ -308,7 +308,7 @@
         }
       }
     },
-    "/clip/{clip_id}/thumbnail": {
+    "/api/clip/{clip_id}/thumbnail": {
       "get": {
         "summary": "Get clip thumbnail image",
         "operationId": "getClipThumbnail",
@@ -335,7 +335,7 @@
         }
       }
     },
-    "/clip/{clip_id}/thumbnail/check": {
+    "/api/clip/{clip_id}/thumbnail/check": {
       "get": {
         "summary": "Check if thumbnail is available for clip",
         "operationId": "checkClipThumbnail",
@@ -361,7 +361,7 @@
         }
       }
     },
-    "/settings": {
+    "/api/settings": {
       "get": {
         "summary": "Get user settings",
         "operationId": "getSettings",
@@ -417,7 +417,7 @@
         }
       }
     },
-    "/clear-cache": {
+    "/api/clear-cache": {
       "post": {
         "summary": "Clear all caches",
         "operationId": "clearCache",
@@ -435,7 +435,129 @@
         }
       }
     },
-    "/hls/{camera_id}/{filename}": {
+    "/": {
+      "get": {
+        "summary": "Main web interface",
+        "operationId": "getMainPage",
+        "responses": {
+          "200": {
+            "description": "Main HTML page",
+            "content": {
+              "text/html": {
+                "schema": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "get": {
+        "summary": "Login page",
+        "operationId": "getLoginPage",
+        "responses": {
+          "200": {
+            "description": "Login HTML page",
+            "content": {
+              "text/html": {
+                "schema": {"type": "string"}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Process login credentials",
+        "operationId": "processLogin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": {"type": "string"},
+                  "password": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Redirect to 2FA or main page"
+          }
+        }
+      }
+    },
+    "/2fa": {
+      "get": {
+        "summary": "2FA verification page",
+        "operationId": "get2FAPage",
+        "responses": {
+          "200": {
+            "description": "2FA HTML page",
+            "content": {
+              "text/html": {
+                "schema": {"type": "string"}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Process 2FA verification code",
+        "operationId": "process2FA",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["verification_code"],
+                "properties": {
+                  "verification_code": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Redirect to main page or back to 2FA"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "Logout user and clear session",
+        "operationId": "logout",
+        "responses": {
+          "302": {
+            "description": "Redirect to login page"
+          }
+        }
+      }
+    },
+    "/placeholder": {
+      "get": {
+        "summary": "Placeholder image for missing thumbnails",
+        "operationId": "getPlaceholder",
+        "responses": {
+          "200": {
+            "description": "Placeholder image",
+            "content": {
+              "image/svg+xml": {
+                "schema": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hls/{camera_id}/{filename}": {
       "get": {
         "summary": "Serve HLS playlist and segment files",
         "operationId": "getHLSFile",
