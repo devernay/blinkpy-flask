@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Blink Upstream Server API",
+    "title": "Blink Server API",
     "description": "Official Blink cloud service API endpoints used by the blinkpy library",
     "version": "1.0.0",
     "contact": {
@@ -32,14 +32,33 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["email", "password", "unique_id", "device_identifier"],
+                "required": [
+                  "email",
+                  "password",
+                  "unique_id",
+                  "device_identifier"
+                ],
                 "properties": {
-                  "email": {"type": "string"},
-                  "password": {"type": "string"},
-                  "unique_id": {"type": "string"},
-                  "device_identifier": {"type": "string"},
-                  "client_name": {"type": "string", "default": "Computer"},
-                  "reauth": {"type": "boolean", "default": true}
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "unique_id": {
+                    "type": "string"
+                  },
+                  "device_identifier": {
+                    "type": "string"
+                  },
+                  "client_name": {
+                    "type": "string",
+                    "default": "Computer"
+                  },
+                  "reauth": {
+                    "type": "boolean",
+                    "default": true
+                  }
                 }
               }
             }
@@ -50,7 +69,9 @@
             "description": "Login successful",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/LoginResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
               }
             }
           }
@@ -62,9 +83,15 @@
         "summary": "Verify 2FA PIN code",
         "operationId": "verify2FA",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/UserId"},
-          {"$ref": "#/components/parameters/ClientId"}
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/UserId"
+          },
+          {
+            "$ref": "#/components/parameters/ClientId"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -72,16 +99,59 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["pin"],
+                "required": [
+                  "pin"
+                ],
                 "properties": {
-                  "pin": {"type": "string"}
+                  "pin": {
+                    "type": "string"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {"$ref": "#/components/responses/Success"}
+          "200": {
+            "$ref": "#/components/responses/Success"
+          }
+        }
+      }
+    },
+    "/api/v4/account/{account_id}/client/{client_id}/logout": {
+      "post": {
+        "summary": "Logout from Blink servers",
+        "operationId": "logout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/ClientId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "summary": "Get user information",
+        "operationId": "getUser",
+        "responses": {
+          "200": {
+            "description": "User information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -96,7 +166,81 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {"$ref": "#/components/schemas/Network"}
+                  "items": {
+                    "$ref": "#/components/schemas/Network"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/{network_id}": {
+      "get": {
+        "summary": "Get network status information",
+        "operationId": "getNetworkStatus",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Network status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/{network_id}/update": {
+      "post": {
+        "summary": "Request network update",
+        "operationId": "updateNetwork",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Network update command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/{network_id}/syncmodules": {
+      "get": {
+        "summary": "Get sync module information",
+        "operationId": "getSyncModules",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sync modules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyncModule"
+                  }
                 }
               }
             }
@@ -108,13 +252,19 @@
       "get": {
         "summary": "Get homescreen information",
         "operationId": "getHomescreen",
-        "parameters": [{"$ref": "#/components/parameters/AccountId"}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Homescreen data",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/Homescreen"}
+                "schema": {
+                  "$ref": "#/components/schemas/Homescreen"
+                }
               }
             }
           }
@@ -126,15 +276,21 @@
         "summary": "Arm the security system",
         "operationId": "armSystem",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"}
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Arm command initiated",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
               }
             }
           }
@@ -146,193 +302,20 @@
         "summary": "Disarm the security system",
         "operationId": "disarmSystem",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"}
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Disarm command initiated",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/network/{network_id}/cameras": {
-      "get": {
-        "summary": "Get all cameras for network",
-        "operationId": "getCameras",
-        "parameters": [{"$ref": "#/components/parameters/NetworkId"}],
-        "responses": {
-          "200": {
-            "description": "Cameras retrieved successfully",
-            "content": {
-              "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {"$ref": "#/components/schemas/Camera"}
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/network/{network_id}/camera/{camera_id}/thumbnail": {
-      "post": {
-        "summary": "Request new thumbnail capture",
-        "operationId": "requestThumbnail",
-        "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail capture command initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/accounts/{account_id}/networks/{network_id}/cameras/{camera_id}/liveview": {
-      "post": {
-        "summary": "Request live view stream",
-        "operationId": "requestLiveView",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Live view stream initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/LiveViewResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/media/changed": {
-      "get": {
-        "summary": "Get videos/clips since timestamp",
-        "operationId": "getVideos",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {
-            "name": "since",
-            "in": "query",
-            "required": true,
-            "schema": {"type": "string"},
-            "description": "Timestamp in epoch seconds"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {"type": "integer", "default": 0},
-            "description": "Page number for pagination"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Video clips retrieved",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {"$ref": "#/components/schemas/VideoClip"}
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v4/account/{account_id}/client/{client_id}/logout": {
-      "post": {
-        "summary": "Logout from Blink servers",
-        "operationId": "logout",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/ClientId"}
-        ],
-        "responses": {
-          "200": {"$ref": "#/components/responses/Success"}
-        }
-      }
-    },
-    "/user": {
-      "get": {
-        "summary": "Get user information",
-        "operationId": "getUser",
-        "responses": {
-          "200": {
-            "description": "User information",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/User"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/network/{network_id}": {
-      "get": {
-        "summary": "Get network status information",
-        "operationId": "getNetworkStatus",
-        "parameters": [{"$ref": "#/components/parameters/NetworkId"}],
-        "responses": {
-          "200": {
-            "description": "Network status",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/NetworkStatus"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/network/{network_id}/update": {
-      "post": {
-        "summary": "Request network update",
-        "operationId": "updateNetwork",
-        "parameters": [{"$ref": "#/components/parameters/NetworkId"}],
-        "responses": {
-          "200": {
-            "description": "Network update command",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/network/{network_id}/syncmodules": {
-      "get": {
-        "summary": "Get sync module information",
-        "operationId": "getSyncModules",
-        "parameters": [{"$ref": "#/components/parameters/NetworkId"}],
-        "responses": {
-          "200": {
-            "description": "Sync modules",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {"$ref": "#/components/schemas/SyncModule"}
+                  "$ref": "#/components/schemas/CommandResponse"
                 }
               }
             }
@@ -344,13 +327,19 @@
       "get": {
         "summary": "Get system notification configuration",
         "operationId": "getNotificationFlags",
-        "parameters": [{"$ref": "#/components/parameters/AccountId"}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Notification settings",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/NotificationConfig"}
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationConfig"
+                }
               }
             }
           }
@@ -359,7 +348,11 @@
       "post": {
         "summary": "Set system notification flags",
         "operationId": "setNotificationFlags",
-        "parameters": [{"$ref": "#/components/parameters/AccountId"}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -367,14 +360,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "notifications": {"type": "object"}
+                  "notifications": {
+                    "type": "object"
+                  }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {"$ref": "#/components/responses/Success"}
+          "200": {
+            "$ref": "#/components/responses/Success"
+          }
         }
       }
     },
@@ -382,7 +379,11 @@
       "get": {
         "summary": "Get events from sync module",
         "operationId": "getSyncEvents",
-        "parameters": [{"$ref": "#/components/parameters/NetworkId"}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Sync module events",
@@ -390,7 +391,35 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {"$ref": "#/components/schemas/Event"}
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/network/{network_id}/cameras": {
+      "get": {
+        "summary": "Get all cameras for network",
+        "operationId": "getCameras",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cameras retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Camera"
+                  }
                 }
               }
             }
@@ -403,15 +432,21 @@
         "summary": "Get camera configuration",
         "operationId": "getCameraConfig",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Camera configuration",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CameraConfig"}
+                "schema": {
+                  "$ref": "#/components/schemas/CameraConfig"
+                }
               }
             }
           }
@@ -423,19 +458,53 @@
         "summary": "Update camera configuration (Catalina cameras)",
         "operationId": "updateCameraConfig",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"type": "object"}
+              "schema": {
+                "type": "object"
+              }
             }
           }
         },
         "responses": {
-          "200": {"$ref": "#/components/responses/Success"}
+          "200": {
+            "$ref": "#/components/responses/Success"
+          }
+        }
+      }
+    },
+    "/network/{network_id}/camera/{camera_id}/thumbnail": {
+      "post": {
+        "summary": "Request new thumbnail capture",
+        "operationId": "requestThumbnail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail capture command initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -444,15 +513,21 @@
         "summary": "Request new video clip capture",
         "operationId": "requestVideoClip",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Video clip capture command initiated",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
               }
             }
           }
@@ -464,15 +539,21 @@
         "summary": "Get camera sensor information",
         "operationId": "getCameraSensors",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Camera sensor data",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CameraSensors"}
+                "schema": {
+                  "$ref": "#/components/schemas/CameraSensors"
+                }
               }
             }
           }
@@ -484,15 +565,21 @@
         "summary": "Enable motion detection for camera",
         "operationId": "enableMotionDetection",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Motion detection enable command",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
               }
             }
           }
@@ -504,15 +591,50 @@
         "summary": "Disable motion detection for camera",
         "operationId": "disableMotionDetection",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Motion detection disable command",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/accounts/{account_id}/networks/{network_id}/cameras/{camera_id}/liveview": {
+      "post": {
+        "summary": "Request live view stream",
+        "operationId": "requestLiveView",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live view stream initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveViewResponse"
+                }
               }
             }
           }
@@ -524,16 +646,24 @@
         "summary": "Get Owl camera configuration",
         "operationId": "getOwlCameraConfig",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Owl camera configuration",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CameraConfig"}
+                "schema": {
+                  "$ref": "#/components/schemas/CameraConfig"
+                }
               }
             }
           }
@@ -543,37 +673,258 @@
         "summary": "Update Owl camera configuration",
         "operationId": "updateOwlCameraConfig",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {"type": "object"}
+              "schema": {
+                "type": "object"
+              }
             }
           }
         },
         "responses": {
-          "200": {"$ref": "#/components/responses/Success"}
+          "200": {
+            "$ref": "#/components/responses/Success"
+          }
         }
       }
     },
-    "/api/v2/videos/count": {
-      "get": {
-        "summary": "Get total video count",
-        "operationId": "getVideoCount",
+    "/api/v1/accounts/{account_id}/networks/{network_id}/owls/{camera_id}/clip": {
+      "post": {
+        "summary": "Request video clip for Owl camera (Mini)",
+        "operationId": "requestOwlVideoClip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Video count information",
+            "description": "Video clip command initiated",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "count": {"type": "integer"}
-                  }
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/owls/{camera_id}/thumbnail": {
+      "post": {
+        "summary": "Request thumbnail for Owl camera (Mini)",
+        "operationId": "requestOwlThumbnail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail command initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/owls/{camera_id}/liveview": {
+      "post": {
+        "summary": "Request live view for Owl camera (Mini)",
+        "operationId": "requestOwlLiveView",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live view stream initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveViewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/enable": {
+      "post": {
+        "summary": "Enable doorbell camera",
+        "operationId": "enableDoorbellCamera",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Doorbell enable command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/disable": {
+      "post": {
+        "summary": "Disable doorbell camera",
+        "operationId": "disableDoorbellCamera",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Doorbell disable command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/clip": {
+      "post": {
+        "summary": "Request video clip for doorbell camera",
+        "operationId": "requestDoorbellVideoClip",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video clip command initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/thumbnail": {
+      "post": {
+        "summary": "Request thumbnail for doorbell camera",
+        "operationId": "requestDoorbellThumbnail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail command initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/liveview": {
+      "post": {
+        "summary": "Request live view for doorbell camera",
+        "operationId": "requestDoorbellLiveView",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live view stream initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveViewResponse"
                 }
               }
             }
@@ -590,7 +941,132 @@
             "description": "Camera usage statistics",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CameraUsage"}
+                "schema": {
+                  "$ref": "#/components/schemas/CameraUsage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/videos/count": {
+      "get": {
+        "summary": "Get total video count",
+        "operationId": "getVideoCount",
+        "responses": {
+          "200": {
+            "description": "Video count information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{account_id}/media/changed": {
+      "get": {
+        "summary": "Get videos/clips since timestamp",
+        "operationId": "getVideos",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Timestamp in epoch seconds"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Page number for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video clips retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VideoClip"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v3/media/accounts/{account_id}/networks/{network_id}/{product_type}/{camera_id}/thumbnail/thumbnail.jpg": {
+      "get": {
+        "summary": "Get camera thumbnail image (direct media URL)",
+        "operationId": "getMediaThumbnail",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          },
+          {
+            "name": "product_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Camera product type (owl, catalina, etc.)"
+          },
+          {
+            "name": "ts",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Timestamp parameter"
+          },
+          {
+            "name": "ext",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Extension parameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail image",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           }
@@ -602,16 +1078,24 @@
         "summary": "Request creation of local storage manifest",
         "operationId": "requestLocalStorageManifest",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/SyncId"}
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/SyncId"
+          }
         ],
         "responses": {
           "200": {
             "description": "Manifest request response",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
               }
             }
           }
@@ -623,14 +1107,22 @@
         "summary": "Get local storage manifest",
         "operationId": "getLocalStorageManifest",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/SyncId"},
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/SyncId"
+          },
           {
             "name": "manifest_request_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -638,7 +1130,9 @@
             "description": "Local storage manifest",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/LocalStorageManifest"}
+                "schema": {
+                  "$ref": "#/components/schemas/LocalStorageManifest"
+                }
               }
             }
           }
@@ -650,20 +1144,30 @@
         "summary": "Prepare local storage clip for download",
         "operationId": "requestLocalStorageClip",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/SyncId"},
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/SyncId"
+          },
           {
             "name": "manifest_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "clip_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -671,7 +1175,9 @@
             "description": "Clip preparation response",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
               }
             }
           }
@@ -681,20 +1187,30 @@
         "summary": "Download prepared local storage clip",
         "operationId": "downloadLocalStorageClip",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/SyncId"},
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/SyncId"
+          },
           {
             "name": "manifest_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "clip_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -717,20 +1233,30 @@
         "summary": "Delete local storage clip from sync module",
         "operationId": "deleteLocalStorageClip",
         "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/SyncId"},
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/SyncId"
+          },
           {
             "name": "manifest_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "clip_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -738,218 +1264,8 @@
             "description": "Clip deletion confirmation",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/owls/{camera_id}/clip": {
-      "post": {
-        "summary": "Request video clip for Owl camera (Mini)",
-        "operationId": "requestOwlVideoClip",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Video clip command initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/owls/{camera_id}/thumbnail": {
-      "post": {
-        "summary": "Request thumbnail for Owl camera (Mini)",
-        "operationId": "requestOwlThumbnail",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail command initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/owls/{camera_id}/liveview": {
-      "post": {
-        "summary": "Request live view for Owl camera (Mini)",
-        "operationId": "requestOwlLiveView",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Live view stream initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/LiveViewResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/enable": {
-      "post": {
-        "summary": "Enable doorbell camera",
-        "operationId": "enableDoorbellCamera",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Doorbell enable command",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/disable": {
-      "post": {
-        "summary": "Disable doorbell camera",
-        "operationId": "disableDoorbellCamera",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Doorbell disable command",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/clip": {
-      "post": {
-        "summary": "Request video clip for doorbell camera",
-        "operationId": "requestDoorbellVideoClip",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Video clip command initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/thumbnail": {
-      "post": {
-        "summary": "Request thumbnail for doorbell camera",
-        "operationId": "requestDoorbellThumbnail",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail command initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/accounts/{account_id}/networks/{network_id}/doorbells/{camera_id}/liveview": {
-      "post": {
-        "summary": "Request live view for doorbell camera",
-        "operationId": "requestDoorbellLiveView",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"}
-        ],
-        "responses": {
-          "200": {
-            "description": "Live view stream initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/LiveViewResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v3/media/accounts/{account_id}/networks/{network_id}/{product_type}/{camera_id}/thumbnail/thumbnail.jpg": {
-      "get": {
-        "summary": "Get camera thumbnail image (direct media URL)",
-        "operationId": "getMediaThumbnail",
-        "parameters": [
-          {"$ref": "#/components/parameters/AccountId"},
-          {"$ref": "#/components/parameters/NetworkId"},
-          {"$ref": "#/components/parameters/CameraId"},
-          {
-            "name": "product_type",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"},
-            "description": "Camera product type (owl, catalina, etc.)"
-          },
-          {
-            "name": "ts",
-            "in": "query",
-            "required": true,
-            "schema": {"type": "string"},
-            "description": "Timestamp parameter"
-          },
-          {
-            "name": "ext",
-            "in": "query",
-            "schema": {"type": "string"},
-            "description": "Extension parameter"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail image",
-            "content": {
-              "image/jpeg": {
                 "schema": {
-                  "type": "string",
-                  "format": "binary"
+                  "$ref": "#/components/schemas/CommandResponse"
                 }
               }
             }
@@ -962,12 +1278,16 @@
         "summary": "Check command execution status",
         "operationId": "getCommandStatus",
         "parameters": [
-          {"$ref": "#/components/parameters/NetworkId"},
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
           {
             "name": "command_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"}
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -975,7 +1295,9 @@
             "description": "Command status",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/CommandStatus"}
+                "schema": {
+                  "$ref": "#/components/schemas/CommandStatus"
+                }
               }
             }
           }
@@ -995,37 +1317,49 @@
         "name": "account_id",
         "in": "path",
         "required": true,
-        "schema": {"type": "string"}
+        "schema": {
+          "type": "string"
+        }
       },
       "NetworkId": {
         "name": "network_id",
         "in": "path",
         "required": true,
-        "schema": {"type": "string"}
+        "schema": {
+          "type": "string"
+        }
       },
       "CameraId": {
         "name": "camera_id",
         "in": "path",
         "required": true,
-        "schema": {"type": "string"}
+        "schema": {
+          "type": "string"
+        }
       },
       "UserId": {
         "name": "user_id",
         "in": "path",
         "required": true,
-        "schema": {"type": "string"}
+        "schema": {
+          "type": "string"
+        }
       },
       "ClientId": {
         "name": "client_id",
         "in": "path",
         "required": true,
-        "schema": {"type": "string"}
+        "schema": {
+          "type": "string"
+        }
       },
       "SyncId": {
         "name": "sync_id",
         "in": "path",
         "required": true,
-        "schema": {"type": "string"}
+        "schema": {
+          "type": "string"
+        }
       }
     },
     "responses": {
@@ -1036,7 +1370,9 @@
             "schema": {
               "type": "object",
               "properties": {
-                "message": {"type": "string"}
+                "message": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -1047,159 +1383,309 @@
       "LoginResponse": {
         "type": "object",
         "properties": {
-          "account": {"type": "object"},
-          "auth": {"type": "object"},
-          "client": {"type": "object"},
-          "user": {"type": "object"}
+          "account": {
+            "type": "object"
+          },
+          "auth": {
+            "type": "object"
+          },
+          "client": {
+            "type": "object"
+          },
+          "user": {
+            "type": "object"
+          }
         }
       },
       "Network": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "name": {"type": "string"},
-          "account_id": {"type": "integer"},
-          "armed": {"type": "boolean"},
-          "created_at": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "integer"
+          },
+          "armed": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "Camera": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "name": {"type": "string"},
-          "thumbnail": {"type": "string"},
-          "status": {"type": "string"},
-          "battery": {"type": "string"},
-          "temperature": {"type": "integer"},
-          "wifi_strength": {"type": "integer"},
-          "motion_enabled": {"type": "boolean"}
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "battery": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "integer"
+          },
+          "wifi_strength": {
+            "type": "integer"
+          },
+          "motion_enabled": {
+            "type": "boolean"
+          }
         }
       },
       "CommandResponse": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "network_id": {"type": "integer"},
-          "complete": {"type": "boolean"},
-          "status_code": {"type": "integer"}
+          "id": {
+            "type": "integer"
+          },
+          "network_id": {
+            "type": "integer"
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "status_code": {
+            "type": "integer"
+          }
         }
       },
       "CommandStatus": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "complete": {"type": "boolean"},
-          "status_code": {"type": "integer"},
-          "status_msg": {"type": "string"}
+          "id": {
+            "type": "integer"
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "status_code": {
+            "type": "integer"
+          },
+          "status_msg": {
+            "type": "string"
+          }
         }
       },
       "LiveViewResponse": {
         "type": "object",
         "properties": {
-          "server": {"type": "string"},
-          "url": {"type": "string"},
-          "immedia_host": {"type": "string"}
+          "server": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "immedia_host": {
+            "type": "string"
+          }
         }
       },
       "VideoClip": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "created_at": {"type": "string", "format": "date-time"},
-          "updated_at": {"type": "string", "format": "date-time"},
-          "deleted": {"type": "boolean"},
-          "device_name": {"type": "string"},
-          "device_id": {"type": "integer"},
-          "account_id": {"type": "integer"},
-          "media": {"type": "string"},
-          "thumbnail": {"type": "string"},
-          "partial": {"type": "boolean"},
-          "watched": {"type": "boolean"},
-          "size": {"type": "integer"}
+          "id": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "device_name": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": "integer"
+          },
+          "account_id": {
+            "type": "integer"
+          },
+          "media": {
+            "type": "string"
+          },
+          "thumbnail": {
+            "type": "string"
+          },
+          "partial": {
+            "type": "boolean"
+          },
+          "watched": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "integer"
+          }
         }
       },
       "User": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "email": {"type": "string"},
-          "account_id": {"type": "integer"}
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "integer"
+          }
         }
       },
       "NetworkStatus": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "name": {"type": "string"},
-          "status": {"type": "string"},
-          "armed": {"type": "boolean"}
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "armed": {
+            "type": "boolean"
+          }
         }
       },
       "SyncModule": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "name": {"type": "string"},
-          "status": {"type": "string"},
-          "serial": {"type": "string"},
-          "fw_version": {"type": "string"}
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "serial": {
+            "type": "string"
+          },
+          "fw_version": {
+            "type": "string"
+          }
         }
       },
       "CameraConfig": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "name": {"type": "string"},
-          "enabled": {"type": "boolean"},
-          "motion_sensitivity": {"type": "integer"}
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "motion_sensitivity": {
+            "type": "integer"
+          }
         }
       },
       "CameraSensors": {
         "type": "object",
         "properties": {
-          "battery": {"type": "string"},
-          "temperature": {"type": "integer"},
-          "wifi_strength": {"type": "integer"},
-          "lfr": {"type": "integer"}
+          "battery": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "integer"
+          },
+          "wifi_strength": {
+            "type": "integer"
+          },
+          "lfr": {
+            "type": "integer"
+          }
         }
       },
       "CameraUsage": {
         "type": "object",
         "properties": {
-          "networks": {"type": "array"}
+          "networks": {
+            "type": "array"
+          }
         }
       },
       "Event": {
         "type": "object",
         "properties": {
-          "id": {"type": "integer"},
-          "type": {"type": "string"},
-          "created_at": {"type": "string", "format": "date-time"}
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "NotificationConfig": {
         "type": "object",
         "properties": {
-          "notifications": {"type": "object"}
+          "notifications": {
+            "type": "object"
+          }
         }
       },
       "LocalStorageManifest": {
         "type": "object",
         "properties": {
-          "manifest": {"type": "array"},
-          "manifest_id": {"type": "string"}
+          "manifest": {
+            "type": "array"
+          },
+          "manifest_id": {
+            "type": "string"
+          }
         }
       },
       "Homescreen": {
         "type": "object",
         "properties": {
-          "networks": {"type": "array"},
-          "sync_modules": {"type": "array"},
-          "cameras": {"type": "array"},
-          "sirens": {"type": "array"},
-          "chimes": {"type": "array"},
-          "video_stats": {"type": "object"}
+          "networks": {
+            "type": "array"
+          },
+          "sync_modules": {
+            "type": "array"
+          },
+          "cameras": {
+            "type": "array"
+          },
+          "sirens": {
+            "type": "array"
+          },
+          "chimes": {
+            "type": "array"
+          },
+          "video_stats": {
+            "type": "object"
+          }
         }
       }
     }
