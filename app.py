@@ -28,6 +28,7 @@ import re
 import signal
 import sys
 import threading
+from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,7 +106,9 @@ class CacheError(BlinkError):
 
 
 @contextmanager
-def error_context(operation: str, reraise_as: type = BlinkError):
+def error_context(
+    operation: str, reraise_as: type = BlinkError
+) -> Generator[None, None, None]:
     """Context manager for consistent error handling."""
     try:
         yield
@@ -117,7 +120,9 @@ def error_context(operation: str, reraise_as: type = BlinkError):
         raise reraise_as(f"Failed to {operation}: {str(e)}") from e
 
 
-def safe_execute(func, default: Any = None, log_error: bool = True) -> Any:
+def safe_execute(
+    func: Callable[[], Any], default: Any = None, log_error: bool = True
+) -> Any:
     """Execute function safely with error logging.
 
     Args:
@@ -301,7 +306,7 @@ class ClipId(BaseId):
 class ThreadSafeCache:
     """Thread-safe wrapper for cachetools caches."""
 
-    def __init__(self, cache):
+    def __init__(self, cache: Any) -> None:
         self._cache = cache
         self._lock = threading.RLock()
 
@@ -1094,7 +1099,7 @@ def update_camera_thumbnail(
         f"Updating thumbnail cache for {camera.name} (ts: {current_ts} > {cached_ts})"
     )
 
-    def update_thumbnail():
+    def update_thumbnail() -> None:
         # Double-check timestamp to prevent race condition
         current_entry = thumbnail_cache.get(cache_key)
         current_cached_ts = current_entry.get("timestamp", 0) if current_entry else 0
@@ -1315,7 +1320,7 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
 
 
 @app.route("/")
-def index() -> Response:
+def index() -> str:
     """Main page - redirect to login if not authenticated.
 
     Returns:
@@ -1334,7 +1339,7 @@ def index() -> Response:
 
 
 @app.route("/login", methods=["GET", "POST"])
-def login() -> Response:
+def login() -> str:
     """Handle login page GET/POST requests.
 
     Returns:
@@ -1383,7 +1388,7 @@ def login() -> Response:
 
 
 @app.route("/2fa", methods=["GET", "POST"])
-def two_factor() -> Response:
+def two_factor() -> str:
     """Handle 2FA verification page GET/POST requests.
 
     Returns:
@@ -1448,7 +1453,7 @@ def two_factor() -> Response:
     )
 
 
-def clear_all_caches():
+def clear_all_caches() -> dict[str, Any]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
         # Clear memory caches first (fast operation)
@@ -1457,7 +1462,7 @@ def clear_all_caches():
         clips_metadata_cache.clear()
 
         # Clear file caches (slow I/O operations)
-        def clear_file_cache(cache_dir, cache_name):
+        def clear_file_cache(cache_dir: str, cache_name: str) -> None:
             try:
                 if os.path.exists(cache_dir):
                     import shutil
@@ -1479,12 +1484,17 @@ def clear_all_caches():
             thumbnail_future.result(timeout=Config.CACHE_CLEAR_TIMEOUT)
             clips_future.result(timeout=Config.CACHE_CLEAR_TIMEOUT)
             logger.info("All caches cleared successfully")
+            return {"status": "success", "message": "All caches cleared successfully"}
         except Exception as e:
             logger.warning(f"Cache clearing completed with errors: {e}")
+            return {
+                "status": "warning",
+                "message": f"Cache clearing completed with errors: {e}",
+            }
 
 
 @app.route("/api/clear-cache", methods=["POST"])
-def clear_cache():
+def clear_cache() -> tuple[FlaskResponse, int]:
     """Clear all caches except credentials."""
     executor.submit(clear_all_caches)
     response, status_code = create_api_response(
@@ -1494,7 +1504,7 @@ def clear_cache():
 
 
 @app.route("/logout", methods=["POST"])
-def logout() -> Response:
+def logout() -> str:
     """Logout user and clear all credentials and caches.
 
     Returns:
@@ -1508,6 +1518,7 @@ def logout() -> Response:
     # Clear session and credentials
     session.clear()
     blink = None
+    assert CREDENTIALS_FILE is not None
     cred_file = Path(CREDENTIALS_FILE)
     if cred_file.exists():
         cred_file.unlink()
@@ -1519,7 +1530,7 @@ def logout() -> Response:
 
 
 @app.route("/api/system/list")
-def get_systems() -> Response:
+def get_systems() -> tuple[FlaskResponse, int]:
     """Get list of available Blink systems.
 
     Returns:
@@ -1549,7 +1560,7 @@ def get_systems() -> Response:
 
 
 @app.route("/api/system/<network_id_str>/devices")
-def get_devices(network_id_str: str) -> Response:
+def get_devices(network_id_str: str) -> tuple[FlaskResponse, int]:
     try:
         network_id = NetworkId(network_id_str)
     except ValueError as e:
@@ -1612,7 +1623,7 @@ def get_devices(network_id_str: str) -> Response:
 
 
 @app.route("/api/system/<network_id_str>/arm", methods=["POST"])
-def arm_system(network_id_str: str) -> Response:
+def arm_system(network_id_str: str) -> tuple[FlaskResponse, int]:
     try:
         network_id = NetworkId(network_id_str)
     except ValueError as e:
@@ -1673,7 +1684,7 @@ def arm_system(network_id_str: str) -> Response:
 
 
 @app.route("/api/camera/<camera_id_str>/refresh", methods=["POST"])
-def refresh_camera(camera_id_str: str):
+def refresh_camera(camera_id_str: str) -> tuple[FlaskResponse, int]:
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -1695,7 +1706,7 @@ def refresh_camera(camera_id_str: str):
 
     with error_context("refresh camera thumbnail", CameraError):
         # Remove camera thumbnail from cache in background
-        def remove_thumbnail_cache():
+        def remove_thumbnail_cache() -> None:
             cache_key = CameraId(camera.camera_id)
             cached_info = thumbnail_cache.get(cache_key)
             if cached_info is not None:
@@ -1724,7 +1735,7 @@ def refresh_camera(camera_id_str: str):
 
 
 @app.route("/api/clips")
-def get_clips():
+def get_clips() -> tuple[FlaskResponse, int]:
     """Get clips from cloud or local storage."""
     error_response = require_blink()
     if error_response is not None:
@@ -1765,7 +1776,7 @@ def get_clips():
 
 
 @app.route("/api/system/refresh", methods=["POST"])
-def refresh_system():
+def refresh_system() -> tuple[FlaskResponse, int]:
     """Manually refresh the Blink system."""
     error_response = require_blink()
     if error_response is not None:
@@ -1798,7 +1809,7 @@ def refresh_system():
 
 
 @app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
-def process_clip(clip_id_str: str):
+def process_clip(clip_id_str: str) -> tuple[FlaskResponse, int]:
     """Process clip on server (download and generate thumbnail) without sending to client.
 
     Initiates background processing of clip for thumbnail generation.
@@ -1837,7 +1848,7 @@ def process_clip(clip_id_str: str):
 
 
 @app.route("/api/clip/<clip_id_str>/download")
-def download_clip(clip_id_str: str):
+def download_clip(clip_id_str: str) -> tuple[FlaskResponse, int]:
     clip_id, error_response = parse_clip_id(clip_id_str)
     if error_response is not None:
         response, status_code = error_response
@@ -1879,7 +1890,7 @@ def _download_clip_common(
     }
 
     # Generate thumbnail in background
-    def generate_thumbnail_bg():
+    def generate_thumbnail_bg() -> None:
         thumbnail_path = generate_clip_thumbnail(
             filepath, filename, middle_frame=middle_frame
         )
@@ -1943,7 +1954,7 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
             return jsonify(response), status_code
 
         # Download in executor to avoid blocking
-        def download_file():
+        def download_file() -> None:
             try:
                 response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
                 if response.status_code == Config.HTTP_STATUS_OK:
@@ -2067,7 +2078,7 @@ def process_local_clip_background(
         item_id: Local storage item ID
     """
 
-    def process():
+    def process() -> None:
         try:
             # Check if already cached
             cached_clip = clips_download_cache.get(clip_id)
@@ -2128,7 +2139,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         clip_id: Unique identifier for the cloud clip
     """
 
-    def process():
+    def process() -> None:
         try:
             # Check if already cached
             cached_clip = clips_download_cache.get(clip_id)
@@ -2192,7 +2203,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 
 
 @app.route("/api/camera/<camera_id_str>/liveview")
-def get_camera_liveview(camera_id_str: str):
+def get_camera_liveview(camera_id_str: str) -> tuple[FlaskResponse, int]:
     """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md."""
     try:
         camera_id = CameraId(camera_id_str)
@@ -2282,7 +2293,7 @@ def get_camera_liveview(camera_id_str: str):
 
 
 @app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
-def stop_camera_liveview(camera_id_str: str):
+def stop_camera_liveview(camera_id_str: str) -> tuple[FlaskResponse, int]:
     """Stop live view stream for camera."""
     try:
         camera_id = CameraId(camera_id_str)
@@ -2325,7 +2336,9 @@ def stop_camera_liveview(camera_id_str: str):
 
 
 @app.route("/api/hls/<camera_id_str>/<path:filename>")
-def serve_hls_file(camera_id_str: str, filename: str):
+def serve_hls_file(
+    camera_id_str: str, filename: str
+) -> tuple[FlaskResponse, int] | FlaskResponse:
     """Serve HLS playlist and segment files."""
     if not stream_manager:
         response, status_code = create_api_response(
@@ -2355,7 +2368,7 @@ def serve_hls_file(camera_id_str: str, filename: str):
 
 
 @app.route("/api/clip/<clip_id_str>/thumbnail")
-def get_clip_thumbnail(clip_id_str: str):
+def get_clip_thumbnail(clip_id_str: str) -> tuple[FlaskResponse, int]:
     clip_id, error_response = parse_clip_id(clip_id_str)
     if error_response is not None:
         response, status_code = error_response
@@ -2374,7 +2387,7 @@ def get_clip_thumbnail(clip_id_str: str):
 
 
 @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
-def get_camera_thumbnail_timestamp(camera_id_str: str):
+def get_camera_thumbnail_timestamp(camera_id_str: str) -> tuple[FlaskResponse, int]:
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -2407,7 +2420,7 @@ def get_camera_thumbnail_timestamp(camera_id_str: str):
 
 
 @app.route("/api/camera/<camera_id_str>/thumbnail")
-def get_camera_thumbnail(camera_id_str: str):
+def get_camera_thumbnail(camera_id_str: str) -> tuple[FlaskResponse, int]:
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -2470,7 +2483,7 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
 
 
 @app.route("/api/config")
-def get_config():
+def get_config() -> tuple[FlaskResponse, int]:
     """Get client-side configuration constants.
 
     Returns configuration values needed by the JavaScript frontend.
@@ -2509,7 +2522,7 @@ def get_config():
 
 
 @app.route("/placeholder")
-def placeholder():
+def placeholder() -> tuple[FlaskResponse, int]:
     """Show placeholder message."""
     response, status_code = create_api_response(
         success=False,
@@ -2550,7 +2563,7 @@ async def load_saved_blink():
     return False
 
 
-def dump_cloud_videos(videos):
+def dump_cloud_videos(videos: list[dict[str, Any]]) -> None:
     """Dump cloud videos information."""
     logger.info("=== CLOUD VIDEOS ===")
     try:
@@ -2561,7 +2574,7 @@ def dump_cloud_videos(videos):
         logger.error(f"Error processing cloud videos: {e}")
 
 
-def dump_blink_system_info():
+def dump_blink_system_info() -> None:
     """Dump comprehensive Blink system information."""
     if not blink or not blink.available:
         logger.error("Blink system not available")
@@ -2913,7 +2926,7 @@ def load_thumbnail_cache() -> None:
                     files_to_remove.append(old_path)
 
         # Remove invalid/old files in background
-        def remove_files(files_list):
+        def remove_files(files_list: list[Path]) -> None:
             for file_path in files_list:
                 try:
                     file_path.unlink()
@@ -3017,7 +3030,7 @@ def load_clips_cache() -> None:
                 files_to_remove.append(video_file)
 
         # Remove invalid files in background
-        def remove_files(files_list):
+        def remove_files(files_list: list[Path]) -> None:
             for file_path in files_list:
                 try:
                     file_path.unlink()
@@ -3036,7 +3049,7 @@ def load_clips_cache() -> None:
 
 
 @app.route("/api/settings", methods=["GET", "POST"])
-def settings():
+def settings() -> tuple[FlaskResponse, int]:
     """Get or save application settings.
 
     GET: Returns current user settings (temperature units, clip retention, etc.)
@@ -3108,7 +3121,7 @@ def settings():
 
 
 @app.route("/api/clip/<clip_id_str>/thumbnail/check")
-def check_clip_thumbnail(clip_id_str: str):
+def check_clip_thumbnail(clip_id_str: str) -> tuple[FlaskResponse, int]:
     """Check if thumbnail is available for clip."""
     clip_id, error_response = parse_clip_id(clip_id_str)
     if error_response is not None:

@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def run_tests(with_coverage=False, html_report=False):
+def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
     """Run tests with optional coverage reporting."""
 
     # Add current directory to Python path
@@ -85,7 +85,7 @@ def run_tests(with_coverage=False, html_report=False):
             return False
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Run Blink Flask application tests")
     parser.add_argument(

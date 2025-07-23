@@ -40,7 +40,7 @@ class StreamConfig:
     timeout: int = None  # Process timeout
     idle_timeout: int = None  # Stream idle timeout
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set default values from Config if not provided."""
         if self.segment_time is None:
             self.segment_time = Config.HLS_SEGMENT_TIME
@@ -55,7 +55,7 @@ class StreamConfig:
 class HLSStream:
     """Manages a single TCP to HLS transcoding stream for Blink cameras."""
 
-    def __init__(self, stream_id: str, tcp_url: str, config: StreamConfig):
+    def __init__(self, stream_id: str, tcp_url: str, config: StreamConfig) -> None:
         """Initialize HLS stream.
 
         Args:
@@ -214,7 +214,7 @@ class HLSStream:
 class StreamManager:
     """Manages multiple TCP to HLS streams for Blink cameras."""
 
-    def __init__(self, config: StreamConfig | None = None):
+    def __init__(self, config: StreamConfig | None = None) -> None:
         """Initialize stream manager.
 
         Args:
