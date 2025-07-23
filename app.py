@@ -822,6 +822,7 @@ def require_sync_module(
     Returns:
         Tuple of (sync_module, error_response). One will be None.
     """
+    assert blink is not None
     for name, sync in blink.sync.items():
         if str(sync.network_id) == str(network_id):
             return sync, None
@@ -988,6 +989,7 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
 
         # Send 2FA key using same session/thread
         logger.debug("Sending 2FA key...")
+        assert blink is not None
         await blink.auth.send_auth_key(blink, tfa_key)
 
         logger.debug("Setting up post verification...")
@@ -1105,6 +1107,7 @@ def update_camera_thumbnail(
         if old_entry:
             old_filename = old_entry.get("filename")
             if old_filename:
+                assert THUMBNAIL_CACHE_DIR is not None
                 old_filepath = Path(THUMBNAIL_CACHE_DIR) / old_filename
                 try:
                     if old_filepath.exists():
@@ -2449,9 +2452,6 @@ def get_camera_thumbnail(camera_id_str: str):
         return jsonify(response), status_code
 
 
-# SSE blueprint removed - using polling approach instead
-
-
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
     """Thumbnail ready notification (no longer needed with polling approach)."""
     logger.debug(f"Thumbnail ready for clip: {clip_id}")
@@ -2540,75 +2540,77 @@ async def load_saved_blink():
 
 def dump_cloud_videos(videos):
     """Dump cloud videos information."""
-    print("\n=== CLOUD VIDEOS ===")
+    logger.info("=== CLOUD VIDEOS ===")
     try:
-        print(f"Found {len(videos)} cloud videos:")
+        logger.info(f"Found {len(videos)} cloud videos:")
         for video in videos:
-            print(f"  - {video}")
+            logger.info(f"  - {video}")
     except Exception as e:
-        print(f"Error processing cloud videos: {e}")
+        logger.error(f"Error processing cloud videos: {e}")
 
 
 def dump_blink_system_info():
     """Dump comprehensive Blink system information."""
     if not blink or not blink.available:
-        print("ERROR: Blink system not available")
+        logger.error("Blink system not available")
         return
 
-    print("=== BLINK SYSTEM DUMP ===")
+    logger.info("=== BLINK SYSTEM DUMP ===")
 
     # Basic system info
-    print(f"Account ID: {blink.account_id}")
-    print(f"Client ID: {blink.client_id}")
-    print(f"Available: {blink.available}")
-    print(f"Auth data: {blink.auth.data}")
-    print(f"Last refresh: {blink.last_refresh}")
-    print(f"Refresh rate: {blink.refresh_rate}")
-    print(f"Motion interval: {blink.motion_interval}")
-    print(f"Key required: {blink.key_required}")
-    print(f"Network IDs: {blink.network_ids}")
-    print(f"Networks: {blink.networks}")
-    print(f"Version: {blink.version}")
-    print("Homescreen:")
+    logger.info(f"Account ID: {blink.account_id}")
+    logger.info(f"Client ID: {blink.client_id}")
+    logger.info(f"Available: {blink.available}")
+    logger.info(f"Auth data: {blink.auth.data}")
+    logger.info(f"Last refresh: {blink.last_refresh}")
+    logger.info(f"Refresh rate: {blink.refresh_rate}")
+    logger.info(f"Motion interval: {blink.motion_interval}")
+    logger.info(f"Key required: {blink.key_required}")
+    logger.info(f"Network IDs: {blink.network_ids}")
+    logger.info(f"Networks: {blink.networks}")
+    logger.info(f"Version: {blink.version}")
+    logger.info("Homescreen:")
     import json
 
-    print(json.dumps(blink.homescreen, indent=2))
+    logger.info(json.dumps(blink.homescreen, indent=2))
 
     # Sync modules
-    print(f"\n=== SYNC MODULES ({len(blink.sync)}) ===")
+    logger.info(f"=== SYNC MODULES ({len(blink.sync)}) ===")
     for sync_name, sync in blink.sync.items():
-        print(f"\n--- Sync Module: {sync_name} ---")
-        print(f"Attributes: {sync.attributes}")
-        print(f"Network Info: {sync.network_info}")
-        print(f"Summary: {sync.summary}")
-        print(f"Status: {sync.status}")
-        print(f"Online: {sync.online}")
-        print(f"Armed: {sync.arm}")
-        print(f"Cameras: {list(sync.cameras.keys())}")
+        logger.info(f"--- Sync Module: {sync_name} ---")
+        logger.info(f"Attributes: {sync.attributes}")
+        logger.info(f"Network Info: {sync.network_info}")
+        logger.info(f"Summary: {sync.summary}")
+        logger.info(f"Status: {sync.status}")
+        logger.info(f"Online: {sync.online}")
+        logger.info(f"Armed: {sync.arm}")
+        logger.info(f"Cameras: {list(sync.cameras.keys())}")
 
         # Local storage info
-        print(f"Local storage enabled: {sync._local_storage['enabled']}")
-        print(f"Local storage compatible: {sync._local_storage['compatible']}")
-        print(f"Local storage status: {sync._local_storage['status']}")
-        print(f"Local storage manifest ready: {sync.local_storage_manifest_ready}")
+        logger.info(f"Local storage enabled: {sync._local_storage['enabled']}")
+        logger.info(f"Local storage compatible: {sync._local_storage['compatible']}")
+        logger.info(f"Local storage status: {sync._local_storage['status']}")
+        logger.info(
+            f"Local storage manifest ready: {sync.local_storage_manifest_ready}"
+        )
 
         if sync.local_storage and sync.local_storage_manifest_ready:
             manifest = sync._local_storage.get("manifest", [])
-            print(f"Local storage clips ({len(manifest)}):")
+            logger.info(f"Local storage clips ({len(manifest)}):")
             for item in manifest:
-                print(
+                logger.info(
                     f"  - ID: {item.id}, Camera: {item.name}, Created: {item.created_at}, Size: {item.size}"
                 )
 
     # All cameras
-    print(f"\n=== CAMERAS ({len(blink.cameras)}) ===")
+    logger.info(f"=== CAMERAS ({len(blink.cameras)}) ===")
     for camera_name, camera in blink.cameras.items():
-        print(f"\n--- Camera: {camera_name} ---")
-        print(f"Attributes: {camera.attributes}")
+        logger.info(f"--- Camera: {camera_name} ---")
+        logger.info(f"Attributes: {camera.attributes}")
 
-    print("\n=== CLOUD VIDEOS (see separate dump) ===")
+    logger.info("=== CLOUD VIDEOS (see separate dump) ===")
 
-    print("\n=== END DUMP ===")
+    logger.info("=== END DUMP ===")
 
 
 def startup() -> None:
@@ -3181,10 +3183,17 @@ def handle_dump_system() -> None:
     """Handle dump-system command line option."""
     initialize_cache_paths()
 
+    # Add console handler for CLI output
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter("%(message)s")
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
     cred_file = Path(CREDENTIALS_FILE)
     if not cred_file.exists():
-        print("ERROR: No saved credentials found.")
-        print("Please start the server and login first to save credentials.")
+        logger.error("No saved credentials found.")
+        logger.error("Please start the server and login first to save credentials.")
         sys.exit(1)
 
     blink_connection.start()
@@ -3207,17 +3216,20 @@ def handle_dump_system() -> None:
             # Dump cloud videos
             dump_cloud_videos(videos)
 
-            print("System dump completed successfully.")
+            logger.info("System dump completed successfully.")
         else:
-            print("ERROR: Failed to load Blink system from saved credentials.")
+            logger.error("Failed to load Blink system from saved credentials.")
             sys.exit(1)
     except Exception as e:
-        print(f"ERROR: {e}")
+        logger.error(f"System dump error: {e}")
         sys.exit(1)
     finally:
         # Clean up Blink session and shutdown connection
         if blink:
             blink_connection.execute(cleanup_blink_session())
+
+        # Remove console handler
+        logger.removeHandler(console_handler)
         blink_connection.shutdown()
 
 

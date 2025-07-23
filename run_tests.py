@@ -6,9 +6,18 @@ Usage: python run_tests.py [--coverage] [--html]
 """
 
 import argparse
+import logging
 import os
 import subprocess
 import sys
+
+# Set up console logging for test runner
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+logger = logging.getLogger(__name__)
 
 
 def run_tests(with_coverage=False, html_report=False):
@@ -21,7 +30,9 @@ def run_tests(with_coverage=False, html_report=False):
         try:
             import coverage
         except ImportError:
-            print("Coverage package not installed. Install with: pip install coverage")
+            logger.error(
+                "Coverage package not installed. Install with: pip install coverage"
+            )
             return False
 
         # Start coverage
@@ -47,19 +58,19 @@ def run_tests(with_coverage=False, html_report=False):
             cov.save()
 
             # Generate reports
-            print("\n" + "=" * 50)
-            print("COVERAGE REPORT")
-            print("=" * 50)
+            logger.info("\n" + "=" * 50)
+            logger.info("COVERAGE REPORT")
+            logger.info("=" * 50)
             cov.report(show_missing=True)
 
             if html_report:
                 cov.html_report(directory="htmlcov")
-                print("\nHTML coverage report generated in htmlcov/index.html")
+                logger.info("\nHTML coverage report generated in htmlcov/index.html")
 
             return result.wasSuccessful()
 
         except Exception as e:
-            print(f"Error running tests with coverage: {e}")
+            logger.error(f"Error running tests with coverage: {e}")
             return False
     else:
         # Run tests without coverage
@@ -70,7 +81,7 @@ def run_tests(with_coverage=False, html_report=False):
             )
             return result.returncode == 0
         except Exception as e:
-            print(f"Error running tests: {e}")
+            logger.error(f"Error running tests: {e}")
             return False
 
 
@@ -89,19 +100,19 @@ def main():
     args = parser.parse_args()
 
     if args.html and not args.coverage:
-        print("--html requires --coverage")
+        logger.error("--html requires --coverage")
         sys.exit(1)
 
-    print("Running Blink Flask Application Tests")
-    print("=" * 40)
+    logger.info("Running Blink Flask Application Tests")
+    logger.info("=" * 40)
 
     success = run_tests(with_coverage=args.coverage, html_report=args.html)
 
     if success:
-        print("\n✅ All tests passed!")
+        logger.info("\n✅ All tests passed!")
         sys.exit(0)
     else:
-        print("\n❌ Some tests failed!")
+        logger.error("\n❌ Some tests failed!")
         sys.exit(1)
 
 
