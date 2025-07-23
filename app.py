@@ -29,7 +29,7 @@ import signal
 import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -1122,6 +1122,7 @@ def update_camera_thumbnail(
 
             # Save to file with new timestamp
             filename = f"{cache_key}_{current_ts}.jpg"
+            assert THUMBNAIL_CACHE_DIR is not None
             filepath = Path(THUMBNAIL_CACHE_DIR) / filename
             try:
                 filepath.write_bytes(image_data)
@@ -1198,6 +1199,7 @@ def process_local_clips() -> list[dict[str, Any]]:
     """
     clips_by_day = {}
 
+    assert blink is not None
     for sync_name, sync_module in blink.sync.items():
         try:
             # Refresh sync module to update local storage manifest
@@ -1277,7 +1279,7 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
     """Format timestamp as 'Xd ago' format.
 
     Args:
-        timestamp_str: ISO format timestamp string or None
+        timestamp_str: ISO format timestamp string, Unix timestamp integer, or None
 
     Returns:
         Formatted time string like '5d ago', '2h ago', '30m ago', or 'Unknown'
@@ -1285,8 +1287,18 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
     try:
         if timestamp_str is None:
             return "Unknown"
-        # Parse the timestamp
-        timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+
+        # Handle different input types
+        if isinstance(timestamp_str, int):
+            # Unix timestamp (seconds since epoch)
+            timestamp = datetime.fromtimestamp(timestamp_str, tz=timezone.utc)
+        elif isinstance(timestamp_str, str):
+            # ISO format timestamp string
+            timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+        else:
+            logger.debug(f"Unsupported timestamp type: {type(timestamp_str)}")
+            return "Unknown"
+
         now = datetime.now(timestamp.tzinfo)
         diff = now - timestamp
         days = diff.days
@@ -1297,8 +1309,8 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
                 return f"{minutes}m ago"
             return f"{hours}h ago"
         return f"{days}d ago"
-    except (ValueError, TypeError, AttributeError) as e:
-        logger.debug(f"Failed to format time ago for '{timestamp}': {e}")
+    except (ValueError, TypeError, AttributeError, OSError) as e:
+        logger.debug(f"Failed to format time ago for '{timestamp_str}': {e}")
         return "Unknown"
 
 
