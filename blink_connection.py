@@ -16,6 +16,7 @@ Usage:
 """
 
 import asyncio
+import concurrent.futures
 import logging
 import threading
 from typing import Any
@@ -98,7 +99,9 @@ class BlinkConnection:
         try:
             future = asyncio.run_coroutine_threadsafe(coro, self.loop)
             return future.result(timeout=operation_timeout)
-        except Exception as e:
+        except (asyncio.TimeoutError, concurrent.futures.TimeoutError) as e:
+            raise BlinkError(f"Blink operation timed out: {str(e)}") from e
+        except (RuntimeError, OSError) as e:
             raise BlinkError(f"Blink operation failed: {str(e)}") from e
 
     def shutdown(self) -> None:
@@ -116,14 +119,14 @@ class BlinkConnection:
                             self.blink.close(), self.loop
                         )
                         future.result(timeout=2)
-            except Exception as e:
+            except (asyncio.TimeoutError, RuntimeError, OSError) as e:
                 logger.debug(f"Session cleanup: {e}")
 
         # Stop event loop
         if self.loop and self.loop.is_running():
             try:
                 self.loop.call_soon_threadsafe(self.loop.stop)
-            except Exception as e:
+            except (RuntimeError, OSError) as e:
                 logger.error(f"Error stopping loop: {e}")
 
         self._started = False

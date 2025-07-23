@@ -115,7 +115,7 @@ class HLSStream:
                 logger.info(f"Started HLS stream {self.stream_id}")
                 return f"/api/hls/{self.stream_id}/playlist.m3u8", None
 
-            except Exception as e:
+            except (OSError, subprocess.SubprocessError, PermissionError) as e:
                 error_msg = f"Error starting stream {self.stream_id}: {e}"
                 logger.error(error_msg)
                 self._cleanup()
@@ -134,7 +134,7 @@ class HLSStream:
                     )
                     self.process.kill()
                     self.process.wait()
-                except Exception as e:
+                except (OSError, subprocess.SubprocessError) as e:
                     logger.error(
                         f"Error stopping process for stream {self.stream_id}: {e}"
                     )
@@ -181,7 +181,7 @@ class HLSStream:
                 shutil.rmtree(self.hls_dir)
                 self.hls_dir = None
                 self.playlist_path = None
-            except Exception as e:
+            except (OSError, PermissionError) as e:
                 logger.error(
                     f"Error cleaning up HLS directory for stream {self.stream_id}: {e}"
                 )

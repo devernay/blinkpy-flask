@@ -996,7 +996,8 @@ def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
 
         match = re.search(r"ts=([0-9]+)", thumbnail_url)
         return int(match.group(1)) if match else 0
-    except Exception:
+    except (AttributeError, ValueError, TypeError) as e:
+        logger.debug(f"Failed to extract timestamp from URL '{thumbnail_url}': {e}")
         return 0
 
 
@@ -1032,7 +1033,10 @@ def create_device_data(
                     last_updated = f"{hours}h ago"
             else:
                 last_updated = f"{days}d ago"
-        except Exception:
+        except (ValueError, TypeError, AttributeError) as e:
+            logger.debug(
+                f"Failed to calculate time difference for camera {camera.name}: {e}"
+            )
             last_updated = (
                 format_time_ago(camera.last_record) if camera.last_record else "Never"
             )
@@ -1270,7 +1274,8 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
                 return f"{minutes}m ago"
             return f"{hours}h ago"
         return f"{days}d ago"
-    except Exception:
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.debug(f"Failed to format time ago for '{timestamp}': {e}")
         return "Unknown"
 
 
@@ -1611,7 +1616,8 @@ def arm_system(network_id_str: str) -> Response:
                 status_code=400,
             )
             return jsonify(response), status_code
-    except Exception:
+    except (KeyError, TypeError, ValueError) as e:
+        logger.error(f"Invalid request data for arm/disarm: {e}")
         response, status_code = create_api_response(
             success=False,
             error=Config.ErrorMessages.INVALID_REQUEST_DATA,
@@ -1913,7 +1919,7 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
                         f"HTTP {response.status_code} downloading clip {clip_id}"
                     )
                     return False
-            except Exception as e:
+            except (requests.RequestException, OSError) as e:
                 logger.error(f"Error downloading clip {clip_id}: {e}")
                 return False
 
@@ -2117,9 +2123,18 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                 media_url = clip_info.get("media")
                 if not media_url:
                     return
-                response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
-                if response.status_code == Config.HTTP_STATUS_OK:
-                    filepath.write_bytes(response.content)
+                try:
+                    response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
+                    if response.status_code == Config.HTTP_STATUS_OK:
+                        filepath.write_bytes(response.content)
+                    else:
+                        logger.error(
+                            f"HTTP {response.status_code} downloading clip for processing"
+                        )
+                        return
+                except (requests.RequestException, OSError) as e:
+                    logger.error(f"Error downloading clip for processing: {e}")
+                    return
 
             # Cache the clip and generate thumbnail
             clips_download_cache[clip_id] = {"filepath": filepath, "thumbnail": None}
@@ -2867,7 +2882,7 @@ def load_thumbnail_cache() -> None:
                 try:
                     file_path.unlink()
                     logger.debug(f"Removed invalid thumbnail: {file_path.name}")
-                except Exception as e:
+                except (OSError, PermissionError) as e:
                     logger.warning(f"Could not remove thumbnail file {file_path}: {e}")
 
         if files_to_remove:
@@ -2971,13 +2986,13 @@ def load_clips_cache() -> None:
                 try:
                     file_path.unlink()
                     logger.debug(f"Removed invalid cached file: {file_path.name}")
-                except Exception as e:
+                except (OSError, PermissionError) as e:
                     logger.warning(f"Could not remove file {file_path}: {e}")
 
         if files_to_remove:
             executor.submit(remove_files, files_to_remove)
 
-    except Exception as e:
+    except (OSError, PermissionError) as e:
         logger.error(f"Error scanning clips cache: {e}")
 
 
@@ -3115,7 +3130,7 @@ def cleanup_resources() -> None:
                     if hasattr(stream, "stop"):
                         stream.stop()
                         logger.info(f"Stopped active livestream {stream_id}")
-                except Exception as e:
+                except (AttributeError, RuntimeError, OSError) as e:
                     logger.warning(f"Error stopping livestream {stream_id}: {e}")
             blink_connection._active_streams.clear()
 
@@ -3123,8 +3138,8 @@ def cleanup_resources() -> None:
         if blink and blink_connection.is_running():
             try:
                 blink_connection.execute(cleanup_blink_session())
-            except Exception:
-                pass  # Ignore cleanup errors
+            except (RuntimeError, ConnectionError, TimeoutError) as e:
+                logger.debug(f"Error during Blink session cleanup: {e}")
 
         # Shutdown Blink connection
         blink_connection.shutdown()
@@ -3132,12 +3147,12 @@ def cleanup_resources() -> None:
         # Close HTTP session
         try:
             http_session.close()
-        except Exception:
-            pass  # Ignore close errors
+        except (AttributeError, RuntimeError) as e:
+            logger.debug(f"Error closing HTTP session: {e}")
 
         logger.info("Resource cleanup completed")
-    except Exception:
-        pass  # Ignore all cleanup errors during shutdown
+    except (AttributeError, RuntimeError) as e:
+        logger.warning(f"Error during resource cleanup: {e}")
 
 
 def handle_dump_system() -> None:
