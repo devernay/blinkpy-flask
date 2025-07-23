@@ -1,5 +1,5 @@
 Flask>=2.0.0
-blinkpy @ git+https://github.com/fronzbot/blinkpy.git
+blinkpy @ git+https://github.com/fronzbot/blinkpy.git@refs/pull/1078/head
 cachetools>=5.0.0
 
 # Testing dependencies

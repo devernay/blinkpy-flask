@@ -7,7 +7,7 @@ A professional-grade Flask web application providing comprehensive access to Bli
 ### Core Functionality
 - **Multi-system support** - Manage multiple Blink systems
 - **Real-time camera thumbnails** with intelligent caching and age tracking
-- **Live streaming** - RTSP to HLS transcoding with FFmpeg
+- **Live streaming** - TCP to HLS transcoding with FFmpeg using Blink's init_livestream() (see note on live streaming below)
 - **Clip management** - Download and view cloud/local storage clips with thumbnail generation
 - **2FA authentication** - Full two-factor authentication support with unified login flow
 - **RESTful API** - 20+ endpoints for programmatic access
@@ -102,6 +102,16 @@ All API endpoints return standardized JSON responses:
 - `POST /api/camera/<camera_id>/refresh` - Refresh camera thumbnail
 - `GET /api/camera/<camera_id>/liveview` - Start live stream
 
+Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. The `requirements.txt` file will install this version of blinkpy.
+
+If you need to checkout the code for this PR from the blinkpy repo:
+```
+git clone https://github.com/fronzbot/blinkpy
+cd blinkpy
+git fetch origin pull/1078/head:pr-1078
+git checkout pr-1078
+```
+
 ### Clip Management
 - `GET /api/clips?storage=cloud|local` - List clips by storage type
 - `GET /api/clip/<clip_id>/download` - Download clip file
@@ -140,7 +150,7 @@ CACHE_DIR=cache  # Default cache directory
 blinkpy-flask/
 ├── app.py              # Main Flask application with CLI (2000+ lines)
 ├── blink_connection.py # Blink thread management and async operations
-├── stream_manager.py   # RTSP to HLS stream management
+├── stream_manager.py   # TCP to HLS stream management for Blink cameras
 ├── requirements.txt    # Python dependencies
 ├── templates/          # HTML templates
 │   ├── base.html      # Base template with responsive CSS
@@ -176,7 +186,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 
 ### Performance Tuning
 - Adjust cache sizes in `Config` class
-- Configure FFmpeg parameters for streaming
+- Configure FFmpeg parameters for TCP to HLS transcoding
 - Monitor disk usage for clip cache
 - Set appropriate timeout values
 
@@ -186,7 +196,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 - **FFmpeg not found**: Install FFmpeg and ensure it's in PATH
 - **2FA timeout**: Check email/SMS and enter code quickly
 - **Cache full**: Use `/api/clear-cache` endpoint or clear cache in Settings
-- **Stream fails**: Check camera connectivity and RTSP support
+- **Stream fails**: Check camera connectivity and TCP stream availability
 - **Local clips not loading**: Ensure USB storage is connected and accessible
 - **Thumbnails not updating**: Use "Update All" button for local clips
 

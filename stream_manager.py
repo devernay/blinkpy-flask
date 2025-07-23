@@ -1,8 +1,10 @@
-"""RTSP to HLS stream management module.
+"""TCP to HLS stream management module.
 
-Provides object-oriented management of RTSP streams with FFmpeg transcoding
+Provides object-oriented management of TCP streams from Blink cameras with FFmpeg transcoding
 to HLS format. Handles multiple concurrent streams with automatic cleanup
 and resource management.
+
+This module specifically handles MPEG-TS streams from Blink's init_livestream() TCP proxy.
 """
 
 import logging
@@ -18,27 +20,27 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StreamConfig:
-    """Configuration for HLS stream transcoding."""
+    """Configuration for HLS stream transcoding from Blink TCP streams."""
 
-    segment_time: int = 2  # HLS segment duration in seconds
-    list_size: int = 3  # Number of segments in playlist
-    timeout: int = 30  # Process timeout
-    idle_timeout: int = 300  # Stream idle timeout (5 minutes)
+    segment_time: int = 2  # HLS segment duration in seconds (will be set from Config)
+    list_size: int = 3  # Number of segments in playlist (will be set from Config)
+    timeout: int = 30  # Process timeout (will be set from Config)
+    idle_timeout: int = 300  # Stream idle timeout (will be set from Config)
 
 
 class HLSStream:
-    """Manages a single RTSP to HLS transcoding stream."""
+    """Manages a single TCP to HLS transcoding stream for Blink cameras."""
 
-    def __init__(self, stream_id: str, rtsp_url: str, config: StreamConfig):
+    def __init__(self, stream_id: str, tcp_url: str, config: StreamConfig):
         """Initialize HLS stream.
 
         Args:
             stream_id: Unique identifier for the stream
-            rtsp_url: RTSP source URL
+            tcp_url: TCP source URL from Blink's init_livestream() (e.g., tcp://127.0.0.1:12345)
             config: Stream configuration
         """
         self.stream_id = stream_id
-        self.rtsp_url = rtsp_url
+        self.tcp_url = tcp_url
         self.config = config
         self.process: subprocess.Popen | None = None
         self.hls_dir: Path | None = None
@@ -47,7 +49,7 @@ class HLSStream:
         self._lock = threading.Lock()
 
     def start(self) -> tuple[str | None, str | None]:
-        """Start HLS transcoding.
+        """Start HLS transcoding from TCP stream.
 
         Returns:
             Tuple of (playlist_url, error_message)
@@ -60,11 +62,13 @@ class HLSStream:
             self.hls_dir = Path(tempfile.mkdtemp(prefix=f"hls_{self.stream_id}_"))
             self.playlist_path = self.hls_dir / "playlist.m3u8"
 
-            # FFmpeg command
+            # Build FFmpeg command for TCP MPEG-TS input from Blink livestream
             cmd = [
                 "ffmpeg",
+                "-f",
+                "mpegts",  # Input format is MPEG-TS from Blink TCP stream
                 "-i",
-                self.rtsp_url,
+                self.tcp_url,
                 "-c:v",
                 "libx264",
                 "-c:a",
@@ -85,6 +89,9 @@ class HLSStream:
             ]
 
             try:
+                logger.info(
+                    f"Starting FFmpeg for Blink TCP stream {self.stream_id} with command: {' '.join(cmd)}"
+                )
                 self.process = subprocess.Popen(
                     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
@@ -181,7 +188,7 @@ class HLSStream:
 
 
 class StreamManager:
-    """Manages multiple RTSP to HLS streams."""
+    """Manages multiple TCP to HLS streams for Blink cameras."""
 
     def __init__(self, config: StreamConfig | None = None):
         """Initialize stream manager.
@@ -196,13 +203,13 @@ class StreamManager:
         self._start_cleanup_timer()
 
     def start_stream(
-        self, stream_id: str, rtsp_url: str
+        self, stream_id: str, tcp_url: str
     ) -> tuple[str | None, str | None]:
-        """Start or get existing HLS stream.
+        """Start or get existing HLS stream from Blink TCP source.
 
         Args:
             stream_id: Unique identifier for the stream
-            rtsp_url: RTSP source URL
+            tcp_url: TCP source URL from Blink's init_livestream()
 
         Returns:
             Tuple of (playlist_url, error_message)
@@ -211,7 +218,7 @@ class StreamManager:
             # Stop existing stream if different URL
             if stream_id in self.streams:
                 existing_stream = self.streams[stream_id]
-                if existing_stream.rtsp_url != rtsp_url:
+                if existing_stream.tcp_url != tcp_url:
                     existing_stream.stop()
                     del self.streams[stream_id]
                 else:
@@ -220,7 +227,7 @@ class StreamManager:
                         return f"/api/hls/{stream_id}/playlist.m3u8", None
 
             # Create new stream
-            stream = HLSStream(stream_id, rtsp_url, self.config)
+            stream = HLSStream(stream_id, tcp_url, self.config)
             result = stream.start()
 
             if result[0]:  # Success

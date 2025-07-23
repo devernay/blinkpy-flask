@@ -42,12 +42,48 @@ When the app is launched, it scans the thumbnail cache directory for existing th
 ## Live View
 
 Clicking on the the "play" button in the middle of a thumbnail opens the "Live View" page for that camera.
-The live view for a camera is obtained by calling get_liveview, which returns an rtsps link. That rtsps stream can then be transcoded to HLS and displayed using an HTML5 video player.
 On the top-left of the Live View page, there is a "Back" button (back arrow), that goes back to the "Home" view.
 On the top-right of the Live View page, there is a "Mute" button ("speaker" icon) to mute the sound of the live view.
 
+### Live streaming MPEG-TS livestreaming via local TCP proxy server
 
-### Camera pane
+Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. The `requirements.txt` file installs this version of blinkpy.
+
+Here is sample code that uses this functionality:
+```python
+import asyncio
+import os.path
+from aiohttp import ClientSession
+from blinkpy.blinkpy import Blink
+from blinkpy.auth import Auth
+from blinkpy.helpers.util import json_load
+
+async def start():
+    blink = Blink(session=ClientSession())
+    if os.path.exists("blink.json"):
+        auth = Auth(await json_load("blink.json"))
+        blink.auth = auth
+    await blink.start()
+    await blink.save("blink.json")
+    camera = blink.cameras["MyCamera"]
+    stream = await camera.init_livestream()
+    await stream.start()
+    print(stream.url)
+    await stream.feed()
+
+
+asyncio.run(start())
+```
+
+ffplay just works with the stable stream like this:
+```
+ffplay tcp://127.0.0.1:<random-port>
+```
+The URL given to ffplay is `stream.url` from the code above.
+
+In our implementation, the MPEG-TS should be transcoded to HLS and played by the browser.
+
+## Camera pane
 
 The camera pane is overlaid on the page when the camera kebab button is pressed. It has:
 - On top-right a "close" button (with a cross) to close the pane and get back to the Home view.
@@ -165,3 +201,147 @@ Verify that the following issues have been fixed already:
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
 Read the whole code again, including the python code and the HTML templates. How would you rate the code quality? Is there room for improvement?
+
+## 🟡 Areas for Improvement
+
+### **1. File Size & Complexity**
+Issue: app.py is 3,193 lines - too large for maintainability
+python
+# Current: Everything in one massive file
+# Better: Split into modules
+app/
+├── __init__.py
+├── routes/
+│   ├── camera.py
+│   ├── clips.py
+│   ├── system.py
+│   └── settings.py
+├── models/
+├── services/
+└── utils/
+
+
+### **2. Global Variables**
+Issue: Heavy reliance on global state
+python
+# Current: 10+ global variables
+global blink, stream_manager, thumbnail_cache, clips_cache, ...
+
+# Better: Dependency injection or application context
+class AppContext:
+    def __init__(self):
+        self.blink = None
+        self.stream_manager = None
+        self.caches = CacheManager()
+
+
+### **3. Function Length**
+Issue: Some functions are too long (100+ lines)
+python
+# Example: get_camera_liveview() is 70+ lines
+# Better: Break into smaller, focused functions
+def get_camera_liveview(camera_id_str: str):
+    camera_id = validate_camera_id(camera_id_str)
+    camera = get_camera_or_error(camera_id)
+    stream = start_livestream(camera)
+    return create_stream_response(stream)
+
+
+### **4. JavaScript Code Quality**
+Issue: 1,376 lines of JavaScript in HTML template
+javascript
+// Current: All JS embedded in HTML
+// Better: Separate JS files with modules
+static/js/
+├── app.js
+├── camera.js
+├── clips.js
+└── livestream.js
+
+
+### **5. Error Handling Inconsistencies**
+Issue: Mix of specific and generic exception handling
+python
+# Current: Inconsistent patterns
+try:
+    # operation
+except Exception:  # Too broad
+    pass
+
+# Better: Specific exception handling
+try:
+    # operation
+except BlinkError as e:
+    logger.error(f"Blink operation failed: {e}")
+    return error_response(e)
+except Exception as e:
+    logger.exception("Unexpected error")
+    return error_response("Internal server error")
+
+
+### **6. Magic Numbers & Hardcoded Values**
+Issue: Some values still hardcoded despite Config class
+python
+# Found in code:
+time.sleep(1)  # Should be Config.STREAM_START_DELAY
+attempts < 10  # Should be Config.MAX_RETRY_ATTEMPTS
+
+
+### **7. Testing Coverage**
+Issue: Limited test coverage for such a complex application
+python
+# Current: Basic test file exists
+# Better: Comprehensive test suite
+tests/
+├── unit/
+├── integration/
+└── e2e/
+
+
+## 🔴 Critical Issues
+
+### **1. Security Concerns**
+python
+# Issue: Hardcoded secret key
+SECRET_KEY = "your-secret-key-here"  # Should be environment variable
+
+# Issue: No input sanitization in some endpoints
+# Better: Add validation decorators
+@validate_json_input
+@require_authentication
+def api_endpoint():
+    pass
+
+
+### **2. Resource Leaks**
+python
+# Issue: Potential memory leaks with active streams
+# Current cleanup is basic
+# Better: Implement proper resource managers with __enter__/__exit__
+
+
+### **3. Concurrency Issues**
+python
+# Issue: Race conditions possible in cache updates
+# Better: Use proper locking or atomic operations
+
+
+## 📋 Specific Recommendations
+
+### **Immediate (High Priority)**
+1. Split app.py into modules - Reduce complexity
+2. Move JavaScript to separate files - Better maintainability
+3. Fix security issues - Environment variables for secrets
+4. Add comprehensive logging - Better debugging
+
+### **Short Term (Medium Priority)**
+1. Reduce global variables - Use dependency injection
+2. Add more specific exception handling - Better error recovery
+3. Implement proper resource managers - Prevent leaks
+4. Add input validation decorators - Security & robustness
+
+### **Long Term (Low Priority)**
+1. Add comprehensive test suite - Better reliability
+2. Implement caching strategies - Performance optimization
+3. Add monitoring/metrics - Production readiness
+4. Consider async Flask (Quart) - Better performance

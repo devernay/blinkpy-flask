@@ -183,13 +183,75 @@ let systems = [];
 let devices = [];
 let currentCameraId = null;
 
+// Cleanup livestream when page is unloaded
+window.addEventListener('beforeunload', function() {
+    if (currentLiveStream) {
+        // Use sendBeacon for reliable cleanup during page unload
+        navigator.sendBeacon(`/api/camera/${currentLiveStream.cameraId}/liveview/stop`);
+    }
+});
+
+// Also cleanup on visibility change (when tab becomes hidden)
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden && currentLiveStream) {
+        stopLiveStream();
+    }
+});
+
+// Configuration loaded from server
+let appConfig = {
+    hls_stream_check_interval: 1000,
+    hls_stream_check_delay: 2000,
+    hls_stream_max_attempts: 10,
+    thumbnail_update_poll_interval: 2000,
+    thumbnail_success_display_time: 1000,
+    thumbnail_processing_display_time: 3000,
+    clip_thumbnail_check_interval: 2000,
+    milliseconds_to_seconds: 1000,
+    error_messages: {
+        live_stream_failed: "Unable to start live video. Please check your camera connection and try again.",
+        live_stream_connection_failed: "Unable to start live video. Please check your internet connection and try again.",
+        live_view_failed: "Unable to start live view. Please check that your camera is online and try again.",
+        connection_error: "Unable to connect. Please check your internet connection and try again.",
+        arm_state_failed: "Unable to change system status. Please check your connection and try again.",
+        clip_download_failed: "Unable to download video. Please try again later.",
+        clip_play_failed: "Unable to play video. Please check your connection and try again.",
+        cache_clear_success: "Cache cleared successfully! Your storage space has been freed up.",
+        cache_clear_failed: "Unable to clear cache. Please check your connection and try again.",
+        logout_failed: "Unable to log out. Please try again.",
+        clips_updated: "All your local video clips are already up to date!",
+        feature_coming_soon: "This feature is coming soon! We're working hard to bring it to you."
+    }
+};
+
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
+    loadConfig();
     loadSystems();
     loadSettings();
 });
 
+async function loadConfig() {
+    try {
+        const response = await fetch('/api/config');
+        const data = await response.json();
+        if (response.ok && data.success) {
+            appConfig = { ...appConfig, ...data.data };
+        }
+    } catch (error) {
+        console.warn('Could not load configuration, using defaults:', error);
+    }
+}
+
+// Global variable to track current livestream
+let currentLiveStream = null;
+
 function showView(viewName) {
+    // Stop livestream if leaving live view
+    if (currentLiveStream && viewName !== 'live') {
+        stopLiveStream();
+    }
+
     // Hide all views
     document.querySelectorAll('.view').forEach(view => {
         view.style.display = 'none';
@@ -385,6 +447,37 @@ function createSyncModuleCard(sync) {
     return card;
 }
 
+async function stopLiveStream() {
+    if (!currentLiveStream) return;
+
+    try {
+        console.log('Stopping livestream for camera:', currentLiveStream.cameraId);
+
+        // Stop the video element
+        const video = document.getElementById('live-video');
+        if (video) {
+            video.pause();
+            video.src = '';
+            video.load();
+        }
+
+        // Call the backend to stop the stream
+        const response = await fetch(`/api/camera/${currentLiveStream.cameraId}/liveview/stop`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            console.log('Livestream stopped successfully');
+        } else {
+            console.warn('Failed to stop livestream on server');
+        }
+    } catch (error) {
+        console.error('Error stopping livestream:', error);
+    } finally {
+        currentLiveStream = null;
+    }
+}
+
 async function showLiveView(cameraId, cameraName) {
     try {
         console.log('Starting live view for camera:', cameraId);
@@ -394,17 +487,26 @@ async function showLiveView(cameraId, cameraName) {
         console.log('Live view response:', data);
 
         if (response.ok && data.success) {
+            // Store current stream info for cleanup
+            currentLiveStream = {
+                cameraId: cameraId,
+                streamId: data.data.stream_id,
+                tcpUrl: data.data.tcp_url,
+                hlsUrl: data.data.hls_url
+            };
+
             // Show live view
             document.getElementById('live-view-title').textContent = `${cameraName} Live View`;
             const video = document.getElementById('live-video');
 
             console.log('HLS URL:', data.data.hls_url);
+            console.log('TCP URL:', data.data.tcp_url);
 
             showView('live');
 
             // Wait for HLS stream to be ready and check if playlist exists
             let attempts = 0;
-            const maxAttempts = 10;
+            const maxAttempts = appConfig.hls_stream_max_attempts;
             const checkStream = async () => {
                 attempts++;
                 try {
@@ -415,31 +517,35 @@ async function showLiveView(cameraId, cameraName) {
                         video.load();
                     } else if (attempts < maxAttempts) {
                         console.log(`HLS playlist not ready (attempt ${attempts}/${maxAttempts}), retrying...`);
-                        setTimeout(checkStream, 1000);
+                        setTimeout(checkStream, appConfig.hls_stream_check_interval);
                     } else {
                         console.error('HLS playlist failed to become ready after', maxAttempts, 'attempts');
-                        alert('Live stream failed to start. Please try again.');
+                        alert(appConfig.error_messages.live_stream_failed);
+                        // Clean up on failure
+                        currentLiveStream = null;
                     }
                 } catch (error) {
                     if (attempts < maxAttempts) {
                         console.log(`Error checking HLS playlist (attempt ${attempts}/${maxAttempts}):`, error);
-                        setTimeout(checkStream, 1000);
+                        setTimeout(checkStream, appConfig.hls_stream_check_interval);
                     } else {
                         console.error('Failed to load HLS stream after', maxAttempts, 'attempts:', error);
-                        alert('Live stream failed to start. Please try again.');
+                        alert(appConfig.error_messages.live_stream_connection_failed);
+                        // Clean up on failure
+                        currentLiveStream = null;
                     }
                 }
             };
 
-            // Start checking after 2 seconds
-            setTimeout(checkStream, 2000);
+            // Start checking after configured delay
+            setTimeout(checkStream, appConfig.hls_stream_check_delay);
         } else {
             console.error('Live view API error:', data);
-            alert('Error starting live view: ' + (data.error || 'Unknown error'));
+            alert(appConfig.error_messages.live_view_failed);
         }
     } catch (error) {
         console.error('Error starting live view:', error);
-        alert('Error starting live view');
+        alert(appConfig.error_messages.connection_error);
     }
 }
 
@@ -543,11 +649,11 @@ async function setArmState(armed) {
             updateArmButton();
         } else {
             const data = await response.json();
-            alert('Error toggling arm state: ' + data.error);
+            alert(appConfig.error_messages.arm_state_failed + (data.error ? ': ' + data.error : ''));
         }
     } catch (error) {
         console.error('Error toggling arm state:', error);
-        alert('Error toggling arm state');
+        alert(appConfig.error_messages.arm_state_failed);
     }
 }
 
@@ -570,11 +676,11 @@ async function toggleArm() {
             updateArmButton();
         } else {
             const data = await response.json();
-            alert('Error toggling arm state: ' + data.error);
+            alert(appConfig.error_messages.arm_state_failed + (data.error ? ': ' + data.error : ''));
         }
     } catch (error) {
         console.error('Error toggling arm state:', error);
-        alert('Error toggling arm state');
+        alert(appConfig.error_messages.arm_state_failed);
     }
 }
 
@@ -752,12 +858,12 @@ async function playClip(clip) {
         } else {
             loadingModal.remove();
             const error = await response.json();
-            alert('Error downloading clip: ' + error.error);
+            alert(appConfig.error_messages.clip_download_failed + (error.error ? ': ' + error.error : ''));
         }
     } catch (error) {
         loadingModal.remove();
         console.error('Error playing clip:', error);
-        alert('Error playing clip');
+        alert(appConfig.error_messages.clip_play_failed);
     }
 }
 
@@ -808,14 +914,14 @@ async function clearCache() {
                 loadClips();
             }
 
-            alert('Cache cleared successfully');
+            alert(appConfig.error_messages.cache_clear_success);
         } else {
             const data = await response.json();
-            alert('Error clearing cache: ' + (data.error || 'Unknown error'));
+            alert(appConfig.error_messages.cache_clear_failed + (data.error ? ': ' + data.error : ''));
         }
     } catch (error) {
         console.error('Error clearing cache:', error);
-        alert('Error clearing cache');
+        alert(appConfig.error_messages.cache_clear_failed);
     }
 }
 
@@ -828,11 +934,11 @@ async function performLogout() {
         if (response.ok) {
             window.location.href = '/login';
         } else {
-            alert('Error logging out');
+            alert(appConfig.error_messages.logout_failed);
         }
     } catch (error) {
         console.error('Error logging out:', error);
-        alert('Error logging out');
+        alert(appConfig.error_messages.logout_failed);
     }
 }
 
@@ -937,7 +1043,7 @@ function updateAllThumbnailAges() {
 }
 
 function formatTimestampAge(timestamp) {
-    const now = Date.now() / 1000;
+    const now = Date.now() / appConfig.milliseconds_to_seconds;
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60);
     const hours = Math.floor(diff / 3600);
@@ -1062,7 +1168,7 @@ async function downloadAllLocalClips() {
     });
 
     if (clipsToDownload.length === 0) {
-        alert('All local clips are already updated.');
+        alert(appConfig.error_messages.clips_updated);
         return;
     }
 
@@ -1156,7 +1262,7 @@ async function waitForThumbnail(clipId) {
                     resolve();
                 } else {
                     // Retry after a delay
-                    setTimeout(checkThumbnail, 2000);
+                    setTimeout(checkThumbnail, appConfig.clip_thumbnail_check_interval);
                 }
             } catch (error) {
                 console.error('Error checking thumbnail:', error);
@@ -1181,7 +1287,7 @@ function showAddDevicePlaceholder() {
 }
 
 function showPlaceholder() {
-    alert('This feature is not yet available');
+    alert(appConfig.error_messages.feature_coming_soon);
 }
 
 function toggleSwitch(switchElement) {
@@ -1249,7 +1355,7 @@ function pollForThumbnailUpdate(cameraId) {
                     }
 
                     showThumbnailBanner(cameraId, 'Thumbnail updated!', 'success');
-                    setTimeout(() => hideThumbnailBanner(cameraId), 1000);
+                    setTimeout(() => hideThumbnailBanner(cameraId), appConfig.thumbnail_success_display_time);
 
                     clearInterval(pollInterval);
                     return;
@@ -1262,9 +1368,9 @@ function pollForThumbnailUpdate(cameraId) {
         if (pollCount >= maxPolls) {
             clearInterval(pollInterval);
             showThumbnailBanner(cameraId, 'Thumbnail refresh timeout', 'error');
-            setTimeout(() => hideThumbnailBanner(cameraId), 3000);
+            setTimeout(() => hideThumbnailBanner(cameraId), appConfig.thumbnail_processing_display_time);
         }
-    }, 2000);
+    }, appConfig.thumbnail_update_poll_interval);
 }
 </script>
 {% endblock %}

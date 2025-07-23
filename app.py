@@ -4,7 +4,7 @@ Blink Camera Flask Web Interface
 
 A comprehensive web application for managing Blink camera systems with features including:
 - Multi-system support with real-time camera thumbnails
-- Live streaming via RTSP to HLS transcoding
+- Live streaming via TCP to HLS transcoding using Blink's init_livestream()
 - Cloud and local clip management with thumbnail generation
 - User settings (temperature units, clip retention, thumbnail sizes)
 - Mobile-optimized responsive interface
@@ -13,7 +13,7 @@ A comprehensive web application for managing Blink camera systems with features 
 Main components:
 - Flask web server with RESTful API
 - Async Blink connection management
-- HLS stream manager for live video
+- HLS stream manager for live video from TCP streams
 - Intelligent caching with configurable retention
 - Thread-safe operations with proper cleanup
 
@@ -21,6 +21,7 @@ Author: Fredderic Devernay
 License: MIT
 """
 
+import asyncio
 import atexit
 import os
 import re
@@ -439,10 +440,21 @@ class Config:
     Includes cache settings, timeouts, validation patterns, and limits.
     """
 
+    # Server defaults
+    DEFAULT_HOST = "0.0.0.0"  # Default host to bind to
+    DEFAULT_PORT = 5001  # Default port to bind to
+    DEFAULT_CACHE_DIR = "cache"  # Default cache directory name
+
     # Cache settings
     CLIPS_CACHE_SIZE = 100  # Maximum clips in cache
     CLIPS_METADATA_CACHE_SIZE = 1000  # Maximum clips metadata entries in cache
     THUMBNAIL_CACHE_SIZE = 100  # Maximum thumbnail entries in cache
+
+    # Cache subdirectory names
+    CREDENTIALS_FILENAME = "blink.json"  # Encrypted credentials file
+    SETTINGS_FILENAME = "settings.json"  # User settings file
+    THUMBNAILS_SUBDIR = "thumbnails"  # Thumbnail cache subdirectory
+    CLIPS_SUBDIR = "clips"  # Clips cache subdirectory
 
     # FFmpeg settings
     FFMPEG_TIMEOUT = 30  # FFmpeg operation timeout
@@ -473,11 +485,41 @@ class Config:
     THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max polling attempts for thumbnail updates
     CACHE_CLEAR_TIMEOUT = 30  # Cache clearing operation timeout
 
+    # UI polling and timing settings
+    HLS_STREAM_CHECK_INTERVAL = 1000  # HLS stream readiness check interval (ms)
+    HLS_STREAM_CHECK_DELAY = 2000  # Initial delay before checking HLS stream (ms)
+    HLS_STREAM_MAX_ATTEMPTS = 10  # Maximum attempts to check HLS stream readiness
+    THUMBNAIL_UPDATE_POLL_INTERVAL = 2000  # Thumbnail update polling interval (ms)
+    THUMBNAIL_SUCCESS_DISPLAY_TIME = 1000  # Time to show success message (ms)
+    THUMBNAIL_PROCESSING_DISPLAY_TIME = 3000  # Time to show processing message (ms)
+    CLIP_THUMBNAIL_CHECK_INTERVAL = (
+        2000  # Clip thumbnail availability check interval (ms)
+    )
+
+    # Time calculation constants
+    MILLISECONDS_TO_SECONDS = 1000  # Conversion factor from milliseconds to seconds
+
     # Log settings
     LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit
 
     # System name fallback
     DEFAULT_SYSTEM_NAME = "Blink System"  # Default system name for cloud clips
+
+    # HTTP Status codes
+    HTTP_STATUS_OK = 200  # Success status code
+    HTTP_STATUS_BAD_REQUEST = 400  # Bad request status code
+    HTTP_STATUS_UNAUTHORIZED = 401  # Unauthorized status code
+    HTTP_STATUS_NOT_FOUND = 404  # Not found status code
+    HTTP_STATUS_INTERNAL_ERROR = 500  # Internal server error status code
+    HTTP_STATUS_NOT_IMPLEMENTED = 501  # Not implemented status code
+    HTTP_STATUS_SERVICE_UNAVAILABLE = 503  # Service unavailable status code
+
+    # HTTP retry configuration
+    HTTP_RETRY_TOTAL = 3  # Total number of retries
+    HTTP_RETRY_BACKOFF_FACTOR = 1  # Backoff factor for retries
+
+    # HTTP retry status codes
+    HTTP_RETRY_STATUS_CODES = [429, 500, 502, 503, 504]  # Status codes to retry on
 
     # Validation settings
     MAX_USERNAME_LENGTH = 100  # Maximum username length
@@ -486,6 +528,72 @@ class Config:
     VALID_CAMERA_ID_PATTERN = r"^[a-zA-Z0-9_-]+$"  # Camera ID regex
     VALID_NETWORK_ID_PATTERN = r"^[0-9]+$"  # Network ID regex
     VALID_CLIP_ID_PATTERN = r"^[a-zA-Z0-9_~-]+$"  # Clip ID regex
+
+    # User-friendly error messages
+    class ErrorMessages:
+        """User-friendly error messages for common scenarios."""
+
+        # Authentication errors
+        SYSTEM_NOT_INITIALIZED = "Unable to connect to your Blink system. Please try logging out and back in."
+        AUTH_FAILED = "Your session has expired. Please log in again to continue."
+        INVALID_CREDENTIALS = "The email or password you entered is incorrect. Please check and try again."
+        INVALID_2FA_CODE = "The verification code you entered is incorrect. Please check your email or SMS and try again."
+        TFA_VERIFICATION_FAILED = "We couldn't verify your code. Please request a new verification code and try again."
+        LOGIN_FAILED = "We're having trouble logging you in. Please check your internet connection and try again."
+
+        # Camera errors
+        CAMERA_NOT_FOUND = (
+            "We couldn't find that camera. It may have been removed or renamed."
+        )
+        CAMERA_THUMBNAIL_NOT_FOUND = "Unable to load camera image. The camera may be offline or experiencing connectivity issues."
+        THUMBNAIL_FETCH_FAILED = "We couldn't update the camera image right now. Please try again in a moment."
+
+        # System errors
+        SYSTEM_NOT_FOUND = (
+            "We couldn't find that Blink system. Please check your account settings."
+        )
+        SYSTEM_REFRESH_FAILED = "Unable to refresh your Blink system. Please check your internet connection and try again."
+
+        # Clip errors
+        CLIP_NOT_FOUND = (
+            "We couldn't find that video clip. It may have been deleted or moved."
+        )
+        CLIP_NO_MEDIA_URL = "This video clip is not available for download right now. Please try again later."
+        CLIP_DOWNLOAD_FAILED = "We couldn't download your video clip. Please check your internet connection and try again."
+        CLIP_DOWNLOAD_TIMEOUT = (
+            "The video download is taking longer than expected. Please try again."
+        )
+        LOCAL_CLIP_NOT_FOUND = "We couldn't find that local video clip. Please check that your sync module's USB storage is connected."
+        LOCAL_STORAGE_NOT_AVAILABLE = "Local storage is not available. Please check that your sync module has a USB drive connected and is online."
+        SYNC_MODULE_NOT_FOUND = "We couldn't find your sync module. Please check that it's online and connected to your network."
+
+        # Live streaming errors
+        LIVE_VIEW_FAILED = "Unable to start live view. Please check that your camera is online and try again."
+        HLS_TRANSCODING_FAILED = "We're having trouble starting the video stream. Please try again in a moment."
+        STREAM_MANAGER_UNAVAILABLE = (
+            "Live streaming is temporarily unavailable. Please try again later."
+        )
+        STREAM_NOT_FOUND = "The video stream is no longer available. Please try starting live view again."
+
+        # Data validation errors
+        INVALID_JSON_DATA = (
+            "The request contains invalid data. Please refresh the page and try again."
+        )
+        INVALID_REQUEST_DATA = (
+            "We couldn't process your request. Please refresh the page and try again."
+        )
+        INVALID_STORAGE_TYPE = "Please select either cloud storage or local storage."
+        INVALID_ARM_STATUS = "Please specify whether to arm or disarm the system."
+        INVALID_FILE_TYPE = "The requested file type is not supported."
+
+        # Generic errors
+        FEATURE_NOT_AVAILABLE = (
+            "This feature is coming soon! We're working hard to bring it to you."
+        )
+        INTERNAL_ERROR = (
+            "Something went wrong on our end. Please try again in a few moments."
+        )
+        THUMBNAIL_NOT_FOUND = "Image not available. The camera may be offline or the image may have expired."
 
 
 # Configure logging - will be reconfigured after cache paths are set
@@ -569,7 +677,7 @@ def create_api_response(
     success: bool = True,
     data: Any = None,
     error: str | None = None,
-    status_code: int = 200,
+    status_code: int = Config.HTTP_STATUS_OK,
 ) -> tuple[ApiResponse, int]:
     """Create standardized API response format.
 
@@ -612,9 +720,11 @@ def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
 
 
 def handle_api_error(
-    error: Exception, operation: str, status_code: int = 500
+    error: Exception,
+    operation: str,
+    status_code: int = Config.HTTP_STATUS_INTERNAL_ERROR,
 ) -> tuple[ApiResponse, int]:
-    """Handle API errors consistently.
+    """Handle API errors with user-friendly messages.
 
     Args:
         error: Exception that occurred
@@ -625,7 +735,25 @@ def handle_api_error(
         Standardized error response tuple
     """
     logger.error(f"Error {operation}: {error}")
-    return create_api_response(success=False, error=str(error), status_code=status_code)
+
+    # Map common exceptions to user-friendly messages
+    error_message = str(error)
+    if isinstance(error, ConnectionError):
+        error_message = "Unable to connect to your Blink system. Please check your internet connection and try again."
+    elif isinstance(error, TimeoutError):
+        error_message = "The request timed out. Please try again in a moment."
+    elif isinstance(error, ValueError):
+        error_message = "Invalid data provided. Please check your input and try again."
+    elif "authentication" in str(error).lower() or "login" in str(error).lower():
+        error_message = Config.ErrorMessages.AUTH_FAILED
+    elif "not found" in str(error).lower():
+        error_message = "The requested item could not be found."
+    elif status_code >= 500:
+        error_message = Config.ErrorMessages.INTERNAL_ERROR
+
+    return create_api_response(
+        success=False, error=error_message, status_code=status_code
+    )
 
 
 def require_blink() -> tuple[ApiResponse, int] | None:
@@ -637,13 +765,13 @@ def require_blink() -> tuple[ApiResponse, int] | None:
     if blink is None:
         return create_api_response(
             success=False,
-            error="Blink system not initialized. Log out if error persists.",
-            status_code=500,
+            error=Config.ErrorMessages.SYSTEM_NOT_INITIALIZED,
+            status_code=Config.HTTP_STATUS_INTERNAL_ERROR,
         )
     if not blink.available:
         return create_api_response(
             success=False,
-            error="Authentication failed. Log out if error persists.",
+            error=Config.ErrorMessages.AUTH_FAILED,
             status_code=401,
         )
     return None
@@ -663,7 +791,7 @@ def require_camera(
     camera = find_camera_by_id(camera_id)
     if camera is None:
         error_response = create_api_response(
-            success=False, error="Camera not found", status_code=404
+            success=False, error=Config.ErrorMessages.CAMERA_NOT_FOUND, status_code=404
         )
         return None, error_response
     return camera, None
@@ -685,7 +813,7 @@ def require_sync_module(
             return sync, None
 
     error_response = create_api_response(
-        success=False, error="System not found", status_code=404
+        success=False, error=Config.ErrorMessages.SYSTEM_NOT_FOUND, status_code=404
     )
     return None, error_response
 
@@ -721,9 +849,9 @@ app.secret_key = os.environ.get("SECRET_KEY", Config.SECRET_KEY)
 # HTTP session with connection pooling
 http_session = requests.Session()
 retry_strategy = Retry(
-    total=3,
-    backoff_factor=1,
-    status_forcelist=[429, 500, 502, 503, 504],
+    total=Config.HTTP_RETRY_TOTAL,
+    backoff_factor=Config.HTTP_RETRY_BACKOFF_FACTOR,
+    status_forcelist=Config.HTTP_RETRY_STATUS_CODES,
 )
 adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=20)
 http_session.mount("http://", adapter)
@@ -739,7 +867,9 @@ blink: Blink | None = None
 # Stream management - only initialized when running server
 stream_manager = None
 # Cache configuration - will be set from command line
-CACHE_DIR = "cache"  # Default cache directory, overridden by Flask config
+CACHE_DIR = (
+    Config.DEFAULT_CACHE_DIR
+)  # Default cache directory, overridden by Flask config
 CREDENTIALS_FILE = None  # Path to encrypted credentials file, set in get_cache_paths()
 THUMBNAIL_CACHE_DIR = None  # Directory for cached thumbnails, set in get_cache_paths()
 CLIPS_CACHE_DIR = None  # Directory for cached clips, set in get_cache_paths()
@@ -756,7 +886,7 @@ def initialize_cache_paths() -> None:
     """Initialize cache directory paths from Flask config or defaults.
 
     Sets global path variables for cache directories and credential file.
-    Uses Flask app config 'CACHE_DIR' or defaults to 'cache'.
+    Uses Flask app config 'CACHE_DIR' or defaults to Config.DEFAULT_CACHE_DIR.
 
     Side Effects:
         Updates global variables: CACHE_DIR, CREDENTIALS_FILE,
@@ -768,12 +898,12 @@ def initialize_cache_paths() -> None:
         THUMBNAIL_CACHE_DIR, \
         CLIPS_CACHE_DIR, \
         SETTINGS_FILE
-    cache_dir = Path(app.config.get("CACHE_DIR", "cache"))
+    cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
     CACHE_DIR = str(cache_dir)
-    CREDENTIALS_FILE = str(cache_dir / "blink.json")
-    THUMBNAIL_CACHE_DIR = str(cache_dir / "thumbnails")
-    CLIPS_CACHE_DIR = str(cache_dir / "clips")
-    SETTINGS_FILE = str(cache_dir / "settings.json")
+    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
+    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
+    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)
+    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
 
 
 # Cache configuration
@@ -960,7 +1090,7 @@ def update_camera_thumbnail(
                     logger.debug(f"Could not remove old thumbnail: {e}")
 
         thumbnail_response = blink_connection.execute(camera.get_thumbnail())
-        if thumbnail_response and thumbnail_response.status == 200:
+        if thumbnail_response and thumbnail_response.status == Config.HTTP_STATUS_OK:
             image_data = blink_connection.execute(thumbnail_response.read())
 
             # Save to file with new timestamp
@@ -1197,14 +1327,16 @@ def login() -> Response:
                 return redirect(url_for("index"))
             else:
                 return render_template(
-                    "auth.html", is_2fa=False, error="Invalid credentials"
+                    "auth.html",
+                    is_2fa=False,
+                    error=Config.ErrorMessages.INVALID_CREDENTIALS,
                 )
         except AuthenticationError as e:
             return render_template("login.html", error=str(e))
         except Exception as e:
             logger.error(f"Unexpected login error: {e}")
             return render_template(
-                "auth.html", is_2fa=False, error="Login failed. Please try again."
+                "auth.html", is_2fa=False, error=Config.ErrorMessages.LOGIN_FAILED
             )
 
     return render_template("auth.html", is_2fa=False)
@@ -1252,7 +1384,7 @@ def two_factor() -> Response:
                 return render_template(
                     "auth.html",
                     is_2fa=True,
-                    error="Invalid 2FA code",
+                    error=Config.ErrorMessages.INVALID_2FA_CODE,
                     email=session.get("temp_username", ""),
                 )
         except AuthenticationError as e:
@@ -1267,7 +1399,7 @@ def two_factor() -> Response:
             return render_template(
                 "auth.html",
                 is_2fa=True,
-                error="2FA verification failed",
+                error=Config.ErrorMessages.TFA_VERIFICATION_FAILED,
                 email=session.get("temp_username", ""),
             )
 
@@ -1465,19 +1597,25 @@ def arm_system(network_id_str: str) -> Response:
         data = request.get_json()
         if not isinstance(data, dict):
             response, status_code = create_api_response(
-                success=False, error="Invalid JSON data", status_code=400
+                success=False,
+                error=Config.ErrorMessages.INVALID_JSON_DATA,
+                status_code=400,
             )
             return jsonify(response), status_code
 
         armed = data.get("armed")
         if not isinstance(armed, bool):
             response, status_code = create_api_response(
-                success=False, error="Armed status must be boolean", status_code=400
+                success=False,
+                error=Config.ErrorMessages.INVALID_ARM_STATUS,
+                status_code=400,
             )
             return jsonify(response), status_code
     except Exception:
         response, status_code = create_api_response(
-            success=False, error="Invalid request data", status_code=400
+            success=False,
+            error=Config.ErrorMessages.INVALID_REQUEST_DATA,
+            status_code=400,
         )
         return jsonify(response), status_code
 
@@ -1556,7 +1694,7 @@ def get_clips():
     if storage_type not in ["cloud", "local"]:
         response, status_code = create_api_response(
             success=False,
-            error='Invalid storage type. Must be "cloud" or "local"',
+            error=Config.ErrorMessages.INVALID_STORAGE_TYPE,
             status_code=400,
         )
         return jsonify(response), status_code
@@ -1603,13 +1741,17 @@ def refresh_system():
             return jsonify(response), status_code
         else:
             response, status_code = create_api_response(
-                success=False, error="Failed to refresh system", status_code=500
+                success=False,
+                error=Config.ErrorMessages.SYSTEM_REFRESH_FAILED,
+                status_code=500,
             )
             return jsonify(response), status_code
     except Exception as e:
         logger.error(f"Error refreshing system: {e}")
         response, status_code = create_api_response(
-            success=False, error=str(e), status_code=500
+            success=False,
+            error=Config.ErrorMessages.SYSTEM_REFRESH_FAILED,
+            status_code=500,
         )
         return jsonify(response), status_code
 
@@ -1737,7 +1879,7 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
     )
     if clip_info is None:
         response, status_code = create_api_response(
-            success=False, error="Clip not found", status_code=404
+            success=False, error=Config.ErrorMessages.CLIP_NOT_FOUND, status_code=404
         )
         return jsonify(response), status_code
 
@@ -1753,7 +1895,9 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
         media_url = clip_info.get("media")
         if media_url is None:
             response, status_code = create_api_response(
-                success=False, error="No media URL found", status_code=404
+                success=False,
+                error=Config.ErrorMessages.CLIP_NO_MEDIA_URL,
+                status_code=404,
             )
             return jsonify(response), status_code
 
@@ -1761,7 +1905,7 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
         def download_file():
             try:
                 response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
-                if response.status_code == 200:
+                if response.status_code == Config.HTTP_STATUS_OK:
                     filepath.write_bytes(response.content)
                     return True
                 else:
@@ -1779,13 +1923,17 @@ def download_cloud_clip(clip_id: ClipId) -> Response:
             success = future.result(timeout=Config.DOWNLOAD_TIMEOUT)
             if not success:
                 response, status_code = create_api_response(
-                    success=False, error="Failed to download clip", status_code=500
+                    success=False,
+                    error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
+                    status_code=500,
                 )
                 return jsonify(response), status_code
         except Exception as e:
             logger.error(f"Download timeout or error for clip {clip_id}: {e}")
             response, status_code = create_api_response(
-                success=False, error="Download failed or timed out", status_code=500
+                success=False,
+                error=Config.ErrorMessages.CLIP_DOWNLOAD_TIMEOUT,
+                status_code=500,
             )
             return jsonify(response), status_code
 
@@ -1809,13 +1957,17 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
     sync_module = blink.sync.get(sync_name)
     if sync_module is None:
         response, status_code = create_api_response(
-            success=False, error="Sync module not found", status_code=404
+            success=False,
+            error=Config.ErrorMessages.SYNC_MODULE_NOT_FOUND,
+            status_code=404,
         )
         return jsonify(response), status_code
 
     if not sync_module.local_storage or not sync_module.local_storage_manifest_ready:
         response, status_code = create_api_response(
-            success=False, error="Local storage not available", status_code=404
+            success=False,
+            error=Config.ErrorMessages.LOCAL_STORAGE_NOT_AVAILABLE,
+            status_code=404,
         )
         return jsonify(response), status_code
 
@@ -1823,7 +1975,9 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
     item = next((i for i in manifest if i.id == item_id), None)
     if item is None:
         response, status_code = create_api_response(
-            success=False, error="Local clip not found", status_code=404
+            success=False,
+            error=Config.ErrorMessages.LOCAL_CLIP_NOT_FOUND,
+            status_code=404,
         )
         return jsonify(response), status_code
 
@@ -1842,14 +1996,16 @@ def download_local_clip(clip_id: ClipId, sync_name: str, item_id: int) -> Respon
             if success is not True:
                 response, status_code = create_api_response(
                     success=False,
-                    error="Failed to download local clip",
+                    error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
                     status_code=500,
                 )
                 return jsonify(response), status_code
         except Exception as e:
             logger.error(f"Error downloading local clip: {e}")
             response, status_code = create_api_response(
-                success=False, error=f"Download failed: {str(e)}", status_code=500
+                success=False,
+                error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
+                status_code=500,
             )
             return jsonify(response), status_code
 
@@ -1962,7 +2118,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                 if not media_url:
                     return
                 response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
-                if response.status_code == 200:
+                if response.status_code == Config.HTTP_STATUS_OK:
                     filepath.write_bytes(response.content)
 
             # Cache the clip and generate thumbnail
@@ -1987,6 +2143,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 
 @app.route("/api/camera/<camera_id_str>/liveview")
 def get_camera_liveview(camera_id_str: str):
+    """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md."""
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -1995,7 +2152,6 @@ def get_camera_liveview(camera_id_str: str):
         )
         return jsonify(response), status_code
 
-    """Get live view stream for camera."""
     error_response = require_blink()
     if error_response is not None:
         response, status_code = error_response
@@ -2007,39 +2163,115 @@ def get_camera_liveview(camera_id_str: str):
         return jsonify(response), status_code
 
     try:
-        # Get RTSP stream URL via blink operation
-        rtsp_url = blink_connection.execute(camera.get_liveview())
+        # Use init_livestream() as specified in IMPLEMENTATION.md
+        async def init_stream():
+            stream = await camera.init_livestream()
+            await stream.start()
+            # Start feeding the stream in the background
+            asyncio.create_task(stream.feed())
+            return stream
 
-        if rtsp_url is not None:
-            # Start HLS transcoding
+        # Execute the async livestream initialization
+        stream = blink_connection.execute(init_stream())
+
+        if stream is not None:
+            # Get the TCP URL from the stream
+            tcp_url = stream.url
+            logger.info(f"Livestream TCP URL for camera {camera_id}: {tcp_url}")
+
+            # Start HLS transcoding from the TCP stream
             if stream_manager:
                 hls_url, error_msg = stream_manager.start_stream(
-                    str(camera_id), rtsp_url
+                    str(camera_id), tcp_url
                 )
             else:
-                hls_url, error_msg = None, "Stream manager not initialized"
+                hls_url = None
+
             if hls_url is not None:
+                # Store the stream object for later cleanup
+                if not hasattr(blink_connection, "_active_streams"):
+                    blink_connection._active_streams = {}
+                blink_connection._active_streams[str(camera_id)] = stream
+
                 response, status_code = create_api_response(
-                    success=True, data={"rtsp_url": rtsp_url, "hls_url": hls_url}
+                    success=True,
+                    data={
+                        "tcp_url": tcp_url,
+                        "hls_url": hls_url,
+                        "stream_id": str(camera_id),
+                    },
                 )
                 return jsonify(response), status_code
             else:
+                # Clean up the stream if HLS transcoding failed
+                if hasattr(stream, "stop"):
+                    try:
+                        stream.stop()
+                    except Exception as e:
+                        logger.warning(f"Error stopping stream during cleanup: {e}")
+
                 response, status_code = create_api_response(
                     success=False,
-                    error=f"Failed to start HLS transcoding: {error_msg}",
+                    error=Config.ErrorMessages.HLS_TRANSCODING_FAILED,
                     status_code=500,
                 )
                 return jsonify(response), status_code
         else:
             response, status_code = create_api_response(
-                success=False, error="Failed to get live view URL", status_code=500
+                success=False,
+                error=Config.ErrorMessages.LIVE_VIEW_FAILED,
+                status_code=500,
             )
             return jsonify(response), status_code
     except Exception as e:
+        logger.error(f"Error starting livestream for camera {camera_id}: {e}")
         response, status_code = handle_api_error(
-            e, f"getting live view for camera {camera_id}"
+            e, f"starting livestream for camera {camera_id}"
         )
         return jsonify(response), status_code
+
+
+@app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
+def stop_camera_liveview(camera_id_str: str):
+    """Stop live view stream for camera."""
+    try:
+        camera_id = CameraId(camera_id_str)
+    except ValueError as e:
+        response, status_code = create_api_response(
+            success=False, error=str(e), status_code=400
+        )
+        return jsonify(response), status_code
+
+    try:
+        # Stop the HLS stream
+        if stream_manager:
+            stream_manager.stop_stream(str(camera_id))
+
+        # Stop the TCP livestream if it exists
+        if hasattr(blink_connection, "_active_streams"):
+            stream = blink_connection._active_streams.get(str(camera_id))
+            if stream and hasattr(stream, "stop"):
+                try:
+                    stream.stop()
+                    logger.info(f"Stopped livestream for camera {camera_id}")
+                except Exception as e:
+                    logger.warning(
+                        f"Error stopping livestream for camera {camera_id}: {e}"
+                    )
+                finally:
+                    # Remove from active streams
+                    del blink_connection._active_streams[str(camera_id)]
+
+        response, status_code = create_api_response(
+            success=True, data={"message": "Livestream stopped successfully"}
+        )
+        return jsonify(response), status_code
+
+    except Exception as e:
+        logger.error(f"Error stopping livestream for camera {camera_id}: {e}")
+        response, status_code = handle_api_error(
+            e, f"stopping livestream for camera {camera_id}"
+        )
 
 
 @app.route("/api/hls/<camera_id_str>/<path:filename>")
@@ -2047,7 +2279,9 @@ def serve_hls_file(camera_id_str: str, filename: str):
     """Serve HLS playlist and segment files."""
     if not stream_manager:
         response, status_code = create_api_response(
-            success=False, error="Stream manager not available", status_code=503
+            success=False,
+            error=Config.ErrorMessages.STREAM_MANAGER_UNAVAILABLE,
+            status_code=Config.HTTP_STATUS_SERVICE_UNAVAILABLE,
         )
         return jsonify(response), status_code
 
@@ -2055,7 +2289,7 @@ def serve_hls_file(camera_id_str: str, filename: str):
 
     if file_path is None:
         response, status_code = create_api_response(
-            success=False, error="Stream or file not found", status_code=404
+            success=False, error=Config.ErrorMessages.STREAM_NOT_FOUND, status_code=404
         )
         return jsonify(response), status_code
 
@@ -2065,7 +2299,7 @@ def serve_hls_file(camera_id_str: str, filename: str):
         return send_file(str(file_path), mimetype="video/mp2t")
     else:
         response, status_code = create_api_response(
-            success=False, error="Invalid file type", status_code=400
+            success=False, error=Config.ErrorMessages.INVALID_FILE_TYPE, status_code=400
         )
         return jsonify(response), status_code
 
@@ -2084,7 +2318,7 @@ def get_clip_thumbnail(clip_id_str: str):
             return send_file(str(thumbnail_path), mimetype="image/jpeg")
 
     response, status_code = create_api_response(
-        success=False, error="Thumbnail not found", status_code=404
+        success=False, error=Config.ErrorMessages.THUMBNAIL_NOT_FOUND, status_code=404
     )
     return jsonify(response), status_code
 
@@ -2108,7 +2342,7 @@ def get_camera_thumbnail_timestamp(camera_id_str: str):
     camera = find_camera_by_id(camera_id)
     if camera is None:
         response, status_code = create_api_response(
-            success=False, error="Camera not found", status_code=404
+            success=False, error=Config.ErrorMessages.CAMERA_NOT_FOUND, status_code=404
         )
         return jsonify(response), status_code
 
@@ -2141,7 +2375,9 @@ def get_camera_thumbnail(camera_id_str: str):
     camera = find_camera_by_id(camera_id)
     if camera is None or camera.thumbnail is None:
         response, status_code = create_api_response(
-            success=False, error="Camera or thumbnail not found", status_code=404
+            success=False,
+            error=Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND,
+            status_code=404,
         )
         return jsonify(response), status_code
 
@@ -2161,12 +2397,14 @@ def get_camera_thumbnail(camera_id_str: str):
 
         # If not cached, fetch via blink operation
         response = blink_connection.execute(camera.get_thumbnail())
-        if response is not None and response.status == 200:
+        if response is not None and response.status == Config.HTTP_STATUS_OK:
             image_data = blink_connection.execute(response.read())
             return FlaskResponse(image_data, mimetype="image/jpeg")
         else:
             response, status_code = create_api_response(
-                success=False, error="Failed to fetch thumbnail", status_code=500
+                success=False,
+                error=Config.ErrorMessages.THUMBNAIL_FETCH_FAILED,
+                status_code=500,
             )
             return jsonify(response), status_code
     except Exception as e:
@@ -2184,11 +2422,50 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
     logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
+@app.route("/api/config")
+def get_config():
+    """Get client-side configuration constants.
+
+    Returns configuration values needed by the JavaScript frontend.
+    This allows centralizing timing and polling constants in the Config class.
+    """
+    config_data = {
+        "hls_stream_check_interval": Config.HLS_STREAM_CHECK_INTERVAL,
+        "hls_stream_check_delay": Config.HLS_STREAM_CHECK_DELAY,
+        "hls_stream_max_attempts": Config.HLS_STREAM_MAX_ATTEMPTS,
+        "thumbnail_update_poll_interval": Config.THUMBNAIL_UPDATE_POLL_INTERVAL,
+        "thumbnail_success_display_time": Config.THUMBNAIL_SUCCESS_DISPLAY_TIME,
+        "thumbnail_processing_display_time": Config.THUMBNAIL_PROCESSING_DISPLAY_TIME,
+        "clip_thumbnail_check_interval": Config.CLIP_THUMBNAIL_CHECK_INTERVAL,
+        "milliseconds_to_seconds": Config.MILLISECONDS_TO_SECONDS,
+        # User-friendly error messages for frontend
+        "error_messages": {
+            "live_stream_failed": "Unable to start live video. Please check your camera connection and try again.",
+            "live_stream_connection_failed": "Unable to start live video. Please check your internet connection and try again.",
+            "live_view_failed": "Unable to start live view. Please check that your camera is online and try again.",
+            "connection_error": "Unable to connect. Please check your internet connection and try again.",
+            "arm_state_failed": "Unable to change system status. Please check your connection and try again.",
+            "clip_download_failed": "Unable to download video. Please try again later.",
+            "clip_play_failed": "Unable to play video. Please check your connection and try again.",
+            "cache_clear_success": "Cache cleared successfully! Your storage space has been freed up.",
+            "cache_clear_failed": "Unable to clear cache. Please check your connection and try again.",
+            "logout_failed": "Unable to log out. Please try again.",
+            "clips_updated": "All your local video clips are already up to date!",
+            "feature_coming_soon": "This feature is coming soon! We're working hard to bring it to you.",
+        },
+    }
+
+    response, status_code = create_api_response(success=True, data=config_data)
+    return jsonify(response), status_code
+
+
 @app.route("/placeholder")
 def placeholder():
     """Show placeholder message."""
     response, status_code = create_api_response(
-        success=False, error="This feature is not yet available", status_code=501
+        success=False,
+        error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
+        status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
     )
     return jsonify(response), status_code
 
@@ -2657,7 +2934,9 @@ def load_clips_cache() -> None:
                         else:
                             # Validate cloud clip (simplified check)
                             videos_metadata = blink_connection.execute(
-                                blink.get_videos_metadata(stop=50)
+                                blink.get_videos_metadata(
+                                    stop=Config.MAX_VIDEOS_METADATA
+                                )
                             )
                             for video in videos_metadata:
                                 if str(video.get("id")) == str(clip_id):
@@ -2743,7 +3022,9 @@ def settings():
             data = request.get_json()
             if not isinstance(data, dict):
                 response, status_code = create_api_response(
-                    success=False, error="Invalid JSON data", status_code=400
+                    success=False,
+                    error=Config.ErrorMessages.INVALID_JSON_DATA,
+                    status_code=400,
                 )
                 return jsonify(response), status_code
 
@@ -2827,6 +3108,17 @@ def cleanup_resources() -> None:
         if stream_manager:
             stream_manager.shutdown()
 
+        # Clean up active livestreams
+        if hasattr(blink_connection, "_active_streams"):
+            for stream_id, stream in blink_connection._active_streams.items():
+                try:
+                    if hasattr(stream, "stop"):
+                        stream.stop()
+                        logger.info(f"Stopped active livestream {stream_id}")
+                except Exception as e:
+                    logger.warning(f"Error stopping livestream {stream_id}: {e}")
+            blink_connection._active_streams.clear()
+
         # Clean up Blink session only if connection is active
         if blink and blink_connection.is_running():
             try:
@@ -2868,7 +3160,9 @@ def handle_dump_system() -> None:
                     blink_connection.execute(sync.update_local_storage_manifest())
 
             # Get cloud videos in blink thread
-            videos = blink_connection.execute(blink.get_videos_metadata(stop=50))
+            videos = blink_connection.execute(
+                blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+            )
 
             # Dump system info (non-async)
             dump_blink_system_info()
@@ -2914,10 +3208,15 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
     parser.add_argument(
-        "--host", default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)"
+        "--host",
+        default=Config.DEFAULT_HOST,
+        help=f"Host to bind to (default: {Config.DEFAULT_HOST})",
     )
     parser.add_argument(
-        "--port", type=int, default=5001, help="Port to bind to (default: 5001)"
+        "--port",
+        type=int,
+        default=Config.DEFAULT_PORT,
+        help=f"Port to bind to (default: {Config.DEFAULT_PORT})",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument(
@@ -2928,8 +3227,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--cache",
-        default="cache",
-        help="Cache directory for credentials, thumbnails, and clips (default: cache)",
+        default=Config.DEFAULT_CACHE_DIR,
+        help=f"Cache directory for credentials, thumbnails, and clips (default: {Config.DEFAULT_CACHE_DIR})",
     )
     parser.add_argument(
         "--dump-system",
