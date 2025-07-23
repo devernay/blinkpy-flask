@@ -130,13 +130,15 @@ async function refreshThumbnail() {
             pollForThumbnailUpdate(currentCameraId);
         } else {
             const data = await response.json();
+            const config = window.App.getConfig();
             showThumbnailBanner(currentCameraId, 'Error refreshing thumbnail', 'error');
-            setTimeout(() => hideThumbnailBanner(currentCameraId), 3000);
+            setTimeout(() => hideThumbnailBanner(currentCameraId), config.thumbnail_error_display_time || 3000);
         }
     } catch (error) {
         console.error('Error refreshing thumbnail:', error);
+        const config = window.App.getConfig();
         showThumbnailBanner(currentCameraId, 'Error refreshing thumbnail', 'error');
-        setTimeout(() => hideThumbnailBanner(currentCameraId), 3000);
+        setTimeout(() => hideThumbnailBanner(currentCameraId), config.thumbnail_error_display_time || 3000);
     }
 }
 

@@ -499,6 +499,13 @@ class Config:
     # Time calculation constants
     MILLISECONDS_TO_SECONDS = 1000  # Conversion factor from milliseconds to seconds
 
+    # Additional timeout and retry constants
+    BLINK_CONNECTION_TIMEOUT = 30  # Blink connection timeout in seconds
+    FUTURE_RESULT_TIMEOUT = 2  # Future result timeout in seconds
+    PROCESS_WAIT_TIMEOUT = 5  # Process wait timeout in seconds
+    CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max attempts for clip thumbnail polling
+    THUMBNAIL_ERROR_DISPLAY_TIME = 3000  # Time to show error message (ms)
+
     # Log settings
     LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit
 
@@ -520,6 +527,13 @@ class Config:
 
     # HTTP retry status codes
     HTTP_RETRY_STATUS_CODES = [429, 500, 502, 503, 504]  # Status codes to retry on
+
+    # HTTP connection pool settings
+    HTTP_POOL_CONNECTIONS = 10  # Number of connection pools to cache
+    HTTP_POOL_MAXSIZE = 20  # Maximum number of connections in each pool
+
+    # Thread pool settings
+    THREAD_POOL_MAX_WORKERS = 4  # Maximum number of background worker threads
 
     # Validation settings
     MAX_USERNAME_LENGTH = 100  # Maximum username length
@@ -853,12 +867,18 @@ retry_strategy = Retry(
     backoff_factor=Config.HTTP_RETRY_BACKOFF_FACTOR,
     status_forcelist=Config.HTTP_RETRY_STATUS_CODES,
 )
-adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=20)
+adapter = HTTPAdapter(
+    max_retries=retry_strategy,
+    pool_connections=Config.HTTP_POOL_CONNECTIONS,
+    pool_maxsize=Config.HTTP_POOL_MAXSIZE,
+)
 http_session.mount("http://", adapter)
 http_session.mount("https://", adapter)
 
 # Standard thread management
-executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="blink-bg-")
+executor = ThreadPoolExecutor(
+    max_workers=Config.THREAD_POOL_MAX_WORKERS, thread_name_prefix="blink-bg-"
+)
 
 # Blink connection - always needed
 blink_connection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
@@ -2452,6 +2472,8 @@ def get_config():
         "thumbnail_success_display_time": Config.THUMBNAIL_SUCCESS_DISPLAY_TIME,
         "thumbnail_processing_display_time": Config.THUMBNAIL_PROCESSING_DISPLAY_TIME,
         "clip_thumbnail_check_interval": Config.CLIP_THUMBNAIL_CHECK_INTERVAL,
+        "clip_thumbnail_poll_max_attempts": Config.CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS,
+        "thumbnail_error_display_time": Config.THUMBNAIL_ERROR_DISPLAY_TIME,
         "milliseconds_to_seconds": Config.MILLISECONDS_TO_SECONDS,
         # User-friendly error messages for frontend
         "error_messages": {

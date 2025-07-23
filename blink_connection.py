@@ -9,7 +9,7 @@ Classes:
     BlinkError: Base exception for Blink-related errors
 
 Usage:
-    connection = BlinkConnection(timeout=30)
+    connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
     connection.start()
     result = connection.execute(some_async_operation())
     connection.shutdown()
@@ -20,6 +20,16 @@ import concurrent.futures
 import logging
 import threading
 from typing import Any
+
+# Import Config for timeout constants
+try:
+    from app import Config
+except ImportError:
+    # Fallback values if Config is not available
+    class Config:
+        BLINK_CONNECTION_TIMEOUT = 30
+        FUTURE_RESULT_TIMEOUT = 2
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +51,16 @@ class BlinkConnection:
     async operations in a dedicated event loop thread.
     """
 
-    def __init__(self, timeout: int = 30) -> None:
+    def __init__(self, timeout: int = None) -> None:
         """Initialize Blink connection.
 
         Args:
-            timeout: Default timeout in seconds for Blink operations
+            timeout: Default timeout in seconds for Blink operations.
+                    If None, uses Config.BLINK_CONNECTION_TIMEOUT
         """
-        self.timeout: int = timeout
+        self.timeout: int = (
+            timeout if timeout is not None else Config.BLINK_CONNECTION_TIMEOUT
+        )
         self.thread: threading.Thread | None = None
         self.loop: asyncio.AbstractEventLoop | None = None
         self.blink: Any | None = None
@@ -118,7 +131,7 @@ class BlinkConnection:
                         future = asyncio.run_coroutine_threadsafe(
                             self.blink.close(), self.loop
                         )
-                        future.result(timeout=2)
+                        future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
             except (asyncio.TimeoutError, RuntimeError, OSError) as e:
                 logger.debug(f"Session cleanup: {e}")
 

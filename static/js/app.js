@@ -18,6 +18,8 @@ let appConfig = {
     thumbnail_success_display_time: 1000,
     thumbnail_processing_display_time: 3000,
     clip_thumbnail_check_interval: 2000,
+    clip_thumbnail_poll_max_attempts: 15,
+    thumbnail_error_display_time: 3000,
     milliseconds_to_seconds: 1000,
     error_messages: {
         live_stream_failed: "Unable to start live video. Please check your camera connection and try again.",

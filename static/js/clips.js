@@ -250,7 +250,8 @@ function startClipThumbnailPolling(clipId) {
 
     clipsBeingProcessed.add(clipId);
     let attempts = 0;
-    const maxAttempts = 15;
+    const config = window.App.getConfig();
+    const maxAttempts = config.clip_thumbnail_poll_max_attempts || 15;
 
     const pollInterval = setInterval(async () => {
         attempts++;
@@ -285,7 +286,7 @@ function startClipThumbnailPolling(clipId) {
                 clipsBeingProcessed.delete(clipId);
             }
         }
-    }, 2000);
+    }, config.clip_thumbnail_check_interval || 2000);
 }
 
 /**

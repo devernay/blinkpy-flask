@@ -15,6 +15,19 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+# Import Config for timeout constants
+try:
+    from app import Config
+except ImportError:
+    # Fallback values if Config is not available
+    class Config:
+        HLS_SEGMENT_TIME = 2
+        HLS_LIST_SIZE = 3
+        FFMPEG_TIMEOUT = 30
+        STREAM_IDLE_TIMEOUT = 300
+        PROCESS_WAIT_TIMEOUT = 5
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,10 +35,21 @@ logger = logging.getLogger(__name__)
 class StreamConfig:
     """Configuration for HLS stream transcoding from Blink TCP streams."""
 
-    segment_time: int = 2  # HLS segment duration in seconds (will be set from Config)
-    list_size: int = 3  # Number of segments in playlist (will be set from Config)
-    timeout: int = 30  # Process timeout (will be set from Config)
-    idle_timeout: int = 300  # Stream idle timeout (will be set from Config)
+    segment_time: int = None  # HLS segment duration in seconds
+    list_size: int = None  # Number of segments in playlist
+    timeout: int = None  # Process timeout
+    idle_timeout: int = None  # Stream idle timeout
+
+    def __post_init__(self):
+        """Set default values from Config if not provided."""
+        if self.segment_time is None:
+            self.segment_time = Config.HLS_SEGMENT_TIME
+        if self.list_size is None:
+            self.list_size = Config.HLS_LIST_SIZE
+        if self.timeout is None:
+            self.timeout = Config.FFMPEG_TIMEOUT
+        if self.idle_timeout is None:
+            self.idle_timeout = Config.STREAM_IDLE_TIMEOUT
 
 
 class HLSStream:
@@ -127,7 +151,7 @@ class HLSStream:
             if self.process:
                 try:
                     self.process.terminate()
-                    self.process.wait(timeout=5)
+                    self.process.wait(timeout=Config.PROCESS_WAIT_TIMEOUT)
                 except subprocess.TimeoutExpired:
                     logger.warning(
                         f"Force killing FFmpeg process for stream {self.stream_id}"
