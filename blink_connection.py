@@ -44,7 +44,7 @@ class BlinkConnection:
     async operations in a dedicated event loop thread.
     """
 
-    def __init__(self, timeout: int = None) -> None:
+    def __init__(self, timeout: int | None = None) -> None:
         """Initialize Blink connection.
 
         Args:
