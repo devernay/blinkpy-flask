@@ -22,14 +22,7 @@ import threading
 from typing import Any
 
 # Import Config for timeout constants
-try:
-    from app import Config
-except ImportError:
-    # Fallback values if Config is not available
-    class Config:
-        BLINK_CONNECTION_TIMEOUT = 30
-        FUTURE_RESULT_TIMEOUT = 2
-
+from config import Config
 
 logger = logging.getLogger(__name__)
 

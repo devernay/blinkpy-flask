@@ -16,17 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Import Config for timeout constants
-try:
-    from app import Config
-except ImportError:
-    # Fallback values if Config is not available
-    class Config:
-        HLS_SEGMENT_TIME = 2
-        HLS_LIST_SIZE = 3
-        FFMPEG_TIMEOUT = 30
-        STREAM_IDLE_TIMEOUT = 300
-        PROCESS_WAIT_TIMEOUT = 5
-
+from config import Config
 
 logger = logging.getLogger(__name__)
 
