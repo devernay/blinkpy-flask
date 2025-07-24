@@ -34,11 +34,13 @@ from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from typing import (
     Any,
     Literal,
     TypedDict,
+    TypeGuard,
 )
 
 import requests
@@ -543,6 +545,49 @@ def handle_api_error(
     return create_api_response(
         success=False, error=error_message, status_code=status_code
     )
+
+
+def is_blink_available(obj: Any) -> TypeGuard[Blink]:
+    """Type guard to check if blink is available and not None.
+
+    Usage:
+    def my_function() -> ResponseReturnValue:
+        if not is_blink_available(blink):
+            return jsonify({"error": "Not available"}), 500
+
+        # Type checkers know blink is not None and available
+        return jsonify(blink.sync)  # No type errors
+
+    Args:
+        obj: Object to check
+
+    Returns:
+        True if obj is available and not None, False otherwise
+    """
+    return obj is not None and hasattr(obj, "available") and obj.available
+
+
+def requires_blink(
+    func: Callable[..., ResponseReturnValue],
+) -> Callable[..., ResponseReturnValue]:
+    """Decorator that ensures blink is available before calling the function.
+
+    This decorator also serves as a type guard, telling type checkers that
+    after the check, blink is guaranteed to be non-None and available.
+    """
+
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> ResponseReturnValue:
+        error_response = require_blink()
+        if error_response is not None:
+            response, status_code = error_response
+            return jsonify(response), status_code
+
+        # At this point, type checkers know blink is not None and available
+        assert blink is not None  # Help type checkers understand this
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def require_blink() -> tuple[ApiResponse, int] | None:
@@ -1300,17 +1345,13 @@ def logout() -> ResponseReturnValue:
 
 
 @app.route("/api/system/list")
+@requires_blink
 def get_systems() -> ResponseReturnValue:
     """Get list of available Blink systems.
 
     Returns:
         JSON response with list of systems or error message
     """
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
-
     with error_context("get systems"):
         logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
         systems = []
@@ -1330,14 +1371,8 @@ def get_systems() -> ResponseReturnValue:
 
 
 @app.route("/api/system/<network_id_str>/devices")
+@requires_blink
 def get_devices(network_id_str: str) -> ResponseReturnValue:
-    try:
-        network_id = NetworkId(network_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
     """Get devices for a specific Blink system.
 
     Args:
@@ -1346,11 +1381,13 @@ def get_devices(network_id_str: str) -> ResponseReturnValue:
     Returns:
         JSON response with list of devices or error message
     """
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
+    try:
+        network_id = NetworkId(network_id_str)
+    except ValueError as e:
+        response, status_code = create_api_response(
+            success=False, error=str(e), status_code=400
+        )
         return jsonify(response), status_code
-
     devices = []
 
     # Find the sync module for this network
@@ -1393,14 +1430,8 @@ def get_devices(network_id_str: str) -> ResponseReturnValue:
 
 
 @app.route("/api/system/<network_id_str>/arm", methods=["POST"])
+@requires_blink
 def arm_system(network_id_str: str) -> ResponseReturnValue:
-    try:
-        network_id = NetworkId(network_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
     """Arm or disarm a Blink system.
 
     Args:
@@ -1409,11 +1440,13 @@ def arm_system(network_id_str: str) -> ResponseReturnValue:
     Returns:
         JSON response with success status or error message
     """
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
+    try:
+        network_id = NetworkId(network_id_str)
+    except ValueError as e:
+        response, status_code = create_api_response(
+            success=False, error=str(e), status_code=400
+        )
         return jsonify(response), status_code
-
     try:
         data = request.get_json()
         if not isinstance(data, dict):
@@ -1455,19 +1488,15 @@ def arm_system(network_id_str: str) -> ResponseReturnValue:
 
 
 @app.route("/api/camera/<camera_id_str>/refresh", methods=["POST"])
+@requires_blink
 def refresh_camera(camera_id_str: str) -> ResponseReturnValue:
+    """Refresh camera thumbnail."""
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
         response, status_code = create_api_response(
             success=False, error=str(e), status_code=400
         )
-        return jsonify(response), status_code
-
-    """Refresh camera thumbnail."""
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
         return jsonify(response), status_code
 
     camera, error_response = require_camera(camera_id)
@@ -1507,13 +1536,9 @@ def refresh_camera(camera_id_str: str) -> ResponseReturnValue:
 
 
 @app.route("/api/clips")
+@requires_blink
 def get_clips() -> ResponseReturnValue:
     """Get clips from cloud or local storage."""
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
-
     storage_type = request.args.get("storage", "cloud")
     if storage_type not in ["cloud", "local"]:
         response, status_code = create_api_response(
@@ -1548,13 +1573,9 @@ def get_clips() -> ResponseReturnValue:
 
 
 @app.route("/api/system/refresh", methods=["POST"])
+@requires_blink
 def refresh_system() -> ResponseReturnValue:
     """Manually refresh the Blink system."""
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
-
     try:
         success = blink_connection.execute(blink.refresh(force=True))
 
@@ -1581,6 +1602,7 @@ def refresh_system() -> ResponseReturnValue:
 
 
 @app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
+@requires_blink
 def process_clip(clip_id_str: str) -> ResponseReturnValue:
     """Process clip on server (download and generate thumbnail) without sending to client.
 
@@ -1594,11 +1616,6 @@ def process_clip(clip_id_str: str) -> ResponseReturnValue:
         JSON response indicating processing has started
     """
     clip_id, error_response = parse_clip_id(clip_id_str)
-    if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
-
-    error_response = require_blink()
     if error_response is not None:
         response, status_code = error_response
         return jsonify(response), status_code
@@ -1620,17 +1637,13 @@ def process_clip(clip_id_str: str) -> ResponseReturnValue:
 
 
 @app.route("/api/clip/<clip_id_str>/download")
+@requires_blink
 def download_clip(clip_id_str: str) -> ResponseReturnValue:
+    """Download a specific clip."""
     clip_id, error_response = parse_clip_id(clip_id_str)
     if error_response is not None:
         response, status_code = error_response
         return jsonify(response), status_code
-    """Download a specific clip."""
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
-
     try:
         logger.debug(
             f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})"
@@ -1981,6 +1994,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 
 
 @app.route("/api/camera/<camera_id_str>/liveview")
+@requires_blink
 def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
     """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md."""
     try:
@@ -1989,11 +2003,6 @@ def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
         response, status_code = create_api_response(
             success=False, error=str(e), status_code=400
         )
-        return jsonify(response), status_code
-
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
         return jsonify(response), status_code
 
     camera, error_response = require_camera(camera_id)
@@ -2167,19 +2176,15 @@ def get_clip_thumbnail(clip_id_str: str) -> ResponseReturnValue:
 
 
 @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
+@requires_blink
 def get_camera_thumbnail_timestamp(camera_id_str: str) -> ResponseReturnValue:
+    """Get camera thumbnail timestamp for polling."""
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
         response, status_code = create_api_response(
             success=False, error=str(e), status_code=400
         )
-        return jsonify(response), status_code
-
-    """Get camera thumbnail timestamp for polling."""
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
         return jsonify(response), status_code
 
     camera = find_camera_by_id(camera_id)
@@ -2200,19 +2205,15 @@ def get_camera_thumbnail_timestamp(camera_id_str: str) -> ResponseReturnValue:
 
 
 @app.route("/api/camera/<camera_id_str>/thumbnail")
+@requires_blink
 def get_camera_thumbnail(camera_id_str: str) -> ResponseReturnValue:
+    """Proxy camera thumbnail with authentication."""
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
         response, status_code = create_api_response(
             success=False, error=str(e), status_code=400
         )
-        return jsonify(response), status_code
-
-    """Proxy camera thumbnail with authentication."""
-    error_response = require_blink()
-    if error_response is not None:
-        response, status_code = error_response
         return jsonify(response), status_code
 
     camera = find_camera_by_id(camera_id)
