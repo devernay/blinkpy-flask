@@ -1,0 +1,53 @@
+# Stubs for blinkpy.sync_module module
+from typing import Any
+
+from .camera import BlinkCamera
+
+class BlinkSyncModule:
+    """Sync module class for Blink systems."""
+
+    blink: Any
+    name: str
+    network_id: int
+    sync_id: int
+    cameras: dict[str, BlinkCamera]
+    local_storage: dict[str, Any]
+    local_storage_manifest_ready: bool
+    _local_storage: dict[str, Any]
+    attributes: dict[str, Any]
+    network_info: dict[str, Any]
+    summary: dict[str, Any]
+
+    def __init__(
+        self, blink: Any, name: str, network_id: int, response: dict[str, Any]
+    ) -> None: ...
+    async def async_arm(self, value: bool) -> bool: ...
+    async def get_events(self, page: int = 1) -> dict[str, Any]: ...
+    async def get_owl_info(self) -> dict[str, Any]: ...
+    async def refresh(self) -> bool: ...  # Add missing method
+    async def update_local_storage_manifest(self) -> bool: ...  # Add missing method
+    def get_videos_metadata(
+        self,
+        since: int | None = None,
+        stop: int = 10,
+    ) -> dict[str, Any]: ...
+
+    # Properties
+    @property
+    def arm(self) -> bool: ...
+    @property
+    def online(self) -> bool: ...
+    @property
+    def status(self) -> str: ...
+    @property
+    def serial(self) -> str: ...
+    @property
+    def host(self) -> str: ...
+    @property
+    def last_record(self) -> dict[str, Any] | None: ...
+    @property
+    def wifi_strength(self) -> int: ...
+    @property
+    def temperature(self) -> float | None: ...
+    @property
+    def battery(self) -> str | None: ...

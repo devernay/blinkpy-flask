@@ -2,6 +2,6 @@ cache
 __pycache__
 .DS_Store
 *.bak
-blinkpy
+/blinkpy/
 .python-version
 *.log
