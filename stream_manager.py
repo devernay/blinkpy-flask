@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 class StreamConfig:
     """Configuration for HLS stream transcoding from Blink TCP streams."""
 
-    segment_time: int = None  # HLS segment duration in seconds
-    list_size: int = None  # Number of segments in playlist
-    timeout: int = None  # Process timeout
-    idle_timeout: int = None  # Stream idle timeout
+    segment_time: int | None = None  # HLS segment duration in seconds
+    list_size: int | None = None  # Number of segments in playlist
+    timeout: int | None = None  # Process timeout
+    idle_timeout: int | None = None  # Stream idle timeout
 
     def __post_init__(self) -> None:
         """Set default values from Config if not provided."""
@@ -164,6 +164,8 @@ class HLSStream:
 
     def is_idle(self) -> bool:
         """Check if stream has been idle too long."""
+        if self.config.idle_timeout is None:
+            return False
         return time.time() - self.last_accessed > self.config.idle_timeout
 
     def is_running(self) -> bool:

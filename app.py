@@ -42,6 +42,7 @@ from typing import (
     ParamSpec,
     TypedDict,
     TypeVar,
+    cast,
 )
 
 import requests
@@ -107,7 +108,18 @@ class CacheError(BlinkError):
 def error_context(
     operation: str, reraise_as: type = BlinkError
 ) -> Generator[None, None, None]:
-    """Context manager for consistent error handling."""
+    """Context manager for consistent error handling.
+
+    Args:
+        operation: Description of the operation being performed
+        reraise_as: Exception type to reraise as (default: BlinkError)
+
+    Yields:
+        None: Context for the operation
+
+    Raises:
+        BlinkError: If the operation fails (or the specified reraise_as type)
+    """
     try:
         yield
     except Exception as e:
@@ -691,23 +703,29 @@ http_session.mount("http://", adapter)
 http_session.mount("https://", adapter)
 
 # Standard thread management
-executor = ThreadPoolExecutor(
+executor: ThreadPoolExecutor = ThreadPoolExecutor(
     max_workers=Config.THREAD_POOL_MAX_WORKERS, thread_name_prefix="blink-bg-"
 )
 
 # Blink connection - always needed
-blink_connection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
+blink_connection: BlinkConnection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
 blink: Blink | None = None
 
 # Stream management - only initialized when running server
-stream_manager = None
+stream_manager: StreamManager | None = None
 # Cache configuration - will be set from command line
-CACHE_DIR = (
+CACHE_DIR: str = (
     Config.DEFAULT_CACHE_DIR
 )  # Default cache directory, overridden by Flask config
-CREDENTIALS_FILE = None  # Path to encrypted credentials file, set in get_cache_paths()
-THUMBNAIL_CACHE_DIR = None  # Directory for cached thumbnails, set in get_cache_paths()
-CLIPS_CACHE_DIR = None  # Directory for cached clips, set in get_cache_paths()
+CREDENTIALS_FILE: str | None = (
+    None  # Path to encrypted credentials file, set in get_cache_paths()
+)
+THUMBNAIL_CACHE_DIR: str | None = (
+    None  # Directory for cached thumbnails, set in get_cache_paths()
+)
+CLIPS_CACHE_DIR: str | None = (
+    None  # Directory for cached clips, set in get_cache_paths()
+)
 
 # Standard cache instances using cachetools
 thumbnail_cache = ThreadSafeCache(LRUCache(maxsize=Config.THUMBNAIL_CACHE_SIZE))
@@ -715,6 +733,26 @@ clips_metadata_cache = ThreadSafeCache(
     LRUCache(maxsize=Config.CLIPS_METADATA_CACHE_SIZE)
 )
 clips_download_cache = ThreadSafeCache(LRUCache(maxsize=Config.CLIPS_CACHE_SIZE))
+
+
+def ensure_cache_paths_initialized() -> None:
+    """Ensure cache paths are initialized, raising an error if not.
+
+    This function serves as a type guard for mypy to understand that
+    the cache path variables are not None after this call.
+
+    Raises:
+        RuntimeError: If cache paths haven't been initialized
+    """
+    if (
+        CACHE_DIR is None
+        or CREDENTIALS_FILE is None
+        or THUMBNAIL_CACHE_DIR is None
+        or CLIPS_CACHE_DIR is None
+    ):
+        raise RuntimeError(
+            "Cache paths not initialized. Call initialize_cache_paths() first."
+        )
 
 
 def initialize_cache_paths() -> None:
@@ -743,7 +781,9 @@ def initialize_cache_paths() -> None:
 
 # Cache configuration
 CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
-SETTINGS_FILE = None  # Path to settings file, set in initialize_cache_paths()
+SETTINGS_FILE: str | None = (
+    None  # Path to settings file, set in initialize_cache_paths()
+)
 
 # Legacy stream variables removed - now handled by StreamManager
 
@@ -923,7 +963,7 @@ def update_camera_thumbnail(
             old_filename = old_entry.get("filename")
             if old_filename is not None:
                 assert THUMBNAIL_CACHE_DIR is not None
-                old_filepath = Path(THUMBNAIL_CACHE_DIR) / old_filename
+                old_filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / old_filename
                 try:
                     if old_filepath.exists():
                         old_filepath.unlink()
@@ -941,7 +981,7 @@ def update_camera_thumbnail(
             # Save to file with new timestamp
             filename = f"{cache_key}_{current_ts}.jpg"
             assert THUMBNAIL_CACHE_DIR is not None
-            filepath = Path(THUMBNAIL_CACHE_DIR) / filename
+            filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
             try:
                 filepath.write_bytes(image_data)
                 # Update cache info atomically
@@ -1519,7 +1559,9 @@ def refresh_camera(camera_id_str: str) -> ResponseReturnValue:
                 # Remove cached file
                 if "filename" in cached_info:
                     assert THUMBNAIL_CACHE_DIR is not None
-                    cached_file = Path(THUMBNAIL_CACHE_DIR) / cached_info["filename"]
+                    cached_file = (
+                        Path(cast(str, THUMBNAIL_CACHE_DIR)) / cached_info["filename"]
+                    )
                     try:
                         if cached_file.exists():
                             cached_file.unlink()
@@ -1742,7 +1784,7 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
     filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
     assert CLIPS_CACHE_DIR is not None
-    filepath = Path(CLIPS_CACHE_DIR) / filename
+    filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
 
     # Download if not cached
     if not filepath.exists():
@@ -1844,7 +1886,7 @@ def download_local_clip(
     iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
     filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
     assert CLIPS_CACHE_DIR is not None
-    filepath = Path(CLIPS_CACHE_DIR) / filename
+    filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
 
     # Download if not cached
     if not filepath.exists():
@@ -1912,7 +1954,7 @@ def process_local_clip_background(
             iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
             filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
             assert CLIPS_CACHE_DIR is not None
-            filepath = Path(CLIPS_CACHE_DIR) / filename
+            filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
 
             if not filepath.exists():
                 blink_connection.execute(item.prepare_download(blink))
@@ -1975,7 +2017,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
             filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
             assert CLIPS_CACHE_DIR is not None
-            filepath = Path(CLIPS_CACHE_DIR) / filename
+            filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
 
             if not filepath.exists():
                 media_url = clip_info.get("media")
@@ -2017,7 +2059,17 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 @app.route("/api/camera/<camera_id_str>/liveview")
 @requires_blink
 def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
-    """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md."""
+    """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md.
+
+    Args:
+        camera_id_str: String representation of the camera ID
+
+    Returns:
+        JSON response with stream URLs (TCP and HLS) or error message
+
+    Raises:
+        ValueError: If camera_id_str is invalid
+    """
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -2034,11 +2086,16 @@ def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
     assert camera is not None
     try:
         # Use init_livestream() as specified in IMPLEMENTATION.md
-        async def init_stream():
+        async def init_stream() -> Any:
             stream = await camera.init_livestream()
-            await stream.start()
-            # Start feeding the stream in the background
-            asyncio.create_task(stream.feed())
+            if (
+                stream is not None
+                and hasattr(stream, "start")
+                and hasattr(stream, "feed")
+            ):
+                await stream.start()
+                # Start feeding the stream in the background
+                asyncio.create_task(stream.feed())
             return stream
 
         # Execute the async livestream initialization
@@ -2061,7 +2118,8 @@ def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
                 # Store the stream object for later cleanup
                 if not hasattr(blink_connection, "_active_streams"):
                     blink_connection._active_streams = {}
-                blink_connection._active_streams[str(camera_id)] = stream
+                active_streams = getattr(blink_connection, "_active_streams", {})
+                active_streams[str(camera_id)] = stream
 
                 response, status_code = create_api_response(
                     success=True,
@@ -2165,11 +2223,13 @@ def serve_hls_file(camera_id_str: str, filename: str) -> ResponseReturnValue:
         return jsonify(response), status_code
 
     if filename.endswith(".m3u8"):
-        response = send_file(str(file_path), mimetype="application/vnd.apple.mpegurl")
-        return response, 200
+        file_response = send_file(
+            str(file_path), mimetype="application/vnd.apple.mpegurl"
+        )
+        return file_response
     elif filename.endswith(".ts"):
-        response = send_file(str(file_path), mimetype="video/mp2t")
-        return response, 200
+        file_response = send_file(str(file_path), mimetype="video/mp2t")
+        return file_response
     else:
         response, status_code = create_api_response(
             success=False, error=Config.ErrorMessages.INVALID_FILE_TYPE, status_code=400
@@ -2200,7 +2260,17 @@ def get_clip_thumbnail(clip_id_str: str) -> ResponseReturnValue:
 @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
 @requires_blink
 def get_camera_thumbnail_timestamp(camera_id_str: str) -> ResponseReturnValue:
-    """Get camera thumbnail timestamp for polling."""
+    """Get camera thumbnail timestamp for polling.
+
+    Args:
+        camera_id_str: String representation of the camera ID
+
+    Returns:
+        JSON response with thumbnail timestamp or error message
+
+    Raises:
+        ValueError: If camera_id_str is invalid
+    """
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -2229,7 +2299,17 @@ def get_camera_thumbnail_timestamp(camera_id_str: str) -> ResponseReturnValue:
 @app.route("/api/camera/<camera_id_str>/thumbnail")
 @requires_blink
 def get_camera_thumbnail(camera_id_str: str) -> ResponseReturnValue:
-    """Proxy camera thumbnail with authentication."""
+    """Proxy camera thumbnail with authentication.
+
+    Args:
+        camera_id_str: String representation of the camera ID
+
+    Returns:
+        JPEG image file or JSON error response
+
+    Raises:
+        ValueError: If camera_id_str is invalid
+    """
     try:
         camera_id = CameraId(camera_id_str)
     except ValueError as e:
@@ -2253,7 +2333,8 @@ def get_camera_thumbnail(camera_id_str: str) -> ResponseReturnValue:
         if cached_thumbnail is not None:
             logger.debug(f"Serving cached thumbnail for camera {camera_id}")
             filename = cached_thumbnail["filename"]
-            filepath = Path(THUMBNAIL_CACHE_DIR) / filename
+            assert THUMBNAIL_CACHE_DIR is not None
+            filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
             if filepath.exists():
                 file_response = send_file(str(filepath), mimetype="image/jpeg")
                 return response, 200
@@ -2336,17 +2417,26 @@ def placeholder() -> ResponseReturnValue:
     return jsonify(response), status_code
 
 
-async def load_saved_blink():
-    """Load Blink system from saved credentials file."""
+async def load_saved_blink() -> bool:
+    """Load Blink system from saved credentials file.
+
+    Returns:
+        True if successfully loaded, False otherwise
+    """
     global blink
-    cred_file = Path(CREDENTIALS_FILE)
+    assert CREDENTIALS_FILE is not None
+    cred_file = Path(cast(str, CREDENTIALS_FILE))
     if cred_file.exists():
         try:
             from aiohttp import ClientSession
 
             from blinkpy.helpers.util import json_load
 
-            auth_data = await json_load(CREDENTIALS_FILE)
+            assert CREDENTIALS_FILE is not None
+            # Type ignore for mypy issue with blinkpy's json_load function
+            auth_data: dict[str, Any] | None = await json_load(
+                cast(str, CREDENTIALS_FILE)
+            )  # type: ignore[misc]
             session = ClientSession()
             auth = Auth(auth_data, session=session)
             blink = Blink(session=session)
@@ -2476,8 +2566,10 @@ def startup() -> None:
 
         # Create cache directories if they don't exist
         Path(CACHE_DIR).mkdir(exist_ok=True)
-        Path(THUMBNAIL_CACHE_DIR).mkdir(exist_ok=True)
-        Path(CLIPS_CACHE_DIR).mkdir(exist_ok=True)
+        assert THUMBNAIL_CACHE_DIR is not None
+        assert CLIPS_CACHE_DIR is not None
+        Path(cast(str, THUMBNAIL_CACHE_DIR)).mkdir(exist_ok=True)
+        Path(cast(str, CLIPS_CACHE_DIR)).mkdir(exist_ok=True)
 
         # Setup logging with rotation in cache directory
         setup_logging()
@@ -2558,7 +2650,7 @@ def generate_clip_thumbnail(
     """
     thumbnail_filename = filename.replace(".mp4", ".jpg")
     assert CLIPS_CACHE_DIR is not None
-    thumbnail_path = Path(CLIPS_CACHE_DIR) / thumbnail_filename
+    thumbnail_path = Path(cast(str, CLIPS_CACHE_DIR)) / thumbnail_filename
 
     if thumbnail_path.exists():
         return thumbnail_path
@@ -2659,7 +2751,8 @@ def load_thumbnail_cache() -> None:
         - Missing cameras: Files removed if system available
         - File system errors: Logged, operation continues
     """
-    cache_dir = Path(THUMBNAIL_CACHE_DIR)
+    assert THUMBNAIL_CACHE_DIR is not None
+    cache_dir = Path(cast(str, THUMBNAIL_CACHE_DIR))
     if not cache_dir.exists():
         return
 
@@ -2753,7 +2846,8 @@ def load_clips_cache() -> None:
     validates against Blink system, and removes invalid files.
     Thread-safe operation.
     """
-    cache_dir = Path(CLIPS_CACHE_DIR)
+    assert CLIPS_CACHE_DIR is not None
+    cache_dir = Path(cast(str, CLIPS_CACHE_DIR))
     if not cache_dir.exists():
         return
 
@@ -2864,7 +2958,8 @@ def settings() -> ResponseReturnValue:
     """
     if request.method == "GET":
         try:
-            settings_file = Path(SETTINGS_FILE)
+            assert SETTINGS_FILE is not None
+            settings_file = Path(cast(str, SETTINGS_FILE))
             if settings_file.exists():
                 import json
 
@@ -2898,7 +2993,8 @@ def settings() -> ResponseReturnValue:
                 return jsonify(response), status_code
 
             # Load existing settings
-            settings_file = Path(SETTINGS_FILE)
+            assert SETTINGS_FILE is not None
+            settings_file = Path(cast(str, SETTINGS_FILE))
             if settings_file.exists():
                 import json
 
@@ -2950,7 +3046,7 @@ def check_clip_thumbnail(clip_id_str: str) -> ResponseReturnValue:
 # Stream cleanup functions moved to StreamManager class
 
 
-async def cleanup_blink_session():
+async def cleanup_blink_session() -> None:
     """Clean up Blink aiohttp session."""
     global blink
     if blink and hasattr(blink, "auth") and hasattr(blink.auth, "session"):
@@ -3020,7 +3116,8 @@ def handle_dump_system() -> None:
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
-    cred_file = Path(CREDENTIALS_FILE)
+    assert CREDENTIALS_FILE is not None
+    cred_file = Path(cast(str, CREDENTIALS_FILE))
     if not cred_file.exists():
         logger.error("No saved credentials found.")
         logger.error("Please start the server and login first to save credentials.")
@@ -3031,11 +3128,13 @@ def handle_dump_system() -> None:
         success = blink_connection.execute(load_saved_blink())
         if success:
             # Update local storage manifests first
+            assert blink is not None
             for sync_name, sync in blink.sync.items():
                 if sync.local_storage:
                     blink_connection.execute(sync.update_local_storage_manifest())
 
             # Get cloud videos in blink thread
+            assert blink is not None
             videos = blink_connection.execute(
                 blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
             )
