@@ -206,7 +206,7 @@ Check that Python type hints are used thoroughly through the code. Try to avoid 
 
 Move all testing code in a subdirectory, and clean up the workspace. Make sure that instructions to launch tests are available in README.md. Check that README.md is up-to-date with the code.
 
-Fix all failing tests one by one, except those already marked as "Specific Tests Requiring Individual Review" in `tests/test_doubts.md`. Figure out if each test fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later.
+Fix all failing tests one by one, except those already marked as "Test Doubts and Unfixable Tests" in `tests/test_doubts.md`. Figure out if each test fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later.
 
 Next, we will write a full developer documentation detailing, not necessarily in that order:
 - The general organization of the code, describing the function of each file.

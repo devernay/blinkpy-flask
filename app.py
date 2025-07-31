@@ -2809,7 +2809,6 @@ def get_camera_thumbnail(camera_id_str: str) -> ResponseReturnValue:
             filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
             if filepath.exists():
                 file_response = send_file(str(filepath), mimetype="image/jpeg")
-                return response, 200
                 file_response.headers["Cache-Control"] = (
                     "no-cache, no-store, must-revalidate"
                 )
@@ -2910,21 +2909,23 @@ async def load_saved_blink() -> bool:
                 cast(str, CREDENTIALS_FILE)
             )
             session = ClientSession()
-            auth = Auth(auth_data, session=session)
-            blink = Blink(session=session)
-            blink.auth = auth
-            success = await blink.start()
-            if success is True:
-                logger.info("Blink system loaded from saved credentials")
-                return True
-            else:
-                logger.warning("Failed to load Blink system from saved credentials")
+            try:
+                auth = Auth(auth_data, session=session)
+                blink = Blink(session=session)
+                blink.auth = auth
+                success = await blink.start()
+                if success is True:
+                    logger.info("Blink system loaded from saved credentials")
+                    return True
+                else:
+                    logger.warning("Failed to load Blink system from saved credentials")
+                    await session.close()
+                    return False
+            except Exception as inner_e:
                 await session.close()
-                return False
+                raise inner_e
         except Exception as e:
             logger.warning(f"Could not load Blink system from saved credentials: {e}")
-            if "session" in locals():
-                await session.close()
             return False
     return False
 
@@ -3128,9 +3129,9 @@ def generate_clip_thumbnail(
     if thumbnail_path.exists():
         return thumbnail_path
 
-    try:
-        import subprocess
+    import subprocess
 
+    try:
         # Use ffmpeg to extract frame (middle frame for local clips, first frame for cloud)
         if middle_frame:
             # Get video duration and extract middle frame
