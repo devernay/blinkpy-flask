@@ -200,4 +200,26 @@ Verify that the following issues have been fixed already:
 
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
-Read the whole code again, including the python code and the HTML templates. How would you rate the code quality? Is there room for improvement?
+Read the whole code again, including the Python code, the Javascript code and the HTML templates. How would you rate the code quality? Is there room for improvement?  Is there code that can be de-duplicated or factorized?
+
+Check that Python type hints are used thoroughly through the code. Try to avoid using `Any` if possible: infer the type by reading the app code or the blinkpy code. Check that docstrings are complete with parameters description.
+
+Move all testing code in a subdirectory, and clean up the workspace. Make sure that instructions to launch tests are available in README.md. Check that README.md is up-to-date with the code.
+
+Fix all failing tests one by one, except those already marked as "Specific Tests Requiring Individual Review" in `tests/test_doubts.md`. Figure out if each test fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later.
+
+Next, we will write a full developer documentation detailing, not necessarily in that order:
+- The general organization of the code, describing the function of each file.
+- How configuration centralization works, what to modify in the Python and javascript code if an additional config constant is needed
+- How error messages are defined and shared between Python and Javascript
+- How thread-safe LRU cache safety works.
+- How error handling works in Python
+- How error handling works in Javascript
+- How API response patterns are used in the Python code, with the list of helper functions and when to use them.
+- The various decorators implemented in the Python app and their use. Make sure that each validator also has a full docstring with a usage example in the Python code.
+- How the CSS is structured
+- How the DOM utilities and selection (Javascript) work: DOM, DOMUtils, DOMBatch...
+- Any other helpful information that would help the developer understand the code and extend it.
+You can find some existing documentation in IMPLEMENTATIONS.md and in the various .md files your can find in this repository, but it is not well organized.
+The developper documentation should be in markdown format, in a fine called DOCUMENTATION.md.
+First, you should sketch the plan of the documentation, with sections and subsections, and after I approve you can continue filling in the details.

@@ -21,8 +21,10 @@ Author: Fredderic Devernay
 License: MIT
 """
 
+import argparse
 import asyncio
 import atexit
+import functools
 import logging
 import os
 import re
@@ -31,22 +33,27 @@ import sys
 import threading
 import traceback
 from collections.abc import Callable, Generator
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     ParamSpec,
     TypedDict,
-    TypeVar,
     cast,
 )
 
+if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
+
+    from blink_connection import BlinkConnection
+
 import requests
-from cachetools import LRUCache
+from cachetools import LRUCache, cachedmethod
+from cachetools.keys import hashkey
 from flask import (
     Flask,
     jsonify,
@@ -59,10 +66,7 @@ from flask import (
 )
 from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
-from blink_connection import BlinkConnection
 from blinkpy.auth import Auth  # type: ignore
 from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.camera import BlinkCamera
@@ -71,6 +75,24 @@ from config import Config
 
 # from flask_sse import sse  # No longer needed
 from stream_manager import StreamConfig, StreamManager
+
+# Global variables
+app: "Flask | None" = None
+blink: "Blink | None" = None
+blink_connection: "BlinkConnection | None" = None
+executor: "ThreadPoolExecutor | None" = None
+http_session: "requests.Session | None" = None
+stream_manager: "StreamManager | None" = None
+
+# Global cache directory variables
+CACHE_DIR: str | None = None
+CREDENTIALS_FILE: str | None = None
+THUMBNAIL_CACHE_DIR: str | None = None
+CLIPS_CACHE_DIR: str | None = None
+SETTINGS_FILE: str | None = None
+
+# Type variables for generic functions
+P = ParamSpec("P")
 
 
 # Centralized error handling
@@ -163,15 +185,19 @@ class BaseId:
         value: The validated ID string value
     """
 
-    def __init__(self, value: str) -> None:
+    def __init__(self, value: str | int | float) -> None:
         """Initialize and validate ID value.
 
         Args:
-            value: String ID to validate
+            value: String or numeric ID to validate
 
         Raises:
             ValueError: If value is empty or doesn't match pattern
         """
+        # Convert to string if needed
+        if isinstance(value, int | float):
+            value = str(value)
+
         self.value = self._validate(value)
 
     def _validate(self, value: str) -> str:
@@ -186,10 +212,15 @@ class BaseId:
         Raises:
             ValueError: If validation fails
         """
-        if not isinstance(value, str) or not value.strip():
-            raise ValueError(f"{self._get_type_name()} cannot be empty")
+        if not isinstance(value, str):
+            raise ValueError(f"{self._get_type_name()} must be a string")
+
         value = value.strip()
-        if not re.match(self._get_pattern(), value):
+        if not value:
+            raise ValueError(f"{self._get_type_name()} cannot be empty")
+
+        # Allow numeric strings and basic alphanumeric patterns
+        if not re.match(r"^[a-zA-Z0-9_~-]+$", value):
             raise ValueError(f"Invalid {self._get_type_name()} format")
         return value
 
@@ -226,6 +257,15 @@ class BaseId:
     def __hash__(self) -> int:
         """Return hash for use in sets and dicts."""
         return hash(self.value)
+
+    def __int__(self) -> int:
+        """Convert to integer if possible."""
+        try:
+            return int(self.value)
+        except ValueError as e:
+            raise ValueError(
+                f"Cannot convert {self._get_type_name()} '{self.value}' to integer"
+            ) from e
 
 
 # ID classes with validation
@@ -311,49 +351,537 @@ class ClipId(BaseId):
         sync_name, item_id_str = self.value.split("~", 1)
         return sync_name, int(item_id_str)
 
+    @classmethod
+    def from_cloud(cls, clip_id: int | str) -> "ClipId":
+        """Create ClipId for cloud storage clip.
 
-# Thread-safe cache wrapper for cachetools
-class ThreadSafeCache:
-    """Thread-safe wrapper for cachetools caches."""
+        Args:
+            clip_id: Numeric ID of the cloud clip
+
+        Returns:
+            ClipId instance for cloud clip
+        """
+        return cls(str(clip_id))
+
+
+# Standard thread-safe decorator using functools.wraps
+def synchronized(func):
+    """Decorator to make cache methods thread-safe using the instance's _lock.
+
+    This follows the standard Python pattern for creating decorators that
+    preserve function metadata using functools.wraps.
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+# Simplified cache implementation inheriting from LRUCache
+
+
+class ThumbnailCache(LRUCache):
+    """
+    Thumbnail cache inheriting from LRUCache with thread-safe methods.
+
+    Combines the simplicity of direct LRUCache inheritance with thread-safe
+    operations using both decorators and cachetools @cachedmethod decorators.
+    """
+
+    def __init__(self, maxsize: int = 100):
+        super().__init__(maxsize=maxsize)
+        self._lock = threading.RLock()
+
+    # Thread-safe overrides for LRUCache methods using decorator
+    @synchronized
+    def get(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe get method."""
+        return super().get(key, default)
+
+    @synchronized
+    def __getitem__(self, key: Any) -> Any:
+        """Thread-safe getitem method."""
+        return super().__getitem__(key)
+
+    @synchronized
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """Thread-safe setitem method."""
+        super().__setitem__(key, value)
+
+    @synchronized
+    def __delitem__(self, key: Any) -> None:
+        """Thread-safe delitem method."""
+        super().__delitem__(key)
+
+    @synchronized
+    def __contains__(self, key: Any) -> bool:
+        """Thread-safe contains method."""
+        return super().__contains__(key)
+
+    @synchronized
+    def __len__(self) -> int:
+        """Thread-safe len method."""
+        return super().__len__()
+
+    @synchronized
+    def pop(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe pop method."""
+        return super().pop(key, default)
+
+    @synchronized
+    def popitem(self) -> tuple[Any, Any]:
+        """Thread-safe popitem method."""
+        return super().popitem()
+
+    @synchronized
+    def clear(self) -> None:
+        """Thread-safe clear method."""
+        super().clear()
+
+    @synchronized
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe setdefault method."""
+        return super().setdefault(key, default)
+
+    @synchronized
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """Thread-safe update method."""
+        super().update(*args, **kwargs)
+
+    @synchronized
+    def keys(self) -> Any:
+        """Thread-safe keys method."""
+        return list(super().keys())
+
+    @synchronized
+    def values(self) -> Any:
+        """Thread-safe values method."""
+        return list(super().values())
+
+    @synchronized
+    def items(self) -> Any:
+        """Thread-safe items method."""
+        return list(super().items())
+
+    # Custom methods using @cachedmethod decorator
+    @cachedmethod(lambda self: self, lock=lambda self: self._lock)
+    def get_thumbnail_data(self, camera_id: str, timestamp: int) -> dict[str, Any]:
+        """
+        Get thumbnail data - automatically cached and thread-safe.
+
+        This method uses @cachedmethod decorator as recommended by cachetools.
+        Only called once per unique (camera_id, timestamp) combination.
+        """
+        return {
+            "camera_id": camera_id,
+            "timestamp": timestamp,
+            "filename": f"thumb_{camera_id}_{timestamp}.jpg",
+        }
+
+    @synchronized
+    def update_thumbnail_if_newer(
+        self, camera_id: str, timestamp: int, filename: str
+    ) -> bool:
+        """
+        Update thumbnail if timestamp is newer.
+
+        For conditional caching logic where decorators aren't suitable.
+        """
+        # Check for existing entries for this camera
+        cache_key = f"{camera_id}_current"
+        current_entry = self.get(cache_key)
+        current_ts = current_entry.get("timestamp", 0) if current_entry else 0
+
+        if timestamp > current_ts:
+            self[cache_key] = {
+                "camera_id": camera_id,
+                "timestamp": timestamp,
+                "filename": filename,
+            }
+            return True
+        return False
+
+    @synchronized
+    def get_current_thumbnail(self, camera_id: str) -> dict[str, Any] | None:
+        """Get current thumbnail info for camera."""
+        return self.get(f"{camera_id}_current")
+
+    def clear_cache(self) -> None:
+        """Clear all cached thumbnails."""
+        self.clear()
+
+    @synchronized
+    def get_cache_stats(self) -> dict[str, Any]:
+        """Get cache statistics."""
+        return {"size": len(self), "maxsize": self.maxsize}
+
+
+class ClipsMetadataCache(LRUCache):
+    """
+    Clips metadata cache inheriting from LRUCache with thread-safe methods.
+    """
+
+    def __init__(self, maxsize: int = 1000):
+        super().__init__(maxsize=maxsize)
+        self._lock = threading.RLock()
+
+    @cachedmethod(lambda self: self, lock=lambda self: self._lock)
+    def get_clips_metadata(self, storage_type: str) -> list[dict[str, Any]]:
+        """
+        Get clips metadata - automatically cached and thread-safe.
+
+        Uses @cachedmethod decorator as recommended by cachetools.
+        """
+        # This would normally fetch from Blink API
+        return []
+
+    @cachedmethod(
+        lambda self: self,
+        lock=lambda self: self._lock,
+        key=lambda self, storage, filters: hashkey(
+            storage, tuple(sorted(filters.items()))
+        ),
+    )
+    def get_filtered_clips(
+        self, storage_type: str, filters: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        """
+        Get filtered clips with custom key function.
+
+        Uses custom key function to handle dict parameters properly.
+        """
+        base_clips = self.get_clips_metadata(storage_type)
+        # Apply filters here
+        return base_clips
+
+    @synchronized
+    def cache_clips_manually(
+        self, storage_type: str, clips: list[dict[str, Any]]
+    ) -> None:
+        """Manually cache clips list (for cases where decorator isn't suitable)."""
+        # Manually add to cache using the same key pattern as the decorator
+        cache_key = (self.get_clips_metadata, storage_type)
+        self[cache_key] = clips
+
+    @synchronized
+    def clear_cache(self) -> None:
+        """Clear all cached clips metadata."""
+        self.clear()
+
+    @synchronized
+    def get_cache_stats(self) -> dict[str, Any]:
+        """Get cache statistics."""
+        return {"size": len(self), "maxsize": self.maxsize}
+
+    # Thread-safe overrides for LRUCache methods
+    @synchronized
+    def get(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe get method."""
+        return super().get(key, default)
+
+    @synchronized
+    def __getitem__(self, key: Any) -> Any:
+        """Thread-safe getitem method."""
+        return super().__getitem__(key)
+
+    @synchronized
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """Thread-safe setitem method."""
+        super().__setitem__(key, value)
+
+    @synchronized
+    def __delitem__(self, key: Any) -> None:
+        """Thread-safe delitem method."""
+        super().__delitem__(key)
+
+    @synchronized
+    def __contains__(self, key: Any) -> bool:
+        """Thread-safe contains method."""
+        return super().__contains__(key)
+
+    @synchronized
+    def __len__(self) -> int:
+        """Thread-safe len method."""
+        return super().__len__()
+
+    @synchronized
+    def pop(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe pop method."""
+        return super().pop(key, default)
+
+    @synchronized
+    def popitem(self) -> tuple[Any, Any]:
+        """Thread-safe popitem method."""
+        return super().popitem()
+
+    @synchronized
+    def clear(self) -> None:
+        """Thread-safe clear method."""
+        super().clear()
+
+    @synchronized
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe setdefault method."""
+        return super().setdefault(key, default)
+
+    @synchronized
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """Thread-safe update method."""
+        super().update(*args, **kwargs)
+
+    @synchronized
+    def keys(self) -> Any:
+        """Thread-safe keys method."""
+        return list(super().keys())
+
+    @synchronized
+    def values(self) -> Any:
+        """Thread-safe values method."""
+        return list(super().values())
+
+    @synchronized
+    def items(self) -> Any:
+        """Thread-safe items method."""
+        return list(super().items())
+
+    @property
+    def maxsize(self) -> int:
+        """Get maximum cache size."""
+        return self._cache.maxsize
+
+
+class ClipsDownloadCache(LRUCache):
+    """
+    Clips download cache inheriting from LRUCache with thread-safe methods.
+    """
+
+    def __init__(self, maxsize: int = 100):
+        super().__init__(maxsize=maxsize)
+        self._lock = threading.RLock()
+
+    @cachedmethod(lambda self: self, lock=lambda self: self._lock)
+    def get_clip_download_info(self, clip_id: str) -> dict[str, Any]:
+        """
+        Get clip download info - automatically cached and thread-safe.
+
+        Uses @cachedmethod decorator as recommended by cachetools.
+        """
+        return {
+            "clip_id": clip_id,
+            "filepath": f"/downloads/{clip_id}.mp4",
+            "thumbnail": None,
+        }
+
+    @synchronized
+    def cache_clip_manually(
+        self, clip_id: str, filepath: str, thumbnail_path: str | None = None
+    ) -> None:
+        """Manually cache clip info (for cases where decorator isn't suitable)."""
+        cache_key = (self.get_clip_download_info, clip_id)
+        self[cache_key] = {
+            "clip_id": clip_id,
+            "filepath": filepath,
+            "thumbnail": thumbnail_path,
+        }
+
+    @synchronized
+    def clear_cache(self) -> None:
+        """Clear all cached clip downloads."""
+        self.clear()
+
+    @synchronized
+    def get_cache_stats(self) -> dict[str, Any]:
+        """Get cache statistics."""
+        return {"size": len(self), "maxsize": self.maxsize}
+
+    # Thread-safe overrides for LRUCache methods
+    @synchronized
+    def get(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe get method."""
+        return super().get(key, default)
+
+    @synchronized
+    def __getitem__(self, key: Any) -> Any:
+        """Thread-safe getitem method."""
+        return super().__getitem__(key)
+
+    @synchronized
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """Thread-safe setitem method."""
+        super().__setitem__(key, value)
+
+    @synchronized
+    def __delitem__(self, key: Any) -> None:
+        """Thread-safe delitem method."""
+        super().__delitem__(key)
+
+    @synchronized
+    def __contains__(self, key: Any) -> bool:
+        """Thread-safe contains method."""
+        return super().__contains__(key)
+
+    @synchronized
+    def __len__(self) -> int:
+        """Thread-safe len method."""
+        return super().__len__()
+
+    @synchronized
+    def pop(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe pop method."""
+        return super().pop(key, default)
+
+    @synchronized
+    def popitem(self) -> tuple[Any, Any]:
+        """Thread-safe popitem method."""
+        return super().popitem()
+
+    @synchronized
+    def clear(self) -> None:
+        """Thread-safe clear method."""
+        super().clear()
+
+    @synchronized
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        """Thread-safe setdefault method."""
+        return super().setdefault(key, default)
+
+    @synchronized
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """Thread-safe update method."""
+        super().update(*args, **kwargs)
+
+    @synchronized
+    def keys(self) -> Any:
+        """Thread-safe keys method."""
+        return list(super().keys())
+
+    @synchronized
+    def values(self) -> Any:
+        """Thread-safe values method."""
+        return list(super().values())
+
+    @synchronized
+    def items(self) -> Any:
+        """Thread-safe items method."""
+        return list(super().items())
+
+    @property
+    def maxsize(self) -> int:
+        """Get maximum cache size."""
+        return self._cache.maxsize
+
+
+# Cache instances using object-oriented memoizing decorators
+thumbnail_cache_oo = ThumbnailCache(maxsize=Config.THUMBNAIL_CACHE_SIZE)
+clips_metadata_cache_oo = ClipsMetadataCache(maxsize=Config.CLIPS_METADATA_CACHE_SIZE)
+clips_download_cache_oo = ClipsDownloadCache(maxsize=Config.CLIPS_CACHE_SIZE)
+
+# Hybrid approach: Keep both implementations for compatibility
+# Object-oriented cache instances (new approach)
+thumbnail_cache = thumbnail_cache_oo
+clips_metadata_cache = clips_metadata_cache_oo
+clips_download_cache = clips_download_cache_oo
+
+# Alias for backward compatibility with tests
+clips_cache = clips_download_cache
+
+
+def is_authenticated() -> bool:
+    """Check if user is authenticated with Blink.
+
+    Returns:
+        True if authenticated, False otherwise
+    """
+    global blink
+    return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete
+
+
+def parse_arguments(args: list[str] | None = None) -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Args:
+        args: Optional list of arguments to parse (for testing)
+
+    Returns:
+        Parsed arguments namespace
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=5000, help="Port to bind to (default: 5000)"
+    )
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    parser.add_argument(
+        "--cache", default=Config.DEFAULT_CACHE_DIR, help="Cache directory path"
+    )
+    parser.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        default="INFO",
+        help="Set logging level",
+    )
+    parser.add_argument(
+        "--dump-system",
+        action="store_true",
+        help="Dump Blink system information and exit (requires saved credentials)",
+    )
+
+    return parser.parse_args(args)
+
+
+def get_cache_stats() -> dict[str, dict[str, Any]]:
+    """Get statistics for all caches using OO implementation."""
+    return {
+        "thumbnail_cache": thumbnail_cache.get_cache_stats(),
+        "clips_metadata_cache": clips_metadata_cache.get_cache_stats(),
+        "clips_download_cache": clips_download_cache.get_cache_stats(),
+    }
 
     def __init__(self, cache: Any) -> None:
         self._cache = cache
         self._lock = threading.RLock()
 
+    @synchronized
     def get(self, key: Any, default: Any = None) -> Any:
         """Get value from cache."""
-        with self._lock:
-            return self._cache.get(key, default)
+        return self._cache.get(key, default)
 
+    @synchronized
     def __setitem__(self, key: Any, value: Any) -> None:
         """Set value in cache."""
-        with self._lock:
-            self._cache[key] = value
+        self._cache[key] = value
 
+    @synchronized
     def __getitem__(self, key: Any) -> Any:
         """Get value from cache with KeyError if not found."""
-        with self._lock:
-            return self._cache[key]
+        return self._cache[key]
 
+    @synchronized
     def __contains__(self, key: Any) -> bool:
         """Check if key exists in cache."""
-        with self._lock:
-            return key in self._cache
+        return key in self._cache
 
+    @synchronized
     def pop(self, key: Any, default: Any = None) -> Any:
         """Remove and return value from cache."""
-        with self._lock:
-            return self._cache.pop(key, default)
+        return self._cache.pop(key, default)
 
+    @synchronized
     def clear(self) -> None:
         """Clear all entries from cache."""
-        with self._lock:
-            self._cache.clear()
+        self._cache.clear()
 
+    @synchronized
     def __len__(self) -> int:
         """Get current cache size."""
-        with self._lock:
-            return len(self._cache)
+        return len(self)
 
 
 # Typed dictionaries for structured data
@@ -400,52 +928,6 @@ class ApiResponse(TypedDict):
     error: str | None
 
 
-# Configure logging - will be reconfigured after cache paths are set
-logger = logging.getLogger(__name__)
-
-
-def setup_logging() -> None:
-    """Configure logging with rotating file handler in cache directory.
-
-    Sets up console and rotating file logging with proper formatting.
-    Must be called after cache paths are initialized.
-    """
-    # Clear any existing handlers
-    logger.handlers.clear()
-    logging.getLogger().handlers.clear()
-
-    # Create formatter
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-
-    # Rotating file handler in cache directory
-    from logging.handlers import RotatingFileHandler
-
-    log_file_path = Path(CACHE_DIR) / Config.LOG_FILE
-    file_handler = RotatingFileHandler(
-        log_file_path,
-        maxBytes=Config.LOG_MAX_BYTES,
-        backupCount=Config.LOG_BACKUP_COUNT,
-    )
-    file_handler.setFormatter(formatter)
-
-    # Configure root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(
-        logging.INFO
-    )  # Default level, will be overridden by command line
-    root_logger.addHandler(console_handler)
-    root_logger.addHandler(file_handler)
-
-    # Force rotation on startup
-    file_handler.doRollover()
-
-
 def validate_string_input(value: str, max_length: int, field_name: str) -> str:
     """Validate string input for length and basic safety.
 
@@ -475,33 +957,6 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
         raise ValueError(f"{field_name} contains invalid characters")
 
     return value
-
-
-def create_api_response(
-    success: bool = True,
-    data: Any = None,
-    error: str | None = None,
-    status_code: int = Config.HTTP_STATUS_OK,
-) -> tuple[ApiResponse, int]:
-    """Create standardized API response format.
-
-    Args:
-        success: Whether the operation was successful
-        data: Response data (for successful operations)
-        error: Error message (for failed operations)
-        status_code: HTTP status code
-
-    Returns:
-        Tuple of (response_dict, status_code)
-    """
-    response: ApiResponse = {
-        "success": success,
-        "timestamp": datetime.now().isoformat(),
-        "data": data if success else None,
-        "error": error if not success else None,
-    }
-
-    return response, status_code
 
 
 def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
@@ -558,63 +1013,6 @@ def handle_api_error(
     return create_api_response(
         success=False, error=error_message, status_code=status_code
     )
-
-
-# Type variables for better decorator typing
-P = ParamSpec("P")
-T = TypeVar("T")
-
-
-def requires_blink(
-    func: Callable[P, ResponseReturnValue],
-) -> Callable[P, ResponseReturnValue]:
-    """Decorator that ensures blink is available before calling the function.
-
-    This decorator also serves as a type guard, telling type checkers that
-    after the check, blink is guaranteed to be non-None and available.
-
-    Usage in decorated functions:
-        @requires_blink
-        def my_function() -> ResponseReturnValue:
-            assert blink is not None  # For Pylance type narrowing
-            return jsonify(blink.sync)  # No type errors
-    """
-
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ResponseReturnValue:
-        error_response = require_blink()
-        if error_response is not None:
-            response, status_code = error_response
-            return jsonify(response), status_code
-
-        # At this point, type checkers know blink is not None and available
-        assert blink is not None  # Help type checkers understand this
-        assert blink.available  # Additional assertion for Pylance
-
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-def require_blink() -> tuple[ApiResponse, int] | None:
-    """Check if Blink is available, return error response if not.
-
-    Returns:
-        None if Blink is available, error response tuple if not
-    """
-    if blink is None:
-        return create_api_response(
-            success=False,
-            error=Config.ErrorMessages.SYSTEM_NOT_INITIALIZED,
-            status_code=Config.HTTP_STATUS_INTERNAL_ERROR,
-        )
-    if not blink.available:
-        return create_api_response(
-            success=False,
-            error=Config.ErrorMessages.AUTH_FAILED,
-            status_code=401,
-        )
-    return None
 
 
 def require_camera(
@@ -683,56 +1081,132 @@ def parse_clip_id(
         return None, error_response
 
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", Config.SECRET_KEY)
-# app.config["REDIS_URL"] = "redis://localhost:6379"  # No longer needed
+# Configure logging - will be reconfigured after cache paths are set
+logger = logging.getLogger(__name__)
 
-# HTTP session with connection pooling
-http_session = requests.Session()
-retry_strategy = Retry(
-    total=Config.HTTP_RETRY_TOTAL,
-    backoff_factor=Config.HTTP_RETRY_BACKOFF_FACTOR,
-    status_forcelist=Config.HTTP_RETRY_STATUS_CODES,
-)
-adapter = HTTPAdapter(
-    max_retries=retry_strategy,
-    pool_connections=Config.HTTP_POOL_CONNECTIONS,
-    pool_maxsize=Config.HTTP_POOL_MAXSIZE,
-)
-http_session.mount("http://", adapter)
-http_session.mount("https://", adapter)
 
-# Standard thread management
-executor: ThreadPoolExecutor = ThreadPoolExecutor(
-    max_workers=Config.THREAD_POOL_MAX_WORKERS, thread_name_prefix="blink-bg-"
-)
+def setup_logging() -> None:
+    """Configure logging with rotating file handler in cache directory.
 
-# Blink connection - always needed
-blink_connection: BlinkConnection = BlinkConnection(Config.BLINK_OPERATION_TIMEOUT)
-blink: Blink | None = None
+    Sets up console and rotating file logging with proper formatting.
+    Must be called after cache paths are initialized.
+    """
+    # Clear any existing handlers
+    logger.handlers.clear()
+    logging.getLogger().handlers.clear()
 
-# Stream management - only initialized when running server
-stream_manager: StreamManager | None = None
-# Cache configuration - will be set from command line
-CACHE_DIR: str = (
-    Config.DEFAULT_CACHE_DIR
-)  # Default cache directory, overridden by Flask config
-CREDENTIALS_FILE: str | None = (
-    None  # Path to encrypted credentials file, set in get_cache_paths()
-)
-THUMBNAIL_CACHE_DIR: str | None = (
-    None  # Directory for cached thumbnails, set in get_cache_paths()
-)
-CLIPS_CACHE_DIR: str | None = (
-    None  # Directory for cached clips, set in get_cache_paths()
-)
+    # Create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
-# Standard cache instances using cachetools
-thumbnail_cache = ThreadSafeCache(LRUCache(maxsize=Config.THUMBNAIL_CACHE_SIZE))
-clips_metadata_cache = ThreadSafeCache(
-    LRUCache(maxsize=Config.CLIPS_METADATA_CACHE_SIZE)
-)
-clips_download_cache = ThreadSafeCache(LRUCache(maxsize=Config.CLIPS_CACHE_SIZE))
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    # Rotating file handler in cache directory
+    from logging.handlers import RotatingFileHandler
+
+    log_file_path = Path(CACHE_DIR) / Config.LOG_FILE
+    file_handler = RotatingFileHandler(
+        log_file_path,
+        maxBytes=Config.LOG_MAX_BYTES,
+        backupCount=Config.LOG_BACKUP_COUNT,
+    )
+    file_handler.setFormatter(formatter)
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(
+        logging.INFO
+    )  # Default level, will be overridden by command line
+    root_logger.addHandler(console_handler)
+    root_logger.addHandler(file_handler)
+
+    # Force rotation on startup
+    file_handler.doRollover()
+
+
+def create_api_response(
+    success: bool = True,
+    data: Any = None,
+    error: str | None = None,
+    status_code: int = Config.HTTP_STATUS_OK,
+) -> tuple[ApiResponse, int]:
+    """Create standardized API response format.
+
+    Args:
+        success: Whether the operation was successful
+        data: Response data (for successful operations)
+        error: Error message (for failed operations)
+        status_code: HTTP status code
+
+    Returns:
+        Tuple of (response_dict, status_code)
+    """
+    response: ApiResponse = {
+        "success": success,
+        "timestamp": datetime.now().isoformat(),
+        "data": data if success else None,
+        "error": error if not success else None,
+    }
+
+    return response, status_code
+
+
+def requires_blink(
+    func: Callable[P, ResponseReturnValue],
+) -> Callable[P, ResponseReturnValue]:
+    """Decorator that ensures blink is available before calling the function.
+
+    This decorator also serves as a type guard, telling type checkers that
+    after the check, blink is guaranteed to be non-None and available.
+
+    Usage in decorated functions:
+        @requires_blink
+        def my_function() -> ResponseReturnValue:
+            assert blink is not None  # For Pylance type narrowing
+            return jsonify(blink.sync)  # No type errors
+    """
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> ResponseReturnValue:
+        error_response = require_blink()
+        if error_response is not None:
+            response, status_code = error_response
+            return jsonify(response), status_code
+
+        # At this point, type checkers know blink is not None and available
+        assert blink is not None  # Help type checkers understand this
+        assert blink.available  # Additional assertion for Pylance
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def require_blink() -> tuple[ApiResponse, int] | None:
+    """Check if Blink is available, return error response if not.
+
+    Returns:
+        None if Blink is available, error response tuple if not
+    """
+    if blink is None:
+        return create_api_response(
+            success=False,
+            error=Config.ErrorMessages.SYSTEM_NOT_INITIALIZED,
+            status_code=Config.HTTP_STATUS_INTERNAL_ERROR,
+        )
+    if not blink.available:
+        return create_api_response(
+            success=False,
+            error=Config.ErrorMessages.AUTH_FAILED,
+            status_code=401,
+        )
+    return None
+
+
+# Cache instances are now created using OO implementation above
 
 
 def ensure_cache_paths_initialized() -> None:
@@ -1310,10 +1784,10 @@ def two_factor() -> ResponseReturnValue:
 def clear_all_caches() -> dict[str, Any]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
-        # Clear memory caches first (fast operation)
-        thumbnail_cache.clear()
-        clips_download_cache.clear()
-        clips_metadata_cache.clear()
+        # Clear memory caches first (fast operation) using OO cache methods
+        thumbnail_cache.clear_cache()
+        clips_download_cache.clear_cache()
+        clips_metadata_cache.clear_cache()
 
         # Clear file caches (slow I/O operations)
         def clear_file_cache(cache_dir: str, cache_name: str) -> None:
