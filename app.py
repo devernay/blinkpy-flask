@@ -650,7 +650,7 @@ class ClipsMetadataCache(LRUCache):
     @property
     def maxsize(self) -> int:
         """Get maximum cache size."""
-        return self._cache.maxsize
+        return int(super().maxsize)
 
 
 class ClipsDownloadCache(LRUCache):
@@ -771,7 +771,7 @@ class ClipsDownloadCache(LRUCache):
     @property
     def maxsize(self) -> int:
         """Get maximum cache size."""
-        return self._cache.maxsize
+        return int(super().maxsize)
 
 
 # Cache instances using object-oriented memoizing decorators
@@ -1107,6 +1107,7 @@ def setup_logging() -> None:
     # Rotating file handler in cache directory
     from logging.handlers import RotatingFileHandler
 
+    assert CACHE_DIR is not None
     log_file_path = Path(CACHE_DIR) / Config.LOG_FILE
     file_handler = RotatingFileHandler(
         log_file_path,
@@ -1255,9 +1256,6 @@ def initialize_cache_paths() -> None:
 
 # Cache configuration
 CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
-SETTINGS_FILE: str | None = (
-    None  # Path to settings file, set in initialize_cache_paths()
-)
 
 # Legacy stream variables removed - now handled by StreamManager
 
@@ -3039,6 +3037,7 @@ def startup() -> None:
         initialize_cache_paths()
 
         # Create cache directories if they don't exist
+        assert CACHE_DIR is not None
         Path(CACHE_DIR).mkdir(exist_ok=True)
         assert THUMBNAIL_CACHE_DIR is not None
         assert CLIPS_CACHE_DIR is not None
