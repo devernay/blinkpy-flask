@@ -200,7 +200,7 @@ Verify that the following issues have been fixed already:
 
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
-Read the whole code again, including the Python code, the Javascript code and the HTML templates. How would you rate the code quality? Is there room for improvement?  Is there code that can be de-duplicated or factorized?
+Read the whole code again, including the Python code, the Javascript code and the HTML templates. How would you rate the code quality? Is there room for improvement?  Is there code that can be de-duplicated or factorized? Add a section to IMPLEMENTATION.md with the proposed code quality improvements.
 
 Check that Python type hints are used thoroughly through the code. Try to avoid using `Any` if possible: infer the type by reading the app code or the blinkpy code. Check that docstrings are complete with parameters description.
 

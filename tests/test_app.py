@@ -1085,9 +1085,9 @@ class TestAPIEndpoints(unittest.TestCase):
     ):
         """Test clear_all_caches function exists and works."""
         # Setup mocks
-        mock_thumb.clear = MagicMock()
-        mock_clips_dl.clear = MagicMock()
-        mock_clips_meta.clear = MagicMock()
+        mock_thumb.clear_cache = MagicMock()
+        mock_clips_dl.clear_cache = MagicMock()
+        mock_clips_meta.clear_cache = MagicMock()
 
         # Mock executor.submit to return a mock future
         mock_future = MagicMock()
@@ -1105,9 +1105,9 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(result["status"], "success")
 
         # Verify cache clearing was called
-        mock_thumb.clear.assert_called_once()
-        mock_clips_dl.clear.assert_called_once()
-        mock_clips_meta.clear.assert_called_once()
+        mock_thumb.clear_cache.assert_called_once()
+        mock_clips_dl.clear_cache.assert_called_once()
+        mock_clips_meta.clear_cache.assert_called_once()
 
     """Test configuration and setup functions."""
 
@@ -2937,9 +2937,14 @@ class TestAdvancedClipOperations(unittest.TestCase):
             "thumbnail_path": "/tmp/test_thumb.jpg",
         }
 
-        with patch("pathlib.Path.exists", return_value=True):
-            response = self.client.post("/api/clip/test_clip/process")
-            self.assertEqual(response.status_code, 200)
+        with patch("app.blink") as mock_blink:
+            mock_blink.available = True
+
+            with patch("pathlib.Path.exists", return_value=True):
+                with patch("app.process_cloud_clip_background") as mock_process:
+                    response = self.client.post("/api/clip/test_clip/process")
+                    self.assertEqual(response.status_code, 200)
+                    mock_process.assert_called_once()
 
             data = json.loads(response.data)
             self.assertTrue(data["success"])
@@ -2994,19 +2999,21 @@ class TestSystemDeviceOperations(unittest.TestCase):
             mock_camera.thumbnail = (
                 f"https://example.com/thumb{i}.jpg?ts={1000 + i * 100}"
             )
+            # Set attributes that will be serialized to JSON
+            mock_camera.battery = f"OK ({100 + i * 5}%)"
+            mock_camera.temperature = 70 + i * 2
+            mock_camera.wifi_strength = -40 - i * 5
+            mock_camera.last_record = None
             cameras[f"Camera {i}"] = mock_camera
 
-        # Mock sync module
+        # Mock sync module structure
         mock_sync = Mock()
         mock_sync.online = True
         mock_sync.sync_id = 54321
+        mock_sync.network_id = 12345
         mock_sync.cameras = cameras
 
-        mock_network = Mock()
-        mock_network.network_id = 12345
-        mock_network.sync_wireless = mock_sync
-
-        mock_blink.networks = {"12345": mock_network}
+        mock_blink.sync = {"sync1": mock_sync}
 
         with patch("app.thumbnail_cache") as mock_cache:
             mock_cache.get.return_value = {"timestamp": 500}
@@ -3027,13 +3034,10 @@ class TestSystemDeviceOperations(unittest.TestCase):
         mock_sync = Mock()
         mock_sync.online = False
         mock_sync.sync_id = 54321
+        mock_sync.network_id = 12345
         mock_sync.cameras = {}
 
-        mock_network = Mock()
-        mock_network.network_id = 12345
-        mock_network.sync_wireless = mock_sync
-
-        mock_blink.networks = {"12345": mock_network}
+        mock_blink.sync = {"sync1": mock_sync}
 
         response = self.client.get("/api/system/12345/devices")
         self.assertEqual(response.status_code, 200)
@@ -3047,9 +3051,13 @@ class TestSystemDeviceOperations(unittest.TestCase):
     @patch("app.blink_connection")
     def test_arm_system_with_network_delay(self, mock_connection, mock_blink):
         """Test arm system with network delay simulation."""
-        mock_network = Mock()
-        mock_network.arm = Mock()
-        mock_blink.networks = {"12345": mock_network}
+        mock_blink.available = True
+
+        # Mock sync module structure
+        mock_sync = Mock()
+        mock_sync.network_id = 12345
+        mock_sync.async_arm = Mock()
+        mock_blink.sync = {"sync1": mock_sync}
 
         # Simulate network delay
         import time
@@ -3084,10 +3092,16 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
     @patch("app.thumbnail_cache")
     def test_get_camera_thumbnail_with_stale_cache(self, mock_cache, mock_blink):
         """Test camera thumbnail with stale cache data."""
+        mock_blink.available = True
+
         # Mock camera with newer thumbnail
         mock_camera = Mock()
+        mock_camera.camera_id = 12345
         mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=2000"
-        mock_blink.cameras = {12345: mock_camera}
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"camera1": mock_camera}
+        mock_blink.sync = {"sync1": mock_sync}
 
         # Mock stale cache entry
         mock_cache.get.return_value = {
@@ -3096,23 +3110,33 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
         }
 
         with patch("app.blink_connection") as mock_connection:
-            mock_connection.execute.return_value = b"new_image_data"
+            # Mock response object with status attribute
+            mock_response = Mock()
+            mock_response.status = 200  # HTTP_STATUS_OK
+
+            # Set up execute to return response first, then image data
+            mock_connection.execute.side_effect = [mock_response, b"new_image_data"]
 
             with patch("app.executor") as mock_executor:
                 mock_executor.submit.return_value = Mock()
 
                 response = self.client.get("/api/camera/12345/thumbnail")
 
-                # Should trigger background update
-                self.assertIn(response.status_code, [200, 500])
-                mock_executor.submit.assert_called()
+                # Should return the image data directly
+                self.assertEqual(response.status_code, 200)
 
     @patch("app.blink")
     def test_refresh_camera_thumbnail_with_error(self, mock_blink):
         """Test refresh camera thumbnail when snap_picture fails."""
+        mock_blink.available = True
+
         mock_camera = Mock()
+        mock_camera.camera_id = 12345
         mock_camera.snap_picture.side_effect = Exception("Camera error")
-        mock_blink.cameras = {12345: mock_camera}
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"camera1": mock_camera}
+        mock_blink.sync = {"sync1": mock_sync}
 
         with patch("app.blink_connection") as mock_connection:
             mock_connection.execute.side_effect = Exception("Camera error")
@@ -3125,9 +3149,15 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
     @patch("app.blink")
     def test_get_camera_thumbnail_timestamp_with_invalid_url(self, mock_blink):
         """Test thumbnail timestamp extraction with invalid URL."""
+        mock_blink.available = True
+
         mock_camera = Mock()
+        mock_camera.camera_id = 12345
         mock_camera.thumbnail = "invalid_url_without_timestamp"
-        mock_blink.cameras = {12345: mock_camera}
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"camera1": mock_camera}
+        mock_blink.sync = {"sync1": mock_sync}
 
         response = self.client.get("/api/camera/12345/thumbnail/timestamp")
         self.assertEqual(response.status_code, 200)
@@ -3155,21 +3185,31 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
     @patch("app.blink_connection")
     def test_connection_recovery_after_failure(self, mock_connection, mock_blink):
         """Test connection recovery after initial failure."""
+        mock_blink.available = True
+
+        # Mock camera structure
+        mock_camera = Mock()
+        mock_camera.camera_id = 12345
+        mock_camera.thumbnail = "https://example.com/thumb.jpg"
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"camera1": mock_camera}
+        mock_blink.sync = {"sync1": mock_sync}
+
         # Mock initial failure followed by success
         mock_connection.execute.side_effect = [
             Exception("Connection failed"),  # First call fails
             {"success": True},  # Second call succeeds
         ]
 
-        mock_blink.cameras = {12345: Mock()}
-
         # First request should fail
         response1 = self.client.get("/api/camera/12345/thumbnail")
         self.assertIn(response1.status_code, [500, 404])
 
         # Reset side effect for second request
-        mock_connection.execute.side_effect = None
-        mock_connection.execute.return_value = b"image_data"
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         # Second request should succeed
         response2 = self.client.get("/api/camera/12345/thumbnail")
@@ -3218,7 +3258,10 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
 
     @patch("app.thumbnail_cache")
     @patch("app.executor")
-    def test_concurrent_thumbnail_updates(self, mock_executor, mock_cache):
+    @patch("app.blink_connection")
+    def test_concurrent_thumbnail_updates(
+        self, mock_connection, mock_executor, mock_cache
+    ):
         """Test concurrent thumbnail update handling."""
         from app import CameraId, update_camera_thumbnail
 
@@ -3226,6 +3269,7 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
         mock_camera = Mock()
         mock_camera.name = "Test Camera"
         mock_camera.camera_id = 12345
+        mock_camera.thumbnail = "https://example.com/thumb.jpg"
 
         cache_key = CameraId(12345)
 
@@ -3248,6 +3292,11 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
             return Mock()
 
         mock_executor.submit.side_effect = execute_immediately
+
+        # Mock blink_connection
+        mock_response = Mock()
+        mock_response.status = 200
+        mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
 

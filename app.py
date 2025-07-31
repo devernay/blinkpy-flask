@@ -2026,36 +2026,43 @@ def refresh_camera(camera_id_str: str) -> ResponseReturnValue:
         return jsonify(response), status_code
 
     assert camera is not None
-    with error_context("refresh camera thumbnail", CameraError):
-        # Remove camera thumbnail from cache in background
-        def remove_thumbnail_cache() -> None:
-            cache_key = CameraId(camera.camera_id)
-            cached_info = thumbnail_cache.get(cache_key)
-            if cached_info is not None:
-                # Remove cached file
-                if "filename" in cached_info:
-                    assert THUMBNAIL_CACHE_DIR is not None
-                    cached_file = (
-                        Path(cast(str, THUMBNAIL_CACHE_DIR)) / cached_info["filename"]
-                    )
-                    try:
-                        if cached_file.exists():
-                            cached_file.unlink()
-                    except OSError as e:
-                        logger.debug(f"Could not remove cached thumbnail: {e}")
-                # Remove from cache
-                thumbnail_cache.pop(cache_key, None)
+    try:
+        with error_context("refresh camera thumbnail", CameraError):
+            # Remove camera thumbnail from cache in background
+            def remove_thumbnail_cache() -> None:
+                cache_key = CameraId(camera.camera_id)
+                cached_info = thumbnail_cache.get(cache_key)
+                if cached_info is not None:
+                    # Remove cached file
+                    if "filename" in cached_info:
+                        assert THUMBNAIL_CACHE_DIR is not None
+                        cached_file = (
+                            Path(cast(str, THUMBNAIL_CACHE_DIR))
+                            / cached_info["filename"]
+                        )
+                        try:
+                            if cached_file.exists():
+                                cached_file.unlink()
+                        except OSError as e:
+                            logger.debug(f"Could not remove cached thumbnail: {e}")
+                    # Remove from cache
+                    thumbnail_cache.pop(cache_key, None)
 
-        executor.submit(remove_thumbnail_cache)
+            executor.submit(remove_thumbnail_cache)
 
-        if camera is not None:
-            blink_connection.execute(camera.snap_picture())
+            if camera is not None:
+                blink_connection.execute(camera.snap_picture())
 
-        # Refresh camera data to get updated thumbnail URL
-        blink_connection.execute(blink.refresh())
+            # Refresh camera data to get updated thumbnail URL
+            blink_connection.execute(blink.refresh())
 
         response, status_code = create_api_response(
             success=True, data={"message": "Thumbnail refresh initiated"}
+        )
+        return jsonify(response), status_code
+    except CameraError as e:
+        response, status_code = create_api_response(
+            success=False, error=str(e), status_code=500
         )
         return jsonify(response), status_code
 
@@ -2081,21 +2088,27 @@ def get_clips() -> ResponseReturnValue:
         response, status_code = create_api_response(success=True, data=cached_clips)
         return jsonify(response), status_code
 
-    with error_context(f"get {storage_type} clips"):
-        if storage_type == "cloud":
-            # Get cloud clips via blink operation
-            videos_metadata = blink_connection.execute(
-                blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
-            )
-            clips = process_cloud_clips(videos_metadata)
-        else:
-            clips = process_local_clips()
+    try:
+        with error_context(f"get {storage_type} clips"):
+            if storage_type == "cloud":
+                # Get cloud clips via blink operation
+                videos_metadata = blink_connection.execute(
+                    blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
+                )
+                clips = process_cloud_clips(videos_metadata)
+            else:
+                clips = process_local_clips()
 
-    # Cache the results
-    clips_metadata_cache[storage_type] = clips
+        # Cache the results
+        clips_metadata_cache[storage_type] = clips
 
-    response, status_code = create_api_response(success=True, data=clips)
-    return jsonify(response), status_code
+        response, status_code = create_api_response(success=True, data=clips)
+        return jsonify(response), status_code
+    except BlinkError as e:
+        response, status_code = create_api_response(
+            success=False, error=str(e), status_code=500
+        )
+        return jsonify(response), status_code
 
 
 @app.route("/api/system/refresh", methods=["POST"])
@@ -3275,6 +3288,7 @@ def load_thumbnail_cache() -> None:
     assert THUMBNAIL_CACHE_DIR is not None
     cache_dir = Path(cast(str, THUMBNAIL_CACHE_DIR))
     if not cache_dir.exists():
+        logger.warning(f"Thumbnail cache directory does not exist: {cache_dir}")
         return
 
     try:
@@ -3370,6 +3384,7 @@ def load_clips_cache() -> None:
     assert CLIPS_CACHE_DIR is not None
     cache_dir = Path(cast(str, CLIPS_CACHE_DIR))
     if not cache_dir.exists():
+        logger.warning(f"Clips cache directory does not exist: {cache_dir}")
         return
 
     try:
