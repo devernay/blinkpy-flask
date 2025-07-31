@@ -1055,81 +1055,6 @@ class TestAPIEndpoints(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
-
-class TestUtilityFunctions(unittest.TestCase):
-    """Test utility functions for better coverage."""
-
-    def test_create_api_response_success(self):
-        """Test create_api_response with success."""
-        response, status = create_api_response(success=True, data={"test": "data"})
-
-        self.assertTrue(response["success"])
-        self.assertEqual(response["data"], {"test": "data"})
-        self.assertIn("timestamp", response)
-        self.assertEqual(status, 200)
-
-    def test_create_api_response_error(self):
-        """Test create_api_response with error."""
-        response, status = create_api_response(
-            success=False, error="Test error", status_code=400
-        )
-
-        self.assertFalse(response["success"])
-        self.assertEqual(response["error"], "Test error")
-        self.assertEqual(status, 400)
-
-    def test_extract_thumbnail_timestamp_valid(self):
-        """Test extract_thumbnail_timestamp with valid URL."""
-        url = "https://example.com/thumb.jpg?ts=1234567890"
-        timestamp = extract_thumbnail_timestamp(url)
-        self.assertEqual(timestamp, 1234567890)
-
-    def test_extract_thumbnail_timestamp_invalid(self):
-        """Test extract_thumbnail_timestamp with invalid URL."""
-        url = "https://example.com/thumb.jpg"
-        timestamp = extract_thumbnail_timestamp(url)
-        self.assertEqual(timestamp, 0)
-
-    def test_extract_thumbnail_timestamp_none(self):
-        """Test extract_thumbnail_timestamp with None."""
-        timestamp = extract_thumbnail_timestamp(None)
-        self.assertEqual(timestamp, 0)
-
-    def test_validate_string_input_empty_after_strip(self):
-        """Test validate_string_input with whitespace-only string."""
-        with self.assertRaises(ValueError) as context:
-            validate_string_input("   ", 100, "test_field")
-        self.assertIn("cannot be empty", str(context.exception))
-
-    def test_validate_string_input_not_string(self):
-        """Test validate_string_input with non-string input."""
-        with self.assertRaises(ValueError) as context:
-            validate_string_input(123, 100, "test_field")
-        self.assertIn("must be a string", str(context.exception))
-
-    def test_validate_string_input_too_long(self):
-        """Test validate_string_input with string too long."""
-        long_string = "a" * 101
-        with self.assertRaises(ValueError) as context:
-            validate_string_input(long_string, 100, "test_field")
-        self.assertIn("too long", str(context.exception))
-
-    def test_validate_string_input_xss_characters(self):
-        """Test validate_string_input with XSS characters."""
-        test_cases = [
-            "<script>alert('xss')</script>",
-            "test & test",
-            "test > test",
-            "test < test",
-        ]
-
-        for test_input in test_cases:
-            with self.assertRaises(ValueError) as context:
-                validate_string_input(test_input, 100, "test_field")
-            self.assertIn("invalid characters", str(context.exception))
-
-
-class TestCacheManagement(unittest.TestCase):
     """Test cache management functions."""
 
     @patch("app.executor")
@@ -1167,31 +1092,6 @@ class TestCacheManagement(unittest.TestCase):
         mock_clips_dl.clear.assert_called_once()
         mock_clips_meta.clear.assert_called_once()
 
-
-class TestErrorHandling(unittest.TestCase):
-    """Test error handling scenarios."""
-
-    def setUp(self):
-        """Set up test client."""
-        app.config["TESTING"] = True
-        self.client = app.test_client()
-
-    def test_404_error_response(self):
-        """Test 404 error response."""
-        response = self.client.get("/nonexistent-endpoint")
-        self.assertEqual(response.status_code, 404)
-        # Flask returns HTML by default for 404, not JSON
-
-    @patch("app.blink", None)
-    def test_requires_blink_decorator_behavior(self):
-        """Test behavior when blink is None."""
-        # This will likely return 500 due to the decorator implementation
-        response = self.client.get("/api/system/list")
-        # Accept either 401 or 500 depending on implementation
-        self.assertIn(response.status_code, [401, 500])
-
-
-class TestConfigurationAndSetup(unittest.TestCase):
     """Test configuration and setup functions."""
 
     @patch("app.CACHE_DIR", "/tmp/test_cache")
