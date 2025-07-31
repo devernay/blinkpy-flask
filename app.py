@@ -67,7 +67,7 @@ from flask import (
 from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
 
-from blinkpy.auth import Auth  # type: ignore
+from blinkpy.auth import Auth
 from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.camera import BlinkCamera
 from blinkpy.sync_module import BlinkSyncModule
@@ -2908,7 +2908,7 @@ async def load_saved_blink() -> bool:
             # Type ignore for mypy issue with blinkpy's json_load function
             auth_data: dict[str, Any] | None = await json_load(
                 cast(str, CREDENTIALS_FILE)
-            )  # type: ignore[misc]
+            )
             session = ClientSession()
             auth = Auth(auth_data, session=session)
             blink = Blink(session=session)
