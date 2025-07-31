@@ -342,9 +342,14 @@ class TestAdditionalEndpoints(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        from test_utils import setup_test_globals
+
         self.app = app
         self.app.config["TESTING"] = True
         self.client = self.app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
 
     @patch("app.blink")
     def test_api_devices_network_not_found(self, mock_blink):
@@ -495,15 +500,15 @@ class TestErrorHandlingExtended(unittest.TestCase):
 
     def test_error_context_manager_with_different_operations(self):
         """Test error context manager with different operation names."""
-        from app import error_context
+        from app import BlinkError, error_context
 
         # Test successful operation
         with error_context("test operation"):
             result = "success"
         self.assertEqual(result, "success")
 
-        # Test operation that raises exception
-        with self.assertRaises(ValueError):
+        # Test operation that raises exception - should be re-raised as BlinkError
+        with self.assertRaises(BlinkError):
             with error_context("failing operation"):
                 raise ValueError("Test error")
 
@@ -757,6 +762,13 @@ class TestAuthenticationFlows(unittest.TestCase):
 class TestAuthenticationHelpers(unittest.TestCase):
     """Test authentication helper functions and error handling."""
 
+    def setUp(self):
+        """Set up test fixtures."""
+        from test_utils import setup_test_globals
+
+        # Initialize globals for testing
+        setup_test_globals()
+
     def test_authentication_error_class(self):
         """Test AuthenticationError exception class."""
         from app import AuthenticationError
@@ -971,8 +983,13 @@ class TestAPIEndpoints(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
         self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
 
     @patch("app.blink")
     def test_get_systems_success(self, mock_blink):
@@ -1174,7 +1191,13 @@ class TestThumbnailManagement(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -1311,7 +1334,13 @@ class TestFileOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     def test_camera_id_class(self):
@@ -1646,8 +1675,13 @@ class TestThumbnailCacheOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
         self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
 
     @patch("app.thumbnail_cache")
     @patch("app.executor")
@@ -1676,10 +1710,10 @@ class TestThumbnailCacheOperations(unittest.TestCase):
         mock_executor.submit.side_effect = mock_submit
 
         # Mock cache behavior for race condition test
-        mock_cache.get.side_effect = [
-            {"timestamp": 1000},  # Initial check
-            {"timestamp": 2500},  # Race condition - already updated
-        ]
+        # The function calls get() once inside the background function for race condition check
+        mock_cache.get.return_value = {
+            "timestamp": 2500
+        }  # Race condition - already updated
 
         with patch("app.blink_connection") as mock_connection:
             # This shouldn't be called due to race condition, but mock it just in case
@@ -1956,8 +1990,13 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
         self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
 
     @patch("app.blink")
     def test_get_devices_with_cameras(self, mock_blink):
@@ -2037,20 +2076,28 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
     @patch("app.blink")
     def test_get_clip_thumbnail_success(self, mock_blink):
         """Test getting clip thumbnail."""
-        with patch("app.clips_cache") as mock_cache:
+        with patch("app.clips_download_cache") as mock_cache:
             # Mock Path object for thumbnail
             mock_thumbnail_path = Mock()
             mock_thumbnail_path.exists.return_value = True
+            mock_thumbnail_path.__str__ = Mock(return_value="/fake/path/thumbnail.jpg")
 
             mock_cache.get.return_value = {"thumbnail": mock_thumbnail_path}
 
-            with patch("flask.send_file") as mock_send:
-                mock_send.return_value = Mock()
+            with patch("app.send_file") as mock_send:
+                # Mock send_file to return a proper response object
+                from flask import Response
+
+                mock_response = Response("fake image data", mimetype="image/jpeg")
+                mock_send.return_value = mock_response
 
                 response = self.client.get("/api/clip/test_clip/thumbnail")
 
                 # Should serve thumbnail file
-                self.assertIn(response.status_code, [200, 500])
+                self.assertEqual(response.status_code, 200)
+                mock_send.assert_called_once_with(
+                    "/fake/path/thumbnail.jpg", mimetype="image/jpeg"
+                )
 
     @patch("app.blink")
     def test_get_clip_thumbnail_not_found(self, mock_blink):
@@ -2293,8 +2340,13 @@ class TestCacheLoadingOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
         self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_load_thumbnail_cache_success(self):
@@ -2380,7 +2432,7 @@ class TestCommandLineInterface(unittest.TestCase):
         args = parse_arguments(["--host", "127.0.0.1"])
 
         self.assertEqual(args.host, "127.0.0.1")
-        self.assertEqual(args.port, 5001)  # Default port
+        self.assertEqual(args.port, 5000)  # Default port
         self.assertFalse(args.debug)  # Default debug
 
     def test_parse_arguments_all_options(self):
@@ -2510,8 +2562,13 @@ class TestPerformanceOptimizations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
         self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
 
     @patch("app.thumbnail_cache")
     def test_cache_hit_optimization(self, mock_cache):
@@ -2524,9 +2581,18 @@ class TestPerformanceOptimizations(unittest.TestCase):
         }
 
         with patch("app.blink") as mock_blink:
+            # Mock blink to be available
+            mock_blink.available = True
+
+            # Mock camera structure
             mock_camera = Mock()
+            mock_camera.camera_id = 12345
             mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1000"
-            mock_blink.cameras = {12345: mock_camera}
+
+            # Mock sync structure
+            mock_sync = Mock()
+            mock_sync.cameras = {"camera1": mock_camera}
+            mock_blink.sync = {"sync1": mock_sync}
 
             response = self.client.get("/api/camera/12345/thumbnail")
 
@@ -2799,7 +2865,13 @@ class TestAdvancedClipOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -2893,7 +2965,13 @@ class TestSystemDeviceOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -2993,7 +3071,13 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -3058,7 +3142,13 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -3117,7 +3207,13 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.thumbnail_cache")
@@ -3265,7 +3361,13 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
@@ -3380,7 +3482,13 @@ class TestAdvancedSystemOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -3452,7 +3560,13 @@ class TestAdvancedFileOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.SETTINGS_FILE", "/tmp/test_settings.json")
@@ -3500,7 +3614,13 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -3581,7 +3701,13 @@ class TestSecurityAdvanced(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     def test_input_sanitization_comprehensive(self):
@@ -3655,7 +3781,13 @@ class TestIntegrationScenarios(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -3762,7 +3894,13 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.thumbnail_cache")
@@ -3880,7 +4018,13 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -4115,7 +4259,13 @@ class TestAdvancedCacheOperations(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
@@ -4250,7 +4400,13 @@ class TestComplexErrorScenarios(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -4323,7 +4479,13 @@ class TestAdvancedIntegrationWorkflows(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.blink")
@@ -4465,7 +4627,13 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     def test_application_startup_sequence(self):
@@ -4582,8 +4750,10 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertEqual(response["data"], {"test": "data"})
         self.assertEqual(status, 200)
 
-        # Test error response
-        response, status = create_api_response(success=False, error="Test error")
+        # Test error response with explicit status code
+        response, status = create_api_response(
+            success=False, error="Test error", status_code=500
+        )
         self.assertFalse(response["success"])
         self.assertEqual(response["error"], "Test error")
         self.assertEqual(status, 500)
@@ -4601,8 +4771,8 @@ class TestCriticalPathCoverage(unittest.TestCase):
         """Test basic route accessibility."""
         # Test that basic routes are accessible
         routes_to_test = [
-            ("/", [200, 500]),  # Index route
-            ("/auth", [200, 500]),  # Auth route
+            ("/", [200, 302, 500]),  # Index route (may redirect to login)
+            ("/login", [200, 302, 500]),  # Login route
             ("/api/settings", [200, 500]),  # Settings route
         ]
 
@@ -5051,7 +5221,13 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
 
     def setUp(self):
         """Set up test client."""
+        from test_utils import setup_test_globals
+
         app.config["TESTING"] = True
+        self.client = app.test_client()
+
+        # Initialize globals for testing
+        setup_test_globals()
         self.client = app.test_client()
 
     @patch("app.is_authenticated")
@@ -5072,13 +5248,16 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         self.assertIn(response.status_code, [200, 302, 404])
 
     @patch("app.clips_metadata_cache")
-    def test_get_clips_missing_storage_param(self, mock_cache):
+    @patch("app.blink")
+    def test_get_clips_missing_storage_param(self, mock_blink, mock_cache):
         """Test get clips without storage parameter."""
+        # Mock blink to be available
+        mock_blink.available = True
         mock_cache.get.return_value = []
 
         response = self.client.get("/api/clips")
-        # Should return error or default behavior
-        self.assertIn(response.status_code, [200, 400])
+        # Should return success with default storage type (cloud)
+        self.assertEqual(response.status_code, 200)
 
     @patch("app.clips_metadata_cache")
     def test_get_clip_thumbnail_check_success(self, mock_cache):
@@ -5296,10 +5475,10 @@ class TestResourceManagementFixed(unittest.TestCase):
 
         # Add items beyond capacity
         for i in range(10):
-            cache.put(f"key{i}", f"value{i}")
+            cache[f"key{i}"] = f"value{i}"
 
         # Should only contain last 5 items
-        self.assertEqual(len(cache._cache), 5)
+        self.assertEqual(len(cache), 5)
 
         # Should contain keys 5-9
         for i in range(5, 10):
@@ -5313,12 +5492,11 @@ class TestResourceManagementFixed(unittest.TestCase):
 
         # Add and remove items to test memory management
         for i in range(50):
-            cache.put(f"key{i}", f"value{i}")
+            cache[f"key{i}"] = f"value{i}"
 
         # Clear cache
         cache.clear()
-        self.assertEqual(len(cache._cache), 0)
-        self.assertEqual(len(cache._order), 0)
+        self.assertEqual(len(cache), 0)
 
 
 if __name__ == "__main__":

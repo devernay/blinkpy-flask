@@ -76,8 +76,11 @@ from config import Config
 # from flask_sse import sse  # No longer needed
 from stream_manager import StreamConfig, StreamManager
 
+# Create Flask app instance
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
+
 # Global variables
-app: "Flask | None" = None
 blink: "Blink | None" = None
 blink_connection: "BlinkConnection | None" = None
 executor: "ThreadPoolExecutor | None" = None
@@ -219,8 +222,9 @@ class BaseId:
         if not value:
             raise ValueError(f"{self._get_type_name()} cannot be empty")
 
-        # Allow numeric strings and basic alphanumeric patterns
-        if not re.match(r"^[a-zA-Z0-9_~-]+$", value):
+        # Use the specific pattern from the subclass
+        pattern = self._get_pattern()
+        if not re.match(pattern, value):
             raise ValueError(f"Invalid {self._get_type_name()} format")
         return value
 
@@ -3005,6 +3009,39 @@ def dump_blink_system_info() -> None:
     logger.info("=== END DUMP ===")
 
 
+def initialize_for_testing() -> None:
+    """Initialize global variables for testing.
+
+    This function should only be called from test code to ensure
+    that executor and blink_connection are properly initialized
+    when testing individual functions.
+    """
+    global blink_connection, executor
+
+    # Import here to avoid circular imports
+    from concurrent.futures import ThreadPoolExecutor
+
+    from blink_connection import BlinkConnection
+
+    # Initialize executor for background tasks if not already initialized
+    if executor is None:
+        executor = ThreadPoolExecutor(max_workers=Config.THREAD_POOL_MAX_WORKERS)
+
+    # Initialize Blink connection if not already initialized
+    if blink_connection is None:
+        blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
+
+    # Initialize cache directories for testing if not already done
+    global \
+        CACHE_DIR, \
+        THUMBNAIL_CACHE_DIR, \
+        CLIPS_CACHE_DIR, \
+        CREDENTIALS_FILE, \
+        SETTINGS_FILE
+    if CACHE_DIR is None:
+        initialize_cache_paths()
+
+
 def startup() -> None:
     """Initialize application on startup.
 
@@ -3031,9 +3068,19 @@ def startup() -> None:
         If no valid credentials found, user must login via web interface.
         All errors are logged but don't prevent application startup.
     """
-    global stream_manager
+    global stream_manager, blink_connection, executor
+
+    # Import here to avoid circular imports
+    from concurrent.futures import ThreadPoolExecutor
+
+    from blink_connection import BlinkConnection
 
     try:
+        # Initialize executor for background tasks
+        executor = ThreadPoolExecutor(max_workers=Config.THREAD_POOL_MAX_WORKERS)
+
+        # Initialize Blink connection
+        blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
         # Initialize cache paths
         initialize_cache_paths()
 
@@ -3541,14 +3588,17 @@ def cleanup_resources() -> None:
         logger.info("Cleaning up resources...")
 
         # Shutdown executor
-        executor.shutdown(wait=False)
+        if executor is not None:
+            executor.shutdown(wait=False)
 
         # Shutdown stream manager if initialized
         if stream_manager is not None:
             stream_manager.shutdown()
 
         # Clean up active livestreams
-        if hasattr(blink_connection, "_active_streams"):
+        if blink_connection is not None and hasattr(
+            blink_connection, "_active_streams"
+        ):
             for stream_id, stream in blink_connection._active_streams.items():
                 try:
                     if hasattr(stream, "stop"):
@@ -3559,20 +3609,27 @@ def cleanup_resources() -> None:
             blink_connection._active_streams.clear()
 
         # Clean up Blink session only if connection is active
-        if blink and blink_connection.loop and blink_connection.loop.is_running():
+        if (
+            blink
+            and blink_connection is not None
+            and blink_connection.loop
+            and blink_connection.loop.is_running()
+        ):
             try:
                 blink_connection.execute(cleanup_blink_session())
             except (RuntimeError, ConnectionError, TimeoutError) as e:
                 logger.debug(f"Error during Blink session cleanup: {e}")
 
         # Shutdown Blink connection
-        blink_connection.shutdown()
+        if blink_connection is not None:
+            blink_connection.shutdown()
 
         # Close HTTP session
-        try:
-            http_session.close()
-        except (AttributeError, RuntimeError) as e:
-            logger.debug(f"Error closing HTTP session: {e}")
+        if http_session is not None:
+            try:
+                http_session.close()
+            except (AttributeError, RuntimeError) as e:
+                logger.debug(f"Error closing HTTP session: {e}")
 
         logger.info("Resource cleanup completed")
     except (AttributeError, RuntimeError) as e:
