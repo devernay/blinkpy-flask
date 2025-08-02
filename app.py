@@ -72,6 +72,14 @@ from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.camera import BlinkCamera
 from blinkpy.sync_module import BlinkSyncModule
 from config import Config
+from route_decorators import (
+    api_route,
+    api_route_with_validation,
+    cached_api_route,
+    file_response_route,
+    method_dispatch_route,
+    simple_success_response,
+)
 
 # from flask_sse import sse  # No longer needed
 from stream_manager import StreamConfig, StreamManager
@@ -103,6 +111,14 @@ class BlinkError(Exception):
     """Base exception for Blink-related errors."""
 
     pass
+
+
+class ValidationError(Exception):
+    """Exception for validation errors with custom status codes."""
+
+    def __init__(self, message: str, status_code: int = 400):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class AuthenticationError(BlinkError):
@@ -999,6 +1015,12 @@ def handle_api_error(
     """
     logger.error(f"Error {operation}: {error}")
 
+    # Handle ValidationError with custom status code
+    if isinstance(error, ValidationError):
+        return create_api_response(
+            success=False, error=str(error), status_code=error.status_code
+        )
+
     # Map common exceptions to user-friendly messages
     error_message = str(error)
     if isinstance(error, ConnectionError):
@@ -1826,17 +1848,15 @@ def clear_all_caches() -> dict[str, Any]:
 
 
 @app.route("/api/clear-cache", methods=["POST"])
-def clear_cache() -> ResponseReturnValue:
+@simple_success_response("Cache clearing initiated")
+def clear_cache():
     """Clear all caches except credentials."""
     executor.submit(clear_all_caches)
-    response, status_code = create_api_response(
-        success=True, data={"message": "Cache clearing initiated"}
-    )
-    return jsonify(response), status_code
 
 
 @app.route("/logout", methods=["POST"])
-def logout() -> ResponseReturnValue:
+@simple_success_response("Logged out successfully")
+def logout():
     """Logout user and clear all credentials and caches.
 
     Returns:
@@ -1855,15 +1875,11 @@ def logout() -> ResponseReturnValue:
     if cred_file.exists():
         cred_file.unlink()
 
-    response, status_code = create_api_response(
-        success=True, data={"message": "Logged out successfully"}
-    )
-    return jsonify(response), status_code
-
 
 @app.route("/api/system/list")
 @requires_blink
-def get_systems() -> ResponseReturnValue:
+@api_route("get systems")
+def get_systems():
     """Get list of available Blink systems.
 
     Returns:
@@ -1871,49 +1887,41 @@ def get_systems() -> ResponseReturnValue:
     """
     assert blink is not None  # Guaranteed by @requires_blink decorator
 
-    with error_context("get systems"):
-        logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
-        systems = []
-        for name, sync in blink.sync.items():
-            logger.debug(f"Processing sync: {name}, network_id: {sync.network_id}")
-            systems.append(
-                {
-                    "name": name,
-                    "network_id": sync.network_id,
-                    "armed": sync.arm,
-                    "online": sync.online,
-                }
-            )
+    logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
+    systems = []
+    for name, sync in blink.sync.items():
+        logger.debug(f"Processing sync: {name}, network_id: {sync.network_id}")
+        systems.append(
+            {
+                "name": name,
+                "network_id": sync.network_id,
+                "armed": sync.arm,
+                "online": sync.online,
+            }
+        )
 
-        response, status_code = create_api_response(success=True, data=systems)
-        return jsonify(response), status_code
+    return systems
 
 
 @app.route("/api/system/<network_id_str>/devices")
 @requires_blink
-def get_devices(network_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation("get devices", validate_params={"network_id_str": NetworkId})
+def get_devices(network_id):
     """Get devices for a specific Blink system.
 
     Args:
-        network_id: Network ID of the Blink system
+        network_id: Validated NetworkId object (converted from network_id_str by decorator)
 
     Returns:
         JSON response with list of devices or error message
     """
-    try:
-        network_id = NetworkId(network_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
+    # network_id is now validated and converted by the decorator
     devices = []
 
     # Find the sync module for this network
     sync_module, error_response = require_sync_module(network_id)
     if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
+        raise ValidationError(error_response[0]["error"], error_response[1])
 
     assert sync_module is not None
     # Add sync module
@@ -1945,54 +1953,29 @@ def get_devices(network_id_str: str) -> ResponseReturnValue:
         logger.debug(f"Camera device data for {camera.name}: {device_data}")
         devices.append(device_data)
 
-    response, status_code = create_api_response(success=True, data=devices)
-    return jsonify(response), status_code
+    return devices
 
 
 @app.route("/api/system/<network_id_str>/arm", methods=["POST"])
 @requires_blink
-def arm_system(network_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "arm/disarm system",
+    validate_params={"network_id_str": NetworkId},
+    validate_json=True,
+    required_fields=["armed"],
+)
+def arm_system(network_id):
     """Arm or disarm a Blink system.
 
     Args:
-        network_id: Network ID of the system to arm/disarm
+        network_id: Validated NetworkId object (converted from network_id_str by decorator)
 
     Returns:
         JSON response with success status or error message
     """
-    try:
-        network_id = NetworkId(network_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
-    try:
-        data = request.get_json()
-        if not isinstance(data, dict):
-            response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.INVALID_JSON_DATA,
-                status_code=400,
-            )
-            return jsonify(response), status_code
-
-        armed = data.get("armed")
-        if not isinstance(armed, bool):
-            response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.INVALID_ARM_STATUS,
-                status_code=400,
-            )
-            return jsonify(response), status_code
-    except (KeyError, TypeError, ValueError) as e:
-        logger.error(f"Invalid request data for arm/disarm: {e}")
-        response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.INVALID_REQUEST_DATA,
-            status_code=400,
-        )
-        return jsonify(response), status_code
+    # network_id and armed are now validated and converted by the decorator
+    data = request.get_json()
+    armed = data["armed"]
 
     # Find the sync module
     sync_module, error_response = require_sync_module(network_id)
@@ -2003,136 +1986,90 @@ def arm_system(network_id_str: str) -> ResponseReturnValue:
     with error_context("arm/disarm system"):
         if sync_module is not None:
             blink_connection.execute(sync_module.async_arm(armed))
-        response, status_code = create_api_response(success=True, data={"armed": armed})
-        return jsonify(response), status_code
+        return {"armed": armed}
 
 
 @app.route("/api/camera/<camera_id_str>/refresh", methods=["POST"])
 @requires_blink
-def refresh_camera(camera_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "refresh camera thumbnail", validate_params={"camera_id_str": CameraId}
+)
+def refresh_camera(camera_id):
     """Refresh camera thumbnail."""
     assert blink is not None
-    try:
-        camera_id = CameraId(camera_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
 
     camera, error_response = require_camera(camera_id)
     if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
+        raise ValidationError(error_response[0]["error"], error_response[1])
 
     assert camera is not None
-    try:
-        with error_context("refresh camera thumbnail", CameraError):
-            # Remove camera thumbnail from cache in background
-            def remove_thumbnail_cache() -> None:
-                cache_key = CameraId(camera.camera_id)
-                cached_info = thumbnail_cache.get(cache_key)
-                if cached_info is not None:
-                    # Remove cached file
-                    if "filename" in cached_info:
-                        assert THUMBNAIL_CACHE_DIR is not None
-                        cached_file = (
-                            Path(cast(str, THUMBNAIL_CACHE_DIR))
-                            / cached_info["filename"]
-                        )
-                        try:
-                            if cached_file.exists():
-                                cached_file.unlink()
-                        except OSError as e:
-                            logger.debug(f"Could not remove cached thumbnail: {e}")
-                    # Remove from cache
-                    thumbnail_cache.pop(cache_key, None)
+    with error_context("refresh camera thumbnail", CameraError):
+        # Remove camera thumbnail from cache in background
+        def remove_thumbnail_cache() -> None:
+            cache_key = str(camera_id)
+            cached_info = thumbnail_cache.get(cache_key)
+            if cached_info is not None:
+                # Remove cached file
+                if "filename" in cached_info:
+                    assert THUMBNAIL_CACHE_DIR is not None
+                    cached_file = (
+                        Path(cast(str, THUMBNAIL_CACHE_DIR)) / cached_info["filename"]
+                    )
+                    try:
+                        if cached_file.exists():
+                            cached_file.unlink()
+                    except OSError as e:
+                        logger.debug(f"Could not remove cached thumbnail: {e}")
+                # Remove from cache
+                thumbnail_cache.pop(cache_key, None)
 
-            executor.submit(remove_thumbnail_cache)
+        executor.submit(remove_thumbnail_cache)
 
-            if camera is not None:
-                blink_connection.execute(camera.snap_picture())
+        if camera is not None:
+            blink_connection.execute(camera.snap_picture())
 
-            # Refresh camera data to get updated thumbnail URL
-            blink_connection.execute(blink.refresh())
+        # Refresh camera data to get updated thumbnail URL
+        blink_connection.execute(blink.refresh())
 
-        response, status_code = create_api_response(
-            success=True, data={"message": "Thumbnail refresh initiated"}
-        )
-        return jsonify(response), status_code
-    except CameraError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=500
-        )
-        return jsonify(response), status_code
+    return {"message": "Thumbnail refresh initiated"}
 
 
 @app.route("/api/clips")
 @requires_blink
-def get_clips() -> ResponseReturnValue:
+@cached_api_route(
+    "get clips",
+    cache_dict=clips_metadata_cache,
+    cache_key_func=lambda: request.args.get("storage", "cloud"),
+)
+def get_clips():
     """Get clips from cloud or local storage."""
     assert blink is not None
     storage_type = request.args.get("storage", "cloud")
     if storage_type not in ["cloud", "local"]:
-        response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.INVALID_STORAGE_TYPE,
-            status_code=400,
-        )
-        return jsonify(response), status_code
+        raise ValidationError(Config.ErrorMessages.INVALID_STORAGE_TYPE, 400)
 
-    # Check cache first for performance
-    cache_key = storage_type
-    cached_clips = clips_metadata_cache.get(cache_key)
-    if cached_clips is not None:
-        response, status_code = create_api_response(success=True, data=cached_clips)
-        return jsonify(response), status_code
+    with error_context(f"get {storage_type} clips"):
+        if storage_type == "cloud":
+            # Get cloud clips via blink operation
+            videos_metadata = blink_connection.execute(
+                blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
+            )
+            clips = process_cloud_clips(videos_metadata)
+        else:
+            clips = process_local_clips()
 
-    try:
-        with error_context(f"get {storage_type} clips"):
-            if storage_type == "cloud":
-                # Get cloud clips via blink operation
-                videos_metadata = blink_connection.execute(
-                    blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
-                )
-                clips = process_cloud_clips(videos_metadata)
-            else:
-                clips = process_local_clips()
-
-        # Cache the results
-        clips_metadata_cache[storage_type] = clips
-
-        response, status_code = create_api_response(success=True, data=clips)
-        return jsonify(response), status_code
-    except BlinkError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=500
-        )
-        return jsonify(response), status_code
+    return clips
 
 
 @app.route("/api/system/refresh", methods=["POST"])
 @requires_blink
-def refresh_system() -> ResponseReturnValue:
+@simple_success_response("System refreshed successfully")
+def refresh_system():
     """Manually refresh the Blink system."""
     assert blink is not None
-    try:
-        success = blink_connection.execute(blink.refresh(force=True))
+    success = blink_connection.execute(blink.refresh(force=True))
 
-        if success is True:
-            response, status_code = create_api_response(
-                success=True, data={"message": "System refreshed successfully"}
-            )
-            return jsonify(response), status_code
-        else:
-            response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.SYSTEM_REFRESH_FAILED,
-                status_code=500,
-            )
-            return jsonify(response), status_code
-    except Exception as e:
-        logger.error(f"Error refreshing system: {e}")
+    if success is not True:
         response, status_code = create_api_response(
             success=False,
             error=Config.ErrorMessages.SYSTEM_REFRESH_FAILED,
@@ -2143,7 +2080,8 @@ def refresh_system() -> ResponseReturnValue:
 
 @app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
 @requires_blink
-def process_clip(clip_id_str: str) -> ResponseReturnValue:
+@simple_success_response("Clip processing initiated")
+def process_clip(clip_id_str: str):
     """Process clip on server (download and generate thumbnail) without sending to client.
 
     Initiates background processing of clip for thumbnail generation.
@@ -2161,49 +2099,34 @@ def process_clip(clip_id_str: str) -> ResponseReturnValue:
         return jsonify(response), status_code
 
     assert clip_id is not None
-    try:
-        if clip_id.is_local():
-            sync_name, item_id = clip_id.get_local_parts()
-            process_local_clip_background(clip_id, sync_name, item_id)
-        else:
-            process_cloud_clip_background(clip_id)
-
-        response, status_code = create_api_response(
-            success=True, data={"message": "Clip processing initiated"}
-        )
-        return jsonify(response), status_code
-    except Exception as e:
-        response, status_code = handle_api_error(e, f"processing clip {clip_id}")
-        return jsonify(response), status_code
+    if clip_id.is_local():
+        sync_name, item_id = clip_id.get_local_parts()
+        process_local_clip_background(clip_id, sync_name, item_id)
+    else:
+        process_cloud_clip_background(clip_id)
 
 
 @app.route("/api/clip/<clip_id_str>/download")
 @requires_blink
-def download_clip(clip_id_str: str) -> ResponseReturnValue:
+@api_route("download clip")
+def download_clip(clip_id_str: str):
     """Download a specific clip."""
     clip_id, error_response = parse_clip_id(clip_id_str)
     if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
+        # Re-raise as exception to be handled by decorator
+        raise ValueError(error_response[0]["error"])
+
     assert clip_id is not None
-    try:
-        logger.debug(
-            f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})"
-        )
-        if clip_id.is_local():
-            sync_name, item_id = clip_id.get_local_parts()
-            logger.debug(f"Local clip - sync_name: {sync_name}, item_id: {item_id}")
-            return download_local_clip(clip_id, sync_name, item_id)
-        else:
-            logger.debug(f"Cloud clip - ID: {clip_id}")
-            return download_cloud_clip(clip_id)
-    except Exception as e:
-        logger.error(f"Error downloading clip {clip_id}: {e}")
-        logger.debug(f"Full traceback: {traceback.format_exc()}")
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=500
-        )
-        return jsonify(response), status_code
+    logger.debug(
+        f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})"
+    )
+    if clip_id.is_local():
+        sync_name, item_id = clip_id.get_local_parts()
+        logger.debug(f"Local clip - sync_name: {sync_name}, item_id: {item_id}")
+        return download_local_clip(clip_id, sync_name, item_id)
+    else:
+        logger.debug(f"Cloud clip - ID: {clip_id}")
+        return download_cloud_clip(clip_id)
 
 
 def _download_clip_common(
@@ -2547,11 +2470,14 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 
 @app.route("/api/camera/<camera_id_str>/liveview")
 @requires_blink
-def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "start camera liveview", validate_params={"camera_id_str": CameraId}
+)
+def get_camera_liveview(camera_id):
     """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md.
 
     Args:
-        camera_id_str: String representation of the camera ID
+        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
 
     Returns:
         JSON response with stream URLs (TCP and HLS) or error message
@@ -2559,157 +2485,101 @@ def get_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
     Raises:
         ValueError: If camera_id_str is invalid
     """
-    try:
-        camera_id = CameraId(camera_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
+    # camera_id is now validated and converted by the decorator
 
     camera, error_response = require_camera(camera_id)
     if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
+        # Re-raise as exception to be handled by decorator
+        raise ValidationError(error_response[0]["error"], error_response[1])
 
     assert camera is not None
-    try:
-        # Use init_livestream() as specified in IMPLEMENTATION.md
-        async def init_stream() -> Any:
-            stream = await camera.init_livestream()
-            if (
-                stream is not None
-                and hasattr(stream, "start")
-                and hasattr(stream, "feed")
-            ):
-                await stream.start()
-                # Start feeding the stream in the background
-                asyncio.create_task(stream.feed())
-            return stream
 
-        # Execute the async livestream initialization
-        stream = blink_connection.execute(init_stream())
+    # Use init_livestream() as specified in IMPLEMENTATION.md
+    async def init_stream() -> Any:
+        stream = await camera.init_livestream()
+        if stream is not None and hasattr(stream, "start") and hasattr(stream, "feed"):
+            await stream.start()
+            # Start feeding the stream in the background
+            asyncio.create_task(stream.feed())
+        return stream
 
-        if stream is not None:
-            # Get the TCP URL from the stream
-            tcp_url = stream.url
-            logger.info(f"Livestream TCP URL for camera {camera_id}: {tcp_url}")
+    # Execute the async livestream initialization
+    stream = blink_connection.execute(init_stream())
 
-            # Start HLS transcoding from the TCP stream
-            if stream_manager is not None:
-                hls_url, error_msg = stream_manager.start_stream(
-                    str(camera_id), tcp_url
-                )
-            else:
-                hls_url = None
+    if stream is not None:
+        # Get the TCP URL from the stream
+        tcp_url = stream.url
+        logger.info(f"Livestream TCP URL for camera {camera_id}: {tcp_url}")
 
-            if hls_url is not None:
-                # Store the stream object for later cleanup
-                if not hasattr(blink_connection, "_active_streams"):
-                    blink_connection._active_streams = {}
-                active_streams = getattr(blink_connection, "_active_streams", {})
-                active_streams[str(camera_id)] = stream
-
-                response, status_code = create_api_response(
-                    success=True,
-                    data={
-                        "tcp_url": tcp_url,
-                        "hls_url": hls_url,
-                        "stream_id": str(camera_id),
-                    },
-                )
-                return jsonify(response), status_code
-            else:
-                # Clean up the stream if HLS transcoding failed
-                if hasattr(stream, "stop"):
-                    try:
-                        stream.stop()
-                    except Exception as e:
-                        logger.warning(f"Error stopping stream during cleanup: {e}")
-
-                response, status_code = create_api_response(
-                    success=False,
-                    error=Config.ErrorMessages.HLS_TRANSCODING_FAILED,
-                    status_code=500,
-                )
-                return jsonify(response), status_code
+        # Start HLS transcoding from the TCP stream
+        if stream_manager is not None:
+            hls_url, error_msg = stream_manager.start_stream(str(camera_id), tcp_url)
         else:
-            response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.LIVE_VIEW_FAILED,
-                status_code=500,
-            )
-            return jsonify(response), status_code
-    except Exception as e:
-        logger.error(f"Error starting livestream for camera {camera_id}: {e}")
-        response, status_code = handle_api_error(
-            e, f"starting livestream for camera {camera_id}"
-        )
-        return jsonify(response), status_code
+            hls_url = None
+
+        if hls_url is not None:
+            # Store the stream object for later cleanup
+            if not hasattr(blink_connection, "_active_streams"):
+                blink_connection._active_streams = {}
+            active_streams = getattr(blink_connection, "_active_streams", {})
+            active_streams[str(camera_id)] = stream
+
+            return {
+                "tcp_url": tcp_url,
+                "hls_url": hls_url,
+                "stream_id": str(camera_id),
+            }
+        else:
+            # Clean up the stream if HLS transcoding failed
+            if hasattr(stream, "stop"):
+                try:
+                    stream.stop()
+                except Exception as e:
+                    logger.warning(f"Error stopping stream during cleanup: {e}")
+
+            raise RuntimeError(Config.ErrorMessages.HLS_TRANSCODING_FAILED)
+    else:
+        raise RuntimeError(Config.ErrorMessages.LIVE_VIEW_FAILED)
 
 
 @app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
-def stop_camera_liveview(camera_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "stop camera liveview", validate_params={"camera_id_str": CameraId}
+)
+def stop_camera_liveview(camera_id):
     """Stop live view stream for camera."""
-    try:
-        camera_id = CameraId(camera_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
 
-    try:
-        # Stop the HLS stream
-        if stream_manager is not None:
-            stream_manager.stop_stream(str(camera_id))
+    # Stop the HLS stream
+    if stream_manager is not None:
+        stream_manager.stop_stream(str(camera_id))
 
-        # Stop the TCP livestream if it exists
-        if hasattr(blink_connection, "_active_streams"):
-            stream = blink_connection._active_streams.get(str(camera_id))
-            if stream and hasattr(stream, "stop"):
-                try:
-                    stream.stop()
-                    logger.info(f"Stopped livestream for camera {camera_id}")
-                except Exception as e:
-                    logger.warning(
-                        f"Error stopping livestream for camera {camera_id}: {e}"
-                    )
-                finally:
-                    # Remove from active streams
-                    del blink_connection._active_streams[str(camera_id)]
+    # Stop the TCP livestream if it exists
+    if hasattr(blink_connection, "_active_streams"):
+        stream = blink_connection._active_streams.get(str(camera_id))
+        if stream and hasattr(stream, "stop"):
+            try:
+                stream.stop()
+                logger.info(f"Stopped livestream for camera {camera_id}")
+            except Exception as e:
+                logger.warning(f"Error stopping livestream for camera {camera_id}: {e}")
+            finally:
+                # Remove from active streams
+                del blink_connection._active_streams[str(camera_id)]
 
-        response, status_code = create_api_response(
-            success=True, data={"message": "Livestream stopped successfully"}
-        )
-        return jsonify(response), status_code
-
-    except Exception as e:
-        logger.error(f"Error stopping livestream for camera {camera_id}: {e}")
-        response, status_code = handle_api_error(
-            e, f"stopping livestream for camera {camera_id}"
-        )
-        return jsonify(response), status_code
+    return {"message": "Livestream stopped successfully"}
 
 
 @app.route("/api/hls/<camera_id_str>/<path:filename>")
-def serve_hls_file(camera_id_str: str, filename: str) -> ResponseReturnValue:
+@file_response_route("serve HLS file", validate_params={"camera_id_str": CameraId})
+def serve_hls_file(camera_id, filename: str):
     """Serve HLS playlist and segment files."""
     if not stream_manager:
-        response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.STREAM_MANAGER_UNAVAILABLE,
-            status_code=Config.HTTP_STATUS_SERVICE_UNAVAILABLE,
-        )
-        return jsonify(response), status_code
+        raise RuntimeError(Config.ErrorMessages.STREAM_MANAGER_UNAVAILABLE)
 
-    file_path = stream_manager.get_stream_file(camera_id_str, filename)
+    file_path = stream_manager.get_stream_file(str(camera_id), filename)
 
     if file_path is None:
-        response, status_code = create_api_response(
-            success=False, error=Config.ErrorMessages.STREAM_NOT_FOUND, status_code=404
-        )
-        return jsonify(response), status_code
+        raise FileNotFoundError(Config.ErrorMessages.STREAM_NOT_FOUND)
 
     if filename.endswith(".m3u8"):
         file_response = send_file(
@@ -2720,19 +2590,14 @@ def serve_hls_file(camera_id_str: str, filename: str) -> ResponseReturnValue:
         file_response = send_file(str(file_path), mimetype="video/mp2t")
         return file_response
     else:
-        response, status_code = create_api_response(
-            success=False, error=Config.ErrorMessages.INVALID_FILE_TYPE, status_code=400
-        )
-        return jsonify(response), status_code
+        raise ValueError(Config.ErrorMessages.INVALID_FILE_TYPE)
 
 
 @app.route("/api/clip/<clip_id_str>/thumbnail")
-def get_clip_thumbnail(clip_id_str: str) -> ResponseReturnValue:
-    clip_id, error_response = parse_clip_id(clip_id_str)
-    if error_response is not None:
-        api_response, status_code = error_response
-        return jsonify(api_response), status_code
+@file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
+def get_clip_thumbnail(clip_id) -> ResponseReturnValue:
     """Serve clip thumbnail."""
+
     cached_clip = clips_download_cache.get(clip_id)
     if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
@@ -2740,19 +2605,19 @@ def get_clip_thumbnail(clip_id_str: str) -> ResponseReturnValue:
             response = send_file(str(thumbnail_path), mimetype="image/jpeg")
             return response, 200
 
-    api_response, status_code = create_api_response(
-        success=False, error=Config.ErrorMessages.THUMBNAIL_NOT_FOUND, status_code=404
-    )
-    return jsonify(api_response), status_code
+    raise ValidationError(Config.ErrorMessages.THUMBNAIL_NOT_FOUND, 404)
 
 
 @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
 @requires_blink
-def get_camera_thumbnail_timestamp(camera_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "get camera thumbnail timestamp", validate_params={"camera_id_str": CameraId}
+)
+def get_camera_thumbnail_timestamp(camera_id):
     """Get camera thumbnail timestamp for polling.
 
     Args:
-        camera_id_str: String representation of the camera ID
+        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
 
     Returns:
         JSON response with thumbnail timestamp or error message
@@ -2760,38 +2625,29 @@ def get_camera_thumbnail_timestamp(camera_id_str: str) -> ResponseReturnValue:
     Raises:
         ValueError: If camera_id_str is invalid
     """
-    try:
-        camera_id = CameraId(camera_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
+    # camera_id is now validated and converted by the decorator
 
     camera = find_camera_by_id(camera_id)
     if camera is None:
-        response, status_code = create_api_response(
-            success=False, error=Config.ErrorMessages.CAMERA_NOT_FOUND, status_code=404
-        )
-        return jsonify(response), status_code
+        raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
 
     timestamp = extract_thumbnail_timestamp(camera.thumbnail)
     logger.info(
         f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
     )
-    response, status_code = create_api_response(
-        success=True, data={"timestamp": timestamp}
-    )
-    return jsonify(response), status_code
+    return {"timestamp": timestamp}
 
 
 @app.route("/api/camera/<camera_id_str>/thumbnail")
 @requires_blink
-def get_camera_thumbnail(camera_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "get camera thumbnail", validate_params={"camera_id_str": CameraId}
+)
+def get_camera_thumbnail(camera_id):
     """Proxy camera thumbnail with authentication.
 
     Args:
-        camera_id_str: String representation of the camera ID
+        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
 
     Returns:
         JPEG image file or JSON error response
@@ -2799,55 +2655,33 @@ def get_camera_thumbnail(camera_id_str: str) -> ResponseReturnValue:
     Raises:
         ValueError: If camera_id_str is invalid
     """
-    try:
-        camera_id = CameraId(camera_id_str)
-    except ValueError as e:
-        response, status_code = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return jsonify(response), status_code
+    # camera_id is now validated and converted by the decorator
 
     camera = find_camera_by_id(camera_id)
     if camera is None or camera.thumbnail is None:
-        response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND,
-            status_code=404,
-        )
-        return jsonify(response), status_code
+        raise ValidationError(Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND, 404)
 
-    try:
-        # Check cache first
-        cached_thumbnail = thumbnail_cache.get(camera_id)
-        if cached_thumbnail is not None:
-            logger.debug(f"Serving cached thumbnail for camera {camera_id}")
-            filename = cached_thumbnail["filename"]
-            assert THUMBNAIL_CACHE_DIR is not None
-            filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
-            if filepath.exists():
-                file_response = send_file(str(filepath), mimetype="image/jpeg")
-                file_response.headers["Cache-Control"] = (
-                    "no-cache, no-store, must-revalidate"
-                )
-                return file_response
-
-        # If not cached, fetch via blink operation
-        response = blink_connection.execute(camera.thumbnail)
-        if response is not None and response.status == Config.HTTP_STATUS_OK:
-            image_data = blink_connection.execute(response.read())
-            return FlaskResponse(image_data, mimetype="image/jpeg")
-        else:
-            response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.THUMBNAIL_FETCH_FAILED,
-                status_code=500,
+    # Check cache first
+    cached_thumbnail = thumbnail_cache.get(camera_id)
+    if cached_thumbnail is not None:
+        logger.debug(f"Serving cached thumbnail for camera {camera_id}")
+        filename = cached_thumbnail["filename"]
+        assert THUMBNAIL_CACHE_DIR is not None
+        filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
+        if filepath.exists():
+            file_response = send_file(str(filepath), mimetype="image/jpeg")
+            file_response.headers["Cache-Control"] = (
+                "no-cache, no-store, must-revalidate"
             )
-            return jsonify(response), status_code
-    except Exception as e:
-        response, status_code = handle_api_error(
-            e, f"fetching thumbnail for camera {camera_id}"
-        )
-        return jsonify(response), status_code
+            return file_response
+
+    # If not cached, fetch via blink operation
+    response = blink_connection.execute(camera.thumbnail)
+    if response is not None and response.status == Config.HTTP_STATUS_OK:
+        image_data = blink_connection.execute(response.read())
+        return FlaskResponse(image_data, mimetype="image/jpeg")
+    else:
+        raise RuntimeError(Config.ErrorMessages.THUMBNAIL_FETCH_FAILED)
 
 
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
@@ -2856,7 +2690,8 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
 
 
 @app.route("/api/config")
-def get_config() -> ResponseReturnValue:
+@api_route("get config")
+def get_config():
     """Get client-side configuration constants.
 
     Returns configuration values needed by the JavaScript frontend.
@@ -2890,13 +2725,15 @@ def get_config() -> ResponseReturnValue:
         },
     }
 
-    response, status_code = create_api_response(success=True, data=config_data)
-    return jsonify(response), status_code
+    return config_data
 
 
 @app.route("/placeholder")
-def placeholder() -> ResponseReturnValue:
+@api_route("placeholder")
+def placeholder():
     """Show placeholder message."""
+    from flask import jsonify
+
     response, status_code = create_api_response(
         success=False,
         error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
@@ -3484,6 +3321,7 @@ def load_clips_cache() -> None:
 
 
 @app.route("/api/settings", methods=["GET", "POST"])
+@method_dispatch_route("settings")
 def settings() -> ResponseReturnValue:
     """Get or save application settings.
 
@@ -3493,90 +3331,75 @@ def settings() -> ResponseReturnValue:
     Settings are persisted to cache/settings.json and survive logout/restart.
     """
     if request.method == "GET":
-        try:
-            assert SETTINGS_FILE is not None
-            settings_file = Path(cast(str, SETTINGS_FILE))
-            if settings_file.exists():
-                import json
-
-                with open(settings_file) as f:
-                    settings_data = json.load(f)
-            else:
-                settings_data = {
-                    "temperatureUnits": "celsius",
-                    "cloudClipRetention": "30",
-                    "localClipRetention": "never",
-                    "clipThumbnailSize": "medium",
-                }
-
-            response, status_code = create_api_response(
-                success=True, data=settings_data
-            )
-            return jsonify(response), status_code
-        except Exception as e:
-            response, status_code = handle_api_error(e, "loading settings")
-            return jsonify(response), status_code
-
-    else:  # POST
-        try:
-            data = request.get_json()
-            if not isinstance(data, dict):
-                response, status_code = create_api_response(
-                    success=False,
-                    error=Config.ErrorMessages.INVALID_JSON_DATA,
-                    status_code=400,
-                )
-                return jsonify(response), status_code
-
-            # Load existing settings
-            assert SETTINGS_FILE is not None
-            settings_file = Path(cast(str, SETTINGS_FILE))
-            if settings_file.exists():
-                import json
-
-                with open(settings_file) as f:
-                    settings_data = json.load(f)
-            else:
-                settings_data = {}
-
-            # Update settings
-            settings_data.update(data)
-
-            # Save settings
+        assert SETTINGS_FILE is not None
+        settings_file = Path(cast(str, SETTINGS_FILE))
+        if settings_file.exists():
             import json
 
-            with open(settings_file, "w") as f:
-                json.dump(settings_data, f, indent=2)
+            with open(settings_file) as f:
+                settings_data = json.load(f)
+        else:
+            settings_data = {
+                "temperatureUnits": "celsius",
+                "cloudClipRetention": "30",
+                "localClipRetention": "never",
+                "clipThumbnailSize": "medium",
+            }
 
+        response, status_code = create_api_response(success=True, data=settings_data)
+        return jsonify(response), status_code
+
+    else:  # POST
+        data = request.get_json()
+        if not isinstance(data, dict):
             response, status_code = create_api_response(
-                success=True, data={"message": "Settings saved"}
+                success=False,
+                error=Config.ErrorMessages.INVALID_JSON_DATA,
+                status_code=400,
             )
             return jsonify(response), status_code
-        except Exception as e:
-            response, status_code = handle_api_error(e, "saving settings")
-            return jsonify(response), status_code
+
+        # Load existing settings
+        assert SETTINGS_FILE is not None
+        settings_file = Path(cast(str, SETTINGS_FILE))
+        if settings_file.exists():
+            import json
+
+            with open(settings_file) as f:
+                settings_data = json.load(f)
+        else:
+            settings_data = {}
+
+        # Update settings
+        settings_data.update(data)
+
+        # Save settings
+        import json
+
+        with open(settings_file, "w") as f:
+            json.dump(settings_data, f, indent=2)
+
+        response, status_code = create_api_response(
+            success=True, data={"message": "Settings saved"}
+        )
+        return jsonify(response), status_code
 
 
 @app.route("/api/clip/<clip_id_str>/thumbnail/check")
-def check_clip_thumbnail(clip_id_str: str) -> ResponseReturnValue:
+@api_route_with_validation(
+    "check clip thumbnail", validate_params={"clip_id_str": ClipId}
+)
+def check_clip_thumbnail(clip_id):
     """Check if thumbnail is available for clip."""
-    clip_id, error_response = parse_clip_id(clip_id_str)
-    if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
+    # clip_id is now validated and converted by the decorator
 
     cached_clip = clips_download_cache.get(clip_id)
     if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
         if thumbnail_path is not None and thumbnail_path.exists():
-            response, status_code = create_api_response(
-                success=True,
-                data={"available": True, "url": f"/api/clip/{clip_id}/thumbnail"},
-            )
-            return jsonify(response), status_code
+            return {"available": True, "url": f"/api/clip/{clip_id}/thumbnail"}
 
-    response, status_code = create_api_response(success=True, data={"available": False})
-    return jsonify(response), status_code
+    return {"available": False}
 
 
 # Stream cleanup functions moved to StreamManager class
