@@ -59,17 +59,17 @@ app = Flask(__name__)
 class TestRouteDecorators(unittest.TestCase):
     """Test cases for route decorators."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.app = app
         self.client = app.test_client()
         app.config["TESTING"] = True
 
-    def test_api_route_success(self):
+    def test_api_route_success(self) -> None:
         """Test @api_route decorator with successful response."""
 
         @app.route("/test/success")
         @api_route("test operation")
-        def test_success():
+        def test_success() -> None:
             return {"message": "success", "data": [1, 2, 3]}
 
         with app.test_request_context():
@@ -87,12 +87,12 @@ class TestRouteDecorators(unittest.TestCase):
         self.assertTrue(json_response["success"])
         self.assertEqual(json_response["data"]["message"], "success")
 
-    def test_api_route_exception(self):
+    def test_api_route_exception(self) -> None:
         """Test @api_route decorator with exception handling."""
 
         @app.route("/test/error")
         @api_route("test error operation")
-        def test_error():
+        def test_error() -> None:
             raise ValueError("Test error message")
 
         with app.test_request_context():
@@ -105,7 +105,7 @@ class TestRouteDecorators(unittest.TestCase):
         self.assertFalse(json_response["success"])
         self.assertIn("Test error message", json_response["error"])
 
-    def test_api_route_with_validation_success(self):
+    def test_api_route_with_validation_success(self) -> None:
         """Test @api_route_with_validation decorator with valid parameters."""
 
         def validate_id(id_str):
@@ -116,7 +116,7 @@ class TestRouteDecorators(unittest.TestCase):
         @api_route_with_validation(
             "test validation", validate_params={"id_str": validate_id}
         )
-        def test_validate(**kwargs):
+        def test_validate(**kwargs) -> None:
             # The decorator should have converted id_str to id
             validated_id = kwargs.get("id") or kwargs.get("id_str")
             if isinstance(validated_id, str):
@@ -132,7 +132,7 @@ class TestRouteDecorators(unittest.TestCase):
         self.assertEqual(json_response["data"]["validated_id"], 123)
         self.assertEqual(json_response["data"]["type"], "int")
 
-    def test_api_route_with_validation_invalid_param(self):
+    def test_api_route_with_validation_invalid_param(self) -> None:
         """Test @api_route_with_validation decorator with invalid parameters."""
 
         def validate_id(id_str):
@@ -145,7 +145,7 @@ class TestRouteDecorators(unittest.TestCase):
         @api_route_with_validation(
             "test validation", validate_params={"id_str": validate_id}
         )
-        def test_validate_invalid(**kwargs):
+        def test_validate_invalid(**kwargs) -> None:
             validated_id = kwargs.get("id") or kwargs.get("id_str")
             return {"validated_id": validated_id}
 
@@ -159,7 +159,7 @@ class TestRouteDecorators(unittest.TestCase):
         self.assertFalse(json_response["success"])
         self.assertIn("ID must be numeric", json_response["error"])
 
-    def test_api_route_with_json_validation(self):
+    def test_api_route_with_json_validation(self) -> None:
         """Test @api_route_with_validation decorator with JSON validation."""
 
         @app.route("/test/json", methods=["POST"])
@@ -168,7 +168,7 @@ class TestRouteDecorators(unittest.TestCase):
             validate_json=True,
             required_fields=["name", "value"],
         )
-        def test_json_validation():
+        def test_json_validation() -> None:
             data = request.get_json()
             return {"received": data}
 
@@ -182,7 +182,7 @@ class TestRouteDecorators(unittest.TestCase):
         self.assertEqual(json_response["data"]["received"]["name"], "test")
         self.assertEqual(json_response["data"]["received"]["value"], 42)
 
-    def test_api_route_with_json_validation_missing_field(self):
+    def test_api_route_with_json_validation_missing_field(self) -> None:
         """Test @api_route_with_validation decorator with missing required field."""
 
         @app.route("/test/json-missing", methods=["POST"])
@@ -191,7 +191,7 @@ class TestRouteDecorators(unittest.TestCase):
             validate_json=True,
             required_fields=["name", "value"],
         )
-        def test_json_validation_missing():
+        def test_json_validation_missing() -> None:
             data = request.get_json()
             return {"received": data}
 
@@ -207,14 +207,14 @@ class TestRouteDecorators(unittest.TestCase):
         self.assertFalse(json_response["success"])
         self.assertIn("Missing required fields: value", json_response["error"])
 
-    def test_simple_success_response(self):
+    def test_simple_success_response(self) -> None:
         """Test @simple_success_response decorator."""
 
         executed = []
 
         @app.route("/test/simple-success", methods=["POST"])
         @simple_success_response("Operation completed successfully")
-        def test_simple_success():
+        def test_simple_success() -> None:
             executed.append("function_called")
             # Function executes but doesn't need to return anything
 
@@ -231,12 +231,12 @@ class TestRouteDecorators(unittest.TestCase):
         )
         self.assertIn("function_called", executed)
 
-    def test_simple_success_response_with_exception(self):
+    def test_simple_success_response_with_exception(self) -> None:
         """Test @simple_success_response decorator with exception."""
 
         @app.route("/test/simple-error", methods=["POST"])
         @simple_success_response("This should not appear")
-        def test_simple_error():
+        def test_simple_error() -> None:
             raise RuntimeError("Something went wrong")
 
         with app.test_request_context("/test/simple-error", method="POST"):

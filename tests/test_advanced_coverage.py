@@ -21,7 +21,7 @@ from app import app
 class TestLiveStreamOperations(unittest.TestCase):
     """Test live streaming operations - lines 2078-2147."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -30,7 +30,7 @@ class TestLiveStreamOperations(unittest.TestCase):
     @patch("app.blink_connection")
     @patch("app.find_camera_by_id")
     def test_get_camera_liveview_success(
-        self, mock_find_camera, mock_blink_conn, mock_stream_mgr
+        self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
     ):
         """Test successful camera liveview initialization."""
         # Setup mocks
@@ -61,7 +61,7 @@ class TestLiveStreamOperations(unittest.TestCase):
     @patch("app.blink_connection")
     @patch("app.find_camera_by_id")
     def test_get_camera_liveview_no_stream_manager(
-        self, mock_find_camera, mock_blink_conn, mock_stream_mgr
+        self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
     ):
         """Test liveview when stream manager is None."""
         # Setup mocks
@@ -75,7 +75,7 @@ class TestLiveStreamOperations(unittest.TestCase):
         self.assertIn(response.status_code, [200, 500])
 
     @patch("app.find_camera_by_id")
-    def test_get_camera_liveview_camera_not_found(self, mock_find_camera):
+    def test_get_camera_liveview_camera_not_found(self, mock_find_camera: Mock) -> None:
         """Test liveview when camera is not found."""
         mock_find_camera.return_value = None
 
@@ -88,7 +88,7 @@ class TestLiveStreamOperations(unittest.TestCase):
     @patch("app.blink_connection")
     @patch("app.find_camera_by_id")
     def test_get_camera_liveview_stream_init_failure(
-        self, mock_find_camera, mock_blink_conn, mock_stream_mgr
+        self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
     ):
         """Test liveview when stream initialization fails."""
         # Setup mocks
@@ -106,7 +106,7 @@ class TestLiveStreamOperations(unittest.TestCase):
 class TestLocalClipDownloadOperations(unittest.TestCase):
     """Test local clip download operations - lines 1836-1906."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -115,7 +115,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
     @patch("app.send_file")
     @patch("pathlib.Path.exists")
     def test_download_local_clip_cached_success(
-        self, mock_exists, mock_send_file, mock_cache
+        self, mock_exists: Mock, mock_send_file: Mock, mock_cache: Mock
     ):
         """Test successful download of cached local clip."""
         # Setup mocks
@@ -126,10 +126,10 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
 
         # Test download
         try:
-            from app import app, download_local_clip
+            from app import ClipId, app, download_local_clip
 
             with app.app_context():
-                result = download_local_clip("clip123", "sync1", 123)
+                result = download_local_clip(ClipId("clip123"), "sync1", 123)
                 # Should return file response
                 self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -137,17 +137,19 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
 
     @patch("app.clips_download_cache")
     @patch("app.blink")
-    def test_download_local_clip_sync_not_found(self, mock_blink, mock_cache):
+    def test_download_local_clip_sync_not_found(
+        self, mock_blink: Mock, mock_cache: Mock
+    ) -> None:
         """Test download when sync module not found."""
         # Setup mocks
         mock_cache.get.return_value = None
         mock_blink.sync.get.return_value = None
 
         try:
-            from app import app, download_local_clip
+            from app import ClipId, app, download_local_clip
 
             with app.app_context():
-                result = download_local_clip("clip123", "nonexistent_sync", 123)
+                result = download_local_clip(ClipId("clip123"), "nonexistent_sync", 123)
                 # Should return error response
                 self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -155,7 +157,9 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
 
     @patch("app.clips_download_cache")
     @patch("app.blink")
-    def test_download_local_clip_no_local_storage(self, mock_blink, mock_cache):
+    def test_download_local_clip_no_local_storage(
+        self, mock_blink: Mock, mock_cache: Mock
+    ) -> None:
         """Test download when sync module has no local storage."""
         # Setup mocks
         mock_cache.get.return_value = None
@@ -165,10 +169,10 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         mock_blink.sync.get.return_value = mock_sync
 
         try:
-            from app import app, download_local_clip
+            from app import ClipId, app, download_local_clip
 
             with app.app_context():
-                result = download_local_clip("clip123", "sync1", 123)
+                result = download_local_clip(ClipId("clip123"), "sync1", 123)
                 # Should return error response
                 self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -176,7 +180,9 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
 
     @patch("app.clips_download_cache")
     @patch("app.blink")
-    def test_download_local_clip_item_not_found(self, mock_blink, mock_cache):
+    def test_download_local_clip_item_not_found(
+        self, mock_blink: Mock, mock_cache: Mock
+    ) -> None:
         """Test download when clip item not found."""
         # Setup mocks
         mock_cache.get.return_value = None
@@ -187,10 +193,10 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         mock_blink.sync.get.return_value = mock_sync
 
         try:
-            from app import app, download_local_clip
+            from app import ClipId, app, download_local_clip
 
             with app.app_context():
-                result = download_local_clip("nonexistent_clip", "sync1", 123)
+                result = download_local_clip(ClipId("nonexistent_clip"), "sync1", 123)
                 # Should return error response
                 self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -203,7 +209,9 @@ class TestVideoProcessingOperations(unittest.TestCase):
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
-    def test_generate_clip_thumbnail_success(self, mock_exists, mock_subprocess):
+    def test_generate_clip_thumbnail_success(
+        self, mock_exists: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test successful thumbnail generation."""
         # Setup mocks
         mock_exists.return_value = False  # Thumbnail doesn't exist
@@ -224,7 +232,9 @@ class TestVideoProcessingOperations(unittest.TestCase):
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
-    def test_generate_clip_thumbnail_existing_file(self, mock_exists, mock_subprocess):
+    def test_generate_clip_thumbnail_existing_file(
+        self, mock_exists: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test thumbnail generation when file already exists."""
         # Setup mocks
         mock_exists.return_value = True  # Thumbnail already exists
@@ -245,7 +255,9 @@ class TestVideoProcessingOperations(unittest.TestCase):
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
-    def test_generate_clip_thumbnail_ffmpeg_error(self, mock_exists, mock_subprocess):
+    def test_generate_clip_thumbnail_ffmpeg_error(
+        self, mock_exists: Mock, mock_subprocess: Mock
+    ) -> None:
         """Test thumbnail generation when FFmpeg fails."""
         # Setup mocks
         mock_exists.return_value = False
@@ -269,7 +281,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
     @patch("pathlib.Path.exists")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_generate_clip_thumbnail_exception_handling(
-        self, mock_exists, mock_subprocess
+        self, mock_exists: Mock, mock_subprocess: Mock
     ):
         """Test thumbnail generation exception handling."""
         # Setup mocks
@@ -292,7 +304,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
 class TestCloudClipOperations(unittest.TestCase):
     """Test cloud clip operations - lines 1923-1973."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -300,7 +312,9 @@ class TestCloudClipOperations(unittest.TestCase):
     @patch("app.clips_download_cache")
     @patch("app.blink")
     @patch("app.send_file")
-    def test_download_cloud_clip_cached(self, mock_send_file, mock_blink, mock_cache):
+    def test_download_cloud_clip_cached(
+        self, mock_send_file: Mock, mock_blink: Mock, mock_cache: Mock
+    ) -> None:
         """Test download of cached cloud clip."""
         # Setup mocks
         mock_filepath = Mock()
@@ -309,9 +323,9 @@ class TestCloudClipOperations(unittest.TestCase):
         mock_send_file.return_value = "file_response"
 
         try:
-            from app import download_cloud_clip
+            from app import ClipId, download_cloud_clip
 
-            result = download_cloud_clip("clip123")
+            result = download_cloud_clip(ClipId("clip123"))
             # Should return cached file
             self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -319,16 +333,18 @@ class TestCloudClipOperations(unittest.TestCase):
 
     @patch("app.clips_download_cache")
     @patch("app.blink")
-    def test_download_cloud_clip_not_found(self, mock_blink, mock_cache):
+    def test_download_cloud_clip_not_found(
+        self, mock_blink: Mock, mock_cache: Mock
+    ) -> None:
         """Test download when cloud clip not found."""
         # Setup mocks
         mock_cache.get.return_value = None
         mock_blink.videos = {}  # No videos available
 
         try:
-            from app import download_cloud_clip
+            from app import ClipId, download_cloud_clip
 
-            result = download_cloud_clip("nonexistent_clip")
+            result = download_cloud_clip(ClipId("nonexistent_clip"))
             # Should return error response
             self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -338,7 +354,7 @@ class TestCloudClipOperations(unittest.TestCase):
     @patch("app.blink")
     @patch("requests.get")
     def test_download_cloud_clip_download_success(
-        self, mock_requests, mock_blink, mock_cache
+        self, mock_requests: Mock, mock_blink: Mock, mock_cache: Mock
     ):
         """Test successful cloud clip download."""
         # Setup mocks
@@ -356,7 +372,9 @@ class TestCloudClipOperations(unittest.TestCase):
             from app import download_cloud_clip
 
             with patch("builtins.open", mock_open()):
-                result = download_cloud_clip("clip123")
+                from app import ClipId
+
+                result = download_cloud_clip(ClipId("clip123"))
                 # Should download and cache
                 self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -366,12 +384,12 @@ class TestCloudClipOperations(unittest.TestCase):
 class TestSystemDeviceOperations(unittest.TestCase):
     """Test system and device operations - lines 835-851."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_arm_system_success(self):
+    def test_arm_system_success(self) -> None:
         """Test successful system arm/disarm."""
         # Test arm endpoint without mocks first to see if route works
         response = self.client.post("/api/system/12345/arm", json={"armed": True})
@@ -387,7 +405,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         self.assertIn(response.status_code, [200, 401, 500])
 
     @patch("app.blink")
-    def test_arm_system_network_not_found(self, mock_blink):
+    def test_arm_system_network_not_found(self, mock_blink: Mock) -> None:
         """Test arm system when network not found."""
         mock_blink.networks = {}  # No networks
 
@@ -396,7 +414,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         # Should return error
         self.assertIn(response.status_code, [404, 500])
 
-    def test_get_devices_with_cameras(self):
+    def test_get_devices_with_cameras(self) -> None:
         """Test get devices with camera information."""
         response = self.client.get("/api/system/12345/devices")
 
@@ -404,7 +422,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         self.assertIn(response.status_code, [200, 401, 500])
 
     @patch("app.blink")
-    def test_get_devices_network_not_found(self, mock_blink):
+    def test_get_devices_network_not_found(self, mock_blink: Mock) -> None:
         """Test get devices when network not found."""
         mock_blink.networks = {}
 
@@ -424,8 +442,12 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_clear_all_caches_parallel_execution(
-        self, mock_executor, mock_clips_meta, mock_clips_dl, mock_thumb
-    ):
+        self,
+        mock_executor: Mock,
+        mock_clips_meta: Mock,
+        mock_clips_dl: Mock,
+        mock_thumb: Mock,
+    ) -> None:
         """Test parallel cache clearing execution."""
         # Setup mocks
         mock_future = Mock()
@@ -451,7 +473,9 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
     @patch("os.path.exists")
     @patch("shutil.rmtree")
     @patch("os.makedirs")
-    def test_cache_directory_cleanup(self, mock_makedirs, mock_rmtree, mock_exists):
+    def test_cache_directory_cleanup(
+        self, mock_makedirs: Mock, mock_rmtree: Mock, mock_exists: Mock
+    ) -> None:
         """Test cache directory cleanup operations."""
         mock_exists.return_value = True
 
@@ -468,8 +492,8 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
     @patch("os.listdir")
     @patch("os.path.exists")
     def test_load_thumbnail_cache_with_files(
-        self, mock_exists, mock_listdir, mock_cache
-    ):
+        self, mock_exists: Mock, mock_listdir: Mock, mock_cache: Mock
+    ) -> None:
         """Test loading thumbnail cache with existing files."""
         # Setup mocks
         mock_exists.return_value = True
@@ -488,7 +512,9 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
     @patch("pathlib.Path.glob")
     @patch("pathlib.Path.exists")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
-    def test_load_clips_cache_with_files(self, mock_exists, mock_glob, mock_cache):
+    def test_load_clips_cache_with_files(
+        self, mock_exists: Mock, mock_glob: Mock, mock_cache: Mock
+    ) -> None:
         """Test loading clips cache with existing files."""
         # Setup mocks
         mock_exists.return_value = True
@@ -511,13 +537,13 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 class TestErrorHandlingAdvanced(unittest.TestCase):
     """Test advanced error handling scenarios."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink_connection")
-    def test_connection_error_recovery(self, mock_connection):
+    def test_connection_error_recovery(self, mock_connection: Mock) -> None:
         """Test connection error recovery mechanisms."""
         # Setup mock to simulate connection error
         mock_connection.execute.side_effect = Exception("Connection failed")
@@ -529,7 +555,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
         self.assertIn(response.status_code, [200, 500])
 
     @patch("app.logger")
-    def test_logging_error_scenarios(self, mock_logger):
+    def test_logging_error_scenarios(self, mock_logger: Mock) -> None:
         """Test logging in error scenarios."""
         # Test that logger is called in error conditions
         try:
@@ -541,7 +567,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
         # Should log error
         mock_logger.error.assert_called_with("Test error occurred")
 
-    def test_invalid_input_handling(self):
+    def test_invalid_input_handling(self) -> None:
         """Test handling of invalid input data."""
         # Test with invalid JSON
         response = self.client.post(
@@ -551,7 +577,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
         # Should handle invalid JSON gracefully
         self.assertIn(response.status_code, [400, 500])
 
-    def test_missing_parameters_handling(self):
+    def test_missing_parameters_handling(self) -> None:
         """Test handling of missing required parameters."""
         # Test endpoint without required parameters
         response = self.client.post("/api/system/test/arm")
@@ -563,11 +589,11 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
 class TestPerformanceOptimizations(unittest.TestCase):
     """Test performance optimization features."""
 
-    def test_cache_efficiency(self):
+    def test_cache_efficiency(self) -> None:
         """Test cache efficiency and hit rates."""
         from app import LRUCache
 
-        cache = LRUCache(maxsize=100)
+        cache: LRUCache[str, str] = LRUCache(maxsize=100)
 
         # Fill cache
         for i in range(50):
@@ -582,11 +608,11 @@ class TestPerformanceOptimizations(unittest.TestCase):
         # Should have high hit rate
         self.assertGreater(hit_count, 20)
 
-    def test_memory_usage_optimization(self):
+    def test_memory_usage_optimization(self) -> None:
         """Test memory usage optimization."""
         from app import LRUCache
 
-        cache = LRUCache(maxsize=10)
+        cache: LRUCache[str, str] = LRUCache(maxsize=10)
 
         # Add many items to test memory management
         for i in range(100):
@@ -596,7 +622,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
         self.assertEqual(len(cache), 10)
 
     @patch("app.thumbnail_cache")
-    def test_thumbnail_cache_optimization(self, mock_cache):
+    def test_thumbnail_cache_optimization(self, mock_cache: Mock) -> None:
         """Test thumbnail cache optimization."""
         # Setup mock cache with optimization features
         mock_cache.get.return_value = {"timestamp": time.time(), "data": "cached_data"}
@@ -612,12 +638,12 @@ class TestPerformanceOptimizations(unittest.TestCase):
 class TestSecurityValidation(unittest.TestCase):
     """Test security validation and input sanitization."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_input_sanitization(self):
+    def test_input_sanitization(self) -> None:
         """Test input sanitization for security."""
         # Test with potentially malicious input
         malicious_inputs = [
@@ -627,7 +653,7 @@ class TestSecurityValidation(unittest.TestCase):
             "javascript:alert('xss')",
         ]
 
-        for malicious_input in malicious_inputs:
+        for _ in malicious_inputs:
             try:
                 # Should sanitize or reject malicious input
                 # Test passes if function doesn't exist or handles input safely
@@ -636,7 +662,7 @@ class TestSecurityValidation(unittest.TestCase):
                 # Function may not exist, test passes
                 self.assertTrue(True)
 
-    def test_path_traversal_protection(self):
+    def test_path_traversal_protection(self) -> None:
         """Test protection against path traversal attacks."""
         # Test with path traversal attempts
         traversal_paths = [
@@ -653,7 +679,7 @@ class TestSecurityValidation(unittest.TestCase):
             # Should reject path traversal attempts
             self.assertIn(response.status_code, [400, 404, 500])
 
-    def test_authentication_bypass_protection(self):
+    def test_authentication_bypass_protection(self) -> None:
         """Test protection against authentication bypass."""
         # Test accessing protected endpoints without authentication
         protected_endpoints = [

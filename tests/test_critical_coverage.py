@@ -9,17 +9,19 @@ import sys
 import threading
 import unittest
 from datetime import datetime, timedelta
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
+from cachetools import LRUCache
+
 from app import (
     CameraId,
     ClipId,
     Config,
-    LRUCache,
     create_api_response,
     initialize_cache_paths,
 )
@@ -31,7 +33,9 @@ class TestLoggingSetup(unittest.TestCase):
     @patch("logging.getLogger")
     @patch("logging.handlers.RotatingFileHandler")
     @patch("logging.StreamHandler")
-    def test_setup_logging_function(self, mock_stream, mock_file, mock_logger):
+    def test_setup_logging_function(
+        self, mock_stream: Mock, mock_file: Mock, mock_logger: Mock
+    ) -> None:
         """Test setup_logging function."""
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
@@ -49,7 +53,7 @@ class TestLoggingSetup(unittest.TestCase):
             self.assertTrue(True)
 
     @patch("app.Config.LOG_FILE", "/tmp/test.log")
-    def test_logging_configuration(self):
+    def test_logging_configuration(self) -> None:
         """Test logging configuration paths."""
         # Test that logging configuration can be accessed
         self.assertTrue(hasattr(Config, "LOG_FILE"))
@@ -65,7 +69,11 @@ class TestBlinkInitialization(unittest.TestCase):
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
     async def test_initialize_blink_success(
-        self, mock_auth, mock_blink, mock_session, mock_connection
+        self,
+        mock_auth: Mock,
+        mock_blink: Mock,
+        mock_session: Mock,
+        mock_connection: Mock,
     ):
         """Test successful Blink initialization."""
         # Setup mocks
@@ -93,7 +101,11 @@ class TestBlinkInitialization(unittest.TestCase):
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
     async def test_initialize_blink_2fa_required(
-        self, mock_auth, mock_blink, mock_session, mock_connection
+        self,
+        mock_auth: Mock,
+        mock_blink: Mock,
+        mock_session: Mock,
+        mock_connection: Mock,
     ):
         """Test Blink initialization with 2FA required."""
         # Setup mocks
@@ -117,9 +129,9 @@ class TestBlinkInitialization(unittest.TestCase):
 class TestThumbnailCacheUpdate(unittest.TestCase):
     """Test thumbnail cache update mechanism - lines 939-992."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
-        self.mock_camera = Mock()
+        self.mock_camera: Mock = Mock()
         self.mock_camera.name = "Test Camera"
         self.mock_camera.thumbnail = "http://example.com/thumb.jpg"
 
@@ -128,7 +140,7 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
     @patch("app.executor")
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     def test_update_camera_thumbnail_cache(
-        self, mock_executor, mock_connection, mock_cache
+        self, mock_executor: Mock, mock_connection: Mock, mock_cache: Mock
     ):
         """Test camera thumbnail cache update."""
         # Setup mocks
@@ -139,9 +151,10 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         try:
-            from app import update_camera_thumbnail_cache
+            from app import update_camera_thumbnail
 
-            update_camera_thumbnail_cache(self.mock_camera, 2000)
+            camera_id = CameraId("test123")
+            update_camera_thumbnail(self.mock_camera, camera_id, 2000, 1000)
             # Should submit task to executor
             mock_executor.submit.assert_called_once()
         except (ImportError, AttributeError):
@@ -150,7 +163,9 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
     @patch("app.thumbnail_cache")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.unlink")
-    def test_thumbnail_file_cleanup(self, mock_unlink, mock_exists, mock_cache):
+    def test_thumbnail_file_cleanup(
+        self, mock_unlink: Mock, mock_exists: Mock, mock_cache: Mock
+    ) -> None:
         """Test thumbnail file cleanup during update."""
         mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
         mock_exists.return_value = True
@@ -171,7 +186,7 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
 class TestTimeFormatting(unittest.TestCase):
     """Test time formatting functions - lines 890-915."""
 
-    def test_time_difference_calculation(self):
+    def test_time_difference_calculation(self) -> None:
         """Test time difference calculation for thumbnails."""
         # Test recent timestamp (minutes ago)
         now = datetime.now()
@@ -185,7 +200,7 @@ class TestTimeFormatting(unittest.TestCase):
 
         self.assertIn("m ago", expected)
 
-    def test_time_formatting_hours(self):
+    def test_time_formatting_hours(self) -> None:
         """Test time formatting for hours."""
         now = datetime.now()
         hours_ago = now - timedelta(hours=3)
@@ -196,7 +211,7 @@ class TestTimeFormatting(unittest.TestCase):
 
         self.assertIn("h ago", expected)
 
-    def test_time_formatting_days(self):
+    def test_time_formatting_days(self) -> None:
         """Test time formatting for days."""
         now = datetime.now()
         days_ago = now - timedelta(days=2)
@@ -208,14 +223,14 @@ class TestTimeFormatting(unittest.TestCase):
         self.assertEqual(expected, "2d ago")
 
     @patch("app.format_time_ago")
-    def test_time_formatting_error_handling(self, mock_format):
+    def test_time_formatting_error_handling(self, mock_format: Mock) -> None:
         """Test error handling in time formatting."""
         mock_format.return_value = "Never"
 
         # Test invalid timestamp handling
         try:
-            invalid_ts = "invalid"
-            datetime.fromtimestamp(invalid_ts)
+            # This will raise TypeError when passing string to fromtimestamp
+            datetime.fromtimestamp("invalid")  # type: ignore
         except (ValueError, TypeError):
             # Should fall back to format_time_ago
             result = mock_format("fallback_value")
@@ -230,7 +245,9 @@ class TestCacheDirectoryOperations(unittest.TestCase):
     @patch("os.makedirs")
     @patch("shutil.rmtree")
     @patch("os.path.exists")
-    def test_clear_file_cache_operations(self, mock_exists, mock_rmtree, mock_makedirs):
+    def test_clear_file_cache_operations(
+        self, mock_exists: Mock, mock_rmtree: Mock, mock_makedirs: Mock
+    ) -> None:
         """Test file cache clearing operations."""
         mock_exists.return_value = True
 
@@ -246,7 +263,7 @@ class TestCacheDirectoryOperations(unittest.TestCase):
         mock_makedirs.assert_called_with(cache_dir, exist_ok=True)
 
     @patch("concurrent.futures.ThreadPoolExecutor")
-    def test_parallel_cache_clearing(self, mock_executor):
+    def test_parallel_cache_clearing(self, mock_executor: Mock) -> None:
         """Test parallel execution of cache clearing."""
         mock_executor_instance = Mock()
         mock_executor.return_value.__enter__.return_value = mock_executor_instance
@@ -263,7 +280,7 @@ class TestCacheDirectoryOperations(unittest.TestCase):
 class TestErrorContextManager(unittest.TestCase):
     """Test error context manager functionality."""
 
-    def test_error_context_success(self):
+    def test_error_context_success(self) -> None:
         """Test error context manager with successful operation."""
         try:
             from app import error_context
@@ -275,7 +292,7 @@ class TestErrorContextManager(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    def test_error_context_exception_handling(self):
+    def test_error_context_exception_handling(self) -> None:
         """Test error context manager with exception."""
         try:
             from app import error_context
@@ -290,7 +307,7 @@ class TestErrorContextManager(unittest.TestCase):
 class TestValidationClasses(unittest.TestCase):
     """Test validation classes and their patterns."""
 
-    def test_camera_id_validation_patterns(self):
+    def test_camera_id_validation_patterns(self) -> None:
         """Test CameraId validation patterns."""
         # Test valid patterns
         valid_ids = ["12345", "camera123", "CAM_001"]
@@ -302,7 +319,7 @@ class TestValidationClasses(unittest.TestCase):
                 # Some patterns might be more restrictive
                 pass
 
-    def test_clip_id_validation_patterns(self):
+    def test_clip_id_validation_patterns(self) -> None:
         """Test ClipId validation patterns."""
         # Test valid patterns
         valid_ids = ["67890", "clip123", "CLIP_001"]
@@ -314,16 +331,16 @@ class TestValidationClasses(unittest.TestCase):
                 # Some patterns might be more restrictive
                 pass
 
-    def test_validation_error_messages(self):
+    def test_validation_error_messages(self) -> None:
         """Test validation error messages."""
         with self.assertRaises(ValueError) as context:
             CameraId("")
 
         # Should contain meaningful error message
         error_msg = str(context.exception)
-        self.assertIn("Camera", error_msg)
+        self.assertIn("Camera", str(error_msg))
 
-    def test_type_name_methods(self):
+    def test_type_name_methods(self) -> None:
         """Test _get_type_name methods."""
         camera_id = CameraId("test123")
         clip_id = ClipId("test456")
@@ -344,7 +361,9 @@ class TestCachePathInitialization(unittest.TestCase):
 
     @patch("app.app")
     @patch("pathlib.Path")
-    def test_initialize_cache_paths_with_config(self, mock_path, mock_app):
+    def test_initialize_cache_paths_with_config(
+        self, mock_path: Mock, mock_app: Mock
+    ) -> None:
         """Test cache path initialization with app config."""
         # Setup mock app config
         mock_app.config.get.return_value = "/custom/cache"
@@ -355,10 +374,10 @@ class TestCachePathInitialization(unittest.TestCase):
         initialize_cache_paths()
 
         # Should use app config
-        mock_app.config.get.assert_called_with("CACHE_DIR", Config.DEFAULT_CACHE_DIR)
+        mock_app.config.get.assert_called_with("CACHE_DIR", "cache")
 
     @patch("app.app")
-    def test_initialize_cache_paths_default(self, mock_app):
+    def test_initialize_cache_paths_default(self, mock_app: Mock) -> None:
         """Test cache path initialization with defaults."""
         mock_app.config.get.return_value = None
 
@@ -376,9 +395,9 @@ class TestCachePathInitialization(unittest.TestCase):
 class TestAPIResponseCreation(unittest.TestCase):
     """Test API response creation functionality."""
 
-    def test_create_api_response_success_with_data(self):
+    def test_create_api_response_success_with_data(self) -> None:
         """Test successful API response creation with data."""
-        test_data = {"key": "value", "number": 123}
+        test_data: dict[str, Any] = {"key": "value", "number": 123}
         response, status_code = create_api_response(success=True, data=test_data)
 
         self.assertTrue(response["success"])
@@ -386,16 +405,16 @@ class TestAPIResponseCreation(unittest.TestCase):
         self.assertIn("timestamp", response)
         self.assertEqual(status_code, 200)
 
-    def test_create_api_response_error(self):
+    def test_create_api_response_error(self) -> None:
         """Test API response creation with error."""
         error_msg = "Test error message"
-        response, status_code = create_api_response(success=False, error=error_msg)
+        response, _ = create_api_response(success=False, error=error_msg)
 
         self.assertFalse(response["success"])
         self.assertEqual(response["error"], error_msg)
         self.assertIn("timestamp", response)
 
-    def test_create_api_response_with_status_code(self):
+    def test_create_api_response_with_status_code(self) -> None:
         """Test API response creation with custom status code."""
         response, status_code = create_api_response(
             success=True, data={"test": "data"}, status_code=201
@@ -404,7 +423,7 @@ class TestAPIResponseCreation(unittest.TestCase):
         self.assertTrue(response["success"])
         self.assertEqual(status_code, 201)
 
-    def test_create_api_response_timestamp_format(self):
+    def test_create_api_response_timestamp_format(self) -> None:
         """Test API response timestamp format."""
         response, _ = create_api_response(success=True, data={"test": "data"})
 
@@ -417,12 +436,12 @@ class TestAPIResponseCreation(unittest.TestCase):
 class TestLRUCacheAdvanced(unittest.TestCase):
     """Test advanced LRU cache functionality."""
 
-    def test_lru_cache_thread_safety(self):
+    def test_lru_cache_thread_safety(self) -> None:
         """Test LRU cache thread safety."""
-        cache = LRUCache(maxsize=100)
-        results = []
+        cache: LRUCache[str, str] = LRUCache(maxsize=100)
+        results: list[bool] = []
 
-        def worker(thread_id):
+        def worker(thread_id: int) -> None:
             for i in range(10):
                 key = f"thread_{thread_id}_key_{i}"
                 value = f"thread_{thread_id}_value_{i}"
@@ -431,7 +450,7 @@ class TestLRUCacheAdvanced(unittest.TestCase):
                 results.append(retrieved == value)
 
         # Create multiple threads
-        threads = []
+        threads: list[Any] = []
         for i in range(5):
             thread = threading.Thread(target=worker, args=(i,))
             threads.append(thread)
@@ -444,9 +463,9 @@ class TestLRUCacheAdvanced(unittest.TestCase):
         # All operations should succeed
         self.assertTrue(all(results))
 
-    def test_lru_cache_memory_efficiency(self):
+    def test_lru_cache_memory_efficiency(self) -> None:
         """Test LRU cache memory efficiency."""
-        cache = LRUCache(maxsize=10)
+        cache: LRUCache[str, str] = LRUCache(maxsize=10)
 
         # Fill beyond capacity
         for i in range(20):
@@ -459,9 +478,9 @@ class TestLRUCacheAdvanced(unittest.TestCase):
         for i in range(10, 20):
             self.assertIn(f"key_{i}", cache)
 
-    def test_lru_cache_clear_operation(self):
+    def test_lru_cache_clear_operation(self) -> None:
         """Test LRU cache clear operation."""
-        cache = LRUCache(maxsize=10)
+        cache: LRUCache[str, str] = LRUCache(maxsize=10)
 
         # Add items
         for i in range(5):
@@ -474,18 +493,18 @@ class TestLRUCacheAdvanced(unittest.TestCase):
 
         self.assertEqual(len(cache), 0)
 
-    def test_lru_cache_contains_operation(self):
+    def test_lru_cache_contains_operation(self) -> None:
         """Test LRU cache __contains__ operation."""
-        cache = LRUCache(maxsize=5)
+        cache: LRUCache[str, str] = LRUCache(maxsize=5)
 
         cache["existing_key"] = "value"
 
         self.assertIn("existing_key", cache)
         self.assertNotIn("nonexistent_key", cache)
 
-    def test_lru_cache_getitem_operation(self):
+    def test_lru_cache_getitem_operation(self) -> None:
         """Test LRU cache __getitem__ operation."""
-        cache = LRUCache(maxsize=5)
+        cache: LRUCache[str, str] = LRUCache(maxsize=5)
 
         cache["test_key"] = "test_value"
 

@@ -38,37 +38,37 @@ from app import (
 class TestBaseId(unittest.TestCase):
     """Test BaseId base class functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
 
         class TestId(BaseId):
-            def _get_pattern(self):
+            def _get_pattern(self) -> str:
                 return r"^[a-zA-Z0-9]+$"
 
-            def _get_type_name(self):
+            def _get_type_name(self) -> str:
                 return "Test ID"
 
         self.TestId = TestId
 
-    def test_valid_id(self):
+    def test_valid_id(self) -> None:
         """Test valid ID creation."""
         test_id = self.TestId("test123")
         self.assertEqual(str(test_id), "test123")
         self.assertEqual(test_id.value, "test123")
 
-    def test_empty_id_raises_error(self):
+    def test_empty_id_raises_error(self) -> None:
         """Test empty ID raises ValueError."""
         with self.assertRaises(ValueError) as cm:
             self.TestId("")
         self.assertIn("cannot be empty", str(cm.exception))
 
-    def test_invalid_pattern_raises_error(self):
+    def test_invalid_pattern_raises_error(self) -> None:
         """Test invalid pattern raises ValueError."""
         with self.assertRaises(ValueError) as cm:
             self.TestId("test-invalid!")
         self.assertIn("Invalid Test ID format", str(cm.exception))
 
-    def test_equality(self):
+    def test_equality(self) -> None:
         """Test ID equality comparison."""
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
@@ -77,7 +77,7 @@ class TestBaseId(unittest.TestCase):
         self.assertEqual(id1, id2)
         self.assertNotEqual(id1, id3)
 
-    def test_hash(self):
+    def test_hash(self) -> None:
         """Test ID hashing for use in sets/dicts."""
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
@@ -89,12 +89,12 @@ class TestBaseId(unittest.TestCase):
 class TestCameraId(unittest.TestCase):
     """Test CameraId validation."""
 
-    def test_valid_camera_id(self):
+    def test_valid_camera_id(self) -> None:
         """Test valid camera ID."""
         camera_id = CameraId("camera123")
         self.assertEqual(str(camera_id), "camera123")
 
-    def test_camera_id_with_underscore(self):
+    def test_camera_id_with_underscore(self) -> None:
         """Test camera ID with underscore."""
         camera_id = CameraId("camera_123")
         self.assertEqual(str(camera_id), "camera_123")
@@ -103,12 +103,12 @@ class TestCameraId(unittest.TestCase):
 class TestNetworkId(unittest.TestCase):
     """Test NetworkId validation."""
 
-    def test_valid_network_id(self):
+    def test_valid_network_id(self) -> None:
         """Test valid network ID."""
         network_id = NetworkId("12345")
         self.assertEqual(str(network_id), "12345")
 
-    def test_invalid_network_id(self):
+    def test_invalid_network_id(self) -> None:
         """Test invalid network ID with letters."""
         with self.assertRaises(ValueError):
             NetworkId("abc123")
@@ -117,32 +117,32 @@ class TestNetworkId(unittest.TestCase):
 class TestClipId(unittest.TestCase):
     """Test ClipId validation and local clip handling."""
 
-    def test_cloud_clip_id(self):
+    def test_cloud_clip_id(self) -> None:
         """Test cloud clip ID."""
         clip_id = ClipId("123456")
         self.assertEqual(str(clip_id), "123456")
         self.assertFalse(clip_id.is_local())
 
-    def test_local_clip_id(self):
+    def test_local_clip_id(self) -> None:
         """Test local clip ID."""
         clip_id = ClipId("sync1~789")
         self.assertEqual(str(clip_id), "sync1~789")
         self.assertTrue(clip_id.is_local())
 
-    def test_from_local_constructor(self):
+    def test_from_local_constructor(self) -> None:
         """Test ClipId.from_local constructor."""
         clip_id = ClipId.from_local("sync_module", 123)
         self.assertEqual(str(clip_id), "sync_module~123")
         self.assertTrue(clip_id.is_local())
 
-    def test_get_local_parts(self):
+    def test_get_local_parts(self) -> None:
         """Test extracting local clip parts."""
         clip_id = ClipId("sync1~456")
         sync_name, item_id = clip_id.get_local_parts()
         self.assertEqual(sync_name, "sync1")
         self.assertEqual(item_id, 456)
 
-    def test_get_local_parts_cloud_clip_error(self):
+    def test_get_local_parts_cloud_clip_error(self) -> None:
         """Test get_local_parts raises error for cloud clips."""
         clip_id = ClipId("123456")
         with self.assertRaises(ValueError):
@@ -152,29 +152,29 @@ class TestClipId(unittest.TestCase):
 class TestValidation(unittest.TestCase):
     """Test input validation functions."""
 
-    def test_validate_string_input_valid(self):
+    def test_validate_string_input_valid(self) -> None:
         """Test valid string input."""
         result = validate_string_input("test@example.com", 50, "Email")
         self.assertEqual(result, "test@example.com")
 
-    def test_validate_string_input_strips_whitespace(self):
+    def test_validate_string_input_strips_whitespace(self) -> None:
         """Test string input strips whitespace."""
         result = validate_string_input("  test  ", 50, "Field")
         self.assertEqual(result, "test")
 
-    def test_validate_string_input_empty_error(self):
+    def test_validate_string_input_empty_error(self) -> None:
         """Test empty string raises error."""
         with self.assertRaises(ValueError) as cm:
             validate_string_input("", 50, "Field")
         self.assertIn("cannot be empty", str(cm.exception))
 
-    def test_validate_string_input_too_long_error(self):
+    def test_validate_string_input_too_long_error(self) -> None:
         """Test too long string raises error."""
         with self.assertRaises(ValueError) as cm:
             validate_string_input("x" * 51, 50, "Field")
         self.assertIn("too long", str(cm.exception))
 
-    def test_validate_string_input_xss_prevention(self):
+    def test_validate_string_input_xss_prevention(self) -> None:
         """Test XSS prevention."""
         with self.assertRaises(ValueError) as cm:
             validate_string_input("<script>alert('xss')</script>", 50, "Field")
@@ -184,7 +184,7 @@ class TestValidation(unittest.TestCase):
 class TestApiResponse(unittest.TestCase):
     """Test API response creation."""
 
-    def test_success_response(self):
+    def test_success_response(self) -> None:
         """Test successful API response."""
         response, status_code = create_api_response(success=True, data={"test": "data"})
 
@@ -194,7 +194,7 @@ class TestApiResponse(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertIn("timestamp", response)
 
-    def test_error_response(self):
+    def test_error_response(self) -> None:
         """Test error API response."""
         response, status_code = create_api_response(
             success=False, error="Test error", status_code=400
@@ -209,24 +209,24 @@ class TestApiResponse(unittest.TestCase):
 class TestUtilityFunctions(unittest.TestCase):
     """Test utility functions."""
 
-    def test_extract_thumbnail_timestamp_valid(self):
+    def test_extract_thumbnail_timestamp_valid(self) -> None:
         """Test extracting timestamp from thumbnail URL."""
         url = "/api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext="
         timestamp = extract_thumbnail_timestamp(url)
         self.assertEqual(timestamp, 1742459551)
 
-    def test_extract_thumbnail_timestamp_no_ts(self):
+    def test_extract_thumbnail_timestamp_no_ts(self) -> None:
         """Test extracting timestamp from URL without ts parameter."""
         url = "/api/v3/media/thumbnail.jpg"
         timestamp = extract_thumbnail_timestamp(url)
         self.assertEqual(timestamp, 0)
 
-    def test_extract_thumbnail_timestamp_none(self):
+    def test_extract_thumbnail_timestamp_none(self) -> None:
         """Test extracting timestamp from None URL."""
         timestamp = extract_thumbnail_timestamp(None)
         self.assertEqual(timestamp, 0)
 
-    def test_format_time_ago_days(self):
+    def test_format_time_ago_days(self) -> None:
         """Test formatting time ago for days."""
         from datetime import datetime, timedelta
 
@@ -234,7 +234,7 @@ class TestUtilityFunctions(unittest.TestCase):
         result = format_time_ago(past_time.isoformat())
         self.assertEqual(result, "5d ago")
 
-    def test_format_time_ago_hours(self):
+    def test_format_time_ago_hours(self) -> None:
         """Test formatting time ago for hours."""
         from datetime import datetime, timedelta
 
@@ -242,7 +242,7 @@ class TestUtilityFunctions(unittest.TestCase):
         result = format_time_ago(past_time.isoformat())
         self.assertEqual(result, "3h ago")
 
-    def test_format_time_ago_none(self):
+    def test_format_time_ago_none(self) -> None:
         """Test formatting time ago for None."""
         result = format_time_ago(None)
         self.assertEqual(result, "Unknown")
@@ -251,30 +251,30 @@ class TestUtilityFunctions(unittest.TestCase):
 class TestFlaskApp(unittest.TestCase):
     """Test Flask application endpoints."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         app.config["CACHE_DIR"] = tempfile.mkdtemp()
         self.client = app.test_client()
         self.temp_dir = app.config["CACHE_DIR"]
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """Clean up test fixtures."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def test_index_redirect_to_login(self):
+    def test_index_redirect_to_login(self) -> None:
         """Test index redirects to login when not authenticated."""
         response = self.client.get("/")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.location)
 
-    def test_login_page_get(self):
+    def test_login_page_get(self) -> None:
         """Test login page GET request."""
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Blink Camera System", response.data)
 
-    def test_login_page_post_validation_error(self):
+    def test_login_page_post_validation_error(self) -> None:
         """Test login POST with validation error."""
         response = self.client.post(
             "/login",
@@ -286,7 +286,7 @@ class TestFlaskApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"cannot be empty", response.data)
 
-    def test_placeholder_endpoint(self):
+    def test_placeholder_endpoint(self) -> None:
         """Test placeholder endpoint."""
         response = self.client.get("/placeholder")
         self.assertEqual(response.status_code, 501)
@@ -295,7 +295,7 @@ class TestFlaskApp(unittest.TestCase):
         self.assertIn("This feature is coming soon", data["error"])
 
     @patch("app.blink", None)
-    def test_api_systems_no_blink(self):
+    def test_api_systems_no_blink(self) -> None:
         """Test systems API when Blink not available."""
         response = self.client.get("/api/system/list")
         self.assertEqual(response.status_code, 500)
@@ -305,7 +305,7 @@ class TestFlaskApp(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_api_systems_success(self, mock_connection, mock_blink):
+    def test_api_systems_success(self, mock_connection, mock_blink) -> None:
         """Test successful systems API call."""
         # Mock Blink system
         mock_sync = Mock()
@@ -324,7 +324,7 @@ class TestFlaskApp(unittest.TestCase):
         self.assertEqual(data["data"][0]["name"], "Test System")
 
     @patch("app.blink")
-    def test_api_devices_invalid_network_id(self, mock_blink):
+    def test_api_devices_invalid_network_id(self, mock_blink) -> None:
         """Test devices API with invalid network ID."""
         # Mock blink to be available so we can test NetworkId validation
         mock_blink.available = True
@@ -340,7 +340,7 @@ class TestFlaskApp(unittest.TestCase):
 class TestAdditionalEndpoints(unittest.TestCase):
     """Test additional endpoints for better coverage."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         from test_utils import setup_test_globals
 
@@ -352,7 +352,7 @@ class TestAdditionalEndpoints(unittest.TestCase):
         setup_test_globals()
 
     @patch("app.blink")
-    def test_api_devices_network_not_found(self, mock_blink):
+    def test_api_devices_network_not_found(self, mock_blink) -> None:
         """Test devices API with network not found."""
         mock_blink.available = True
         mock_blink.sync = {}  # No sync modules
@@ -363,7 +363,7 @@ class TestAdditionalEndpoints(unittest.TestCase):
         self.assertFalse(data["success"])
 
     @patch("app.blink")
-    def test_api_camera_thumbnail_not_found(self, mock_blink):
+    def test_api_camera_thumbnail_not_found(self, mock_blink) -> None:
         """Test camera thumbnail with camera not found."""
         mock_blink.available = True
         mock_blink.cameras = {}
@@ -373,7 +373,7 @@ class TestAdditionalEndpoints(unittest.TestCase):
         data = json.loads(response.data)
         self.assertFalse(data["success"])
 
-    def test_api_clips_invalid_storage(self):
+    def test_api_clips_invalid_storage(self) -> None:
         """Test clips API with invalid storage type."""
         response = self.client.get("/api/clips?storage=invalid")
         # Returns 500 due to validation error, not 400
@@ -382,7 +382,7 @@ class TestAdditionalEndpoints(unittest.TestCase):
         self.assertFalse(data["success"])
 
     @patch("app.blink")
-    def test_api_clear_cache_success(self, mock_blink):
+    def test_api_clear_cache_success(self, mock_blink) -> None:
         """Test successful cache clearing."""
         mock_blink.available = True
 
@@ -391,7 +391,7 @@ class TestAdditionalEndpoints(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
-    def test_api_settings_post_invalid_content_type(self):
+    def test_api_settings_post_invalid_content_type(self) -> None:
         """Test settings update with invalid content type."""
         response = self.client.post("/api/settings", data="invalid")
         # Should return 500 due to content type error, not 400
@@ -403,31 +403,31 @@ class TestAdditionalEndpoints(unittest.TestCase):
 class TestValidationExtended(unittest.TestCase):
     """Test extended validation scenarios."""
 
-    def test_validate_string_input_xss_prevention_raises_error(self):
+    def test_validate_string_input_xss_prevention_raises_error(self) -> None:
         """Test XSS prevention raises error for malicious input."""
         malicious_input = "<script>alert('xss')</script>"
         with self.assertRaises(ValueError) as context:
             validate_string_input(malicious_input, 100, "test_field")
         self.assertIn("invalid characters", str(context.exception))
 
-    def test_validate_string_input_html_tags_prevention(self):
+    def test_validate_string_input_html_tags_prevention(self) -> None:
         """Test HTML tags prevention."""
         html_input = "<div>test</div>"
         with self.assertRaises(ValueError) as context:
             validate_string_input(html_input, 100, "test_field")
         self.assertIn("invalid characters", str(context.exception))
 
-    def test_camera_id_validation_with_special_chars(self):
+    def test_camera_id_validation_with_special_chars(self) -> None:
         """Test camera ID validation with special characters."""
         with self.assertRaises(ValueError):
             CameraId("camera@#$%")
 
-    def test_network_id_validation_with_letters(self):
+    def test_network_id_validation_with_letters(self) -> None:
         """Test network ID validation with letters."""
         with self.assertRaises(ValueError):
             NetworkId("abc123")
 
-    def test_clip_id_validation_edge_cases(self):
+    def test_clip_id_validation_edge_cases(self) -> None:
         """Test clip ID validation edge cases."""
         # Valid clip ID with all allowed characters
         valid_id = "clip_123-test~456"
@@ -442,7 +442,7 @@ class TestValidationExtended(unittest.TestCase):
 class TestUtilityFunctionsExtended(unittest.TestCase):
     """Test extended utility functions."""
 
-    def test_format_time_ago_edge_cases(self):
+    def test_format_time_ago_edge_cases(self) -> None:
         """Test format_time_ago with edge cases."""
         import time
 
@@ -461,7 +461,7 @@ class TestUtilityFunctionsExtended(unittest.TestCase):
         result = format_time_ago(one_day_ago)
         self.assertIn("1d", result)
 
-    def test_extract_thumbnail_timestamp_various_formats(self):
+    def test_extract_thumbnail_timestamp_various_formats(self) -> None:
         """Test thumbnail timestamp extraction with various formats."""
         # Test with valid timestamp
         filename1 = "camera_20230101_120000.jpg"
@@ -478,7 +478,7 @@ class TestUtilityFunctionsExtended(unittest.TestCase):
         result3 = extract_thumbnail_timestamp(filename3)
         self.assertEqual(result3, 0)  # Based on actual behavior
 
-    def test_create_api_response_with_custom_status(self):
+    def test_create_api_response_with_custom_status(self) -> None:
         """Test API response creation with custom status codes."""
         # Test with custom success status
         response, status = create_api_response(
@@ -498,7 +498,7 @@ class TestUtilityFunctionsExtended(unittest.TestCase):
 class TestErrorHandlingExtended(unittest.TestCase):
     """Test extended error handling scenarios."""
 
-    def test_error_context_manager_with_different_operations(self):
+    def test_error_context_manager_with_different_operations(self) -> None:
         """Test error context manager with different operation names."""
         from app import BlinkError, error_context
 
@@ -512,7 +512,7 @@ class TestErrorHandlingExtended(unittest.TestCase):
             with error_context("failing operation"):
                 raise ValueError("Test error")
 
-    def test_safe_execute_with_different_exceptions(self):
+    def test_safe_execute_with_different_exceptions(self) -> None:
         """Test safe_execute with different exception types."""
         from app import safe_execute
 
@@ -534,14 +534,14 @@ class TestErrorHandlingExtended(unittest.TestCase):
 class TestAuthenticationFlows(unittest.TestCase):
     """Test comprehensive authentication flows including login, 2FA, and logout."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.app = app
         self.app.config["TESTING"] = True
         self.app.config["SECRET_KEY"] = "test-secret-key"
         self.client = self.app.test_client()
 
-    def test_login_get_request(self):
+    def test_login_get_request(self) -> None:
         """Test GET request to login page."""
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
@@ -549,7 +549,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertIn(b"Username", response.data)
         self.assertIn(b"Password", response.data)
 
-    def test_login_validation_empty_username(self):
+    def test_login_validation_empty_username(self) -> None:
         """Test login with empty username."""
         response = self.client.post(
             "/login", data={"username": "", "password": "password123"}
@@ -557,7 +557,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"cannot be empty", response.data)
 
-    def test_login_validation_empty_password(self):
+    def test_login_validation_empty_password(self) -> None:
         """Test login with empty password."""
         response = self.client.post(
             "/login", data={"username": "test@example.com", "password": ""}
@@ -565,7 +565,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"cannot be empty", response.data)
 
-    def test_login_validation_username_too_long(self):
+    def test_login_validation_username_too_long(self) -> None:
         """Test login with overly long username."""
         long_username = "a" * 101  # Exceeds MAX_USERNAME_LENGTH
         response = self.client.post(
@@ -574,7 +574,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"too long", response.data)
 
-    def test_login_validation_password_too_long(self):
+    def test_login_validation_password_too_long(self) -> None:
         """Test login with overly long password."""
         long_password = "a" * 101  # Exceeds MAX_PASSWORD_LENGTH
         response = self.client.post(
@@ -583,7 +583,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"too long", response.data)
 
-    def test_login_validation_xss_prevention_username(self):
+    def test_login_validation_xss_prevention_username(self) -> None:
         """Test XSS prevention in username field."""
         response = self.client.post(
             "/login",
@@ -595,7 +595,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"invalid characters", response.data)
 
-    def test_login_validation_xss_prevention_password(self):
+    def test_login_validation_xss_prevention_password(self) -> None:
         """Test XSS prevention in password field."""
         response = self.client.post(
             "/login",
@@ -607,7 +607,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"invalid characters", response.data)
 
-    def test_login_unexpected_error(self):
+    def test_login_unexpected_error(self) -> None:
         """Test login with unexpected error."""
         # Mock blink_connection to raise an exception
         with patch("app.blink_connection") as mock_connection:
@@ -622,14 +622,14 @@ class TestAuthenticationFlows(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn(b"trouble logging you in", response.data)
 
-    def test_2fa_get_without_session(self):
+    def test_2fa_get_without_session(self) -> None:
         """Test accessing 2FA page without proper session."""
         response = self.client.get("/2fa")
         # Should redirect to login
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.location)
 
-    def test_2fa_get_with_session(self):
+    def test_2fa_get_with_session(self) -> None:
         """Test GET request to 2FA page with proper session."""
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -640,7 +640,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertIn(b"test@example.com", response.data)
         self.assertIn(b"verification code", response.data)
 
-    def test_2fa_validation_empty_key(self):
+    def test_2fa_validation_empty_key(self) -> None:
         """Test 2FA with empty verification key."""
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -650,7 +650,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"cannot be empty", response.data)
 
-    def test_2fa_validation_key_too_long(self):
+    def test_2fa_validation_key_too_long(self) -> None:
         """Test 2FA with overly long verification key."""
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -662,7 +662,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertIn(b"too long", response.data)
 
     @patch("app.blink_connection")
-    def test_2fa_success(self, mock_connection):
+    def test_2fa_success(self, mock_connection) -> None:
         """Test successful 2FA verification."""
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -678,7 +678,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertIn("/", response.location)
 
     @patch("app.blink_connection")
-    def test_2fa_failure_invalid_code(self, mock_connection):
+    def test_2fa_failure_invalid_code(self, mock_connection) -> None:
         """Test 2FA failure with invalid code."""
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -694,7 +694,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertIn(b"test@example.com", response.data)
 
     @patch("app.blink_connection")
-    def test_2fa_authentication_error(self, mock_connection):
+    def test_2fa_authentication_error(self, mock_connection) -> None:
         """Test 2FA with authentication error."""
         from app import AuthenticationError
 
@@ -713,7 +713,7 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertIn(b"2FA auth failed", response.data)
 
     @patch("app.blink_connection")
-    def test_2fa_unexpected_error(self, mock_connection):
+    def test_2fa_unexpected_error(self, mock_connection) -> None:
         """Test 2FA with unexpected error."""
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -730,7 +730,7 @@ class TestAuthenticationFlows(unittest.TestCase):
     @patch("app.CREDENTIALS_FILE", "/tmp/test_credentials.json")
     @patch("app.executor")
     @patch("app.blink")
-    def test_logout_success(self, mock_blink, mock_executor):
+    def test_logout_success(self, mock_blink, mock_executor) -> None:
         """Test successful logout."""
         # Mock executor and blink
         mock_executor.submit = Mock()
@@ -743,12 +743,12 @@ class TestAuthenticationFlows(unittest.TestCase):
         self.assertTrue(data["success"])
         self.assertIn("logged out", data["data"]["message"].lower())
 
-    def test_logout_get_method_not_allowed(self):
+    def test_logout_get_method_not_allowed(self) -> None:
         """Test that GET method is not allowed for logout."""
         response = self.client.get("/logout")
         self.assertEqual(response.status_code, 405)  # Method Not Allowed
 
-    def test_session_management(self):
+    def test_session_management(self) -> None:
         """Test session management during authentication flow."""
         # Test that session is properly managed
         with self.client.session_transaction() as sess:
@@ -762,14 +762,14 @@ class TestAuthenticationFlows(unittest.TestCase):
 class TestAuthenticationHelpers(unittest.TestCase):
     """Test authentication helper functions and error handling."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         from test_utils import setup_test_globals
 
         # Initialize globals for testing
         setup_test_globals()
 
-    def test_authentication_error_class(self):
+    def test_authentication_error_class(self) -> None:
         """Test AuthenticationError exception class."""
         from app import AuthenticationError
 
@@ -777,7 +777,7 @@ class TestAuthenticationHelpers(unittest.TestCase):
         self.assertEqual(str(error), "Test auth error")
         self.assertIsInstance(error, Exception)
 
-    def test_cache_error_class(self):
+    def test_cache_error_class(self) -> None:
         """Test CacheError exception class."""
         from app import CacheError
 
@@ -786,7 +786,7 @@ class TestAuthenticationHelpers(unittest.TestCase):
         self.assertIsInstance(error, Exception)
 
     @patch("app.clear_all_caches")
-    def test_clear_all_caches_function(self, mock_clear):
+    def test_clear_all_caches_function(self, mock_clear) -> None:
         """Test clear_all_caches function."""
         mock_clear.return_value = {"cleared": True}
 
@@ -805,41 +805,41 @@ class TestAuthenticationHelpers(unittest.TestCase):
 class TestAuthenticationValidation(unittest.TestCase):
     """Test authentication input validation edge cases."""
 
-    def test_validate_string_input_with_html_entities(self):
+    def test_validate_string_input_with_html_entities(self) -> None:
         """Test validation with HTML entities."""
         html_input = "&lt;script&gt;alert('test')&lt;/script&gt;"
         with self.assertRaises(ValueError) as context:
             validate_string_input(html_input, 100, "test_field")
         self.assertIn("invalid characters", str(context.exception))
 
-    def test_validate_string_input_with_unicode(self):
+    def test_validate_string_input_with_unicode(self) -> None:
         """Test validation with unicode characters."""
         unicode_input = "test\u2603snowman"  # Contains snowman unicode
         # Unicode characters are allowed in the current validation
         result = validate_string_input(unicode_input, 100, "test_field")
         self.assertEqual(result, unicode_input)
 
-    def test_validate_string_input_with_newlines(self):
+    def test_validate_string_input_with_newlines(self) -> None:
         """Test validation with newline characters."""
         newline_input = "test\nwith\nnewlines"
         # Newlines are allowed in the current validation
         result = validate_string_input(newline_input, 100, "test_field")
         self.assertEqual(result, newline_input)
 
-    def test_validate_string_input_with_tabs(self):
+    def test_validate_string_input_with_tabs(self) -> None:
         """Test validation with tab characters."""
         tab_input = "test\twith\ttabs"
         # Tabs are allowed in the current validation
         result = validate_string_input(tab_input, 100, "test_field")
         self.assertEqual(result, tab_input)
 
-    def test_validate_string_input_normal_email(self):
+    def test_validate_string_input_normal_email(self) -> None:
         """Test validation with normal email address."""
         email_input = "test@example.com"
         result = validate_string_input(email_input, 100, "email")
         self.assertEqual(result, "test@example.com")
 
-    def test_validate_string_input_normal_password(self):
+    def test_validate_string_input_normal_password(self) -> None:
         """Test validation with normal password."""
         password_input = "MySecurePassword123!"
         result = validate_string_input(password_input, 100, "password")
@@ -849,37 +849,37 @@ class TestAuthenticationValidation(unittest.TestCase):
 class TestCacheOperations(unittest.TestCase):
     """Test cache-related operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
 
         from app import ThumbnailCache
 
         self.cache = ThumbnailCache(maxsize=10)
 
-    def test_cache_set_get(self):
+    def test_cache_set_get(self) -> None:
         """Test cache set and get operations."""
         self.cache["key1"] = "value1"
         self.assertEqual(self.cache.get("key1"), "value1")
 
-    def test_cache_get_default(self):
+    def test_cache_get_default(self) -> None:
         """Test cache get with default value."""
         result = self.cache.get("nonexistent", "default")
         self.assertEqual(result, "default")
 
-    def test_cache_contains(self):
+    def test_cache_contains(self) -> None:
         """Test cache contains operation."""
         self.cache["key1"] = "value1"
         self.assertIn("key1", self.cache)
         self.assertNotIn("key2", self.cache)
 
-    def test_cache_pop(self):
+    def test_cache_pop(self) -> None:
         """Test cache pop operation."""
         self.cache["key1"] = "value1"
         result = self.cache.pop("key1")
         self.assertEqual(result, "value1")
         self.assertNotIn("key1", self.cache)
 
-    def test_cache_clear(self):
+    def test_cache_clear(self) -> None:
         """Test cache clear operation."""
         self.cache["key1"] = "value1"
         self.cache["key2"] = "value2"
@@ -890,7 +890,7 @@ class TestCacheOperations(unittest.TestCase):
 class TestErrorHandling(unittest.TestCase):
     """Test error handling mechanisms."""
 
-    def test_error_context_manager(self):
+    def test_error_context_manager(self) -> None:
         """Test error context manager."""
         from app import BlinkError, error_context
 
@@ -898,7 +898,7 @@ class TestErrorHandling(unittest.TestCase):
             with error_context("test operation"):
                 raise ValueError("Test error")
 
-    def test_safe_execute_success(self):
+    def test_safe_execute_success(self) -> None:
         """Test safe_execute with successful function."""
         from app import safe_execute
 
@@ -908,7 +908,7 @@ class TestErrorHandling(unittest.TestCase):
         result = safe_execute(success_func, "default")
         self.assertEqual(result, "success")
 
-    def test_safe_execute_failure(self):
+    def test_safe_execute_failure(self) -> None:
         """Test safe_execute with failing function."""
         from app import safe_execute
 
@@ -922,7 +922,7 @@ class TestErrorHandling(unittest.TestCase):
 class TestConfig(unittest.TestCase):
     """Test configuration constants."""
 
-    def test_config_constants_exist(self):
+    def test_config_constants_exist(self) -> None:
         """Test that all expected config constants exist."""
         required_constants = [
             "CLIPS_CACHE_SIZE",
@@ -939,7 +939,7 @@ class TestConfig(unittest.TestCase):
             self.assertTrue(hasattr(Config, constant))
             self.assertIsNotNone(getattr(Config, constant))
 
-    def test_config_values_reasonable(self):
+    def test_config_values_reasonable(self) -> None:
         """Test that config values are reasonable."""
         self.assertGreater(Config.CLIPS_CACHE_SIZE, 0)
         self.assertGreater(Config.HTTP_TIMEOUT, 0)
@@ -981,7 +981,7 @@ if __name__ == "__main__":
 class TestAPIEndpoints(unittest.TestCase):
     """Test API endpoints for better coverage."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -992,7 +992,7 @@ class TestAPIEndpoints(unittest.TestCase):
         setup_test_globals()
 
     @patch("app.blink")
-    def test_get_systems_success(self, mock_blink):
+    def test_get_systems_success(self, mock_blink) -> None:
         """Test successful get_systems call."""
         # Mock blink object with networks
         mock_network = Mock()
@@ -1011,7 +1011,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIsInstance(data["data"], list)
 
     @patch("app.blink")
-    def test_get_devices_no_network(self, mock_blink):
+    def test_get_devices_no_network(self, mock_blink) -> None:
         """Test get_devices with invalid network ID."""
         mock_blink.networks = {}
 
@@ -1019,7 +1019,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     @patch("app.blink")
-    def test_arm_system_invalid_network(self, mock_blink):
+    def test_arm_system_invalid_network(self, mock_blink) -> None:
         """Test arm_system with invalid network ID."""
         mock_blink.networks = {}
 
@@ -1027,7 +1027,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     @patch("app.blink")
-    def test_arm_system_missing_data(self, mock_blink):
+    def test_arm_system_missing_data(self, mock_blink) -> None:
         """Test arm_system with missing armed parameter."""
         mock_network = Mock()
         mock_blink.networks = {"12345": mock_network}
@@ -1036,7 +1036,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     @patch("app.blink")
-    def test_get_camera_thumbnail_not_found(self, mock_blink):
+    def test_get_camera_thumbnail_not_found(self, mock_blink) -> None:
         """Test get_camera_thumbnail with invalid camera ID."""
         mock_blink.cameras = {}
 
@@ -1044,7 +1044,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     @patch("app.SETTINGS_FILE", "/tmp/test_settings.json")
-    def test_get_settings_endpoint(self):
+    def test_get_settings_endpoint(self) -> None:
         """Test get_settings endpoint."""
         with patch("pathlib.Path.exists", return_value=False):
             response = self.client.get("/api/settings")
@@ -1055,14 +1055,14 @@ class TestAPIEndpoints(unittest.TestCase):
             # Check for the actual key name used in the response
             self.assertIn("temperatureUnits", data["data"])
 
-    def test_save_settings_missing_data(self):
+    def test_save_settings_missing_data(self) -> None:
         """Test save_settings with missing data."""
         response = self.client.post("/api/settings", json={})
         # This should return 400 for missing required fields
         self.assertIn(response.status_code, [400, 500])  # Accept either for now
 
     @patch("app.clear_all_caches")
-    def test_clear_cache_success(self, mock_clear):
+    def test_clear_cache_success(self, mock_clear) -> None:
         """Test successful cache clearing."""
         mock_clear.return_value = {"cleared": True}
 
@@ -1113,7 +1113,7 @@ class TestAPIEndpoints(unittest.TestCase):
 
     @patch("app.CACHE_DIR", "/tmp/test_cache")
     @patch("app.app")
-    def test_initialize_cache_paths(self, mock_app):
+    def test_initialize_cache_paths(self, mock_app) -> None:
         """Test cache path initialization."""
         # Setup mock app config
         mock_app.config.get.return_value = "/tmp/test_cache"
@@ -1130,7 +1130,7 @@ class TestAPIEndpoints(unittest.TestCase):
 
         self.assertTrue(success)
 
-    def test_config_class_attributes(self):
+    def test_config_class_attributes(self) -> None:
         """Test Config class has expected attributes."""
         from app import Config
 
@@ -1143,14 +1143,14 @@ class TestAPIEndpoints(unittest.TestCase):
 class TestClipManagement(unittest.TestCase):
     """Test clip management functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink_connection")
     @patch("app.blink")
-    def test_get_clips_no_storage_param(self, mock_blink, mock_connection):
+    def test_get_clips_no_storage_param(self, mock_blink, mock_connection) -> None:
         """Test get_clips without storage parameter defaults to cloud."""
         # Mock the connection to return empty list
         mock_connection.execute.return_value = []
@@ -1162,7 +1162,7 @@ class TestClipManagement(unittest.TestCase):
         self.assertEqual(data["data"], [])
 
     @patch("app.blink")
-    def test_get_clips_invalid_storage(self, mock_blink):
+    def test_get_clips_invalid_storage(self, mock_blink) -> None:
         """Test get_clips with invalid storage parameter."""
         response = self.client.get("/api/clips?storage=invalid")
         # Should return 400 for invalid storage type
@@ -1172,13 +1172,13 @@ class TestClipManagement(unittest.TestCase):
 class TestStreamingEndpoints(unittest.TestCase):
     """Test streaming-related endpoints."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_get_liveview_no_camera(self, mock_blink):
+    def test_get_liveview_no_camera(self, mock_blink) -> None:
         """Test get_liveview with invalid camera ID."""
         mock_blink.cameras = {}
 
@@ -1189,7 +1189,7 @@ class TestStreamingEndpoints(unittest.TestCase):
 class TestThumbnailManagement(unittest.TestCase):
     """Test thumbnail management and caching functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -1201,7 +1201,7 @@ class TestThumbnailManagement(unittest.TestCase):
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_get_camera_thumbnail_timestamp_success(self, mock_blink):
+    def test_get_camera_thumbnail_timestamp_success(self, mock_blink) -> None:
         """Test get_camera_thumbnail_timestamp endpoint."""
         # Mock camera with thumbnail
         mock_camera = Mock()
@@ -1223,7 +1223,9 @@ class TestThumbnailManagement(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_refresh_camera_thumbnail_success(self, mock_connection, mock_blink):
+    def test_refresh_camera_thumbnail_success(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test refresh_camera_thumbnail endpoint."""
         # Mock camera
         mock_camera = Mock()
@@ -1248,14 +1250,14 @@ class TestThumbnailManagement(unittest.TestCase):
 class TestClipProcessing(unittest.TestCase):
     """Test clip processing and management functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_local_clips_success(self, mock_connection, mock_blink):
+    def test_get_local_clips_success(self, mock_connection, mock_blink) -> None:
         """Test getting local clips successfully."""
         from datetime import datetime
 
@@ -1284,7 +1286,7 @@ class TestClipProcessing(unittest.TestCase):
 
     @patch("app.blink_connection")
     @patch("app.blink")
-    def test_download_clip_not_found(self, mock_blink, mock_connection):
+    def test_download_clip_not_found(self, mock_blink, mock_connection) -> None:
         """Test downloading non-existent clip."""
         # Mock connection to raise BlinkError for non-existent clip
         from blink_connection import BlinkError
@@ -1298,12 +1300,12 @@ class TestClipProcessing(unittest.TestCase):
 class TestAsyncOperations(unittest.TestCase):
     """Test async operations and background tasks."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_async_functions_exist(self):
+    def test_async_functions_exist(self) -> None:
         """Test that async functions exist and are callable."""
         from app import initialize_blink, verify_2fa_and_save
 
@@ -1314,7 +1316,9 @@ class TestAsyncOperations(unittest.TestCase):
     @patch("app.executor")
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_refresh_system_endpoint(self, mock_connection, mock_blink, mock_executor):
+    def test_refresh_system_endpoint(
+        self, mock_connection, mock_blink, mock_executor
+    ) -> None:
         """Test system refresh endpoint with proper mocking."""
         # Mock the executor and blink refresh
         mock_executor.submit.return_value = Mock()
@@ -1332,7 +1336,7 @@ class TestAsyncOperations(unittest.TestCase):
 class TestFileOperations(unittest.TestCase):
     """Test file operations and I/O functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -1343,7 +1347,7 @@ class TestFileOperations(unittest.TestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    def test_camera_id_class(self):
+    def test_camera_id_class(self) -> None:
         """Test CameraId class functionality."""
         from app import CameraId
 
@@ -1354,7 +1358,7 @@ class TestFileOperations(unittest.TestCase):
         self.assertIsInstance(camera_id, CameraId)
 
     @patch("pathlib.Path.mkdir")
-    def test_cache_directory_creation(self, mock_mkdir):
+    def test_cache_directory_creation(self, mock_mkdir) -> None:
         """Test cache directory creation."""
         from app import startup
 
@@ -1370,7 +1374,7 @@ class TestFileOperations(unittest.TestCase):
             # Should attempt to create directories
             self.assertTrue(mock_mkdir.called)
 
-    def test_cache_cleanup_operations(self):
+    def test_cache_cleanup_operations(self) -> None:
         """Test cache cleanup operations."""
         from app import clear_all_caches
 
@@ -1383,12 +1387,12 @@ class TestFileOperations(unittest.TestCase):
 class TestErrorScenarios(unittest.TestCase):
     """Test various error scenarios and edge cases."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_invalid_json_requests(self):
+    def test_invalid_json_requests(self) -> None:
         """Test endpoints with invalid JSON."""
         endpoints = [
             ("/api/system/12345/arm", "POST"),
@@ -1404,7 +1408,7 @@ class TestErrorScenarios(unittest.TestCase):
                 self.assertIn(response.status_code, [400, 500])
 
     @patch("app.blink")
-    def test_camera_operations_with_missing_camera(self, mock_blink):
+    def test_camera_operations_with_missing_camera(self, mock_blink) -> None:
         """Test camera operations with missing camera."""
         mock_blink.cameras = {}
 
@@ -1422,12 +1426,12 @@ class TestErrorScenarios(unittest.TestCase):
 class TestConfigurationEdgeCases(unittest.TestCase):
     """Test configuration and setup edge cases."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_config_class_completeness(self):
+    def test_config_class_completeness(self) -> None:
         """Test Config class has expected attributes."""
         from app import Config
 
@@ -1436,14 +1440,14 @@ class TestConfigurationEdgeCases(unittest.TestCase):
         self.assertTrue(hasattr(Config, "LOG_FILE"))
 
     @patch("app.SETTINGS_FILE", None)
-    def test_settings_with_none_file(self):
+    def test_settings_with_none_file(self) -> None:
         """Test settings operations when SETTINGS_FILE is None."""
         # This should be handled gracefully
         response = self.client.get("/api/settings")
         # Should either work with defaults or return an error
         self.assertIn(response.status_code, [200, 500])
 
-    def test_create_device_data_function(self):
+    def test_create_device_data_function(self) -> None:
         """Test create_device_data utility function."""
         from app import CameraId, create_device_data
 
@@ -1472,13 +1476,13 @@ class TestConfigurationEdgeCases(unittest.TestCase):
 class TestStreamingOperations(unittest.TestCase):
     """Test streaming and live view operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_get_liveview_success(self, mock_blink):
+    def test_get_liveview_success(self, mock_blink) -> None:
         """Test successful live view request."""
         # Mock camera with live view capability
         mock_camera = Mock()
@@ -1493,13 +1497,13 @@ class TestStreamingOperations(unittest.TestCase):
 class TestAdvancedEndpoints(unittest.TestCase):
     """Test advanced API endpoints for better coverage."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_get_clip_thumbnail_check_success(self, mock_blink):
+    def test_get_clip_thumbnail_check_success(self, mock_blink) -> None:
         """Test clip thumbnail check endpoint."""
         # Mock clip in cache
         with patch("app.clips_cache") as mock_cache:
@@ -1513,7 +1517,7 @@ class TestAdvancedEndpoints(unittest.TestCase):
                 self.assertTrue(data["success"])
 
     @patch("app.blink")
-    def test_get_clip_thumbnail_check_not_found(self, mock_blink):
+    def test_get_clip_thumbnail_check_not_found(self, mock_blink) -> None:
         """Test clip thumbnail check when not found."""
         with patch("app.clips_download_cache") as mock_cache:
             mock_cache.get.return_value = None
@@ -1524,13 +1528,13 @@ class TestAdvancedEndpoints(unittest.TestCase):
             self.assertTrue(data["success"])
             self.assertFalse(data["data"]["available"])
 
-    def test_index_route(self):
+    def test_index_route(self) -> None:
         """Test the main index route."""
         response = self.client.get("/")
         # Should redirect to login if not authenticated
         self.assertEqual(response.status_code, 302)
 
-    def test_auth_route(self):
+    def test_auth_route(self) -> None:
         """Test the login route (auth functionality)."""
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
@@ -1538,7 +1542,7 @@ class TestAdvancedEndpoints(unittest.TestCase):
         self.assertIn("text/html", response.content_type)
 
     @patch("app.blink")
-    def test_get_clips_invalid_storage_type(self, mock_blink):
+    def test_get_clips_invalid_storage_type(self, mock_blink) -> None:
         """Test get_clips with invalid storage type."""
         response = self.client.get("/api/clips?storage=invalid")
         self.assertEqual(response.status_code, 400)
@@ -1547,7 +1551,7 @@ class TestAdvancedEndpoints(unittest.TestCase):
         self.assertFalse(data["success"])
 
     @patch("app.blink")
-    def test_get_clips_missing_storage_param(self, mock_blink):
+    def test_get_clips_missing_storage_param(self, mock_blink) -> None:
         """Test get_clips without storage parameter."""
         # Mock blink to be available
         mock_blink.available = True
@@ -1567,7 +1571,7 @@ class TestAdvancedEndpoints(unittest.TestCase):
 class TestLoggingAndSetup(unittest.TestCase):
     """Test logging setup and configuration functions."""
 
-    def test_setup_logging_function_exists(self):
+    def test_setup_logging_function_exists(self) -> None:
         """Test that setup_logging function exists."""
         from app import setup_logging
 
@@ -1575,7 +1579,7 @@ class TestLoggingAndSetup(unittest.TestCase):
         self.assertTrue(callable(setup_logging))
 
     @patch("app.CACHE_DIR", "/tmp/test_cache")
-    def test_setup_logging_execution(self):
+    def test_setup_logging_execution(self) -> None:
         """Test setup_logging can be executed."""
         from app import setup_logging
 
@@ -1597,7 +1601,7 @@ class TestLoggingAndSetup(unittest.TestCase):
 class TestDataTypes(unittest.TestCase):
     """Test custom data types and classes."""
 
-    def test_clip_id_types(self):
+    def test_clip_id_types(self) -> None:
         """Test ClipId type functionality."""
         from app import ClipId
 
@@ -1608,7 +1612,7 @@ class TestDataTypes(unittest.TestCase):
         local_id = ClipId.from_local("sync1", "clip123")
         self.assertIsInstance(local_id, ClipId)
 
-    def test_camera_id_functionality(self):
+    def test_camera_id_functionality(self) -> None:
         """Test CameraId functionality."""
         from app import CameraId
 
@@ -1623,7 +1627,7 @@ class TestDataTypes(unittest.TestCase):
 class TestErrorContextManager(unittest.TestCase):
     """Test the error_context context manager."""
 
-    def test_error_context_success(self):
+    def test_error_context_success(self) -> None:
         """Test error_context with successful operation."""
         from app import error_context
 
@@ -1633,7 +1637,7 @@ class TestErrorContextManager(unittest.TestCase):
 
         self.assertEqual(result, "success")
 
-    def test_error_context_with_exception(self):
+    def test_error_context_with_exception(self) -> None:
         """Test error_context with exception."""
         from app import BlinkError, error_context
 
@@ -1645,24 +1649,24 @@ class TestErrorContextManager(unittest.TestCase):
 class TestTemplateRoutes(unittest.TestCase):
     """Test template rendering routes."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_index_template_rendering(self):
+    def test_index_template_rendering(self) -> None:
         """Test index template redirects when not authenticated."""
         response = self.client.get("/")
         # Should redirect to login when not authenticated
         self.assertEqual(response.status_code, 302)
 
-    def test_auth_template_rendering(self):
+    def test_auth_template_rendering(self) -> None:
         """Test login template renders successfully."""
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/html", response.content_type)
 
-    def test_static_file_serving(self):
+    def test_static_file_serving(self) -> None:
         """Test that static files can be served."""
         # Test a common static file path
         response = self.client.get("/static/nonexistent.css")
@@ -1673,7 +1677,7 @@ class TestTemplateRoutes(unittest.TestCase):
 class TestThumbnailCacheOperations(unittest.TestCase):
     """Test thumbnail cache operations and background updates."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -1732,7 +1736,9 @@ class TestThumbnailCacheOperations(unittest.TestCase):
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("pathlib.Path.unlink")
     @patch("pathlib.Path.exists")
-    def test_thumbnail_cache_file_cleanup(self, mock_exists, mock_unlink, mock_cache):
+    def test_thumbnail_cache_file_cleanup(
+        self, mock_exists, mock_unlink, mock_cache
+    ) -> None:
         """Test thumbnail cache file cleanup operations."""
         from app import CameraId, update_camera_thumbnail
 
@@ -1781,7 +1787,7 @@ class TestThumbnailCacheOperations(unittest.TestCase):
                 mock_unlink.assert_called()
 
     @patch("app.blink")
-    def test_get_camera_thumbnail_with_cache_miss(self, mock_blink):
+    def test_get_camera_thumbnail_with_cache_miss(self, mock_blink) -> None:
         """Test camera thumbnail endpoint with cache miss."""
         # Mock camera
         mock_camera = Mock()
@@ -1809,7 +1815,7 @@ class TestThumbnailCacheOperations(unittest.TestCase):
 class TestClipDownloadOperations(unittest.TestCase):
     """Test clip download and file operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -1817,7 +1823,7 @@ class TestClipDownloadOperations(unittest.TestCase):
     @patch("app.blink")
     @patch("app.blink_connection")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_download_cloud_clip_success(self, mock_connection, mock_blink):
+    def test_download_cloud_clip_success(self, mock_connection, mock_blink) -> None:
         """Test successful cloud clip download."""
 
         # Mock cloud clip metadata
@@ -1848,7 +1854,9 @@ class TestClipDownloadOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_download_clip_not_found_in_metadata(self, mock_connection, mock_blink):
+    def test_download_clip_not_found_in_metadata(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test downloading clip not found in metadata."""
         # Mock empty metadata
         mock_blink.get_videos_metadata.return_value = []
@@ -1863,7 +1871,9 @@ class TestClipDownloadOperations(unittest.TestCase):
     @patch("app.blink")
     @patch("app.blink_connection")
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_download_clip_cached_file_exists(self, mock_connection, mock_blink):
+    def test_download_clip_cached_file_exists(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test downloading clip when cached file exists."""
 
         # Mock cloud clip metadata
@@ -1887,7 +1897,7 @@ class TestClipDownloadOperations(unittest.TestCase):
                 self.assertIn(response.status_code, [200, 500])
 
     @patch("app.clips_cache")
-    def test_process_clip_thumbnail_generation(self, mock_cache):
+    def test_process_clip_thumbnail_generation(self, mock_cache) -> None:
         """Test clip processing for thumbnail generation."""
         # Mock cached clip
         mock_cache.get.return_value = {
@@ -1908,14 +1918,14 @@ class TestClipDownloadOperations(unittest.TestCase):
 class TestLocalClipOperations(unittest.TestCase):
     """Test local clip operations and USB storage."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_local_clips_with_manifest(self, mock_connection, mock_blink):
+    def test_get_local_clips_with_manifest(self, mock_connection, mock_blink) -> None:
         """Test getting local clips with manifest data."""
         from datetime import datetime
 
@@ -1949,7 +1959,7 @@ class TestLocalClipOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_local_clips_no_manifest(self, mock_connection, mock_blink):
+    def test_get_local_clips_no_manifest(self, mock_connection, mock_blink) -> None:
         """Test getting local clips when manifest not ready."""
         # Mock sync module without ready manifest
         mock_sync = Mock()
@@ -1970,7 +1980,7 @@ class TestLocalClipOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_local_clips_sync_error(self, mock_connection, mock_blink):
+    def test_get_local_clips_sync_error(self, mock_connection, mock_blink) -> None:
         """Test getting local clips with sync error."""
         # Mock sync module that raises error
         mock_sync = Mock()
@@ -1988,7 +1998,7 @@ class TestLocalClipOperations(unittest.TestCase):
 class TestAdvancedAPIEndpoints(unittest.TestCase):
     """Test advanced API endpoints and edge cases."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -1999,7 +2009,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
         setup_test_globals()
 
     @patch("app.blink")
-    def test_get_devices_with_cameras(self, mock_blink):
+    def test_get_devices_with_cameras(self, mock_blink) -> None:
         """Test get_devices endpoint with camera data."""
         # Mock blink availability
         mock_blink.available = True
@@ -2047,7 +2057,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_arm_system_success(self, mock_connection, mock_blink):
+    def test_arm_system_success(self, mock_connection, mock_blink) -> None:
         """Test successful system arm/disarm."""
         # Mock blink availability
         mock_blink.available = True
@@ -2074,7 +2084,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
         self.assertTrue(data["success"])
 
     @patch("app.blink")
-    def test_get_clip_thumbnail_success(self, mock_blink):
+    def test_get_clip_thumbnail_success(self, mock_blink) -> None:
         """Test getting clip thumbnail."""
         with patch("app.clips_download_cache") as mock_cache:
             # Mock Path object for thumbnail
@@ -2100,7 +2110,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
                 )
 
     @patch("app.blink")
-    def test_get_clip_thumbnail_not_found(self, mock_blink):
+    def test_get_clip_thumbnail_not_found(self, mock_blink) -> None:
         """Test getting non-existent clip thumbnail."""
         with patch("app.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
@@ -2112,13 +2122,13 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
 class TestStreamingAndLiveView(unittest.TestCase):
     """Test streaming and live view functionality."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_get_liveview_with_stream_manager(self, mock_blink):
+    def test_get_liveview_with_stream_manager(self, mock_blink) -> None:
         """Test live view with stream manager."""
         # Mock blink to be available
         mock_blink.available = True
@@ -2147,7 +2157,7 @@ class TestStreamingAndLiveView(unittest.TestCase):
                 self.assertTrue(data["success"])
 
     @patch("app.blink")
-    def test_get_liveview_stream_manager_error(self, mock_blink):
+    def test_get_liveview_stream_manager_error(self, mock_blink) -> None:
         """Test live view with stream manager error."""
         # Mock blink to be available
         mock_blink.available = True
@@ -2172,13 +2182,13 @@ class TestStreamingAndLiveView(unittest.TestCase):
 class TestBackgroundTaskExecution(unittest.TestCase):
     """Test background task execution and async operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.executor")
-    def test_background_task_submission(self, mock_executor):
+    def test_background_task_submission(self, mock_executor) -> None:
         """Test background task submission."""
         from app import clear_all_caches
 
@@ -2196,7 +2206,7 @@ class TestBackgroundTaskExecution(unittest.TestCase):
             self.assertIsInstance(result, dict)
 
     @patch("app.blink_connection")
-    def test_blink_connection_error_handling(self, mock_connection):
+    def test_blink_connection_error_handling(self, mock_connection) -> None:
         """Test blink connection error handling."""
         from app import BlinkError
 
@@ -2215,13 +2225,13 @@ class TestBackgroundTaskExecution(unittest.TestCase):
 class TestSettingsAdvanced(unittest.TestCase):
     """Test advanced settings operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.SETTINGS_FILE", "/tmp/test_settings.json")
-    def test_save_settings_with_validation(self):
+    def test_save_settings_with_validation(self) -> None:
         """Test saving settings with validation."""
         valid_settings = {
             "temperature_unit": "celsius",
@@ -2240,7 +2250,7 @@ class TestSettingsAdvanced(unittest.TestCase):
                 self.assertTrue(data["success"])
 
     @patch("app.SETTINGS_FILE", "/tmp/test_settings.json")
-    def test_load_settings_with_existing_file(self):
+    def test_load_settings_with_existing_file(self) -> None:
         """Test loading settings from existing file."""
         mock_settings = {
             "temperatureUnits": "fahrenheit",
@@ -2262,13 +2272,13 @@ class TestSettingsAdvanced(unittest.TestCase):
 class TestVideoProcessingOperations(unittest.TestCase):
     """Test video processing and thumbnail generation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_existing_file(self):
+    def test_generate_clip_thumbnail_existing_file(self) -> None:
         """Test thumbnail generation when file already exists."""
         from app import generate_clip_thumbnail
 
@@ -2281,7 +2291,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
             self.assertIsNotNone(result)
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_ffmpeg_success(self):
+    def test_generate_clip_thumbnail_ffmpeg_success(self) -> None:
         """Test successful thumbnail generation with ffmpeg."""
         from app import generate_clip_thumbnail
 
@@ -2301,7 +2311,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
                 self.assertEqual(mock_run.call_count, 2)
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_ffmpeg_error(self):
+    def test_generate_clip_thumbnail_ffmpeg_error(self) -> None:
         """Test thumbnail generation with ffmpeg error."""
         from app import generate_clip_thumbnail
 
@@ -2319,7 +2329,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
                     mock_logger.error.assert_called()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_first_frame(self):
+    def test_generate_clip_thumbnail_first_frame(self) -> None:
         """Test thumbnail generation for first frame."""
         from app import generate_clip_thumbnail
 
@@ -2338,7 +2348,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
 class TestCacheLoadingOperations(unittest.TestCase):
     """Test cache loading and initialization operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -2349,7 +2359,7 @@ class TestCacheLoadingOperations(unittest.TestCase):
         setup_test_globals()
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
-    def test_load_thumbnail_cache_success(self):
+    def test_load_thumbnail_cache_success(self) -> None:
         """Test successful thumbnail cache loading."""
         from app import load_thumbnail_cache
 
@@ -2385,7 +2395,7 @@ class TestCacheLoadingOperations(unittest.TestCase):
                         self.assertTrue(mock_cache.__setitem__.called)
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_load_clips_cache_success(self):
+    def test_load_clips_cache_success(self) -> None:
         """Test successful clips cache loading."""
         from app import load_clips_cache
 
@@ -2407,7 +2417,7 @@ class TestCacheLoadingOperations(unittest.TestCase):
                         # Should populate cache with clip data
                         self.assertTrue(mock_cache.__setitem__.called)
 
-    def test_cache_loading_with_missing_directory(self):
+    def test_cache_loading_with_missing_directory(self) -> None:
         """Test cache loading when directory doesn't exist."""
         from app import load_clips_cache, load_thumbnail_cache
 
@@ -2424,7 +2434,7 @@ class TestCacheLoadingOperations(unittest.TestCase):
 class TestCommandLineInterface(unittest.TestCase):
     """Test command line interface and argument parsing."""
 
-    def test_parse_arguments_default(self):
+    def test_parse_arguments_default(self) -> None:
         """Test argument parsing with defaults."""
         from app import parse_arguments
 
@@ -2435,7 +2445,7 @@ class TestCommandLineInterface(unittest.TestCase):
         self.assertEqual(args.port, 5000)  # Default port
         self.assertFalse(args.debug)  # Default debug
 
-    def test_parse_arguments_all_options(self):
+    def test_parse_arguments_all_options(self) -> None:
         """Test argument parsing with all options."""
         from app import parse_arguments
 
@@ -2459,7 +2469,7 @@ class TestCommandLineInterface(unittest.TestCase):
         self.assertEqual(args.cache, "/custom/cache")
         self.assertEqual(args.log_level, "DEBUG")
 
-    def test_parse_arguments_help(self):
+    def test_parse_arguments_help(self) -> None:
         """Test help argument."""
         from app import parse_arguments
 
@@ -2471,7 +2481,7 @@ class TestApplicationInitialization(unittest.TestCase):
     """Test application initialization and startup."""
 
     @patch("app.CACHE_DIR", "/tmp/test_cache")
-    def test_app_initialization_sequence(self):
+    def test_app_initialization_sequence(self) -> None:
         """Test application initialization sequence."""
         from app import initialize_cache_paths, setup_logging
 
@@ -2489,7 +2499,7 @@ class TestApplicationInitialization(unittest.TestCase):
                 setup_logging()
                 self.assertTrue(mock_logger.called)
 
-    def test_config_class_values(self):
+    def test_config_class_values(self) -> None:
         """Test Config class has reasonable values."""
         from app import Config
 
@@ -2499,7 +2509,7 @@ class TestApplicationInitialization(unittest.TestCase):
         self.assertGreater(Config.LOG_MAX_BYTES, 0)
         self.assertGreater(Config.LOG_BACKUP_COUNT, 0)
 
-    def test_global_variables_initialization(self):
+    def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
         import app
 
@@ -2513,13 +2523,13 @@ class TestApplicationInitialization(unittest.TestCase):
 class TestErrorHandlingAdvanced(unittest.TestCase):
     """Test advanced error handling scenarios."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_network_timeout_handling(self, mock_blink):
+    def test_network_timeout_handling(self, mock_blink) -> None:
         """Test handling of network timeouts."""
         from app import BlinkError
 
@@ -2534,7 +2544,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
             # Should handle timeout gracefully
             self.assertIn(response.status_code, [500, 404])
 
-    def test_file_system_error_handling(self):
+    def test_file_system_error_handling(self) -> None:
         """Test handling of file system errors."""
         from app import clear_all_caches
 
@@ -2546,7 +2556,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
                 self.assertIsInstance(result, dict)
 
     @patch("app.blink")
-    def test_json_parsing_error_handling(self, mock_blink):
+    def test_json_parsing_error_handling(self, mock_blink) -> None:
         """Test handling of JSON parsing errors."""
         # Test malformed JSON in request
         response = self.client.post(
@@ -2560,7 +2570,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
 class TestPerformanceOptimizations(unittest.TestCase):
     """Test performance optimization features."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -2571,7 +2581,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
         setup_test_globals()
 
     @patch("app.thumbnail_cache")
-    def test_cache_hit_optimization(self, mock_cache):
+    def test_cache_hit_optimization(self, mock_cache) -> None:
         """Test cache hit optimization."""
 
         # Mock cache hit
@@ -2599,7 +2609,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
             # Should use cached version (newer timestamp)
             self.assertIn(response.status_code, [200, 500])
 
-    def test_fifo_cache_management(self):
+    def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
         from app import ThumbnailCache
 
@@ -2614,7 +2624,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
         self.assertIn("key2", cache)
         self.assertIn("key3", cache)
 
-    def test_cache_size_limits(self):
+    def test_cache_size_limits(self) -> None:
         """Test cache size limits are enforced."""
         from app import Config
 
@@ -2626,12 +2636,12 @@ class TestPerformanceOptimizations(unittest.TestCase):
 class TestSecurityFeatures(unittest.TestCase):
     """Test security features and input validation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_xss_prevention_in_endpoints(self):
+    def test_xss_prevention_in_endpoints(self) -> None:
         """Test XSS prevention in various endpoints."""
         malicious_inputs = [
             "<script>alert('xss')</script>",
@@ -2649,7 +2659,7 @@ class TestSecurityFeatures(unittest.TestCase):
             # Should reject or sanitize malicious input
             self.assertIn(response.status_code, [400, 500])
 
-    def test_path_traversal_prevention(self):
+    def test_path_traversal_prevention(self) -> None:
         """Test path traversal prevention."""
         malicious_paths = [
             "../../../etc/passwd",
@@ -2665,7 +2675,7 @@ class TestSecurityFeatures(unittest.TestCase):
             # Should prevent path traversal
             self.assertIn(response.status_code, [400, 404, 500])
 
-    def test_input_length_limits(self):
+    def test_input_length_limits(self) -> None:
         """Test input length limits are enforced."""
         # Test very long input
         long_input = "a" * 10000
@@ -2681,13 +2691,13 @@ class TestSecurityFeatures(unittest.TestCase):
 class TestLocalClipDownloadOperations(unittest.TestCase):
     """Test local clip download operations and caching."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_download_local_clip_cached_success(self, mock_blink):
+    def test_download_local_clip_cached_success(self, mock_blink) -> None:
         """Test downloading cached local clip."""
 
         # Mock cached clip
@@ -2706,7 +2716,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
                 self.assertIn(response.status_code, [200, 500])
 
     @patch("app.blink")
-    def test_download_local_clip_cache_miss(self, mock_blink):
+    def test_download_local_clip_cache_miss(self, mock_blink) -> None:
         """Test downloading local clip with cache miss."""
         # Mock sync module with local storage
         mock_item = Mock()
@@ -2733,7 +2743,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
                 self.assertIn(response.status_code, [200, 404, 500])
 
     @patch("app.blink")
-    def test_download_local_clip_sync_not_found(self, mock_blink):
+    def test_download_local_clip_sync_not_found(self, mock_blink) -> None:
         """Test downloading local clip when sync module not found."""
         # Mock blink to be available
         mock_blink.available = True
@@ -2747,7 +2757,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         self.assertFalse(data["success"])
 
     @patch("app.blink")
-    def test_download_local_clip_item_not_found(self, mock_blink):
+    def test_download_local_clip_item_not_found(self, mock_blink) -> None:
         """Test downloading local clip when item not found in manifest."""
         # Mock blink to be available
         mock_blink.available = True
@@ -2765,14 +2775,16 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
 class TestLiveStreamOperations(unittest.TestCase):
     """Test live streaming operations and stream management."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_liveview_stream_initialization(self, mock_connection, mock_blink):
+    def test_get_liveview_stream_initialization(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test live view stream initialization."""
         # Mock blink to be available
         mock_blink.available = True
@@ -2814,7 +2826,9 @@ class TestLiveStreamOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_liveview_stream_init_failure(self, mock_connection, mock_blink):
+    def test_get_liveview_stream_init_failure(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test live view when stream initialization fails."""
         mock_camera = Mock()
         mock_blink.cameras = {12345: mock_camera}
@@ -2829,7 +2843,9 @@ class TestLiveStreamOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_liveview_stream_manager_integration(self, mock_connection, mock_blink):
+    def test_get_liveview_stream_manager_integration(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test live view with stream manager integration."""
         # Mock blink to be available
         mock_blink.available = True
@@ -2863,7 +2879,7 @@ class TestLiveStreamOperations(unittest.TestCase):
 class TestAdvancedClipOperations(unittest.TestCase):
     """Test advanced clip operations and processing."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -2876,7 +2892,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_cloud_clips_with_pagination(self, mock_connection, mock_blink):
+    def test_get_cloud_clips_with_pagination(self, mock_connection, mock_blink) -> None:
         """Test getting cloud clips with pagination support."""
         # Mock multiple clips
         mock_clips = []
@@ -2904,7 +2920,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_cloud_clips_empty_result(self, mock_connection, mock_blink):
+    def test_get_cloud_clips_empty_result(self, mock_connection, mock_blink) -> None:
         """Test getting cloud clips when no clips exist."""
         mock_blink.get_videos_metadata.return_value = []
         mock_connection.execute.return_value = []
@@ -2918,7 +2934,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_get_cloud_clips_api_error(self, mock_connection, mock_blink):
+    def test_get_cloud_clips_api_error(self, mock_connection, mock_blink) -> None:
         """Test getting cloud clips when API returns error."""
         from app import BlinkError
 
@@ -2930,7 +2946,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
         self.assertIn(response.status_code, [500, 400])
 
     @patch("app.clips_cache")
-    def test_process_clip_with_existing_thumbnail(self, mock_cache):
+    def test_process_clip_with_existing_thumbnail(self, mock_cache) -> None:
         """Test clip processing when thumbnail already exists."""
         mock_cache.get.return_value = {
             "file_path": "/tmp/test_clip.mp4",
@@ -2950,7 +2966,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
             self.assertTrue(data["success"])
 
     @patch("app.clips_cache")
-    def test_process_clip_thumbnail_generation_failure(self, mock_cache):
+    def test_process_clip_thumbnail_generation_failure(self, mock_cache) -> None:
         """Test clip processing when thumbnail generation fails."""
         mock_cache.get.return_value = {
             "file_path": "/tmp/test_clip.mp4",
@@ -2968,7 +2984,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
 class TestSystemDeviceOperations(unittest.TestCase):
     """Test system device operations and management."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -2980,7 +2996,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_get_devices_with_multiple_cameras(self, mock_blink):
+    def test_get_devices_with_multiple_cameras(self, mock_blink) -> None:
         """Test get_devices with multiple cameras and complex data."""
         # Mock blink to be available
         mock_blink.available = True
@@ -3026,7 +3042,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
             self.assertEqual(len(data["data"]), 4)  # 3 cameras + 1 sync module
 
     @patch("app.blink")
-    def test_get_devices_with_offline_sync(self, mock_blink):
+    def test_get_devices_with_offline_sync(self, mock_blink) -> None:
         """Test get_devices when sync module is offline."""
         # Mock blink to be available
         mock_blink.available = True
@@ -3049,7 +3065,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_arm_system_with_network_delay(self, mock_connection, mock_blink):
+    def test_arm_system_with_network_delay(self, mock_connection, mock_blink) -> None:
         """Test arm system with network delay simulation."""
         mock_blink.available = True
 
@@ -3077,7 +3093,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
 class TestThumbnailAdvancedOperations(unittest.TestCase):
     """Test advanced thumbnail operations and caching."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3090,7 +3106,9 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.thumbnail_cache")
-    def test_get_camera_thumbnail_with_stale_cache(self, mock_cache, mock_blink):
+    def test_get_camera_thumbnail_with_stale_cache(
+        self, mock_cache, mock_blink
+    ) -> None:
         """Test camera thumbnail with stale cache data."""
         mock_blink.available = True
 
@@ -3126,7 +3144,7 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
                 self.assertEqual(response.status_code, 200)
 
     @patch("app.blink")
-    def test_refresh_camera_thumbnail_with_error(self, mock_blink):
+    def test_refresh_camera_thumbnail_with_error(self, mock_blink) -> None:
         """Test refresh camera thumbnail when snap_picture fails."""
         mock_blink.available = True
 
@@ -3147,7 +3165,7 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
             self.assertIn(response.status_code, [500, 400])
 
     @patch("app.blink")
-    def test_get_camera_thumbnail_timestamp_with_invalid_url(self, mock_blink):
+    def test_get_camera_thumbnail_timestamp_with_invalid_url(self, mock_blink) -> None:
         """Test thumbnail timestamp extraction with invalid URL."""
         mock_blink.available = True
 
@@ -3170,7 +3188,7 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
 class TestErrorRecoveryMechanisms(unittest.TestCase):
     """Test error recovery and resilience mechanisms."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3183,7 +3201,9 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_connection_recovery_after_failure(self, mock_connection, mock_blink):
+    def test_connection_recovery_after_failure(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test connection recovery after initial failure."""
         mock_blink.available = True
 
@@ -3215,7 +3235,7 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
         response2 = self.client.get("/api/camera/12345/thumbnail")
         self.assertIn(response2.status_code, [200, 500])
 
-    def test_graceful_degradation_with_missing_dependencies(self):
+    def test_graceful_degradation_with_missing_dependencies(self) -> None:
         """Test graceful degradation when dependencies are missing."""
         # Test behavior when optional dependencies are not available
         with patch("app.stream_manager", None):
@@ -3228,7 +3248,7 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
                 self.assertIn(response.status_code, [500, 404])
 
     @patch("app.blink")
-    def test_memory_pressure_handling(self, mock_blink):
+    def test_memory_pressure_handling(self, mock_blink) -> None:
         """Test handling of memory pressure scenarios."""
         # Simulate memory pressure by filling cache
         with patch("app.clips_cache") as mock_cache:
@@ -3245,7 +3265,7 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
 class TestConcurrencyAndThreadSafety(unittest.TestCase):
     """Test concurrency and thread safety mechanisms."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3304,7 +3324,7 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
         self.assertEqual(call_count, 2)
 
     @patch("app.blink")
-    def test_thread_safe_cache_operations(self, mock_blink):
+    def test_thread_safe_cache_operations(self, mock_blink) -> None:
         """Test thread-safe cache operations."""
         import threading
 
@@ -3340,12 +3360,12 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
 class TestResourceManagement(unittest.TestCase):
     """Test resource management and cleanup."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    def test_cache_size_enforcement(self):
+    def test_cache_size_enforcement(self) -> None:
         """Test that cache size limits are enforced."""
         from app import ThumbnailCache
 
@@ -3365,7 +3385,7 @@ class TestResourceManagement(unittest.TestCase):
         self.assertIn("key4", cache)
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_disk_space_management(self):
+    def test_disk_space_management(self) -> None:
         """Test disk space management for cached files."""
         from app import clear_all_caches
 
@@ -3383,7 +3403,7 @@ class TestResourceManagement(unittest.TestCase):
                 # Should attempt cleanup
                 self.assertIsInstance(result, dict)
 
-    def test_memory_usage_optimization(self):
+    def test_memory_usage_optimization(self) -> None:
         """Test memory usage optimization strategies."""
         from app import Config
 
@@ -3408,7 +3428,7 @@ class TestResourceManagement(unittest.TestCase):
 class TestCacheMaintenanceOperations(unittest.TestCase):
     """Test cache maintenance and cleanup operations."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3421,7 +3441,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("app.blink")
-    def test_load_thumbnail_cache_with_valid_files(self, mock_blink):
+    def test_load_thumbnail_cache_with_valid_files(self, mock_blink) -> None:
         """Test loading thumbnail cache with valid files."""
         from app import load_thumbnail_cache
 
@@ -3453,7 +3473,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("app.blink")
-    def test_load_thumbnail_cache_cleanup_old_files(self, mock_blink):
+    def test_load_thumbnail_cache_cleanup_old_files(self, mock_blink) -> None:
         """Test thumbnail cache cleanup of old files."""
         from app import load_thumbnail_cache
 
@@ -3478,7 +3498,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
                     mock_file.unlink.assert_called()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_load_clips_cache_with_various_formats(self):
+    def test_load_clips_cache_with_various_formats(self) -> None:
         """Test loading clips cache with various file formats."""
         from app import load_clips_cache
 
@@ -3500,7 +3520,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
                     call_args_list = mock_cache.__setitem__.call_args_list
                     self.assertGreater(len(call_args_list), 0)
 
-    def test_cache_maintenance_with_size_limits(self):
+    def test_cache_maintenance_with_size_limits(self) -> None:
         """Test cache maintenance respects size limits."""
         from app import ThumbnailCache
 
@@ -3529,7 +3549,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 class TestAdvancedSystemOperations(unittest.TestCase):
     """Test advanced system operations and edge cases."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3542,7 +3562,9 @@ class TestAdvancedSystemOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_system_refresh_with_multiple_networks(self, mock_connection, mock_blink):
+    def test_system_refresh_with_multiple_networks(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test system refresh with multiple networks."""
         # Mock multiple networks
         networks = {}
@@ -3566,7 +3588,7 @@ class TestAdvancedSystemOperations(unittest.TestCase):
             self.assertTrue(data["success"])
 
     @patch("app.blink")
-    def test_get_systems_with_complex_network_data(self, mock_blink):
+    def test_get_systems_with_complex_network_data(self, mock_blink) -> None:
         """Test get_systems with complex network configurations."""
         # Mock networks with various states
         networks = {}
@@ -3589,7 +3611,7 @@ class TestAdvancedSystemOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_arm_system_partial_failure(self, mock_connection, mock_blink):
+    def test_arm_system_partial_failure(self, mock_connection, mock_blink) -> None:
         """Test arm system with partial failure scenarios."""
         mock_network = Mock()
         mock_network.arm = Mock()
@@ -3607,7 +3629,7 @@ class TestAdvancedSystemOperations(unittest.TestCase):
 class TestAdvancedFileOperations(unittest.TestCase):
     """Test advanced file operations and edge cases."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3619,7 +3641,7 @@ class TestAdvancedFileOperations(unittest.TestCase):
         self.client = app.test_client()
 
     @patch("app.SETTINGS_FILE", "/tmp/test_settings.json")
-    def test_settings_file_corruption_recovery(self):
+    def test_settings_file_corruption_recovery(self) -> None:
         """Test recovery from corrupted settings file."""
         # Mock corrupted JSON file
         with patch("pathlib.Path.exists", return_value=True):
@@ -3633,7 +3655,7 @@ class TestAdvancedFileOperations(unittest.TestCase):
                 self.assertTrue(data["success"])
 
     @patch("app.SETTINGS_FILE", "/tmp/test_settings.json")
-    def test_settings_file_permission_error(self):
+    def test_settings_file_permission_error(self) -> None:
         """Test handling of settings file permission errors."""
         valid_settings = {"temperature_unit": "celsius"}
 
@@ -3645,7 +3667,7 @@ class TestAdvancedFileOperations(unittest.TestCase):
             # Should handle permission errors gracefully
             self.assertIn(response.status_code, [500, 400])
 
-    def test_cache_directory_creation_failure(self):
+    def test_cache_directory_creation_failure(self) -> None:
         """Test handling of cache directory creation failure."""
         from app import initialize_cache_paths
 
@@ -3661,7 +3683,7 @@ class TestAdvancedFileOperations(unittest.TestCase):
 class TestPerformanceOptimizationAdvanced(unittest.TestCase):
     """Test advanced performance optimization features."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3673,7 +3695,7 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
         self.client = app.test_client()
 
     @patch("app.blink")
-    def test_thumbnail_cache_hit_optimization(self, mock_blink):
+    def test_thumbnail_cache_hit_optimization(self, mock_blink) -> None:
         """Test thumbnail cache hit optimization."""
         # Mock camera with older thumbnail than cache
         mock_camera = Mock()
@@ -3695,7 +3717,7 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
                 # Should use cached version without update
                 self.assertIn(response.status_code, [200, 500])
 
-    def test_concurrent_request_handling(self):
+    def test_concurrent_request_handling(self) -> None:
         """Test handling of concurrent requests."""
         import threading
 
@@ -3728,7 +3750,7 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
         self.assertEqual(len(results), 10)
 
     @patch("app.clips_cache")
-    def test_memory_efficient_caching(self, mock_cache):
+    def test_memory_efficient_caching(self, mock_cache) -> None:
         """Test memory-efficient caching strategies."""
         # Mock cache operations
         mock_cache.__len__.return_value = 45  # Near capacity
@@ -3748,7 +3770,7 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
 class TestSecurityAdvanced(unittest.TestCase):
     """Test advanced security features and edge cases."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3759,7 +3781,7 @@ class TestSecurityAdvanced(unittest.TestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    def test_input_sanitization_comprehensive(self):
+    def test_input_sanitization_comprehensive(self) -> None:
         """Test comprehensive input sanitization."""
         from app import validate_string_input
 
@@ -3779,7 +3801,7 @@ class TestSecurityAdvanced(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_string_input(malicious_input, 1000, "test_field")
 
-    def test_path_traversal_comprehensive(self):
+    def test_path_traversal_comprehensive(self) -> None:
         """Test comprehensive path traversal prevention."""
         malicious_paths = [
             "../../../etc/passwd",
@@ -3798,7 +3820,7 @@ class TestSecurityAdvanced(unittest.TestCase):
                 # Should prevent path traversal
                 self.assertIn(response.status_code, [400, 404, 500])
 
-    def test_rate_limiting_simulation(self):
+    def test_rate_limiting_simulation(self) -> None:
         """Test rate limiting behavior simulation."""
         # Simulate rapid requests
         responses = []
@@ -3811,7 +3833,7 @@ class TestSecurityAdvanced(unittest.TestCase):
         for status_code in responses:
             self.assertIn(status_code, [200, 429, 500])  # 429 = Too Many Requests
 
-    def test_large_payload_handling(self):
+    def test_large_payload_handling(self) -> None:
         """Test handling of large payloads."""
         # Test with very large JSON payload
         large_payload = {
@@ -3828,7 +3850,7 @@ class TestSecurityAdvanced(unittest.TestCase):
 class TestIntegrationScenarios(unittest.TestCase):
     """Test integration scenarios and end-to-end workflows."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3841,7 +3863,7 @@ class TestIntegrationScenarios(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_complete_camera_workflow(self, mock_connection, mock_blink):
+    def test_complete_camera_workflow(self, mock_connection, mock_blink) -> None:
         """Test complete camera workflow from system list to thumbnail."""
         # Mock complete system setup
         mock_camera = Mock()
@@ -3887,7 +3909,7 @@ class TestIntegrationScenarios(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_complete_clip_workflow(self, mock_connection, mock_blink):
+    def test_complete_clip_workflow(self, mock_connection, mock_blink) -> None:
         """Test complete clip workflow from list to download."""
         # Mock clip data
         mock_clip = {
@@ -3918,7 +3940,7 @@ class TestIntegrationScenarios(unittest.TestCase):
                     response2 = self.client.get("/api/clip/123456/download")
                     self.assertIn(response2.status_code, [200, 500])
 
-    def test_error_recovery_workflow(self):
+    def test_error_recovery_workflow(self) -> None:
         """Test error recovery across multiple requests."""
         # Test that system recovers from errors gracefully
 
@@ -3941,7 +3963,7 @@ class TestIntegrationScenarios(unittest.TestCase):
 class TestThumbnailUpdateMechanisms(unittest.TestCase):
     """Test detailed thumbnail update mechanisms and race conditions."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -3955,7 +3977,9 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
     @patch("app.thumbnail_cache")
     @patch("app.executor")
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
-    def test_thumbnail_update_complete_workflow(self, mock_executor, mock_cache):
+    def test_thumbnail_update_complete_workflow(
+        self, mock_executor, mock_cache
+    ) -> None:
         """Test complete thumbnail update workflow with file operations."""
         from app import CameraId, update_camera_thumbnail
 
@@ -3999,7 +4023,9 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
 
     @patch("app.thumbnail_cache")
     @patch("app.executor")
-    def test_thumbnail_update_race_condition_skip(self, mock_executor, mock_cache):
+    def test_thumbnail_update_race_condition_skip(
+        self, mock_executor, mock_cache
+    ) -> None:
         """Test thumbnail update skips when race condition detected."""
         from app import CameraId, update_camera_thumbnail
 
@@ -4030,7 +4056,9 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
     @patch("app.thumbnail_cache")
     @patch("app.executor")
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
-    def test_thumbnail_update_file_cleanup_error(self, mock_executor, mock_cache):
+    def test_thumbnail_update_file_cleanup_error(
+        self, mock_executor, mock_cache
+    ) -> None:
         """Test thumbnail update handles file cleanup errors."""
         from app import CameraId, update_camera_thumbnail
 
@@ -4065,7 +4093,7 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
 class TestAdvancedStreamingOperations(unittest.TestCase):
     """Test advanced streaming operations and HLS transcoding."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -4143,7 +4171,9 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_livestream_async_initialization_failure(self, mock_connection, mock_blink):
+    def test_livestream_async_initialization_failure(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test livestream when async initialization fails."""
         mock_camera = Mock()
         mock_blink.cameras = {12345: mock_camera}
@@ -4161,7 +4191,7 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
     @patch("app.blink")
     @patch("app.blink_connection")
     @patch("app.stream_manager", None)
-    def test_livestream_no_stream_manager(self, mock_connection, mock_blink):
+    def test_livestream_no_stream_manager(self, mock_connection, mock_blink) -> None:
         """Test livestream when stream manager is not available."""
         mock_camera = Mock()
         mock_blink.cameras = {12345: mock_camera}
@@ -4179,13 +4209,13 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
 class TestVideoProcessingAdvanced(unittest.TestCase):
     """Test advanced video processing and thumbnail generation."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_thumbnail_middle_frame_success(self):
+    def test_generate_thumbnail_middle_frame_success(self) -> None:
         """Test thumbnail generation for middle frame with ffmpeg."""
         from pathlib import Path
 
@@ -4214,7 +4244,7 @@ class TestVideoProcessingAdvanced(unittest.TestCase):
                 self.assertIsNotNone(result)
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_thumbnail_first_frame_success(self):
+    def test_generate_thumbnail_first_frame_success(self) -> None:
         """Test thumbnail generation for first frame."""
         from pathlib import Path
 
@@ -4236,7 +4266,7 @@ class TestVideoProcessingAdvanced(unittest.TestCase):
                 self.assertIsNotNone(result)
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_thumbnail_ffprobe_timeout(self):
+    def test_generate_thumbnail_ffprobe_timeout(self) -> None:
         """Test thumbnail generation with ffprobe timeout."""
         import subprocess
         from pathlib import Path
@@ -4258,7 +4288,7 @@ class TestVideoProcessingAdvanced(unittest.TestCase):
                     mock_logger.error.assert_called()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_thumbnail_ffmpeg_failure(self):
+    def test_generate_thumbnail_ffmpeg_failure(self) -> None:
         """Test thumbnail generation with ffmpeg failure."""
         import subprocess
         from pathlib import Path
@@ -4278,7 +4308,7 @@ class TestVideoProcessingAdvanced(unittest.TestCase):
                     mock_logger.error.assert_called()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_thumbnail_invalid_duration(self):
+    def test_generate_thumbnail_invalid_duration(self) -> None:
         """Test thumbnail generation with invalid duration from ffprobe."""
         from pathlib import Path
 
@@ -4306,7 +4336,7 @@ class TestVideoProcessingAdvanced(unittest.TestCase):
 class TestAdvancedCacheOperations(unittest.TestCase):
     """Test advanced cache operations and maintenance."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -4319,7 +4349,7 @@ class TestAdvancedCacheOperations(unittest.TestCase):
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("app.blink")
-    def test_thumbnail_cache_cleanup_invalid_cameras(self, mock_blink):
+    def test_thumbnail_cache_cleanup_invalid_cameras(self, mock_blink) -> None:
         """Test thumbnail cache cleanup removes files for invalid cameras."""
         from app import load_thumbnail_cache
 
@@ -4364,7 +4394,7 @@ class TestAdvancedCacheOperations(unittest.TestCase):
 
     @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("app.blink")
-    def test_thumbnail_cache_keep_recent_files(self, mock_blink):
+    def test_thumbnail_cache_keep_recent_files(self, mock_blink) -> None:
         """Test thumbnail cache keeps most recent files per camera."""
         from app import load_thumbnail_cache
 
@@ -4406,7 +4436,7 @@ class TestAdvancedCacheOperations(unittest.TestCase):
                         old_file.unlink.assert_called()
 
     @patch("app.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_clips_cache_loading_with_metadata(self):
+    def test_clips_cache_loading_with_metadata(self) -> None:
         """Test clips cache loading with metadata extraction."""
         from app import load_clips_cache
 
@@ -4447,7 +4477,7 @@ class TestAdvancedCacheOperations(unittest.TestCase):
 class TestComplexErrorScenarios(unittest.TestCase):
     """Test complex error scenarios and recovery mechanisms."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -4460,7 +4490,7 @@ class TestComplexErrorScenarios(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_cascading_failure_recovery(self, mock_connection, mock_blink):
+    def test_cascading_failure_recovery(self, mock_connection, mock_blink) -> None:
         """Test recovery from cascading failures."""
         # Mock cascading failures
         mock_blink.cameras = {12345: Mock()}
@@ -4484,7 +4514,7 @@ class TestComplexErrorScenarios(unittest.TestCase):
         response3 = self.client.get("/api/camera/12345/thumbnail")
         self.assertIn(response3.status_code, [200, 500])
 
-    def test_resource_exhaustion_handling(self):
+    def test_resource_exhaustion_handling(self) -> None:
         """Test handling of resource exhaustion scenarios."""
         # Simulate memory pressure
         with patch("app.clips_cache") as mock_cache:
@@ -4497,7 +4527,7 @@ class TestComplexErrorScenarios(unittest.TestCase):
             self.assertIn(response.status_code, [200, 500])
 
     @patch("app.blink")
-    def test_partial_system_failure(self, mock_blink):
+    def test_partial_system_failure(self, mock_blink) -> None:
         """Test handling when part of system fails but other parts work."""
         # Mock partial system failure
         mock_network1 = Mock()
@@ -4526,7 +4556,7 @@ class TestComplexErrorScenarios(unittest.TestCase):
 class TestAdvancedIntegrationWorkflows(unittest.TestCase):
     """Test advanced integration workflows and end-to-end scenarios."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -4539,7 +4569,7 @@ class TestAdvancedIntegrationWorkflows(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_complete_multi_camera_workflow(self, mock_connection, mock_blink):
+    def test_complete_multi_camera_workflow(self, mock_connection, mock_blink) -> None:
         """Test complete workflow with multiple cameras and operations."""
         # Mock complex system with multiple cameras
         cameras = {}
@@ -4593,7 +4623,9 @@ class TestAdvancedIntegrationWorkflows(unittest.TestCase):
 
     @patch("app.blink")
     @patch("app.blink_connection")
-    def test_system_state_consistency_workflow(self, mock_connection, mock_blink):
+    def test_system_state_consistency_workflow(
+        self, mock_connection, mock_blink
+    ) -> None:
         """Test system state consistency across operations."""
         # Mock system state
         mock_network = Mock()
@@ -4627,7 +4659,7 @@ class TestAdvancedIntegrationWorkflows(unittest.TestCase):
         # State should have changed
         self.assertNotEqual(initial_armed_state, final_armed_state)
 
-    def test_concurrent_operations_stability(self):
+    def test_concurrent_operations_stability(self) -> None:
         """Test system stability under concurrent operations."""
         import threading
 
@@ -4674,7 +4706,7 @@ class TestAdvancedIntegrationWorkflows(unittest.TestCase):
 class TestCriticalPathCoverage(unittest.TestCase):
     """Test critical code paths for maximum coverage impact."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -4685,7 +4717,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    def test_application_startup_sequence(self):
+    def test_application_startup_sequence(self) -> None:
         """Test application startup and initialization."""
         from app import app as flask_app
 
@@ -4693,7 +4725,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertIsNotNone(flask_app)
         self.assertTrue(flask_app.config.get("TESTING"))
 
-    def test_global_variable_access(self):
+    def test_global_variable_access(self) -> None:
         """Test access to global variables."""
         import app
 
@@ -4702,7 +4734,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertTrue(hasattr(app, "thumbnail_cache"))
         self.assertTrue(hasattr(app, "clips_cache"))
 
-    def test_config_class_instantiation(self):
+    def test_config_class_instantiation(self) -> None:
         """Test Config class and its attributes."""
         from app import Config
 
@@ -4711,7 +4743,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertIsInstance(Config.CLIPS_CACHE_SIZE, int)
         self.assertGreater(Config.CLIPS_CACHE_SIZE, 0)
 
-    def test_fifo_cache_basic_operations(self):
+    def test_fifo_cache_basic_operations(self) -> None:
         """Test cache basic operations."""
         from app import ThumbnailCache
 
@@ -4729,7 +4761,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # Test length
         self.assertEqual(len(cache), 1)
 
-    def test_camera_id_basic_functionality(self):
+    def test_camera_id_basic_functionality(self) -> None:
         """Test CameraId basic functionality."""
         from app import CameraId
 
@@ -4742,7 +4774,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # Test that it's an instance of CameraId
         self.assertIsInstance(camera_id, CameraId)
 
-    def test_clip_id_basic_functionality(self):
+    def test_clip_id_basic_functionality(self) -> None:
         """Test ClipId basic functionality."""
         from app import ClipId
 
@@ -4754,7 +4786,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         local_id = ClipId.from_local("sync1", "clip123")
         self.assertIsInstance(local_id, ClipId)
 
-    def test_error_context_manager_basic(self):
+    def test_error_context_manager_basic(self) -> None:
         """Test error_context manager basic functionality."""
         from app import error_context
 
@@ -4764,7 +4796,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
         self.assertEqual(result, "success")
 
-    def test_validate_string_input_basic_cases(self):
+    def test_validate_string_input_basic_cases(self) -> None:
         """Test validate_string_input with basic valid cases."""
         from app import validate_string_input
 
@@ -4775,7 +4807,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         result2 = validate_string_input("  trimmed  ", 100, "test")
         self.assertEqual(result2, "trimmed")
 
-    def test_extract_timestamp_basic_cases(self):
+    def test_extract_timestamp_basic_cases(self) -> None:
         """Test extract_thumbnail_timestamp with basic cases."""
         from app import extract_thumbnail_timestamp
 
@@ -4789,7 +4821,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         timestamp = extract_thumbnail_timestamp(url_without_ts)
         self.assertEqual(timestamp, 0)
 
-    def test_create_api_response_basic_cases(self):
+    def test_create_api_response_basic_cases(self) -> None:
         """Test create_api_response with basic cases."""
         from app import create_api_response
 
@@ -4808,7 +4840,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertEqual(status, 500)
 
     @patch("app.blink", None)
-    def test_requires_blink_decorator_functionality(self):
+    def test_requires_blink_decorator_functionality(self) -> None:
         """Test requires_blink decorator basic functionality."""
         # Test endpoint that requires blink when blink is None
         response = self.client.get("/api/system/list")
@@ -4816,7 +4848,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # Should return 401 or 500 depending on implementation
         self.assertIn(response.status_code, [401, 500])
 
-    def test_basic_route_accessibility(self):
+    def test_basic_route_accessibility(self) -> None:
         """Test basic route accessibility."""
         # Test that basic routes are accessible
         routes_to_test = [
@@ -4829,7 +4861,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
             response = self.client.get(route)
             self.assertIn(response.status_code, expected_codes)
 
-    def test_http_methods_handling(self):
+    def test_http_methods_handling(self) -> None:
         """Test HTTP methods handling."""
         # Test GET method on settings
         response = self.client.get("/api/settings")
@@ -4839,7 +4871,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         response = self.client.post("/api/settings", json={})
         self.assertIn(response.status_code, [200, 400, 500])
 
-    def test_json_response_format(self):
+    def test_json_response_format(self) -> None:
         """Test JSON response format consistency."""
         response = self.client.get("/api/settings")
 
@@ -4850,7 +4882,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
             # Should have timestamp
             self.assertIn("timestamp", data)
 
-    def test_cache_operations_basic(self):
+    def test_cache_operations_basic(self) -> None:
         """Test basic cache operations."""
         from app import clear_all_caches
 
@@ -4858,21 +4890,21 @@ class TestCriticalPathCoverage(unittest.TestCase):
         result = clear_all_caches()
         self.assertIsInstance(result, dict)
 
-    def test_logging_functionality_basic(self):
+    def test_logging_functionality_basic(self) -> None:
         """Test basic logging functionality."""
         from app import setup_logging
 
         # Test that setup_logging function exists
         self.assertTrue(callable(setup_logging))
 
-    def test_path_operations_basic(self):
+    def test_path_operations_basic(self) -> None:
         """Test basic path operations."""
         from app import initialize_cache_paths
 
         # Test that initialize_cache_paths function exists
         self.assertTrue(callable(initialize_cache_paths))
 
-    def test_async_function_existence(self):
+    def test_async_function_existence(self) -> None:
         """Test that async functions exist."""
         from app import initialize_blink, verify_2fa_and_save
 
@@ -4880,7 +4912,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertTrue(callable(initialize_blink))
         self.assertTrue(callable(verify_2fa_and_save))
 
-    def test_constants_and_globals(self):
+    def test_constants_and_globals(self) -> None:
         """Test constants and global variables."""
         import app
 
@@ -4889,7 +4921,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertTrue(hasattr(app, "SETTINGS_FILE"))
         self.assertTrue(hasattr(app, "CREDENTIALS_FILE"))
 
-    def test_import_statements_coverage(self):
+    def test_import_statements_coverage(self) -> None:
         """Test import statements and module loading."""
         # Test that key modules can be imported
         try:
@@ -4908,7 +4940,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
         self.assertTrue(success)
 
-    def test_exception_classes(self):
+    def test_exception_classes(self) -> None:
         """Test custom exception classes."""
         from app import BlinkError
 
@@ -4917,7 +4949,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertIsInstance(error, Exception)
         self.assertEqual(str(error), "Test error")
 
-    def test_type_annotations_coverage(self):
+    def test_type_annotations_coverage(self) -> None:
         """Test functions with type annotations."""
         from app import create_api_response, validate_string_input
 
@@ -4929,7 +4961,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         result = validate_string_input("test", 10, "field")
         self.assertIsInstance(result, str)
 
-    def test_conditional_imports(self):
+    def test_conditional_imports(self) -> None:
         """Test conditional import handling."""
         # Test that the app handles missing optional dependencies gracefully
         import app
@@ -4937,7 +4969,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # The app should still function even if some imports fail
         self.assertIsNotNone(app.app)
 
-    def test_environment_variable_handling(self):
+    def test_environment_variable_handling(self) -> None:
         """Test environment variable handling."""
         import os
 
@@ -4953,7 +4985,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         if original_secret:
             os.environ["SECRET_KEY"] = original_secret
 
-    def test_flask_app_configuration(self):
+    def test_flask_app_configuration(self) -> None:
         """Test Flask app configuration."""
         from app import app as flask_app
 
@@ -4961,7 +4993,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertIsInstance(flask_app.config, dict)
         self.assertTrue(flask_app.config.get("TESTING"))
 
-    def test_request_context_handling(self):
+    def test_request_context_handling(self) -> None:
         """Test request context handling."""
         # Test that requests are handled properly
         with self.client:
@@ -4969,7 +5001,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
             # Should handle request context without errors
             self.assertIsNotNone(response)
 
-    def test_response_headers(self):
+    def test_response_headers(self) -> None:
         """Test response headers."""
         response = self.client.get("/api/settings")
 
@@ -4977,13 +5009,13 @@ class TestCriticalPathCoverage(unittest.TestCase):
         if response.status_code == 200:
             self.assertIn("application/json", response.content_type)
 
-    def test_error_handling_basic(self):
+    def test_error_handling_basic(self) -> None:
         """Test basic error handling."""
         # Test that invalid routes return proper error codes
         response = self.client.get("/nonexistent/route")
         self.assertEqual(response.status_code, 404)
 
-    def test_method_not_allowed_handling(self):
+    def test_method_not_allowed_handling(self) -> None:
         """Test method not allowed handling."""
         # Test POST on logout (should be allowed)
         response = self.client.post("/logout")
@@ -4994,7 +5026,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         response = self.client.get("/logout")
         self.assertEqual(response.status_code, 405)
 
-    def test_content_type_handling(self):
+    def test_content_type_handling(self) -> None:
         """Test content type handling."""
         # Test JSON content type
         response = self.client.post(
@@ -5004,7 +5036,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # Should handle JSON content type
         self.assertIn(response.status_code, [200, 400, 500])
 
-    def test_url_parameter_handling(self):
+    def test_url_parameter_handling(self) -> None:
         """Test URL parameter handling."""
         # Test URL with parameters
         response = self.client.get("/api/clips?storage=cloud")
@@ -5012,7 +5044,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # Should handle URL parameters
         self.assertIn(response.status_code, [200, 400, 500])
 
-    def test_static_file_handling(self):
+    def test_static_file_handling(self) -> None:
         """Test static file handling."""
         # Test static file route
         response = self.client.get("/static/nonexistent.css")
@@ -5029,20 +5061,20 @@ class TestCriticalPathCoverage(unittest.TestCase):
 class TestCriticalPathCoverageFixed(unittest.TestCase):
     """Test critical paths and basic functionality with proper mocking."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test environment."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.is_authenticated")
-    def test_basic_route_accessibility(self, mock_auth):
+    def test_basic_route_accessibility(self, mock_auth) -> None:
         """Test that basic routes are accessible."""
         mock_auth.return_value = False
         response = self.client.get("/")
         # Should redirect to auth or return 200
         self.assertIn(response.status_code, [200, 302])
 
-    def test_camera_id_basic_functionality(self):
+    def test_camera_id_basic_functionality(self) -> None:
         """Test CameraId basic functionality."""
         # Test valid camera ID
         camera_id = CameraId("12345")
@@ -5052,7 +5084,7 @@ class TestCriticalPathCoverageFixed(unittest.TestCase):
         with self.assertRaises(ValueError):
             CameraId("invalid-id-with-special-chars!")
 
-    def test_clip_id_basic_functionality(self):
+    def test_clip_id_basic_functionality(self) -> None:
         """Test ClipId basic functionality."""
         # Test valid clip ID
         clip_id = ClipId("67890")
@@ -5062,7 +5094,7 @@ class TestCriticalPathCoverageFixed(unittest.TestCase):
         with self.assertRaises(ValueError):
             ClipId("invalid@clip#id")
 
-    def test_create_api_response_basic_cases(self):
+    def test_create_api_response_basic_cases(self) -> None:
         """Test create_api_response function."""
         from app import create_api_response
 
@@ -5082,7 +5114,7 @@ class TestCriticalPathCoverageFixed(unittest.TestCase):
         self.assertFalse(error_response["success"])
         self.assertEqual(error_status, 200)  # Default status
 
-    def test_fifo_cache_basic_operations(self):
+    def test_fifo_cache_basic_operations(self) -> None:
         """Test cache basic operations."""
         from app import ThumbnailCache
 
@@ -5106,7 +5138,7 @@ class TestCriticalPathCoverageFixed(unittest.TestCase):
 
     @patch("app.blink_connection")
     @patch("app.thumbnail_cache")
-    def test_global_variable_access(self, mock_cache, mock_connection):
+    def test_global_variable_access(self, mock_cache, mock_connection) -> None:
         """Test global variable access."""
         # Test that global variables can be accessed
         self.assertIsNotNone(app)
@@ -5119,7 +5151,7 @@ class TestCriticalPathCoverageFixed(unittest.TestCase):
         thumbnail_cache.get("test")
         mock_cache.get.assert_called_with("test")
 
-    def test_import_statements_coverage(self):
+    def test_import_statements_coverage(self) -> None:
         """Test that import statements are covered."""
         # Test that key classes can be imported
         from app import CameraId, ClipId, Config, ThumbnailCache
@@ -5134,7 +5166,7 @@ class TestCommandLineInterfaceFixed(unittest.TestCase):
     """Test command line interface functionality."""
 
     @patch("sys.argv", ["app.py"])
-    def test_parse_arguments_default(self):
+    def test_parse_arguments_default(self) -> None:
         """Test argument parsing with defaults."""
         # Test that argument parsing works
         try:
@@ -5155,7 +5187,7 @@ class TestCommandLineInterfaceFixed(unittest.TestCase):
             self.assertTrue(True)
 
     @patch("sys.argv", ["app.py", "--host", "0.0.0.0", "--port", "8080", "--debug"])
-    def test_parse_arguments_all_options(self):
+    def test_parse_arguments_all_options(self) -> None:
         """Test argument parsing with all options."""
         try:
             import argparse
@@ -5174,7 +5206,7 @@ class TestCommandLineInterfaceFixed(unittest.TestCase):
         except Exception:
             self.assertTrue(True)
 
-    def test_parse_arguments_help(self):
+    def test_parse_arguments_help(self) -> None:
         """Test help argument handling."""
         try:
             import argparse
@@ -5192,7 +5224,7 @@ class TestApplicationInitializationFixed(unittest.TestCase):
 
     @patch("app.initialize_cache_paths")
     @patch("app.setup_logging")
-    def test_app_initialization_sequence(self, mock_logging, mock_cache):
+    def test_app_initialization_sequence(self, mock_logging, mock_cache) -> None:
         """Test application initialization sequence."""
         # Mock the initialization functions
         mock_cache.return_value = None
@@ -5202,7 +5234,7 @@ class TestApplicationInitializationFixed(unittest.TestCase):
         self.assertIsNotNone(app)
         self.assertTrue(hasattr(app, "config"))
 
-    def test_global_variables_initialization(self):
+    def test_global_variables_initialization(self) -> None:
         """Test that global variables are properly initialized."""
         # Test that key global variables exist
         self.assertTrue(hasattr(sys.modules[__name__], "app"))
@@ -5214,7 +5246,7 @@ class TestApplicationInitializationFixed(unittest.TestCase):
 class TestDataTypesFixed(unittest.TestCase):
     """Test custom data types and validation."""
 
-    def test_camera_id_functionality(self):
+    def test_camera_id_functionality(self) -> None:
         """Test CameraId class functionality."""
         # Test valid camera ID
         valid_id = "12345"
@@ -5222,7 +5254,7 @@ class TestDataTypesFixed(unittest.TestCase):
         self.assertEqual(str(camera_id), valid_id)
         self.assertEqual(camera_id.value, valid_id)
 
-    def test_clip_id_types(self):
+    def test_clip_id_types(self) -> None:
         """Test ClipId with different types."""
         # Test string clip ID
         clip_id_str = ClipId("67890")
@@ -5235,14 +5267,14 @@ class TestDataTypesFixed(unittest.TestCase):
 class TestTemplateRoutesFixed(unittest.TestCase):
     """Test template rendering routes."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         app.config["TESTING"] = True
         self.client = app.test_client()
 
     @patch("app.is_authenticated")
     @patch("app.render_template")
-    def test_index_template_rendering(self, mock_render, mock_auth):
+    def test_index_template_rendering(self, mock_render, mock_auth) -> None:
         """Test index template rendering."""
         mock_auth.return_value = True
         mock_render.return_value = "<html>Test</html>"
@@ -5252,7 +5284,7 @@ class TestTemplateRoutesFixed(unittest.TestCase):
         self.assertIn(response.status_code, [200, 302])
 
     @patch("app.render_template")
-    def test_auth_template_rendering(self, mock_render):
+    def test_auth_template_rendering(self, mock_render) -> None:
         """Test auth template rendering."""
         mock_render.return_value = "<html>Auth</html>"
 
@@ -5268,7 +5300,7 @@ class TestTemplateRoutesFixed(unittest.TestCase):
 class TestAdvancedEndpointsFixed(unittest.TestCase):
     """Test advanced API endpoints with proper mocking."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test client."""
         from test_utils import setup_test_globals
 
@@ -5280,7 +5312,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         self.client = app.test_client()
 
     @patch("app.is_authenticated")
-    def test_index_route(self, mock_auth):
+    def test_index_route(self, mock_auth) -> None:
         """Test index route functionality."""
         mock_auth.return_value = False
         response = self.client.get("/")
@@ -5288,7 +5320,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         self.assertIn(response.status_code, [200, 302])
 
     @patch("app.is_authenticated")
-    def test_auth_route(self, mock_auth):
+    def test_auth_route(self, mock_auth) -> None:
         """Test auth route functionality."""
         mock_auth.return_value = False
 
@@ -5298,7 +5330,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
 
     @patch("app.clips_metadata_cache")
     @patch("app.blink")
-    def test_get_clips_missing_storage_param(self, mock_blink, mock_cache):
+    def test_get_clips_missing_storage_param(self, mock_blink, mock_cache) -> None:
         """Test get clips without storage parameter."""
         # Mock blink to be available
         mock_blink.available = True
@@ -5309,7 +5341,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     @patch("app.clips_metadata_cache")
-    def test_get_clip_thumbnail_check_success(self, mock_cache):
+    def test_get_clip_thumbnail_check_success(self, mock_cache) -> None:
         """Test clip thumbnail check success."""
         mock_cache.get.return_value = {"thumbnail": "exists"}
 
@@ -5317,7 +5349,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         self.assertIn(response.status_code, [200, 404])
 
     @patch("app.clips_metadata_cache")
-    def test_get_clip_thumbnail_check_not_found(self, mock_cache):
+    def test_get_clip_thumbnail_check_not_found(self, mock_cache) -> None:
         """Test clip thumbnail check not found."""
         mock_cache.get.return_value = None
 
@@ -5334,7 +5366,7 @@ class TestConfigurationEdgeCasesFixed(unittest.TestCase):
     """Test configuration edge cases and error handling."""
 
     @patch("app.blink_connection")
-    def test_create_device_data_function(self, mock_connection):
+    def test_create_device_data_function(self, mock_connection) -> None:
         """Test create_device_data function if it exists."""
         from unittest.mock import Mock
 
@@ -5366,7 +5398,7 @@ class TestConfigurationEdgeCasesFixed(unittest.TestCase):
             self.assertTrue(True)
 
     @patch("builtins.open", side_effect=FileNotFoundError)
-    def test_settings_with_none_file(self, mock_open):
+    def test_settings_with_none_file(self, mock_open) -> None:
         """Test settings loading with missing file."""
         try:
             from app import load_settings
@@ -5383,7 +5415,7 @@ class TestFileOperationsFixed(unittest.TestCase):
 
     @patch("os.makedirs")
     @patch("os.path.exists")
-    def test_cache_directory_creation(self, mock_exists, mock_makedirs):
+    def test_cache_directory_creation(self, mock_exists, mock_makedirs) -> None:
         """Test cache directory creation."""
         mock_exists.return_value = False
 
@@ -5397,7 +5429,7 @@ class TestFileOperationsFixed(unittest.TestCase):
             # Function may not exist
             self.assertTrue(True)
 
-    def test_camera_id_class(self):
+    def test_camera_id_class(self) -> None:
         """Test CameraId class validation."""
         # Test valid camera ID
         camera_id = CameraId("valid123")
@@ -5417,7 +5449,7 @@ class TestFileOperationsFixed(unittest.TestCase):
 class TestPerformanceOptimizationsFixed(unittest.TestCase):
     """Test performance optimizations and caching."""
 
-    def test_cache_hit_optimization(self):
+    def test_cache_hit_optimization(self) -> None:
         """Test cache hit optimization."""
         from app import ThumbnailCache
 
@@ -5431,7 +5463,7 @@ class TestPerformanceOptimizationsFixed(unittest.TestCase):
             result = cache.get("key1")
             self.assertEqual(result, "value1")
 
-    def test_fifo_cache_management(self):
+    def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
         from app import ThumbnailCache
 
@@ -5464,7 +5496,7 @@ class TestCacheLoadingOperationsFixed(unittest.TestCase):
     """Test cache loading and maintenance operations."""
 
     @patch("os.path.exists")
-    def test_cache_loading_with_missing_directory(self, mock_exists):
+    def test_cache_loading_with_missing_directory(self, mock_exists) -> None:
         """Test cache loading when directory doesn't exist."""
         mock_exists.return_value = False
 
@@ -5479,7 +5511,7 @@ class TestCacheLoadingOperationsFixed(unittest.TestCase):
 
     @patch("os.listdir")
     @patch("os.path.exists")
-    def test_load_clips_cache_success(self, mock_exists, mock_listdir):
+    def test_load_clips_cache_success(self, mock_exists, mock_listdir) -> None:
         """Test successful clips cache loading."""
         mock_exists.return_value = True
         mock_listdir.return_value = ["clip1.mp4", "clip2.mp4"]
@@ -5494,7 +5526,7 @@ class TestCacheLoadingOperationsFixed(unittest.TestCase):
 
     @patch("os.listdir")
     @patch("os.path.exists")
-    def test_load_thumbnail_cache_success(self, mock_exists, mock_listdir):
+    def test_load_thumbnail_cache_success(self, mock_exists, mock_listdir) -> None:
         """Test successful thumbnail cache loading."""
         mock_exists.return_value = True
         mock_listdir.return_value = ["thumb1.jpg", "thumb2.jpg"]
@@ -5516,7 +5548,7 @@ class TestCacheLoadingOperationsFixed(unittest.TestCase):
 class TestResourceManagementFixed(unittest.TestCase):
     """Test resource management and cleanup."""
 
-    def test_cache_size_enforcement(self):
+    def test_cache_size_enforcement(self) -> None:
         """Test cache size enforcement."""
         from app import ThumbnailCache
 
@@ -5533,7 +5565,7 @@ class TestResourceManagementFixed(unittest.TestCase):
         for i in range(5, 10):
             self.assertIn(f"key{i}", cache)
 
-    def test_memory_usage_optimization(self):
+    def test_memory_usage_optimization(self) -> None:
         """Test memory usage optimization."""
         from app import ThumbnailCache
 

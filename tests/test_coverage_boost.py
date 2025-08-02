@@ -22,7 +22,7 @@ from app import BaseId, CameraId, ClipId, Config
 class TestBaseIdNotImplementedMethods(unittest.TestCase):
     """Test BaseId NotImplementedError methods - lines 211, 222."""
 
-    def test_base_id_get_pattern_not_implemented(self):
+    def test_base_id_get_pattern_not_implemented(self) -> None:
         """Test BaseId._get_pattern raises NotImplementedError."""
 
         # Create a test subclass that implements the abstract methods
@@ -49,7 +49,7 @@ class TestBaseIdNotImplementedMethods(unittest.TestCase):
             # Use an invalid value to trigger the error path
             IncompleteTestId1("invalid_value")
 
-    def test_base_id_get_type_name_not_implemented(self):
+    def test_base_id_get_type_name_not_implemented(self) -> None:
         """Test BaseId._get_type_name raises NotImplementedError."""
 
         # Test through subclass that implements _get_pattern but not _get_type_name
@@ -71,7 +71,7 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("app.CREDENTIALS_FILE", "test")
     @patch("app.THUMBNAIL_CACHE_DIR", "test")
     @patch("app.CLIPS_CACHE_DIR", "test")
-    def test_ensure_cache_paths_cache_dir_none(self):
+    def test_ensure_cache_paths_cache_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CACHE_DIR is None."""
         try:
             from app import ensure_cache_paths_initialized
@@ -89,7 +89,7 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("app.CREDENTIALS_FILE", None)
     @patch("app.THUMBNAIL_CACHE_DIR", "test")
     @patch("app.CLIPS_CACHE_DIR", "test")
-    def test_ensure_cache_paths_credentials_file_none(self):
+    def test_ensure_cache_paths_credentials_file_none(self) -> None:
         """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
         try:
             from app import ensure_cache_paths_initialized
@@ -105,7 +105,7 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("app.CREDENTIALS_FILE", "test")
     @patch("app.THUMBNAIL_CACHE_DIR", None)
     @patch("app.CLIPS_CACHE_DIR", "test")
-    def test_ensure_cache_paths_thumbnail_dir_none(self):
+    def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
         try:
             from app import ensure_cache_paths_initialized
@@ -120,7 +120,7 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("app.CREDENTIALS_FILE", "test")
     @patch("app.THUMBNAIL_CACHE_DIR", "test")
     @patch("app.CLIPS_CACHE_DIR", None)
-    def test_ensure_cache_paths_clips_dir_none(self):
+    def test_ensure_cache_paths_clips_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
         try:
             from app import ensure_cache_paths_initialized
@@ -135,29 +135,29 @@ class TestCachePathValidation(unittest.TestCase):
 class TestValidationClassMethods(unittest.TestCase):
     """Test validation class methods that are currently untested."""
 
-    def test_camera_id_str_method(self):
+    def test_camera_id_str_method(self) -> None:
         """Test CameraId.__str__ method."""
         camera_id = CameraId("test123")
         str_result = str(camera_id)
         self.assertEqual(str_result, "test123")
 
-    def test_clip_id_str_method(self):
+    def test_clip_id_str_method(self) -> None:
         """Test ClipId.__str__ method."""
         clip_id = ClipId("clip456")
         str_result = str(clip_id)
         self.assertEqual(str_result, "clip456")
 
-    def test_camera_id_value_property(self):
+    def test_camera_id_value_property(self) -> None:
         """Test CameraId.value property."""
         camera_id = CameraId("camera789")
         self.assertEqual(camera_id.value, "camera789")
 
-    def test_clip_id_value_property(self):
+    def test_clip_id_value_property(self) -> None:
         """Test ClipId.value property."""
         clip_id = ClipId("clip012")
         self.assertEqual(clip_id.value, "clip012")
 
-    def test_camera_id_validation_method(self):
+    def test_camera_id_validation_method(self) -> None:
         """Test CameraId._validate method."""
         camera_id = CameraId("valid123")
         # Test validation with valid input
@@ -176,7 +176,7 @@ class TestValidationClassMethods(unittest.TestCase):
             # If it raises an exception, that's also valid behavior
             self.assertTrue(True)
 
-    def test_clip_id_validation_method(self):
+    def test_clip_id_validation_method(self) -> None:
         """Test ClipId._validate method."""
         clip_id = ClipId("valid456")
         # Test validation with valid input
@@ -196,7 +196,7 @@ class TestValidationClassMethods(unittest.TestCase):
 class TestConfigurationValues(unittest.TestCase):
     """Test configuration values and constants."""
 
-    def test_config_constants_exist(self):
+    def test_config_constants_exist(self) -> None:
         """Test that Config constants exist and have reasonable values."""
         # Test cache size constants
         self.assertTrue(hasattr(Config, "CLIPS_CACHE_SIZE"))
@@ -211,7 +211,7 @@ class TestConfigurationValues(unittest.TestCase):
         self.assertTrue(hasattr(Config, "DEFAULT_CACHE_DIR"))
         self.assertIsInstance(Config.DEFAULT_CACHE_DIR, str)
 
-    def test_config_filename_constants(self):
+    def test_config_filename_constants(self) -> None:
         """Test filename constants."""
         self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
         self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
@@ -222,7 +222,7 @@ class TestConfigurationValues(unittest.TestCase):
         self.assertIsInstance(Config.CREDENTIALS_FILENAME, str)
         self.assertIsInstance(Config.SETTINGS_FILENAME, str)
 
-    def test_config_http_constants(self):
+    def test_config_http_constants(self) -> None:
         """Test HTTP status constants."""
         if hasattr(Config, "HTTP_STATUS_OK"):
             self.assertEqual(Config.HTTP_STATUS_OK, 200)
@@ -234,12 +234,12 @@ class TestConfigurationValues(unittest.TestCase):
 class TestGlobalVariableAccess(unittest.TestCase):
     """Test global variable access patterns."""
 
-    def test_app_instance_access(self):
+    def test_app_instance_access(self) -> None:
         """Test app instance access."""
         self.assertIsNotNone(app.app)
         self.assertTrue(hasattr(app.app, "config"))
 
-    def test_cache_instance_access(self):
+    def test_cache_instance_access(self) -> None:
         """Test cache instance access."""
         self.assertIsNotNone(app.thumbnail_cache)
         self.assertIsNotNone(app.clips_download_cache)
@@ -249,14 +249,14 @@ class TestGlobalVariableAccess(unittest.TestCase):
         self.assertTrue(hasattr(app.thumbnail_cache, "get"))
         self.assertTrue(hasattr(app.thumbnail_cache, "clear"))
 
-    def test_blink_connection_access(self):
+    def test_blink_connection_access(self) -> None:
         """Test blink_connection access."""
         self.assertTrue(hasattr(app, "blink_connection"))
         # blink_connection might be None initially
         if app.blink_connection is not None:
             self.assertTrue(hasattr(app.blink_connection, "execute"))
 
-    def test_stream_manager_access(self):
+    def test_stream_manager_access(self) -> None:
         """Test stream_manager access."""
         self.assertTrue(hasattr(app, "stream_manager"))
         # stream_manager might be None initially
@@ -265,7 +265,7 @@ class TestGlobalVariableAccess(unittest.TestCase):
 class TestUtilityFunctions(unittest.TestCase):
     """Test utility functions that are currently untested."""
 
-    def test_create_api_response_variations(self):
+    def test_create_api_response_variations(self) -> None:
         """Test create_api_response with different parameter combinations."""
         # Test with minimal parameters
         response, status = app.create_api_response()
@@ -286,7 +286,7 @@ class TestUtilityFunctions(unittest.TestCase):
         response, status = app.create_api_response(status_code=201)
         self.assertEqual(status, 201)
 
-    def test_format_time_ago_function(self):
+    def test_format_time_ago_function(self) -> None:
         """Test format_time_ago function if it exists."""
         try:
             from app import format_time_ago
@@ -304,7 +304,7 @@ class TestUtilityFunctions(unittest.TestCase):
 class TestErrorHandlingPaths(unittest.TestCase):
     """Test error handling code paths."""
 
-    def test_exception_handling_patterns(self):
+    def test_exception_handling_patterns(self) -> None:
         """Test exception handling patterns used in the app."""
         # Test ValueError handling
         with self.assertRaises(ValueError):
@@ -313,7 +313,7 @@ class TestErrorHandlingPaths(unittest.TestCase):
         with self.assertRaises(ValueError):
             ClipId("")  # Should raise ValueError for empty string
 
-    def test_type_error_handling(self):
+    def test_type_error_handling(self) -> None:
         """Test TypeError handling."""
         # Test with wrong types that should raise ValueError
         with self.assertRaises(ValueError):
@@ -323,7 +323,7 @@ class TestErrorHandlingPaths(unittest.TestCase):
         clip_id = ClipId(123)
         self.assertEqual(str(clip_id), "123")
 
-    def test_attribute_error_handling(self):
+    def test_attribute_error_handling(self) -> None:
         """Test AttributeError handling patterns."""
         # Test accessing non-existent attributes
         mock_obj = Mock()
@@ -336,7 +336,7 @@ class TestErrorHandlingPaths(unittest.TestCase):
 class TestImportAndModuleLoading(unittest.TestCase):
     """Test import statements and module loading."""
 
-    def test_flask_imports(self):
+    def test_flask_imports(self) -> None:
         """Test Flask-related imports."""
         self.assertTrue(hasattr(app, "Flask"))
         self.assertTrue(hasattr(app, "jsonify"))
@@ -344,7 +344,7 @@ class TestImportAndModuleLoading(unittest.TestCase):
         self.assertTrue(hasattr(app, "session"))
         self.assertTrue(hasattr(app, "render_template"))
 
-    def test_standard_library_imports(self):
+    def test_standard_library_imports(self) -> None:
         """Test standard library imports."""
         import app as app_module
 
@@ -354,13 +354,13 @@ class TestImportAndModuleLoading(unittest.TestCase):
         self.assertTrue(hasattr(app_module, "datetime"))
         self.assertTrue(hasattr(app_module, "threading"))
 
-    def test_third_party_imports(self):
+    def test_third_party_imports(self) -> None:
         """Test third-party imports."""
         self.assertTrue(hasattr(app, "requests"))
         if hasattr(app, "Path"):
             self.assertTrue(hasattr(app, "Path"))
 
-    def test_custom_class_imports(self):
+    def test_custom_class_imports(self) -> None:
         """Test custom class availability."""
         self.assertTrue(hasattr(app, "CameraId"))
         self.assertTrue(hasattr(app, "ClipId"))
@@ -374,7 +374,7 @@ class TestImportAndModuleLoading(unittest.TestCase):
 class TestBasicOperations(unittest.TestCase):
     """Test basic operations that should increase coverage."""
 
-    def test_string_formatting_operations(self):
+    def test_string_formatting_operations(self) -> None:
         """Test string formatting used in the app."""
         # Test f-string formatting
         camera_id = "test123"
@@ -385,7 +385,7 @@ class TestBasicOperations(unittest.TestCase):
         formatted2 = f"Camera {camera_id} thumbnail"
         self.assertIn(camera_id, formatted2)
 
-    def test_dictionary_operations(self):
+    def test_dictionary_operations(self) -> None:
         """Test dictionary operations used throughout the app."""
         test_dict = {"key1": "value1", "key2": "value2"}
 
@@ -398,7 +398,7 @@ class TestBasicOperations(unittest.TestCase):
         self.assertIn("key1", test_dict)
         self.assertNotIn("nonexistent", test_dict)
 
-    def test_list_operations(self):
+    def test_list_operations(self) -> None:
         """Test list operations used in the app."""
         test_list = ["item1", "item2", "item3"]
 
@@ -410,7 +410,7 @@ class TestBasicOperations(unittest.TestCase):
         test_list.extend(["item5", "item6"])
         self.assertEqual(len(test_list), 6)
 
-    def test_path_operations(self):
+    def test_path_operations(self) -> None:
         """Test Path operations used in the app."""
         # Test Path creation
         test_path = Path("/tmp/test")
@@ -421,7 +421,7 @@ class TestBasicOperations(unittest.TestCase):
         self.assertIn("subdir", str(joined_path))
         self.assertIn("file.txt", str(joined_path))
 
-    def test_datetime_operations(self):
+    def test_datetime_operations(self) -> None:
         """Test datetime operations used in the app."""
         # Test datetime creation
         now = datetime.now()

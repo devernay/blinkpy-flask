@@ -26,7 +26,7 @@ def with_app_initialized(func: F) -> F:
 
     Usage:
         @with_app_initialized
-        def test_some_function(self):
+        def test_some_function(self) -> None:
             # Test code here
     """
 
@@ -48,7 +48,7 @@ def setup_test_globals():
     """Function to call in setUp methods to initialize globals.
 
     Usage in test setUp:
-        def setUp(self):
+        def setUp(self) -> None:
             setup_test_globals()
             # rest of setup code
     """
@@ -65,12 +65,12 @@ class BaseTestCase(unittest.TestCase):
 
     Usage:
         class MyTestClass(BaseTestCase):
-            def test_something(self):
+            def test_something(self) -> None:
                 # globals are already initialized
                 pass
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures with app initialization."""
         super().setUp()
         setup_test_globals()
