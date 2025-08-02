@@ -43,8 +43,19 @@ from typing import (
     Literal,
     ParamSpec,
     TypedDict,
+    TypeVar,
     cast,
 )
+
+from route_decorators import (
+    api_route,
+    api_route_with_validation,
+    cached_api_route,
+    file_response_route,
+    method_dispatch_route,
+    simple_success_response,
+)
+from stream_manager import StreamConfig, StreamManager
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -72,17 +83,19 @@ from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.camera import BlinkCamera
 from blinkpy.sync_module import BlinkSyncModule
 from config import Config
-from route_decorators import (
-    api_route,
-    api_route_with_validation,
-    cached_api_route,
-    file_response_route,
-    method_dispatch_route,
-    simple_success_response,
-)
 
-# from flask_sse import sse  # No longer needed
-from stream_manager import StreamConfig, StreamManager
+# Type definitions
+JsonDict = dict[str, object]
+ApiResponse = tuple[JsonDict, int]
+FlaskRouteResponse = ResponseReturnValue
+CacheKey = str
+SettingsDict = dict[str, str | int | bool]
+DeviceDict = dict[str, object]
+ClipDict = dict[str, object]
+SystemDict = dict[str, object]
+
+# Generic type variables
+T = TypeVar("T")
 
 # Create Flask app instance
 app = Flask(__name__)
@@ -116,7 +129,7 @@ class BlinkError(Exception):
 class ValidationError(Exception):
     """Exception for validation errors with custom status codes."""
 
-    def __init__(self, message: str, status_code: int = 400):
+    def __init__(self, message: str, status_code: int = 400) -> None:
         super().__init__(message)
         self.status_code = status_code
 
@@ -147,7 +160,7 @@ class CacheError(BlinkError):
 
 @contextmanager
 def error_context(
-    operation: str, reraise_as: type = BlinkError
+    operation: str, reraise_as: type[Exception] = BlinkError
 ) -> Generator[None, None, None]:
     """Context manager for consistent error handling.
 
@@ -172,8 +185,8 @@ def error_context(
 
 
 def safe_execute(
-    func: Callable[[], Any], default: Any = None, log_error: bool = True
-) -> Any:
+    func: Callable[[], T], default: T | None = None, log_error: bool = True
+) -> T | None:
     """Execute function safely with error logging.
 
     Args:
@@ -270,7 +283,7 @@ class BaseId:
         """Return string representation."""
         return self.value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Check equality with another BaseId instance."""
         return isinstance(other, self.__class__) and self.value == other.value
 
@@ -385,16 +398,22 @@ class ClipId(BaseId):
 
 
 # Standard thread-safe decorator using functools.wraps
-def synchronized(func):
+def synchronized(func: Callable[..., T]) -> Callable[..., T]:
     """Decorator to make cache methods thread-safe using the instance's _lock.
 
     This follows the standard Python pattern for creating decorators that
     preserve function metadata using functools.wraps.
+
+    Args:
+        func: The function to synchronize
+
+    Returns:
+        Thread-safe wrapper function
     """
 
     @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        with self._lock:
+    def wrapper(self: object, *args: object, **kwargs: object) -> T:
+        with self._lock:  # type: ignore[attr-defined]
             return func(self, *args, **kwargs)
 
     return wrapper
@@ -403,7 +422,7 @@ def synchronized(func):
 # Simplified cache implementation inheriting from LRUCache
 
 
-class ThumbnailCache(LRUCache):
+class ThumbnailCache(LRUCache[str, dict[str, object]]):
     """
     Thumbnail cache inheriting from LRUCache with thread-safe methods.
 
@@ -411,33 +430,56 @@ class ThumbnailCache(LRUCache):
     operations using both decorators and cachetools @cachedmethod decorators.
     """
 
-    def __init__(self, maxsize: int = 100):
+    def __init__(self, maxsize: int = 100) -> None:
+        """Initialize thumbnail cache with specified maximum size.
+
+        Args:
+            maxsize: Maximum number of thumbnails to cache
+        """
         super().__init__(maxsize=maxsize)
         self._lock = threading.RLock()
 
     # Thread-safe overrides for LRUCache methods using decorator
     @synchronized
-    def get(self, key: Any, default: Any = None) -> Any:
-        """Thread-safe get method."""
+    def get(self, key: CacheKey, default: object = None) -> object:
+        """Thread-safe get method.
+
+        Args:
+            key: Cache key to retrieve
+            default: Default value if key not found
+
+        Returns:
+            Cached value or default
+        """
         return super().get(key, default)
 
     @synchronized
-    def __getitem__(self, key: Any) -> Any:
-        """Thread-safe getitem method."""
+    def __getitem__(self, key: CacheKey) -> object:
+        """Thread-safe getitem method.
+
+        Args:
+            key: Cache key to retrieve
+
+        Returns:
+            Cached value
+
+        Raises:
+            KeyError: If key not found
+        """
         return super().__getitem__(key)
 
     @synchronized
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: CacheKey, value: object) -> None:
         """Thread-safe setitem method."""
         super().__setitem__(key, value)
 
     @synchronized
-    def __delitem__(self, key: Any) -> None:
+    def __delitem__(self, key: CacheKey) -> None:
         """Thread-safe delitem method."""
         super().__delitem__(key)
 
     @synchronized
-    def __contains__(self, key: Any) -> bool:
+    def __contains__(self, key: CacheKey) -> bool:
         """Thread-safe contains method."""
         return super().__contains__(key)
 
@@ -447,12 +489,12 @@ class ThumbnailCache(LRUCache):
         return super().__len__()
 
     @synchronized
-    def pop(self, key: Any, default: Any = None) -> Any:
+    def pop(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe pop method."""
         return super().pop(key, default)
 
     @synchronized
-    def popitem(self) -> tuple[Any, Any]:
+    def popitem(self) -> tuple[CacheKey, object]:
         """Thread-safe popitem method."""
         return super().popitem()
 
@@ -462,33 +504,33 @@ class ThumbnailCache(LRUCache):
         super().clear()
 
     @synchronized
-    def setdefault(self, key: Any, default: Any = None) -> Any:
+    def setdefault(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe setdefault method."""
         return super().setdefault(key, default)
 
     @synchronized
-    def update(self, *args: Any, **kwargs: Any) -> None:
+    def update(self, *args: object, **kwargs: object) -> None:
         """Thread-safe update method."""
         super().update(*args, **kwargs)
 
     @synchronized
-    def keys(self) -> Any:
+    def keys(self) -> list[str]:
         """Thread-safe keys method."""
         return list(super().keys())
 
     @synchronized
-    def values(self) -> Any:
+    def values(self) -> list[dict[str, object]]:
         """Thread-safe values method."""
         return list(super().values())
 
     @synchronized
-    def items(self) -> Any:
+    def items(self) -> list[tuple[str, dict[str, object]]]:
         """Thread-safe items method."""
         return list(super().items())
 
     # Custom methods using @cachedmethod decorator
     @cachedmethod(lambda self: self, lock=lambda self: self._lock)
-    def get_thumbnail_data(self, camera_id: str, timestamp: int) -> dict[str, Any]:
+    def get_thumbnail_data(self, camera_id: str, timestamp: int) -> dict[str, object]:
         """
         Get thumbnail data - automatically cached and thread-safe.
 
@@ -505,15 +547,24 @@ class ThumbnailCache(LRUCache):
     def update_thumbnail_if_newer(
         self, camera_id: str, timestamp: int, filename: str
     ) -> bool:
-        """
-        Update thumbnail if timestamp is newer.
+        """Update thumbnail if timestamp is newer.
 
         For conditional caching logic where decorators aren't suitable.
+
+        Args:
+            camera_id: ID of the camera
+            timestamp: Timestamp of the new thumbnail
+            filename: Filename of the thumbnail
+
+        Returns:
+            True if thumbnail was updated, False otherwise
         """
         # Check for existing entries for this camera
         cache_key = f"{camera_id}_current"
         current_entry = self.get(cache_key)
-        current_ts = current_entry.get("timestamp", 0) if current_entry else 0
+        current_ts = (
+            current_entry.get("timestamp", 0) if isinstance(current_entry, dict) else 0
+        )
 
         if timestamp > current_ts:
             self[cache_key] = {
@@ -525,21 +576,22 @@ class ThumbnailCache(LRUCache):
         return False
 
     @synchronized
-    def get_current_thumbnail(self, camera_id: str) -> dict[str, Any] | None:
+    def get_current_thumbnail(self, camera_id: str) -> dict[str, object] | None:
         """Get current thumbnail info for camera."""
-        return self.get(f"{camera_id}_current")
+        result = self.get(f"{camera_id}_current")
+        return result if isinstance(result, dict) else None
 
     def clear_cache(self) -> None:
         """Clear all cached thumbnails."""
         self.clear()
 
     @synchronized
-    def get_cache_stats(self) -> dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, object]:
         """Get cache statistics."""
         return {"size": len(self), "maxsize": self.maxsize}
 
 
-class ClipsMetadataCache(LRUCache):
+class ClipsMetadataCache(LRUCache[str, dict[str, object]]):
     """
     Clips metadata cache inheriting from LRUCache with thread-safe methods.
     """
@@ -549,7 +601,7 @@ class ClipsMetadataCache(LRUCache):
         self._lock = threading.RLock()
 
     @cachedmethod(lambda self: self, lock=lambda self: self._lock)
-    def get_clips_metadata(self, storage_type: str) -> list[dict[str, Any]]:
+    def get_clips_metadata(self, storage_type: str) -> list[dict[str, object]]:
         """
         Get clips metadata - automatically cached and thread-safe.
 
@@ -566,12 +618,18 @@ class ClipsMetadataCache(LRUCache):
         ),
     )
     def get_filtered_clips(
-        self, storage_type: str, filters: dict[str, Any]
-    ) -> list[dict[str, Any]]:
-        """
-        Get filtered clips with custom key function.
+        self, storage_type: str, filters: dict[str, object]
+    ) -> list[dict[str, object]]:
+        """Get filtered clips with custom key function.
 
         Uses custom key function to handle dict parameters properly.
+
+        Args:
+            storage_type: Type of storage ('cloud' or 'local')
+            filters: Dictionary of filters to apply
+
+        Returns:
+            List of filtered clip metadata dictionaries
         """
         base_clips = self.get_clips_metadata(storage_type)
         # Apply filters here
@@ -579,9 +637,14 @@ class ClipsMetadataCache(LRUCache):
 
     @synchronized
     def cache_clips_manually(
-        self, storage_type: str, clips: list[dict[str, Any]]
+        self, storage_type: str, clips: list[dict[str, object]]
     ) -> None:
-        """Manually cache clips list (for cases where decorator isn't suitable)."""
+        """Manually cache clips list (for cases where decorator isn't suitable).
+
+        Args:
+            storage_type: Type of storage ('cloud' or 'local')
+            clips: List of clip metadata dictionaries to cache
+        """
         # Manually add to cache using the same key pattern as the decorator
         cache_key = (self.get_clips_metadata, storage_type)
         self[cache_key] = clips
@@ -592,33 +655,33 @@ class ClipsMetadataCache(LRUCache):
         self.clear()
 
     @synchronized
-    def get_cache_stats(self) -> dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, object]:
         """Get cache statistics."""
         return {"size": len(self), "maxsize": self.maxsize}
 
     # Thread-safe overrides for LRUCache methods
     @synchronized
-    def get(self, key: Any, default: Any = None) -> Any:
+    def get(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe get method."""
         return super().get(key, default)
 
     @synchronized
-    def __getitem__(self, key: Any) -> Any:
+    def __getitem__(self, key: CacheKey) -> object:
         """Thread-safe getitem method."""
         return super().__getitem__(key)
 
     @synchronized
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: CacheKey, value: object) -> None:
         """Thread-safe setitem method."""
         super().__setitem__(key, value)
 
     @synchronized
-    def __delitem__(self, key: Any) -> None:
+    def __delitem__(self, key: CacheKey) -> None:
         """Thread-safe delitem method."""
         super().__delitem__(key)
 
     @synchronized
-    def __contains__(self, key: Any) -> bool:
+    def __contains__(self, key: CacheKey) -> bool:
         """Thread-safe contains method."""
         return super().__contains__(key)
 
@@ -628,12 +691,12 @@ class ClipsMetadataCache(LRUCache):
         return super().__len__()
 
     @synchronized
-    def pop(self, key: Any, default: Any = None) -> Any:
+    def pop(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe pop method."""
         return super().pop(key, default)
 
     @synchronized
-    def popitem(self) -> tuple[Any, Any]:
+    def popitem(self) -> tuple[CacheKey, object]:
         """Thread-safe popitem method."""
         return super().popitem()
 
@@ -643,27 +706,27 @@ class ClipsMetadataCache(LRUCache):
         super().clear()
 
     @synchronized
-    def setdefault(self, key: Any, default: Any = None) -> Any:
+    def setdefault(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe setdefault method."""
         return super().setdefault(key, default)
 
     @synchronized
-    def update(self, *args: Any, **kwargs: Any) -> None:
+    def update(self, *args: object, **kwargs: object) -> None:
         """Thread-safe update method."""
         super().update(*args, **kwargs)
 
     @synchronized
-    def keys(self) -> Any:
+    def keys(self) -> object:
         """Thread-safe keys method."""
         return list(super().keys())
 
     @synchronized
-    def values(self) -> Any:
+    def values(self) -> object:
         """Thread-safe values method."""
         return list(super().values())
 
     @synchronized
-    def items(self) -> Any:
+    def items(self) -> object:
         """Thread-safe items method."""
         return list(super().items())
 
@@ -673,21 +736,31 @@ class ClipsMetadataCache(LRUCache):
         return int(super().maxsize)
 
 
-class ClipsDownloadCache(LRUCache):
+class ClipsDownloadCache(LRUCache[str, dict[str, object]]):
     """
     Clips download cache inheriting from LRUCache with thread-safe methods.
     """
 
-    def __init__(self, maxsize: int = 100):
+    def __init__(self, maxsize: int = 100) -> None:
+        """Initialize clips download cache with specified maximum size.
+
+        Args:
+            maxsize: Maximum number of clips to cache
+        """
         super().__init__(maxsize=maxsize)
         self._lock = threading.RLock()
 
     @cachedmethod(lambda self: self, lock=lambda self: self._lock)
-    def get_clip_download_info(self, clip_id: str) -> dict[str, Any]:
-        """
-        Get clip download info - automatically cached and thread-safe.
+    def get_clip_download_info(self, clip_id: str) -> dict[str, object]:
+        """Get clip download info - automatically cached and thread-safe.
 
         Uses @cachedmethod decorator as recommended by cachetools.
+
+        Args:
+            clip_id: ID of the clip to get download info for
+
+        Returns:
+            Dictionary containing clip download information
         """
         return {
             "clip_id": clip_id,
@@ -699,7 +772,13 @@ class ClipsDownloadCache(LRUCache):
     def cache_clip_manually(
         self, clip_id: str, filepath: str, thumbnail_path: str | None = None
     ) -> None:
-        """Manually cache clip info (for cases where decorator isn't suitable)."""
+        """Manually cache clip info (for cases where decorator isn't suitable).
+
+        Args:
+            clip_id: ID of the clip
+            filepath: Path to the clip file
+            thumbnail_path: Optional path to the thumbnail file
+        """
         cache_key = (self.get_clip_download_info, clip_id)
         self[cache_key] = {
             "clip_id": clip_id,
@@ -713,33 +792,33 @@ class ClipsDownloadCache(LRUCache):
         self.clear()
 
     @synchronized
-    def get_cache_stats(self) -> dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, object]:
         """Get cache statistics."""
         return {"size": len(self), "maxsize": self.maxsize}
 
     # Thread-safe overrides for LRUCache methods
     @synchronized
-    def get(self, key: Any, default: Any = None) -> Any:
+    def get(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe get method."""
         return super().get(key, default)
 
     @synchronized
-    def __getitem__(self, key: Any) -> Any:
+    def __getitem__(self, key: CacheKey) -> object:
         """Thread-safe getitem method."""
         return super().__getitem__(key)
 
     @synchronized
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: CacheKey, value: object) -> None:
         """Thread-safe setitem method."""
         super().__setitem__(key, value)
 
     @synchronized
-    def __delitem__(self, key: Any) -> None:
+    def __delitem__(self, key: CacheKey) -> None:
         """Thread-safe delitem method."""
         super().__delitem__(key)
 
     @synchronized
-    def __contains__(self, key: Any) -> bool:
+    def __contains__(self, key: CacheKey) -> bool:
         """Thread-safe contains method."""
         return super().__contains__(key)
 
@@ -749,12 +828,12 @@ class ClipsDownloadCache(LRUCache):
         return super().__len__()
 
     @synchronized
-    def pop(self, key: Any, default: Any = None) -> Any:
+    def pop(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe pop method."""
         return super().pop(key, default)
 
     @synchronized
-    def popitem(self) -> tuple[Any, Any]:
+    def popitem(self) -> tuple[CacheKey, object]:
         """Thread-safe popitem method."""
         return super().popitem()
 
@@ -764,27 +843,27 @@ class ClipsDownloadCache(LRUCache):
         super().clear()
 
     @synchronized
-    def setdefault(self, key: Any, default: Any = None) -> Any:
+    def setdefault(self, key: CacheKey, default: object = None) -> object:
         """Thread-safe setdefault method."""
         return super().setdefault(key, default)
 
     @synchronized
-    def update(self, *args: Any, **kwargs: Any) -> None:
+    def update(self, *args: object, **kwargs: object) -> None:
         """Thread-safe update method."""
         super().update(*args, **kwargs)
 
     @synchronized
-    def keys(self) -> Any:
+    def keys(self) -> object:
         """Thread-safe keys method."""
         return list(super().keys())
 
     @synchronized
-    def values(self) -> Any:
+    def values(self) -> object:
         """Thread-safe values method."""
         return list(super().values())
 
     @synchronized
-    def items(self) -> Any:
+    def items(self) -> object:
         """Thread-safe items method."""
         return list(super().items())
 
@@ -856,7 +935,7 @@ def parse_arguments(args: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
-def get_cache_stats() -> dict[str, dict[str, Any]]:
+def get_cache_stats() -> dict[str, dict[str, object]]:
     """Get statistics for all caches using OO implementation."""
     return {
         "thumbnail_cache": thumbnail_cache.get_cache_stats(),
@@ -864,32 +943,32 @@ def get_cache_stats() -> dict[str, dict[str, Any]]:
         "clips_download_cache": clips_download_cache.get_cache_stats(),
     }
 
-    def __init__(self, cache: Any) -> None:
+    def __init__(self, cache: object) -> None:
         self._cache = cache
         self._lock = threading.RLock()
 
     @synchronized
-    def get(self, key: Any, default: Any = None) -> Any:
+    def get(self, key: CacheKey, default: object = None) -> object:
         """Get value from cache."""
         return self._cache.get(key, default)
 
     @synchronized
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: CacheKey, value: object) -> None:
         """Set value in cache."""
         self._cache[key] = value
 
     @synchronized
-    def __getitem__(self, key: Any) -> Any:
+    def __getitem__(self, key: CacheKey) -> object:
         """Get value from cache with KeyError if not found."""
         return self._cache[key]
 
     @synchronized
-    def __contains__(self, key: Any) -> bool:
+    def __contains__(self, key: CacheKey) -> bool:
         """Check if key exists in cache."""
         return key in self._cache
 
     @synchronized
-    def pop(self, key: Any, default: Any = None) -> Any:
+    def pop(self, key: CacheKey, default: object = None) -> object:
         """Remove and return value from cache."""
         return self._cache.pop(key, default)
 
@@ -930,22 +1009,6 @@ class ClipCacheEntry(TypedDict):
 
 
 # StreamInfo TypedDict removed - now handled by HLSStream class
-
-
-class ApiResponse(TypedDict):
-    """Standardized API response format.
-
-    Attributes:
-        success: Whether operation succeeded
-        timestamp: ISO timestamp of response
-        data: Response data (success only)
-        error: Error message (failure only)
-    """
-
-    success: bool
-    timestamp: str
-    data: Any | None
-    error: str | None
 
 
 def validate_string_input(value: str, max_length: int, field_name: str) -> str:
@@ -1156,10 +1219,10 @@ def setup_logging() -> None:
 
 def create_api_response(
     success: bool = True,
-    data: Any = None,
+    data: object = None,
     error: str | None = None,
     status_code: int = Config.HTTP_STATUS_OK,
-) -> tuple[ApiResponse, int]:
+) -> tuple[JsonDict, int]:
     """Create standardized API response format.
 
     Args:
@@ -1171,7 +1234,7 @@ def create_api_response(
     Returns:
         Tuple of (response_dict, status_code)
     """
-    response: ApiResponse = {
+    response: JsonDict = {
         "success": success,
         "timestamp": datetime.now().isoformat(),
         "data": data if success else None,
@@ -1378,7 +1441,7 @@ def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
 
 def create_device_data(
     camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int
-) -> dict[str, Any]:
+) -> dict[str, object]:
     """Create device data dictionary for camera.
 
     Args:
@@ -1496,7 +1559,9 @@ def update_camera_thumbnail(
     executor.submit(update_thumbnail)
 
 
-def process_cloud_clips(videos_metadata: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def process_cloud_clips(
+    videos_metadata: list[dict[str, object]],
+) -> list[dict[str, object]]:
     """Process cloud storage clips into day-grouped format.
 
     Args:
@@ -1505,7 +1570,7 @@ def process_cloud_clips(videos_metadata: list[dict[str, Any]]) -> list[dict[str,
     Returns:
         List of day groups with clips
     """
-    clips_by_day: dict[str, dict[str, Any]] = {}
+    clips_by_day: dict[str, dict[str, object]] = {}
     for video in videos_metadata:
         try:
             created_at = datetime.fromisoformat(
@@ -1547,13 +1612,13 @@ def process_cloud_clips(videos_metadata: list[dict[str, Any]]) -> list[dict[str,
     return format_clips_by_day(clips_by_day)
 
 
-def process_local_clips() -> list[dict[str, Any]]:
+def process_local_clips() -> list[dict[str, object]]:
     """Process local storage clips into day-grouped format.
 
     Returns:
         List of day groups with clips
     """
-    clips_by_day: dict[str, dict[str, Any]] = {}
+    clips_by_day: dict[str, dict[str, object]] = {}
 
     assert blink is not None
     for sync_name, sync_module in blink.sync.items():
@@ -1612,8 +1677,8 @@ def process_local_clips() -> list[dict[str, Any]]:
 
 
 def format_clips_by_day(
-    clips_by_day: dict[str, dict[str, Any]],
-) -> list[dict[str, Any]]:
+    clips_by_day: dict[str, dict[str, object]],
+) -> list[dict[str, object]]:
     """Format clips by day into sorted list.
 
     Args:
@@ -1805,7 +1870,7 @@ def two_factor() -> ResponseReturnValue:
     )
 
 
-def clear_all_caches() -> dict[str, Any]:
+def clear_all_caches() -> dict[str, object]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
         # Clear memory caches first (fast operation) using OO cache methods
@@ -1849,18 +1914,22 @@ def clear_all_caches() -> dict[str, Any]:
 
 @app.route("/api/clear-cache", methods=["POST"])
 @simple_success_response("Cache clearing initiated")
-def clear_cache():
-    """Clear all caches except credentials."""
+def clear_cache() -> JsonDict:
+    """Clear all caches except credentials.
+
+    Returns:
+        JSON response with success status
+    """
     executor.submit(clear_all_caches)
 
 
 @app.route("/logout", methods=["POST"])
 @simple_success_response("Logged out successfully")
-def logout():
+def logout() -> JsonDict:
     """Logout user and clear all credentials and caches.
 
     Returns:
-        JSON response indicating success
+        JSON response with success status
     """
     global blink
 
@@ -1879,7 +1948,7 @@ def logout():
 @app.route("/api/system/list")
 @requires_blink
 @api_route("get systems")
-def get_systems():
+def get_systems() -> JsonDict:
     """Get list of available Blink systems.
 
     Returns:
@@ -1906,7 +1975,7 @@ def get_systems():
 @app.route("/api/system/<network_id_str>/devices")
 @requires_blink
 @api_route_with_validation("get devices", validate_params={"network_id_str": NetworkId})
-def get_devices(network_id):
+def get_devices(network_id: NetworkId) -> JsonDict:
     """Get devices for a specific Blink system.
 
     Args:
@@ -1964,7 +2033,7 @@ def get_devices(network_id):
     validate_json=True,
     required_fields=["armed"],
 )
-def arm_system(network_id):
+def arm_system(network_id: NetworkId) -> JsonDict:
     """Arm or disarm a Blink system.
 
     Args:
@@ -1994,8 +2063,15 @@ def arm_system(network_id):
 @api_route_with_validation(
     "refresh camera thumbnail", validate_params={"camera_id_str": CameraId}
 )
-def refresh_camera(camera_id):
-    """Refresh camera thumbnail."""
+def refresh_camera(camera_id: CameraId) -> JsonDict:
+    """Refresh camera thumbnail.
+
+    Args:
+        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+
+    Returns:
+        JSON response with success status or error message
+    """
     assert blink is not None
 
     camera, error_response = require_camera(camera_id)
@@ -2041,8 +2117,12 @@ def refresh_camera(camera_id):
     cache_dict=clips_metadata_cache,
     cache_key_func=lambda: request.args.get("storage", "cloud"),
 )
-def get_clips():
-    """Get clips from cloud or local storage."""
+def get_clips() -> JsonDict:
+    """Get clips from cloud or local storage.
+
+    Returns:
+        JSON response with list of clips organized by date
+    """
     assert blink is not None
     storage_type = request.args.get("storage", "cloud")
     if storage_type not in ["cloud", "local"]:
@@ -2064,8 +2144,12 @@ def get_clips():
 @app.route("/api/system/refresh", methods=["POST"])
 @requires_blink
 @simple_success_response("System refreshed successfully")
-def refresh_system():
-    """Manually refresh the Blink system."""
+def refresh_system() -> JsonDict:
+    """Manually refresh the Blink system.
+
+    Returns:
+        JSON response with success status or error message
+    """
     assert blink is not None
     success = blink_connection.execute(blink.refresh(force=True))
 
@@ -2081,7 +2165,7 @@ def refresh_system():
 @app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
 @requires_blink
 @simple_success_response("Clip processing initiated")
-def process_clip(clip_id_str: str):
+def process_clip(clip_id_str: str) -> JsonDict:
     """Process clip on server (download and generate thumbnail) without sending to client.
 
     Initiates background processing of clip for thumbnail generation.
@@ -2109,8 +2193,15 @@ def process_clip(clip_id_str: str):
 @app.route("/api/clip/<clip_id_str>/download")
 @requires_blink
 @api_route("download clip")
-def download_clip(clip_id_str: str):
-    """Download a specific clip."""
+def download_clip(clip_id_str: str) -> FlaskResponse:
+    """Download a specific clip.
+
+    Args:
+        clip_id_str: String representation of clip ID
+
+    Returns:
+        Flask Response with clip file or error message
+    """
     clip_id, error_response = parse_clip_id(clip_id_str)
     if error_response is not None:
         # Re-raise as exception to be handled by decorator
@@ -2132,7 +2223,17 @@ def download_clip(clip_id_str: str):
 def _download_clip_common(
     clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False
 ) -> ResponseReturnValue:
-    """Common clip download logic after file is downloaded."""
+    """Common clip download logic after file is downloaded.
+
+    Args:
+        clip_id: Unique identifier for the clip
+        filepath: Path to the downloaded clip file
+        filename: Original filename for the clip
+        middle_frame: Whether to extract middle frame as thumbnail
+
+    Returns:
+        Flask response with clip file or error message
+    """
     # Cache the clip first (without thumbnail)
     clips_download_cache[clip_id] = {
         "filepath": filepath,
@@ -2473,7 +2574,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 @api_route_with_validation(
     "start camera liveview", validate_params={"camera_id_str": CameraId}
 )
-def get_camera_liveview(camera_id):
+def get_camera_liveview(camera_id: CameraId) -> JsonDict:
     """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md.
 
     Args:
@@ -2495,7 +2596,7 @@ def get_camera_liveview(camera_id):
     assert camera is not None
 
     # Use init_livestream() as specified in IMPLEMENTATION.md
-    async def init_stream() -> Any:
+    async def init_stream() -> object:
         stream = await camera.init_livestream()
         if stream is not None and hasattr(stream, "start") and hasattr(stream, "feed"):
             await stream.start()
@@ -2546,8 +2647,15 @@ def get_camera_liveview(camera_id):
 @api_route_with_validation(
     "stop camera liveview", validate_params={"camera_id_str": CameraId}
 )
-def stop_camera_liveview(camera_id):
-    """Stop live view stream for camera."""
+def stop_camera_liveview(camera_id: CameraId) -> JsonDict:
+    """Stop live view stream for camera.
+
+    Args:
+        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+
+    Returns:
+        JSON response with success status or error message
+    """
 
     # Stop the HLS stream
     if stream_manager is not None:
@@ -2571,8 +2679,16 @@ def stop_camera_liveview(camera_id):
 
 @app.route("/api/hls/<camera_id_str>/<path:filename>")
 @file_response_route("serve HLS file", validate_params={"camera_id_str": CameraId})
-def serve_hls_file(camera_id, filename: str):
-    """Serve HLS playlist and segment files."""
+def serve_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
+    """Serve HLS playlist and segment files.
+
+    Args:
+        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+        filename: Name of the HLS file to serve
+
+    Returns:
+        Flask response with HLS file content or error message
+    """
     if not stream_manager:
         raise RuntimeError(Config.ErrorMessages.STREAM_MANAGER_UNAVAILABLE)
 
@@ -2613,14 +2729,14 @@ def get_clip_thumbnail(clip_id) -> ResponseReturnValue:
 @api_route_with_validation(
     "get camera thumbnail timestamp", validate_params={"camera_id_str": CameraId}
 )
-def get_camera_thumbnail_timestamp(camera_id):
+def get_camera_thumbnail_timestamp(camera_id: CameraId) -> JsonDict:
     """Get camera thumbnail timestamp for polling.
 
     Args:
         camera_id: Validated CameraId object (converted from camera_id_str by decorator)
 
     Returns:
-        JSON response with thumbnail timestamp or error message
+        JSON response with timestamp or error message
 
     Raises:
         ValueError: If camera_id_str is invalid
@@ -2643,11 +2759,14 @@ def get_camera_thumbnail_timestamp(camera_id):
 @api_route_with_validation(
     "get camera thumbnail", validate_params={"camera_id_str": CameraId}
 )
-def get_camera_thumbnail(camera_id):
+def get_camera_thumbnail(camera_id: CameraId) -> FlaskResponse:
     """Proxy camera thumbnail with authentication.
 
     Args:
         camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+
+    Returns:
+        Flask Response with image data or error message
 
     Returns:
         JPEG image file or JSON error response
@@ -2691,10 +2810,11 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
 
 @app.route("/api/config")
 @api_route("get config")
-def get_config():
+def get_config() -> JsonDict:
     """Get client-side configuration constants.
 
-    Returns configuration values needed by the JavaScript frontend.
+    Returns:
+        JSON response with configuration values for the client
     This allows centralizing timing and polling constants in the Config class.
     """
     config_data = {
@@ -2730,8 +2850,12 @@ def get_config():
 
 @app.route("/placeholder")
 @api_route("placeholder")
-def placeholder():
-    """Show placeholder message."""
+def placeholder() -> JsonDict:
+    """Show placeholder message.
+
+    Returns:
+        JSON response with placeholder message
+    """
     from flask import jsonify
 
     response, status_code = create_api_response(
@@ -2759,7 +2883,7 @@ async def load_saved_blink() -> bool:
 
             assert CREDENTIALS_FILE is not None
             # Type ignore for mypy issue with blinkpy's json_load function
-            auth_data: dict[str, Any] | None = await json_load(
+            auth_data: dict[str, object] | None = await json_load(
                 cast(str, CREDENTIALS_FILE)
             )
             session = ClientSession()
@@ -2784,7 +2908,7 @@ async def load_saved_blink() -> bool:
     return False
 
 
-def dump_cloud_videos(videos: list[dict[str, Any]]) -> None:
+def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
     """Dump cloud videos information."""
     logger.info("=== CLOUD VIDEOS ===")
     try:
@@ -3389,8 +3513,15 @@ def settings() -> ResponseReturnValue:
 @api_route_with_validation(
     "check clip thumbnail", validate_params={"clip_id_str": ClipId}
 )
-def check_clip_thumbnail(clip_id):
-    """Check if thumbnail is available for clip."""
+def check_clip_thumbnail(clip_id: ClipId) -> JsonDict:
+    """Check if thumbnail is available for clip.
+
+    Args:
+        clip_id: Validated ClipId object (converted from clip_id_str by decorator)
+
+    Returns:
+        JSON response with thumbnail availability status
+    """
     # clip_id is now validated and converted by the decorator
 
     cached_clip = clips_download_cache.get(clip_id)
