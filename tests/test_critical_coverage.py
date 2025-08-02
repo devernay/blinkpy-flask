@@ -338,7 +338,7 @@ class TestValidationClasses(unittest.TestCase):
 
         # Should contain meaningful error message
         error_msg = str(context.exception)
-        self.assertIn("Camera", str(error_msg))
+        self.assertIn("Camera", error_msg)
 
     def test_type_name_methods(self) -> None:
         """Test _get_type_name methods."""
