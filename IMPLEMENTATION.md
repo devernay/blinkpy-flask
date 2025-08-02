@@ -224,7 +224,6 @@ The codebase demonstrates solid engineering practices with comprehensive functio
 #### Python Code (app.py - 3,796 lines)
 **Major Issues:**
 - **Monolithic file**: Single 3,796-line file violates single responsibility principle
-- **Cache management duplication**: Similar patterns across ThumbnailCache, ClipsMetadataCache, ClipsDownloadCache
 - **Validation patterns**: Repeated input validation logic across routes
 
 **Recommended Refactoring:**
@@ -282,66 +281,6 @@ static/js/
 
 ### 2. Specific Code Quality Issues
 
-#### A. Route Handler Standardization
-**Current Problem:**
-```python
-@app.route("/api/camera/<camera_id>/thumbnail")
-def get_camera_thumbnail(camera_id: str) -> ResponseReturnValue:
-    try:
-        camera_id_obj = CameraId(camera_id)
-        # ... validation and logic
-        return create_api_response(success=True, data=result)
-    except Exception as e:
-        return handle_api_error(e)
-```
-
-**Proposed Solution:**
-```python
-# Create route decorator factory
-def api_route(path: str, methods: list[str] = ["GET"]):
-    def decorator(func):
-        @app.route(path, methods=methods)
-        @requires_blink
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                return handle_api_error(e)
-        return wrapper
-    return decorator
-
-# Usage:
-@api_route("/api/camera/<camera_id>/thumbnail")
-def get_camera_thumbnail(camera_id: str) -> ResponseReturnValue:
-    camera_id_obj = CameraId(camera_id)
-    # ... business logic only
-    return create_api_response(success=True, data=result)
-```
-
-#### B. Cache Class Consolidation
-**Current Problem:** Three similar cache classes with duplicated methods
-
-**Proposed Solution:**
-```python
-class BaseCache(LRUCache, Generic[K, V]):
-    """Base cache with common functionality."""
-
-    def __init__(self, maxsize: int, name: str):
-        super().__init__(maxsize)
-        self.name = name
-        self._lock = threading.RLock()
-
-    @cachedmethod(lambda self: self, key=hashkey)
-    def get_with_fallback(self, key: K, fallback_func: Callable[[], V]) -> V:
-        """Get item with fallback function if not cached."""
-        pass
-
-class ThumbnailCache(BaseCache[CameraId, ThumbnailCacheEntry]):
-    """Specialized thumbnail cache."""
-    pass
-```
-
 #### C. JavaScript API Centralization
 **Current Problem:** Repeated fetch patterns across files
 
@@ -389,29 +328,6 @@ const clips = await ApiClient.get('/api/clips?storage=cloud');
 - **Lazy loading**: Load clips and thumbnails on demand
 - **Image optimization**: Implement responsive images with multiple sizes
 - **Bundle optimization**: Minify and combine JavaScript files
-
-### 4. Type Safety Improvements
-
-#### Current Issues:
-- Some `Any` types can be replaced with specific types
-- Missing return type annotations in some functions
-- Incomplete generic type parameters
-
-#### Recommended Fixes:
-```python
-# Instead of:
-def process_clip(clip_data: Any) -> Any:
-    pass
-
-# Use:
-def process_clip(clip_data: ClipMetadata) -> ProcessedClip:
-    pass
-
-# Add protocol for better typing:
-class CacheProtocol(Protocol):
-    def get(self, key: str) -> Any: ...
-    def set(self, key: str, value: Any) -> None: ...
-```
 
 ### 5. Testing Improvements
 

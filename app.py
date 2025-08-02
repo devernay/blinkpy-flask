@@ -422,7 +422,124 @@ def synchronized(func: Callable[..., T]) -> Callable[..., T]:
 # Simplified cache implementation inheriting from LRUCache
 
 
-class ThumbnailCache(LRUCache[str, dict[str, object]]):
+class ThreadSafeCache(LRUCache[str, dict[str, object]]):
+    """
+    Base thread-safe cache class with common functionality.
+
+    Provides thread-safe operations for all cache implementations,
+    eliminating code duplication across cache classes.
+    """
+
+    def __init__(self, maxsize: int = 100) -> None:
+        """Initialize cache with specified maximum size.
+
+        Args:
+            maxsize: Maximum number of items to cache
+        """
+        super().__init__(maxsize=maxsize)
+        self._lock = threading.RLock()
+
+    # Thread-safe overrides for LRUCache methods using decorator
+    @synchronized
+    def get(self, key: CacheKey, default: object = None) -> object:
+        """Thread-safe get method.
+
+        Args:
+            key: Cache key to retrieve
+            default: Default value if key not found
+
+        Returns:
+            Cached value or default
+        """
+        return super().get(key, default)
+
+    @synchronized
+    def __getitem__(self, key: CacheKey) -> object:
+        """Thread-safe getitem method.
+
+        Args:
+            key: Cache key to retrieve
+
+        Returns:
+            Cached value
+
+        Raises:
+            KeyError: If key not found
+        """
+        return super().__getitem__(key)
+
+    @synchronized
+    def __setitem__(self, key: CacheKey, value: object) -> None:
+        """Thread-safe setitem method."""
+        super().__setitem__(key, value)
+
+    @synchronized
+    def __delitem__(self, key: CacheKey) -> None:
+        """Thread-safe delitem method."""
+        super().__delitem__(key)
+
+    @synchronized
+    def __contains__(self, key: CacheKey) -> bool:
+        """Thread-safe contains method."""
+        return super().__contains__(key)
+
+    @synchronized
+    def __len__(self) -> int:
+        """Thread-safe len method."""
+        return super().__len__()
+
+    @synchronized
+    def pop(self, key: CacheKey, default: object = None) -> object:
+        """Thread-safe pop method."""
+        return super().pop(key, default)
+
+    @synchronized
+    def popitem(self) -> tuple[CacheKey, object]:
+        """Thread-safe popitem method."""
+        return super().popitem()
+
+    @synchronized
+    def clear(self) -> None:
+        """Thread-safe clear method."""
+        super().clear()
+
+    @synchronized
+    def setdefault(self, key: CacheKey, default: object = None) -> object:
+        """Thread-safe setdefault method."""
+        return super().setdefault(key, default)
+
+    @synchronized
+    def update(self, *args: object, **kwargs: object) -> None:
+        """Thread-safe update method."""
+        super().update(*args, **kwargs)
+
+    @synchronized
+    def keys(self) -> list[str]:
+        """Thread-safe keys method."""
+        return list(super().keys())
+
+    @synchronized
+    def values(self) -> list[dict[str, object]]:
+        """Thread-safe values method."""
+        return list(super().values())
+
+    @synchronized
+    def items(self) -> list[tuple[str, dict[str, object]]]:
+        """Thread-safe items method."""
+        return list(super().items())
+
+    @property
+    def maxsize(self) -> int:
+        """Get maximum cache size."""
+        return int(super().maxsize)
+
+    @synchronized
+    def get_cache_stats(self) -> dict[str, object]:
+        """Get cache statistics."""
+        return {"size": len(self), "maxsize": self.maxsize}
+
+
+class ThumbnailCache(ThreadSafeCache):
     """
     Thumbnail cache inheriting from LRUCache with thread-safe methods.
 
@@ -591,14 +708,16 @@ class ThumbnailCache(LRUCache[str, dict[str, object]]):
         return {"size": len(self), "maxsize": self.maxsize}
 
 
-class ClipsMetadataCache(LRUCache[str, dict[str, object]]):
+class ClipsMetadataCache(ThreadSafeCache):
     """
-    Clips metadata cache inheriting from LRUCache with thread-safe methods.
+    Clips metadata cache with specialized methods for clip data.
+
+    Inherits thread-safe operations from ThreadSafeCache and adds
+    clip-specific functionality.
     """
 
     def __init__(self, maxsize: int = 1000):
         super().__init__(maxsize=maxsize)
-        self._lock = threading.RLock()
 
     @cachedmethod(lambda self: self, lock=lambda self: self._lock)
     def get_clips_metadata(self, storage_type: str) -> list[dict[str, object]]:
@@ -649,106 +768,14 @@ class ClipsMetadataCache(LRUCache[str, dict[str, object]]):
         cache_key = (self.get_clips_metadata, storage_type)
         self[cache_key] = clips
 
-    @synchronized
-    def clear_cache(self) -> None:
-        """Clear all cached clips metadata."""
-        self.clear()
 
-    @synchronized
-    def get_cache_stats(self) -> dict[str, object]:
-        """Get cache statistics."""
-        return {"size": len(self), "maxsize": self.maxsize}
-
-    # Thread-safe overrides for LRUCache methods
-    @synchronized
-    def get(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe get method."""
-        return super().get(key, default)
-
-    @synchronized
-    def __getitem__(self, key: CacheKey) -> object:
-        """Thread-safe getitem method."""
-        return super().__getitem__(key)
-
-    @synchronized
-    def __setitem__(self, key: CacheKey, value: object) -> None:
-        """Thread-safe setitem method."""
-        super().__setitem__(key, value)
-
-    @synchronized
-    def __delitem__(self, key: CacheKey) -> None:
-        """Thread-safe delitem method."""
-        super().__delitem__(key)
-
-    @synchronized
-    def __contains__(self, key: CacheKey) -> bool:
-        """Thread-safe contains method."""
-        return super().__contains__(key)
-
-    @synchronized
-    def __len__(self) -> int:
-        """Thread-safe len method."""
-        return super().__len__()
-
-    @synchronized
-    def pop(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe pop method."""
-        return super().pop(key, default)
-
-    @synchronized
-    def popitem(self) -> tuple[CacheKey, object]:
-        """Thread-safe popitem method."""
-        return super().popitem()
-
-    @synchronized
-    def clear(self) -> None:
-        """Thread-safe clear method."""
-        super().clear()
-
-    @synchronized
-    def setdefault(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe setdefault method."""
-        return super().setdefault(key, default)
-
-    @synchronized
-    def update(self, *args: object, **kwargs: object) -> None:
-        """Thread-safe update method."""
-        super().update(*args, **kwargs)
-
-    @synchronized
-    def keys(self) -> object:
-        """Thread-safe keys method."""
-        return list(super().keys())
-
-    @synchronized
-    def values(self) -> object:
-        """Thread-safe values method."""
-        return list(super().values())
-
-    @synchronized
-    def items(self) -> object:
-        """Thread-safe items method."""
-        return list(super().items())
-
-    @property
-    def maxsize(self) -> int:
-        """Get maximum cache size."""
-        return int(super().maxsize)
-
-
-class ClipsDownloadCache(LRUCache[str, dict[str, object]]):
+class ClipsDownloadCache(ThreadSafeCache):
     """
-    Clips download cache inheriting from LRUCache with thread-safe methods.
+    Clips download cache with specialized methods for clip downloads.
+
+    Inherits thread-safe operations from ThreadSafeCache and adds
+    download-specific functionality.
     """
-
-    def __init__(self, maxsize: int = 100) -> None:
-        """Initialize clips download cache with specified maximum size.
-
-        Args:
-            maxsize: Maximum number of clips to cache
-        """
-        super().__init__(maxsize=maxsize)
-        self._lock = threading.RLock()
 
     @cachedmethod(lambda self: self, lock=lambda self: self._lock)
     def get_clip_download_info(self, clip_id: str) -> dict[str, object]:
@@ -785,92 +812,6 @@ class ClipsDownloadCache(LRUCache[str, dict[str, object]]):
             "filepath": filepath,
             "thumbnail": thumbnail_path,
         }
-
-    @synchronized
-    def clear_cache(self) -> None:
-        """Clear all cached clip downloads."""
-        self.clear()
-
-    @synchronized
-    def get_cache_stats(self) -> dict[str, object]:
-        """Get cache statistics."""
-        return {"size": len(self), "maxsize": self.maxsize}
-
-    # Thread-safe overrides for LRUCache methods
-    @synchronized
-    def get(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe get method."""
-        return super().get(key, default)
-
-    @synchronized
-    def __getitem__(self, key: CacheKey) -> object:
-        """Thread-safe getitem method."""
-        return super().__getitem__(key)
-
-    @synchronized
-    def __setitem__(self, key: CacheKey, value: object) -> None:
-        """Thread-safe setitem method."""
-        super().__setitem__(key, value)
-
-    @synchronized
-    def __delitem__(self, key: CacheKey) -> None:
-        """Thread-safe delitem method."""
-        super().__delitem__(key)
-
-    @synchronized
-    def __contains__(self, key: CacheKey) -> bool:
-        """Thread-safe contains method."""
-        return super().__contains__(key)
-
-    @synchronized
-    def __len__(self) -> int:
-        """Thread-safe len method."""
-        return super().__len__()
-
-    @synchronized
-    def pop(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe pop method."""
-        return super().pop(key, default)
-
-    @synchronized
-    def popitem(self) -> tuple[CacheKey, object]:
-        """Thread-safe popitem method."""
-        return super().popitem()
-
-    @synchronized
-    def clear(self) -> None:
-        """Thread-safe clear method."""
-        super().clear()
-
-    @synchronized
-    def setdefault(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe setdefault method."""
-        return super().setdefault(key, default)
-
-    @synchronized
-    def update(self, *args: object, **kwargs: object) -> None:
-        """Thread-safe update method."""
-        super().update(*args, **kwargs)
-
-    @synchronized
-    def keys(self) -> object:
-        """Thread-safe keys method."""
-        return list(super().keys())
-
-    @synchronized
-    def values(self) -> object:
-        """Thread-safe values method."""
-        return list(super().values())
-
-    @synchronized
-    def items(self) -> object:
-        """Thread-safe items method."""
-        return list(super().items())
-
-    @property
-    def maxsize(self) -> int:
-        """Get maximum cache size."""
-        return int(super().maxsize)
 
 
 # Cache instances using object-oriented memoizing decorators
