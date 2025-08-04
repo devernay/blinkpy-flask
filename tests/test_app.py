@@ -1955,7 +1955,7 @@ class TestLocalClipOperations(unittest.TestCase):
 
         data = json.loads(response.data)
         self.assertTrue(data["success"])
-        self.assertIsInstance(data["data"], list)
+        self.assertIsInstance(data["data"]["clips"], list)
 
     @patch("app.blink")
     @patch("app.blink_connection")
@@ -1976,7 +1976,7 @@ class TestLocalClipOperations(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data["success"])
         # Should return empty data when manifest not ready
-        self.assertEqual(data["data"], [])
+        self.assertEqual(data["data"]["clips"], [])
 
     @patch("app.blink")
     @patch("app.blink_connection")

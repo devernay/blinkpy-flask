@@ -180,7 +180,7 @@ async function loadSystems() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            systems = data.data;
+            systems = data.data.systems;
             const select = document.getElementById('system-select');
             select.innerHTML = '';
 
@@ -236,7 +236,7 @@ async function loadDevices() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            devices = data.data;
+            devices = data.data.devices;
             window.Camera.renderDevices(devices);
         } else {
             console.error('Failed to load devices:', data.error);

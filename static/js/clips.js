@@ -28,7 +28,7 @@ async function loadClips() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            if (data.data.length === 0) {
+            if (data.data.clips.length === 0) {
                 // If cloud storage is empty, try local storage
                 if (storageType === 'cloud') {
                     selectStorage('local');
@@ -42,7 +42,7 @@ async function loadClips() {
                     </div>
                 `;
             } else {
-                renderClips(data.data);
+                renderClips(data.data.clips);
             }
         } else {
             console.error('Failed to load clips:', data.error);

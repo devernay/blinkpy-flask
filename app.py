@@ -2836,39 +2836,6 @@ def dump_blink_system_info() -> None:
     logger.info("=== END DUMP ===")
 
 
-def initialize_for_testing() -> None:
-    """Initialize global variables for testing.
-
-    This function should only be called from test code to ensure
-    that executor and blink_connection are properly initialized
-    when testing individual functions.
-    """
-    global blink_connection, executor
-
-    # Import here to avoid circular imports
-    from concurrent.futures import ThreadPoolExecutor
-
-    from blink_connection import BlinkConnection
-
-    # Initialize executor for background tasks if not already initialized
-    if executor is None:
-        executor = ThreadPoolExecutor(max_workers=Config.THREAD_POOL_MAX_WORKERS)
-
-    # Initialize Blink connection if not already initialized
-    if blink_connection is None:
-        blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
-
-    # Initialize cache directories for testing if not already done
-    global \
-        CACHE_DIR, \
-        THUMBNAIL_CACHE_DIR, \
-        CLIPS_CACHE_DIR, \
-        CREDENTIALS_FILE, \
-        SETTINGS_FILE
-    if CACHE_DIR is None:
-        initialize_cache_paths()
-
-
 def startup() -> None:
     """Initialize application on startup.
 

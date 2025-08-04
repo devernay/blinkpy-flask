@@ -255,6 +255,15 @@ app/
     └── errors.py        # Error handling
 ```
 
+Do it step by step, **one file at a time**.
+
+At each step, check that:
+- the main code and tests pass `ruff check`, `mypy`, and has no error with `pyright` (warnings are ok).
+- the tests that passed with the monomithic version are still passing (record the tests that pass the monolythic version in a file)
+
+ Do not change the API itself: the parameters passed to each function or class should be the same. This should just be about moving code around, not modifying it.
+
+
 #### JavaScript Code (1,496 total lines across 4 files)
 **Issues:**
 - **Global state management**: Multiple global variables scattered across files
@@ -388,9 +397,11 @@ Make sure that the main code doesn't have lines that are specifically written fo
 
 Check for any duplicate or redundant tests, and factorize them. Organize unit tests to mimic the main code organization.
 
+Check and update `tests/test_doubts.md`: do these tests still exist? are there new doubts that should be added? Also create a file `tests/tests_results_baseline.md` with the current test results, starting with a summary. This file will be used to check for any regression in future changes.
+
 Check for any inconsistencies or duplicate code in the main app code.
 
-Check if the app API is still consistent with the API described in api.json.
+Check if the app API is still consistent with the API described in `api.json`. Update `api.json` if needed, and also fix the javascript code that uses this API.
 
 Clean up main code and test code, remove unnecessary workarounds. There are sometimes duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
 

@@ -33,7 +33,7 @@ def with_app_initialized(func: F) -> F:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Import here to avoid circular imports
-        from app import initialize_for_testing
+        from tests.test_initialization import initialize_for_testing
 
         # Initialize globals for testing
         initialize_for_testing()
@@ -52,7 +52,7 @@ def setup_test_globals():
             setup_test_globals()
             # rest of setup code
     """
-    from app import initialize_for_testing
+    from tests.test_initialization import initialize_for_testing
 
     initialize_for_testing()
 

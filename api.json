@@ -147,7 +147,24 @@
             "description": "List of systems retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "systems": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/SystemData"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           }
@@ -188,7 +205,24 @@
             "description": "Devices retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "devices": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/DeviceData"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           }
@@ -353,7 +387,24 @@
             "description": "Clips retrieved successfully",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+                "schema": {
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "clips": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/ClipData"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
               }
             }
           }
@@ -588,6 +639,48 @@
             "type": "string",
             "description": "Error message (failure only)"
           }
+        }
+      },
+      "ClipData": {
+        "type": "object",
+        "properties": {
+          "date": {"type": "string"},
+          "clips": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "string"},
+                "created_at": {"type": "string"},
+                "thumbnail": {"type": "string"},
+                "size": {"type": "integer"},
+                "length": {"type": "number"}
+              }
+            }
+          },
+          "count": {"type": "integer"}
+        }
+      },
+      "SystemData": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "network_id": {"type": "integer"},
+          "armed": {"type": "boolean"},
+          "online": {"type": "boolean"}
+        }
+      },
+      "DeviceData": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string"},
+          "name": {"type": "string"},
+          "online": {"type": "boolean"},
+          "id": {"type": "string"},
+          "thumbnail": {"type": "string"},
+          "battery": {"type": "string"},
+          "temperature": {"type": "integer"},
+          "wifi_strength": {"type": "integer"}
         }
       }
     }
