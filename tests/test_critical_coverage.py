@@ -151,7 +151,7 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         try:
-            from app import update_camera_thumbnail
+            from camera import update_camera_thumbnail
 
             camera_id = CameraId("test123")
             update_camera_thumbnail(self.mock_camera, camera_id, 2000, 1000)

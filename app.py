@@ -33,22 +33,29 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Literal,
     ParamSpec,
     TypeVar,
     cast,
 )
 
+from auth import (
+    load_saved_blink,
+    setup_auth_routes,
+)
 from cache import (
     clips_download_cache,
     clips_metadata_cache,
     thumbnail_cache,
 )
+from camera import (
+    find_camera_by_id,
+    require_camera,
+    setup_camera_routes,
+    update_camera_thumbnail,
+)
 from decorators import error_context, requires_blink
 from errors import (
-    AuthenticationError,
     CacheError,
-    CameraError,
     ValidationError,
 )
 from ids import CameraId, ClipId, NetworkId
@@ -66,7 +73,6 @@ from utils import (
     format_clips_by_day,
     format_time_ago,
     parse_clip_id,
-    validate_string_input,
 )
 
 if TYPE_CHECKING:
@@ -88,7 +94,6 @@ from flask import (
 from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
 
-from blinkpy.auth import Auth
 from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.camera import BlinkCamera
 from blinkpy.sync_module import BlinkSyncModule
@@ -129,33 +134,7 @@ SETTINGS_FILE: str | None = None
 P = ParamSpec("P")
 
 
-def is_authenticated() -> bool:
-    """Check if user is authenticated with Blink.
-
-    Returns:
-        True if authenticated, False otherwise
-    """
-    global blink
-    return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete
-
-
-def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
-    """Find camera by ID across all sync modules.
-
-    Args:
-        camera_id: Camera ID to search for
-
-    Returns:
-        Camera object if found, None otherwise
-    """
-    if blink is None or not blink.available:
-        return None
-
-    for sync_name, sync in blink.sync.items():
-        for cam_name, cam in sync.cameras.items():
-            if str(cam.camera_id) == str(camera_id):
-                return cam
-    return None
+# find_camera_by_id function moved to camera.py
 
 
 def handle_api_error(
@@ -201,24 +180,7 @@ def handle_api_error(
     )
 
 
-def require_camera(
-    camera_id: CameraId,
-) -> tuple[BlinkCamera | None, tuple[ApiResponse, int] | None]:
-    """Find camera by ID, return error response if not found.
-
-    Args:
-        camera_id: Camera ID to find
-
-    Returns:
-        Tuple of (camera, error_response). One will be None.
-    """
-    camera = find_camera_by_id(camera_id)
-    if camera is None:
-        error_response = create_api_response(
-            success=False, error=Config.ErrorMessages.CAMERA_NOT_FOUND, status_code=404
-        )
-        return None, error_response
-    return camera, None
+# require_camera function moved to camera.py
 
 
 def require_sync_module(
@@ -322,73 +284,6 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 # Blink operations delegated to blink_thread module
 
 
-async def initialize_blink(
-    username: str, password: str
-) -> bool | Literal["2fa_required"]:
-    """Initialize Blink system following blinkpy README.
-
-    Args:
-        username: Blink account username/email
-        password: Blink account password
-
-    Returns:
-        True if successful, '2fa_required' if 2FA needed, False if failed
-    """
-    global blink
-    with error_context("initialize Blink system", AuthenticationError):
-        from aiohttp import ClientSession
-
-        session = ClientSession()
-        blink = Blink(session=session)
-        blink_connection.blink = blink  # Set reference in connection
-        auth = Auth(
-            {"username": username, "password": password},
-            no_prompt=True,
-            session=session,
-        )
-        blink.auth = auth
-        await blink.start()
-
-        # Check if 2FA is required
-        if blink.key_required:
-            logger.info("2FA key required - check your email or SMS")
-            return "2fa_required"
-
-        logger.info("Blink system initialized successfully")
-        return True
-
-
-async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> bool:
-    """Verify 2FA code and save credentials in same thread as Blink creation.
-
-    Args:
-        username: Blink account username (unused but kept for consistency)
-        password: Blink account password (unused but kept for consistency)
-        tfa_key: 2FA verification code from email/SMS
-
-    Returns:
-        True if verification successful, False otherwise
-    """
-    global blink
-    with error_context("verify 2FA and save credentials", AuthenticationError):
-        logger.debug(f"Starting 2FA verification with key: {tfa_key[:2]}***")
-
-        # Send 2FA key using same session/thread
-        logger.debug("Sending 2FA key...")
-        assert blink is not None
-        await blink.auth.send_auth_key(blink, tfa_key)
-
-        logger.debug("Setting up post verification...")
-        await blink.setup_post_verify()
-
-        logger.debug("Saving credentials...")
-        assert CREDENTIALS_FILE is not None
-        await blink.save(CREDENTIALS_FILE)
-
-        logger.info("2FA verification and save completed successfully")
-        return True
-
-
 def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
     """Extract timestamp from thumbnail URL.
 
@@ -463,71 +358,7 @@ def create_device_data(
     }
 
 
-def update_camera_thumbnail(
-    camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int
-) -> None:
-    """Update camera thumbnail in background if needed.
-
-    Args:
-        camera: Camera object from blinkpy
-        cache_key: Validated camera ID
-        current_ts: Current thumbnail timestamp
-        cached_ts: Cached thumbnail timestamp
-    """
-    if current_ts <= cached_ts:
-        return
-
-    logger.debug(
-        f"Updating thumbnail cache for {camera.name} (ts: {current_ts} > {cached_ts})"
-    )
-
-    def update_thumbnail() -> None:
-        # Double-check timestamp to prevent race condition
-        current_entry = thumbnail_cache.get(cache_key)
-        current_cached_ts = current_entry.get("timestamp", 0) if current_entry else 0
-        if current_ts <= current_cached_ts:
-            logger.debug(f"Thumbnail already updated for {camera.name}, skipping")
-            return
-
-        # Remove old cached file if exists
-        old_entry = thumbnail_cache.get(cache_key)
-        if old_entry is not None:
-            old_filename = old_entry.get("filename")
-            if old_filename is not None:
-                assert THUMBNAIL_CACHE_DIR is not None
-                old_filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / old_filename
-                try:
-                    if old_filepath.exists():
-                        old_filepath.unlink()
-                        logger.debug(f"Removed old thumbnail file: {old_filename}")
-                except OSError as e:
-                    logger.debug(f"Could not remove old thumbnail: {e}")
-
-        thumbnail_response = blink_connection.execute(camera.thumbnail)
-        if (
-            thumbnail_response is not None
-            and thumbnail_response.status == Config.HTTP_STATUS_OK
-        ):
-            image_data = blink_connection.execute(thumbnail_response.read())
-
-            # Save to file with new timestamp
-            filename = f"{cache_key}_{current_ts}.jpg"
-            assert THUMBNAIL_CACHE_DIR is not None
-            filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
-            try:
-                filepath.write_bytes(image_data)
-                # Update cache info atomically
-                thumbnail_cache[cache_key] = {
-                    "timestamp": current_ts,
-                    "filename": filename,
-                }
-                logger.debug(
-                    f"Cached thumbnail for {camera.name} with timestamp {current_ts}"
-                )
-            except OSError as e:
-                logger.error(f"Failed to write thumbnail file {filepath}: {e}")
-
-    executor.submit(update_thumbnail)
+# update_camera_thumbnail function moved to camera.py
 
 
 def process_cloud_clips(
@@ -666,122 +497,6 @@ def index() -> ResponseReturnValue:
     return render_template("index.html")
 
 
-@app.route("/login", methods=["GET", "POST"])
-def login() -> ResponseReturnValue:
-    """Handle login page GET/POST requests.
-
-    Returns:
-        Login form template or redirect based on authentication result
-    """
-    if request.method == "POST":
-        try:
-            username = validate_string_input(
-                request.form.get("username", ""), Config.MAX_USERNAME_LENGTH, "Username"
-            )
-            password = validate_string_input(
-                request.form.get("password", ""), Config.MAX_PASSWORD_LENGTH, "Password"
-            )
-        except ValueError as e:
-            return render_template("auth.html", is_2fa=False, error=str(e))
-
-        # Initialize Blink thread if needed
-        blink_connection.start()
-
-        try:
-            success = blink_connection.execute(initialize_blink(username, password))
-            assert blink is not None
-            if success == "2fa_required":
-                session["temp_username"] = username
-                session["temp_password"] = password
-                return redirect(url_for("two_factor"))
-            elif success:
-                assert CREDENTIALS_FILE is not None
-                blink_connection.execute(blink.save(CREDENTIALS_FILE))
-                session["authenticated"] = True
-                return redirect(url_for("index"))
-            else:
-                return render_template(
-                    "auth.html",
-                    is_2fa=False,
-                    error=Config.ErrorMessages.INVALID_CREDENTIALS,
-                )
-        except AuthenticationError as e:
-            return render_template("login.html", error=str(e))
-        except Exception as e:
-            logger.error(f"Unexpected login error: {e}")
-            return render_template(
-                "auth.html", is_2fa=False, error=Config.ErrorMessages.LOGIN_FAILED
-            )
-
-    return render_template("auth.html", is_2fa=False)
-
-
-@app.route("/2fa", methods=["GET", "POST"])
-def two_factor() -> ResponseReturnValue:
-    """Handle 2FA verification page GET/POST requests.
-
-    Returns:
-        2FA form template or redirect based on verification result
-    """
-    if "temp_username" not in session:
-        return redirect(url_for("login"))
-
-    if request.method == "POST":
-        try:
-            key = validate_string_input(
-                request.form.get("key", ""), Config.MAX_TFA_LENGTH, "2FA code"
-            )
-            username = session["temp_username"]
-            password = session["temp_password"]
-        except ValueError as e:
-            return render_template(
-                "auth.html",
-                is_2fa=True,
-                error=str(e),
-                email=session.get("temp_username", ""),
-            )
-
-        try:
-            logger.debug("Running 2FA verification in Blink thread")
-            success = blink_connection.execute(
-                verify_2fa_and_save(username, password, key)
-            )
-
-            if success:
-                logger.debug("2FA successful, clearing session and redirecting")
-                session.pop("temp_username", None)
-                session.pop("temp_password", None)
-                session["authenticated"] = True
-                return redirect(url_for("index"))
-            else:
-                logger.debug("2FA failed, showing error")
-                return render_template(
-                    "auth.html",
-                    is_2fa=True,
-                    error=Config.ErrorMessages.INVALID_2FA_CODE,
-                    email=session.get("temp_username", ""),
-                )
-        except AuthenticationError as e:
-            return render_template(
-                "auth.html",
-                is_2fa=True,
-                error=str(e),
-                email=session.get("temp_username", ""),
-            )
-        except Exception as e:
-            logger.error(f"Unexpected 2FA error: {e}")
-            return render_template(
-                "auth.html",
-                is_2fa=True,
-                error=Config.ErrorMessages.TFA_VERIFICATION_FAILED,
-                email=session.get("temp_username", ""),
-            )
-
-    return render_template(
-        "auth.html", is_2fa=True, email=session.get("temp_username", "")
-    )
-
-
 def clear_all_caches() -> dict[str, object]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
@@ -833,28 +548,6 @@ def clear_cache() -> JsonDict:
         JSON response with success status
     """
     executor.submit(clear_all_caches)
-
-
-@app.route("/logout", methods=["POST"])
-@simple_success_response("Logged out successfully")
-def logout() -> JsonDict:
-    """Logout user and clear all credentials and caches.
-
-    Returns:
-        JSON response with success status
-    """
-    global blink
-
-    # Clear caches first in background
-    executor.submit(clear_all_caches)
-
-    # Clear session and credentials
-    session.clear()
-    blink = None
-    assert CREDENTIALS_FILE is not None
-    cred_file = Path(CREDENTIALS_FILE)
-    if cred_file.exists():
-        cred_file.unlink()
 
 
 @app.route("/api/system/list")
@@ -970,56 +663,7 @@ def arm_system(network_id: NetworkId) -> JsonDict:
         return {"armed": armed}
 
 
-@app.route("/api/camera/<camera_id_str>/refresh", methods=["POST"])
-@requires_blink
-@api_route_with_validation(
-    "refresh camera thumbnail", validate_params={"camera_id_str": CameraId}
-)
-def refresh_camera(camera_id: CameraId) -> JsonDict:
-    """Refresh camera thumbnail.
-
-    Args:
-        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-
-    Returns:
-        JSON response with success status or error message
-    """
-    assert blink is not None
-
-    camera, error_response = require_camera(camera_id)
-    if error_response is not None:
-        raise ValidationError(error_response[0]["error"], error_response[1])
-
-    assert camera is not None
-    with error_context("refresh camera thumbnail", CameraError):
-        # Remove camera thumbnail from cache in background
-        def remove_thumbnail_cache() -> None:
-            cache_key = str(camera_id)
-            cached_info = thumbnail_cache.get(cache_key)
-            if cached_info is not None:
-                # Remove cached file
-                if "filename" in cached_info:
-                    assert THUMBNAIL_CACHE_DIR is not None
-                    cached_file = (
-                        Path(cast(str, THUMBNAIL_CACHE_DIR)) / cached_info["filename"]
-                    )
-                    try:
-                        if cached_file.exists():
-                            cached_file.unlink()
-                    except OSError as e:
-                        logger.debug(f"Could not remove cached thumbnail: {e}")
-                # Remove from cache
-                thumbnail_cache.pop(cache_key, None)
-
-        executor.submit(remove_thumbnail_cache)
-
-        if camera is not None:
-            blink_connection.execute(camera.snap_picture())
-
-        # Refresh camera data to get updated thumbnail URL
-        blink_connection.execute(blink.refresh())
-
-    return {"message": "Thumbnail refresh initiated"}
+# refresh_camera route moved to camera.py
 
 
 @app.route("/api/clips")
@@ -1481,7 +1125,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 # Stream management functions moved to StreamManager class
 
 
-@app.route("/api/camera/<camera_id_str>/liveview")
+# @app.route("/api/camera/<camera_id_str>/liveview")
 @requires_blink
 @api_route_with_validation(
     "start camera liveview", validate_params={"camera_id_str": CameraId}
@@ -1555,7 +1199,7 @@ def get_camera_liveview(camera_id: CameraId) -> JsonDict:
         raise RuntimeError(Config.ErrorMessages.LIVE_VIEW_FAILED)
 
 
-@app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
+# @app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
 @api_route_with_validation(
     "stop camera liveview", validate_params={"camera_id_str": CameraId}
 )
@@ -1589,7 +1233,7 @@ def stop_camera_liveview(camera_id: CameraId) -> JsonDict:
     return {"message": "Livestream stopped successfully"}
 
 
-@app.route("/api/hls/<camera_id_str>/<path:filename>")
+# @app.route("/api/hls/<camera_id_str>/<path:filename>")
 @file_response_route("serve HLS file", validate_params={"camera_id_str": CameraId})
 def serve_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
     """Serve HLS playlist and segment files.
@@ -1636,7 +1280,7 @@ def get_clip_thumbnail(clip_id) -> ResponseReturnValue:
     raise ValidationError(Config.ErrorMessages.THUMBNAIL_NOT_FOUND, 404)
 
 
-@app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
+# @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
 @requires_blink
 @api_route_with_validation(
     "get camera thumbnail timestamp", validate_params={"camera_id_str": CameraId}
@@ -1666,7 +1310,7 @@ def get_camera_thumbnail_timestamp(camera_id: CameraId) -> JsonDict:
     return {"timestamp": timestamp}
 
 
-@app.route("/api/camera/<camera_id_str>/thumbnail")
+# @app.route("/api/camera/<camera_id_str>/thumbnail")
 @requires_blink
 @api_route_with_validation(
     "get camera thumbnail", validate_params={"camera_id_str": CameraId}
@@ -1776,48 +1420,6 @@ def placeholder() -> JsonDict:
         status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
     )
     return jsonify(response), status_code
-
-
-async def load_saved_blink() -> bool:
-    """Load Blink system from saved credentials file.
-
-    Returns:
-        True if successfully loaded, False otherwise
-    """
-    global blink
-    assert CREDENTIALS_FILE is not None
-    cred_file = Path(cast(str, CREDENTIALS_FILE))
-    if cred_file.exists():
-        try:
-            from aiohttp import ClientSession
-
-            from blinkpy.helpers.util import json_load
-
-            assert CREDENTIALS_FILE is not None
-            # Type ignore for mypy issue with blinkpy's json_load function
-            auth_data: dict[str, object] | None = await json_load(
-                cast(str, CREDENTIALS_FILE)
-            )
-            session = ClientSession()
-            try:
-                auth = Auth(auth_data, session=session)
-                blink = Blink(session=session)
-                blink.auth = auth
-                success = await blink.start()
-                if success is True:
-                    logger.info("Blink system loaded from saved credentials")
-                    return True
-                else:
-                    logger.warning("Failed to load Blink system from saved credentials")
-                    await session.close()
-                    return False
-            except Exception as inner_e:
-                await session.close()
-                raise inner_e
-        except Exception as e:
-            logger.warning(f"Could not load Blink system from saved credentials: {e}")
-            return False
-    return False
 
 
 def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
@@ -2622,6 +2224,13 @@ def main() -> None:
         logger.info("Received keyboard interrupt")
     finally:
         cleanup_resources()
+
+
+# Set up authentication routes
+setup_auth_routes(app)
+
+# Set up camera routes
+setup_camera_routes(app)
 
 
 if __name__ == "__main__":

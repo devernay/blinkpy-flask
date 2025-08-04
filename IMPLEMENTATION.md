@@ -224,7 +224,6 @@ The codebase demonstrates solid engineering practices with comprehensive functio
 #### Python Code (app.py - 3,796 lines)
 **Major Issues:**
 - **Monolithic file**: Single 3,796-line file violates single responsibility principle
-- **Validation patterns**: Repeated input validation logic across routes
 
 **Recommended Refactoring:**
 ```python
@@ -259,7 +258,7 @@ Do it **step** by **step**, **one** file at a time.
 
 At each step, check that:
 - the main code and tests pass `ruff check`, `mypy`, and has no error with `pyright` (warnings are ok).
-- the tests that passed with the monomithic version are still passing (record the tests that pass the monolythic version in a file)
+- the tests that passed with the monomithic version are still passing (compare with results from `tests/test_results_baseline.md`)
 
  Do not change the API itself: the parameters passed to each function or class should be the same. This should just be about moving code around, not modifying it.
 
@@ -405,7 +404,9 @@ Check if the app API is still consistent with the API described in `api.json`. U
 
 Clean up main code and test code, remove unnecessary workarounds. There are sometimes duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
 
-Add comments in the code to reach at least a 25% comments-to-code ratio.
+Remove useless comments that refer to previous versions of the code, such as "xxx is now yyy". Add comments in the code to reach at least a 25% comments-to-code ratio.
+
+The HLS route should be "/api/camera/{camera_id}/hls/{filename}" rather than "/api/hls/{camera_id}/{filename}". Change this in the Python and Javascript code, as well as in `api.json`.
 
 Next, we will write a full developer documentation detailing, not necessarily in that order:
 - The general organization of the code, describing the function of each file.

@@ -24,12 +24,14 @@ sys.path.insert(0, os.path.dirname(__file__))
 from app import (
     Config,
     app,
-    create_api_response,
     extract_thumbnail_timestamp,
+)
+from ids import BaseId, CameraId, ClipId, NetworkId
+from utils import (
+    create_api_response,
     format_time_ago,
     validate_string_input,
 )
-from ids import BaseId, CameraId, ClipId, NetworkId
 
 
 class TestBaseId(unittest.TestCase):
@@ -694,7 +696,7 @@ class TestAuthenticationFlows(unittest.TestCase):
     @patch("app.blink_connection")
     def test_2fa_authentication_error(self, mock_connection) -> None:
         """Test 2FA with authentication error."""
-        from app import AuthenticationError
+        from errors import AuthenticationError
 
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -769,7 +771,7 @@ class TestAuthenticationHelpers(unittest.TestCase):
 
     def test_authentication_error_class(self) -> None:
         """Test AuthenticationError exception class."""
-        from app import AuthenticationError
+        from errors import AuthenticationError
 
         error = AuthenticationError("Test auth error")
         self.assertEqual(str(error), "Test auth error")
@@ -1306,7 +1308,7 @@ class TestAsyncOperations(unittest.TestCase):
 
     def test_async_functions_exist(self) -> None:
         """Test that async functions exist and are callable."""
-        from app import initialize_blink, verify_2fa_and_save
+        from auth import initialize_blink, verify_2fa_and_save
 
         # Test functions exist and are callable
         self.assertTrue(callable(initialize_blink))
@@ -1689,12 +1691,13 @@ class TestThumbnailCacheOperations(unittest.TestCase):
 
     @patch("app.thumbnail_cache")
     @patch("app.executor")
-    @patch("app.logger")
+    @patch("camera.logger")
     def test_update_camera_thumbnail_race_condition(
         self, mock_logger, mock_executor, mock_cache
     ):
         """Test thumbnail update with race condition handling."""
-        from app import CameraId, update_camera_thumbnail
+        from app import CameraId
+        from camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -1740,7 +1743,8 @@ class TestThumbnailCacheOperations(unittest.TestCase):
         self, mock_exists, mock_unlink, mock_cache
     ) -> None:
         """Test thumbnail cache file cleanup operations."""
-        from app import CameraId, update_camera_thumbnail
+        from app import CameraId
+        from camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -3283,7 +3287,8 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
         self, mock_connection, mock_executor, mock_cache
     ):
         """Test concurrent thumbnail update handling."""
-        from app import CameraId, update_camera_thumbnail
+        from app import CameraId
+        from camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -3981,7 +3986,8 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
         self, mock_executor, mock_cache
     ) -> None:
         """Test complete thumbnail update workflow with file operations."""
-        from app import CameraId, update_camera_thumbnail
+        from app import CameraId
+        from camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -4027,7 +4033,8 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
         self, mock_executor, mock_cache
     ) -> None:
         """Test thumbnail update skips when race condition detected."""
-        from app import CameraId, update_camera_thumbnail
+        from app import CameraId
+        from camera import update_camera_thumbnail
 
         mock_camera = Mock()
         mock_camera.name = "Test Camera"
@@ -4060,7 +4067,8 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
         self, mock_executor, mock_cache
     ) -> None:
         """Test thumbnail update handles file cleanup errors."""
-        from app import CameraId, update_camera_thumbnail
+        from app import CameraId
+        from camera import update_camera_thumbnail
 
         mock_camera = Mock()
         mock_camera.name = "Test Camera"
@@ -4906,7 +4914,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_async_function_existence(self) -> None:
         """Test that async functions exist."""
-        from app import initialize_blink, verify_2fa_and_save
+        from auth import initialize_blink, verify_2fa_and_save
 
         # Test that async functions exist and are callable
         self.assertTrue(callable(initialize_blink))
@@ -5092,7 +5100,7 @@ class TestTemplateRoutesFixed(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("app.is_authenticated")
+    @patch("auth.is_authenticated")
     @patch("app.render_template")
     def test_index_template_rendering(self, mock_render, mock_auth) -> None:
         """Test index template rendering."""
@@ -5131,7 +5139,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("app.is_authenticated")
+    @patch("auth.is_authenticated")
     def test_index_route(self, mock_auth) -> None:
         """Test index route functionality."""
         mock_auth.return_value = False
@@ -5139,7 +5147,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
         # Should redirect to auth or return content
         self.assertIn(response.status_code, [200, 302])
 
-    @patch("app.is_authenticated")
+    @patch("auth.is_authenticated")
     def test_auth_route(self, mock_auth) -> None:
         """Test auth route functionality."""
         mock_auth.return_value = False
