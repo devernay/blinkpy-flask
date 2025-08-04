@@ -2436,7 +2436,7 @@ class TestCommandLineInterface(unittest.TestCase):
 
     def test_parse_arguments_default(self) -> None:
         """Test argument parsing with defaults."""
-        from app import parse_arguments
+        from utils import parse_arguments
 
         # Test with minimal arguments
         args = parse_arguments(["--host", "127.0.0.1"])
@@ -2447,7 +2447,7 @@ class TestCommandLineInterface(unittest.TestCase):
 
     def test_parse_arguments_all_options(self) -> None:
         """Test argument parsing with all options."""
-        from app import parse_arguments
+        from utils import parse_arguments
 
         args = parse_arguments(
             [
@@ -2471,7 +2471,7 @@ class TestCommandLineInterface(unittest.TestCase):
 
     def test_parse_arguments_help(self) -> None:
         """Test help argument."""
-        from app import parse_arguments
+        from utils import parse_arguments
 
         with self.assertRaises(SystemExit):
             parse_arguments(["--help"])
@@ -3783,7 +3783,7 @@ class TestSecurityAdvanced(unittest.TestCase):
 
     def test_input_sanitization_comprehensive(self) -> None:
         """Test comprehensive input sanitization."""
-        from app import validate_string_input
+        from utils import validate_string_input
 
         # Test various malicious inputs
         malicious_inputs = [
@@ -4798,7 +4798,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_validate_string_input_basic_cases(self) -> None:
         """Test validate_string_input with basic valid cases."""
-        from app import validate_string_input
+        from utils import validate_string_input
 
         # Test valid inputs
         result1 = validate_string_input("valid input", 100, "test")
@@ -4823,7 +4823,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_create_api_response_basic_cases(self) -> None:
         """Test create_api_response with basic cases."""
-        from app import create_api_response
+        from utils import create_api_response
 
         # Test success response
         response, status = create_api_response(success=True, data={"test": "data"})
@@ -4953,7 +4953,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_type_annotations_coverage(self) -> None:
         """Test functions with type annotations."""
-        from app import create_api_response, validate_string_input
+        from utils import create_api_response, validate_string_input
 
         # Test that functions with type annotations work correctly
         response, status = create_api_response(True, {"test": "data"})
