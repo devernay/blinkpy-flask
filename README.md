@@ -238,34 +238,47 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ## Testing
 
 ### Test Suite Overview
-The project includes a comprehensive test suite with **50% code coverage** and **248 passing tests** across multiple test files.
+The project includes a comprehensive test suite with **50% code coverage** and **257 passing tests** across multiple test files.
 
 ### Quick Start
 ```bash
-# Run all core tests with coverage
+# Run all tests (recommended)
+cd tests
+python run_tests.py
+
+# Or use the convenience script from project root
+./test.sh
+
+# Run all tests with coverage
 cd tests
 python run_tests.py --coverage
 
 # Run fast test suite (core tests only)
+cd tests
 python run_tests.py --fast
 
 # Generate HTML coverage report
+cd tests
 python run_tests.py --html
 ```
 
 ### Using pytest directly
 ```bash
-# Run all tests
+# Run all tests (must be run from tests directory)
+cd tests
 pytest
 
 # Run with coverage
-pytest --cov=app --cov-report=term-missing
+cd tests
+pytest --cov=blinkapp --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_app.py
+cd tests
+pytest test_app.py
 
 # Generate HTML coverage report
-pytest --cov=app --cov-report=html --cov-report=term
+cd tests
+pytest --cov=blinkapp --cov-report=html --cov-report=term
 ```
 
 ### Test Runner Options
@@ -291,9 +304,9 @@ python run_tests.py --no-warnings     # Suppress warnings
 
 ### Test Coverage Status
 - **Coverage**: 50% (732/1459 lines)
-- **Passing Tests**: 248
-- **Total Tests**: 369 (248 passed + 121 failed)
-- **Test Files**: 8 comprehensive test suites
+- **Passing Tests**: 257
+- **Total Tests**: 395 (257 passed + 138 failed)
+- **Test Files**: 7 comprehensive test suites
 
 ### Test Architecture
 - **Core Tests** (`test_app.py`): Main application functionality, API endpoints, authentication
@@ -327,7 +340,7 @@ pre-commit install    # Install git hooks
 pre-commit run --all-files  # Run on all files
 
 # Run in debug mode
-python app.py --debug
+python blinkapp.py --debug
 
 # Test API endpoints
 curl http://localhost:5001/api/systems

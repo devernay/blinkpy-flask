@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # Import BlinkError from app to avoid duplication
 # Note: This creates a dependency on app.py, but eliminates class duplication
 try:
-    from app import BlinkError
+    from blinkapp import BlinkError
 except ImportError:
     # Fallback definition if app.py not available (for testing)
     class BlinkError(Exception):

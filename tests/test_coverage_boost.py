@@ -15,8 +15,9 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
-import app
-from app import BaseId, CameraId, ClipId, Config
+import blinkapp
+from blinkapp import CameraId, ClipId, Config
+from ids import BaseId
 
 
 class TestBaseIdNotImplementedMethods(unittest.TestCase):
@@ -67,68 +68,68 @@ class TestBaseIdNotImplementedMethods(unittest.TestCase):
 class TestCachePathValidation(unittest.TestCase):
     """Test cache path validation - lines 747-751."""
 
-    @patch("app.CACHE_DIR", None)
-    @patch("app.CREDENTIALS_FILE", "test")
-    @patch("app.THUMBNAIL_CACHE_DIR", "test")
-    @patch("app.CLIPS_CACHE_DIR", "test")
+    @patch("blinkblinkapp.CACHE_DIR", None)
+    @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_cache_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CACHE_DIR is None."""
         try:
-            from app import ensure_cache_paths_initialized
+            from blinkapp import ensure_cache_paths_initialized
 
             with self.assertRaises(RuntimeError):
                 ensure_cache_paths_initialized()
         except ImportError:
             # Function may not exist, create equivalent test
-            if app.CACHE_DIR is None:
+            if blinkapp.CACHE_DIR is None:
                 with self.assertRaises((RuntimeError, AttributeError)):
                     # This should fail due to None cache dir
-                    str(Path(app.CACHE_DIR) / "test")
+                    str(Path(blinkapp.CACHE_DIR) / "test")
 
-    @patch("app.CACHE_DIR", "test")
-    @patch("app.CREDENTIALS_FILE", None)
-    @patch("app.THUMBNAIL_CACHE_DIR", "test")
-    @patch("app.CLIPS_CACHE_DIR", "test")
+    @patch("blinkblinkapp.CACHE_DIR", "test")
+    @patch("blinkblinkapp.CREDENTIALS_FILE", None)
+    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_credentials_file_none(self) -> None:
         """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
         try:
-            from app import ensure_cache_paths_initialized
+            from blinkapp import ensure_cache_paths_initialized
 
             with self.assertRaises(RuntimeError):
                 ensure_cache_paths_initialized()
         except ImportError:
             # Test equivalent condition
-            if app.CREDENTIALS_FILE is None:
+            if blinkapp.CREDENTIALS_FILE is None:
                 self.assertTrue(True)  # Condition met
 
-    @patch("app.CACHE_DIR", "test")
-    @patch("app.CREDENTIALS_FILE", "test")
-    @patch("app.THUMBNAIL_CACHE_DIR", None)
-    @patch("app.CLIPS_CACHE_DIR", "test")
+    @patch("blinkblinkapp.CACHE_DIR", "test")
+    @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", None)
+    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
         try:
-            from app import ensure_cache_paths_initialized
+            from blinkapp import ensure_cache_paths_initialized
 
             with self.assertRaises(RuntimeError):
                 ensure_cache_paths_initialized()
         except ImportError:
-            if app.THUMBNAIL_CACHE_DIR is None:
+            if blinkapp.THUMBNAIL_CACHE_DIR is None:
                 self.assertTrue(True)
 
-    @patch("app.CACHE_DIR", "test")
-    @patch("app.CREDENTIALS_FILE", "test")
-    @patch("app.THUMBNAIL_CACHE_DIR", "test")
-    @patch("app.CLIPS_CACHE_DIR", None)
+    @patch("blinkblinkapp.CACHE_DIR", "test")
+    @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkblinkapp.CLIPS_CACHE_DIR", None)
     def test_ensure_cache_paths_clips_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
         try:
-            from app import ensure_cache_paths_initialized
+            from blinkapp import ensure_cache_paths_initialized
 
             with self.assertRaises(RuntimeError):
                 ensure_cache_paths_initialized()
         except ImportError:
-            if app.CLIPS_CACHE_DIR is None:
+            if blinkapp.CLIPS_CACHE_DIR is None:
                 self.assertTrue(True)
 
 
@@ -236,29 +237,29 @@ class TestGlobalVariableAccess(unittest.TestCase):
 
     def test_app_instance_access(self) -> None:
         """Test app instance access."""
-        self.assertIsNotNone(app.app)
-        self.assertTrue(hasattr(app.app, "config"))
+        self.assertIsNotNone(blinkapp.app)
+        self.assertTrue(hasattr(blinkapp.app, "config"))
 
     def test_cache_instance_access(self) -> None:
         """Test cache instance access."""
-        self.assertIsNotNone(app.thumbnail_cache)
-        self.assertIsNotNone(app.clips_download_cache)
-        self.assertIsNotNone(app.clips_metadata_cache)
+        self.assertIsNotNone(blinkapp.thumbnail_cache)
+        self.assertIsNotNone(blinkapp.clips_download_cache)
+        self.assertIsNotNone(blinkapp.clips_metadata_cache)
 
         # Test cache methods exist
-        self.assertTrue(hasattr(app.thumbnail_cache, "get"))
-        self.assertTrue(hasattr(app.thumbnail_cache, "clear"))
+        self.assertTrue(hasattr(blinkapp.thumbnail_cache, "get"))
+        self.assertTrue(hasattr(blinkapp.thumbnail_cache, "clear"))
 
     def test_blink_connection_access(self) -> None:
         """Test blink_connection access."""
-        self.assertTrue(hasattr(app, "blink_connection"))
+        self.assertTrue(hasattr(blinkapp, "blink_connection"))
         # blink_connection might be None initially
-        if app.blink_connection is not None:
-            self.assertTrue(hasattr(app.blink_connection, "execute"))
+        if blinkapp.blink_connection is not None:
+            self.assertTrue(hasattr(blinkapp.blink_connection, "execute"))
 
     def test_stream_manager_access(self) -> None:
         """Test stream_manager access."""
-        self.assertTrue(hasattr(app, "stream_manager"))
+        self.assertTrue(hasattr(blinkapp, "stream_manager"))
         # stream_manager might be None initially
 
 
@@ -268,28 +269,30 @@ class TestUtilityFunctions(unittest.TestCase):
     def test_create_api_response_variations(self) -> None:
         """Test create_api_response with different parameter combinations."""
         # Test with minimal parameters
-        response, status = app.create_api_response()
+        response, status = blinkapp.create_api_response()
         self.assertTrue(response["success"])
         self.assertEqual(status, 200)
 
         # Test with data only
-        response, status = app.create_api_response(data={"test": "value"})
+        response, status = blinkapp.create_api_response(data={"test": "value"})
         self.assertTrue(response["success"])
         self.assertEqual(response["data"], {"test": "value"})
 
         # Test with error only
-        response, status = app.create_api_response(success=False, error="Test error")
+        response, status = blinkapp.create_api_response(
+            success=False, error="Test error"
+        )
         self.assertFalse(response["success"])
         self.assertEqual(response["error"], "Test error")
 
         # Test with custom status code
-        response, status = app.create_api_response(status_code=201)
+        response, status = blinkapp.create_api_response(status_code=201)
         self.assertEqual(status, 201)
 
     def test_format_time_ago_function(self) -> None:
         """Test format_time_ago function if it exists."""
         try:
-            from app import format_time_ago
+            from blinkapp import format_time_ago
 
             # Test with recent timestamp
             recent_time = datetime.now() - timedelta(minutes=5)
@@ -305,7 +308,7 @@ class TestErrorHandlingPaths(unittest.TestCase):
     """Test error handling code paths."""
 
     def test_exception_handling_patterns(self) -> None:
-        """Test exception handling patterns used in the app."""
+        """Test exception handling patterns used in the blinkapp."""
         # Test ValueError handling
         with self.assertRaises(ValueError):
             CameraId("")  # Should raise ValueError for empty string
@@ -338,44 +341,44 @@ class TestImportAndModuleLoading(unittest.TestCase):
 
     def test_flask_imports(self) -> None:
         """Test Flask-related imports."""
-        self.assertTrue(hasattr(app, "Flask"))
-        self.assertTrue(hasattr(app, "jsonify"))
-        self.assertTrue(hasattr(app, "request"))
-        self.assertTrue(hasattr(app, "session"))
-        self.assertTrue(hasattr(app, "render_template"))
+        self.assertTrue(hasattr(blinkapp, "Flask"))
+        self.assertTrue(hasattr(blinkapp, "jsonify"))
+        self.assertTrue(hasattr(blinkapp, "request"))
+        self.assertTrue(hasattr(blinkapp, "session"))
+        self.assertTrue(hasattr(blinkapp, "render_template"))
 
     def test_standard_library_imports(self) -> None:
         """Test standard library imports."""
-        import app as app_module
+        import blinkapp as app_module
 
         self.assertTrue(hasattr(app_module, "os"))
         self.assertTrue(hasattr(app_module, "sys"))
-        # json is not imported at module level in app.py
+        # json is not imported at module level in blinkapp.py
         self.assertTrue(hasattr(app_module, "datetime"))
         self.assertTrue(hasattr(app_module, "threading"))
 
     def test_third_party_imports(self) -> None:
         """Test third-party imports."""
-        self.assertTrue(hasattr(app, "requests"))
-        if hasattr(app, "Path"):
-            self.assertTrue(hasattr(app, "Path"))
+        self.assertTrue(hasattr(blinkapp, "requests"))
+        if hasattr(blinkapp, "Path"):
+            self.assertTrue(hasattr(blinkapp, "Path"))
 
     def test_custom_class_imports(self) -> None:
         """Test custom class availability."""
-        self.assertTrue(hasattr(app, "CameraId"))
-        self.assertTrue(hasattr(app, "ClipId"))
-        self.assertTrue(hasattr(app, "Config"))
+        self.assertTrue(hasattr(blinkapp, "CameraId"))
+        self.assertTrue(hasattr(blinkapp, "ClipId"))
+        self.assertTrue(hasattr(blinkapp, "Config"))
 
         # Test classes are callable
-        self.assertTrue(callable(app.CameraId))
-        self.assertTrue(callable(app.ClipId))
+        self.assertTrue(callable(blinkapp.CameraId))
+        self.assertTrue(callable(blinkapp.ClipId))
 
 
 class TestBasicOperations(unittest.TestCase):
     """Test basic operations that should increase coverage."""
 
     def test_string_formatting_operations(self) -> None:
-        """Test string formatting used in the app."""
+        """Test string formatting used in the blinkapp."""
         # Test f-string formatting
         camera_id = "test123"
         formatted = f"Camera {camera_id} thumbnail"
@@ -386,7 +389,7 @@ class TestBasicOperations(unittest.TestCase):
         self.assertIn(camera_id, formatted2)
 
     def test_dictionary_operations(self) -> None:
-        """Test dictionary operations used throughout the app."""
+        """Test dictionary operations used throughout the blinkapp."""
         test_dict = {"key1": "value1", "key2": "value2"}
 
         # Test get method
@@ -399,7 +402,7 @@ class TestBasicOperations(unittest.TestCase):
         self.assertNotIn("nonexistent", test_dict)
 
     def test_list_operations(self) -> None:
-        """Test list operations used in the app."""
+        """Test list operations used in the blinkapp."""
         test_list = ["item1", "item2", "item3"]
 
         # Test append
@@ -411,7 +414,7 @@ class TestBasicOperations(unittest.TestCase):
         self.assertEqual(len(test_list), 6)
 
     def test_path_operations(self) -> None:
-        """Test Path operations used in the app."""
+        """Test Path operations used in the blinkapp."""
         # Test Path creation
         test_path = Path("/tmp/test")
         self.assertIsInstance(test_path, Path)
@@ -422,7 +425,7 @@ class TestBasicOperations(unittest.TestCase):
         self.assertIn("file.txt", str(joined_path))
 
     def test_datetime_operations(self) -> None:
-        """Test datetime operations used in the app."""
+        """Test datetime operations used in the blinkapp."""
         # Test datetime creation
         now = datetime.now()
         self.assertIsInstance(now, datetime)

@@ -221,14 +221,14 @@ The codebase demonstrates solid engineering practices with comprehensive functio
 
 ### 1. Code Duplication and Refactoring Opportunities
 
-#### Python Code (app.py - 3,796 lines)
+#### Python Code (blinkapp.py - 3,796 lines)
 **Major Issues:**
 - **Monolithic file**: Single 3,796-line file violates single responsibility principle
 
 **Recommended Refactoring:**
 ```python
-# Split app.py into modules:
-app/
+# Split blinkapp.py into modules:
+blinkapp/
 ├── __init__.py
 ├── routes/
 │   ├── __init__.py
@@ -404,7 +404,9 @@ Check if the app API is still consistent with the API described in `api.json`. U
 
 Clean up main code and test code, remove unnecessary workarounds. There are sometimes duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
 
-Remove useless comments that refer to previous versions of the code, such as "xxx is now yyy". Add comments in the code to reach at least a 25% comments-to-code ratio.
+It looks like some tests such as `tests/test_coverage_boost.py`, `tests/test_advanced_overage.py`, `tests/test_critical_coverage.py` were not included in the test suite.
+
+Remove useless comments that refer to previous versions of the code, such as "xxx is now yyy". Add comments in the code to reach at least a 25% comments-to-code ratio. Make sure docstrings are complete and up-to-date.
 
 The HLS route should be "/api/camera/{camera_id}/hls/{filename}" rather than "/api/hls/{camera_id}/{filename}". Change this in the Python and Javascript code, as well as in `api.json`.
 

@@ -21,7 +21,9 @@ def run_command(cmd, description):
     print("-" * 60)
 
     try:
-        subprocess.run(cmd, check=True, capture_output=False)
+        # Change to tests directory to avoid import issues with blinkpy submodule
+        tests_dir = Path(__file__).parent
+        subprocess.run(cmd, check=True, capture_output=False, cwd=tests_dir)
         print(f"✅ {description} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
@@ -96,12 +98,15 @@ Examples:
                 "test_critical_coverage.py",
                 "test_coverage_boost.py",
                 "test_advanced_coverage.py",
+                "test_route_decorators.py",
+                "test_initialization.py",
+                "test_utils.py",
             ]
         )
 
     # Add coverage options
     if args.coverage or args.html:
-        cmd.extend(["--cov=app", "--cov-report=term-missing"])
+        cmd.extend(["--cov=blinkapp", "--cov-report=term-missing"])
         if args.html:
             cmd.append("--cov-report=html")
 
@@ -148,7 +153,7 @@ Examples:
         print("\nTroubleshooting:")
         print("- Check test output for specific failure details")
         print("- Ensure all dependencies are installed")
-        print("- Verify app.py is in the parent directory")
+        print("- Verify blinkapp.py is in the parent directory")
 
     return 0 if success else 1
 

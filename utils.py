@@ -203,7 +203,12 @@ def ensure_cache_paths_initialized() -> None:
         RuntimeError: If cache paths haven't been initialized
     """
     # Import here to avoid circular imports
-    from app import CACHE_DIR, CLIPS_CACHE_DIR, CREDENTIALS_FILE, THUMBNAIL_CACHE_DIR
+    from blinkapp import (
+        CACHE_DIR,
+        CLIPS_CACHE_DIR,
+        CREDENTIALS_FILE,
+        THUMBNAIL_CACHE_DIR,
+    )
 
     if (
         CACHE_DIR is None

@@ -37,13 +37,13 @@ def handle_api_error(error, operation, status_code=500):
     return create_api_response(success=False, error=str(error), status_code=status_code)
 
 
-# Mock the app module
-mock_app = MagicMock()
-mock_app.Config = MockConfig
-mock_app.create_api_response = create_api_response
-mock_app.handle_api_error = handle_api_error
-mock_app.ResponseReturnValue = tuple
-sys.modules["app"] = mock_app
+# Mock the blinkapp module
+mock_blinkapp = MagicMock()
+mock_blinkapp.Config = MockConfig
+mock_blinkapp.create_api_response = create_api_response
+mock_blinkapp.handle_api_error = handle_api_error
+mock_blinkapp.ResponseReturnValue = tuple
+sys.modules["blinkapp"] = mock_blinkapp
 
 # Now import our decorators
 from route_decorators import (  # noqa: E402

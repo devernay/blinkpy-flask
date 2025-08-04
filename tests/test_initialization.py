@@ -20,18 +20,22 @@ def initialize_for_testing() -> None:
     # Import here to avoid circular imports
     from concurrent.futures import ThreadPoolExecutor
 
-    import app
+    import blinkapp
     from blink_connection import BlinkConnection
     from config import Config
 
     # Initialize executor for background tasks if not already initialized
-    if app.executor is None:
-        app.executor = ThreadPoolExecutor(max_workers=Config.THREAD_POOL_MAX_WORKERS)
+    if blinkapp.executor is None:
+        blinkapp.executor = ThreadPoolExecutor(
+            max_workers=Config.THREAD_POOL_MAX_WORKERS
+        )
 
     # Initialize Blink connection if not already initialized
-    if app.blink_connection is None:
-        app.blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
+    if blinkapp.blink_connection is None:
+        blinkapp.blink_connection = BlinkConnection(
+            timeout=Config.BLINK_CONNECTION_TIMEOUT
+        )
 
     # Initialize cache directories for testing if not already done
-    if app.CACHE_DIR is None:
-        app.initialize_cache_paths()
+    if blinkapp.CACHE_DIR is None:
+        blinkapp.initialize_cache_paths()

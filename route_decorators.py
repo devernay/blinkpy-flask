@@ -31,7 +31,7 @@ def _get_validation_error() -> type[Exception]:
     Returns:
         ValidationError class from app module
     """
-    from app import ValidationError
+    from blinkapp import ValidationError
 
     return ValidationError
 
@@ -57,7 +57,7 @@ def _get_operation_name(
 def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
     """Handle common response formatting logic."""
     # Import here to avoid circular import
-    from app import create_api_response
+    from blinkapp import create_api_response
 
     # If the function already returns a Flask response, pass it through
     if hasattr(result, "status_code") or isinstance(result, tuple):
@@ -78,7 +78,7 @@ def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
 def _handle_error(e: Exception, operation_name: str) -> ErrorResponse:
     """Handle common error processing logic."""
     # Import here to avoid circular import
-    from app import handle_api_error
+    from blinkapp import handle_api_error
 
     logger.error(f"Error in {operation_name}: {e}")
     response, status_code = handle_api_error(e, operation_name)
@@ -90,7 +90,7 @@ def _validate_json_payload(
 ) -> JsonDict | ErrorResponse:
     """Validate JSON payload and return data or error response."""
     # Import here to avoid circular import
-    from app import Config, create_api_response
+    from blinkapp import Config, create_api_response
 
     data = request.get_json()
     if not isinstance(data, dict):
@@ -120,7 +120,7 @@ def _validate_parameters(
 ) -> dict[str, object] | ErrorResponse:
     """Validate URL parameters and return updated kwargs or error response."""
     # Import here to avoid circular import
-    from app import create_api_response
+    from blinkapp import create_api_response
 
     for param_name, validator in validate_params.items():
         if param_name in kwargs:
@@ -238,7 +238,7 @@ def _get_cache_key(
 def _create_cached_response(cached_result: object) -> FlaskResponse:
     """Create response for cached data."""
     # Import here to avoid circular import
-    from app import create_api_response
+    from blinkapp import create_api_response
 
     response, status_code = create_api_response(success=True, data=cached_result)
     return jsonify(response), status_code
@@ -247,7 +247,7 @@ def _create_cached_response(cached_result: object) -> FlaskResponse:
 def _create_success_message_response(message: str) -> FlaskResponse:
     """Create response for simple success messages."""
     # Import here to avoid circular import
-    from app import create_api_response
+    from blinkapp import create_api_response
 
     response, status_code = create_api_response(success=True, data={"message": message})
     return jsonify(response), status_code
@@ -469,7 +469,7 @@ def template_route_with_validation(
         def wrapper(*args: object, **kwargs: object) -> TemplateResult:
             from flask import render_template, request
 
-            from app import validate_string_input
+            from blinkapp import validate_string_input
 
             operation = _get_operation_name(func, operation_name)
 

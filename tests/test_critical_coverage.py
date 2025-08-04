@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import the app module and key components
 from cachetools import LRUCache
 
-from app import (
+from blinkapp import (
     CameraId,
     ClipId,
     Config,
@@ -43,7 +43,7 @@ class TestLoggingSetup(unittest.TestCase):
         mock_file.return_value = mock_file_handler
 
         try:
-            from app import setup_logging
+            from blinkapp import setup_logging
 
             setup_logging()
             # Should create handlers and configure logger
@@ -52,7 +52,7 @@ class TestLoggingSetup(unittest.TestCase):
             # Function may not exist as standalone
             self.assertTrue(True)
 
-    @patch("app.Config.LOG_FILE", "/tmp/test.log")
+    @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
     def test_logging_configuration(self) -> None:
         """Test logging configuration paths."""
         # Test that logging configuration can be accessed
@@ -64,7 +64,7 @@ class TestLoggingSetup(unittest.TestCase):
 class TestBlinkInitialization(unittest.TestCase):
     """Test Blink system initialization - lines 800-820."""
 
-    @patch("app.blink_connection")
+    @patch("blinkapp.blink_connection")
     @patch("aiohttp.ClientSession")
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
@@ -89,14 +89,14 @@ class TestBlinkInitialization(unittest.TestCase):
         mock_auth.return_value = mock_auth_instance
 
         try:
-            from app import initialize_blink
+            from blinkapp import initialize_blink
 
             result = await initialize_blink("test@example.com", "password")
             self.assertTrue(result)
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("app.blink_connection")
+    @patch("blinkapp.blink_connection")
     @patch("aiohttp.ClientSession")
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
@@ -118,7 +118,7 @@ class TestBlinkInitialization(unittest.TestCase):
         mock_blink.return_value = mock_blink_instance
 
         try:
-            from app import initialize_blink
+            from blinkapp import initialize_blink
 
             result = await initialize_blink("test@example.com", "password")
             self.assertEqual(result, "2fa_required")
@@ -135,10 +135,10 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
         self.mock_camera.name = "Test Camera"
         self.mock_camera.thumbnail = "http://example.com/thumb.jpg"
 
-    @patch("app.thumbnail_cache")
-    @patch("app.blink_connection")
-    @patch("app.executor")
-    @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
+    @patch("blinkapp.thumbnail_cache")
+    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.executor")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     def test_update_camera_thumbnail_cache(
         self, mock_executor: Mock, mock_connection: Mock, mock_cache: Mock
     ):
@@ -160,7 +160,7 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("app.thumbnail_cache")
+    @patch("blinkapp.thumbnail_cache")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.unlink")
     def test_thumbnail_file_cleanup(
@@ -222,7 +222,7 @@ class TestTimeFormatting(unittest.TestCase):
 
         self.assertEqual(expected, "2d ago")
 
-    @patch("app.format_time_ago")
+    @patch("blinkapp.format_time_ago")
     def test_time_formatting_error_handling(self, mock_format: Mock) -> None:
         """Test error handling in time formatting."""
         mock_format.return_value = "Never"
@@ -240,8 +240,8 @@ class TestTimeFormatting(unittest.TestCase):
 class TestCacheDirectoryOperations(unittest.TestCase):
     """Test cache directory operations - lines 1316-1322."""
 
-    @patch("app.CLIPS_CACHE_DIR", "/tmp/clips")
-    @patch("app.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     @patch("os.makedirs")
     @patch("shutil.rmtree")
     @patch("os.path.exists")
@@ -283,7 +283,7 @@ class TestErrorContextManager(unittest.TestCase):
     def test_error_context_success(self) -> None:
         """Test error context manager with successful operation."""
         try:
-            from app import error_context
+            from blinkapp import error_context
 
             with error_context("test operation", ValueError):
                 # Successful operation
@@ -295,7 +295,7 @@ class TestErrorContextManager(unittest.TestCase):
     def test_error_context_exception_handling(self) -> None:
         """Test error context manager with exception."""
         try:
-            from app import error_context
+            from blinkapp import error_context
 
             with self.assertRaises(ValueError):
                 with error_context("test operation", ValueError):
@@ -359,7 +359,7 @@ class TestValidationClasses(unittest.TestCase):
 class TestCachePathInitialization(unittest.TestCase):
     """Test cache path initialization - lines 754-775."""
 
-    @patch("app.app")
+    @patch("blinkapp.app")
     @patch("pathlib.Path")
     def test_initialize_cache_paths_with_config(
         self, mock_path: Mock, mock_app: Mock
@@ -376,7 +376,7 @@ class TestCachePathInitialization(unittest.TestCase):
         # Should use app config
         mock_app.config.get.assert_called_with("CACHE_DIR", "cache")
 
-    @patch("app.app")
+    @patch("blinkapp.app")
     def test_initialize_cache_paths_default(self, mock_app: Mock) -> None:
         """Test cache path initialization with defaults."""
         mock_app.config.get.return_value = None

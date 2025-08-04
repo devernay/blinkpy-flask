@@ -28,7 +28,7 @@ def is_authenticated() -> bool:
         True if authenticated, False otherwise
     """
     # Import here to avoid circular imports
-    from app import blink
+    from blinkapp import blink
 
     return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete
 
@@ -46,7 +46,7 @@ async def initialize_blink(
         True if successful, '2fa_required' if 2FA needed, False if failed
     """
     # Import here to avoid circular imports
-    from app import blink_connection
+    from blinkapp import blink_connection
 
     with error_context("initialize Blink system", AuthenticationError):
         from aiohttp import ClientSession
@@ -73,9 +73,9 @@ async def initialize_blink(
         logger.info("Blink system initialized successfully")
 
         # Update global blink reference
-        import app
+        import blinkapp
 
-        app.blink = blink
+        blinkapp.blink = blink
 
         return True
 
@@ -92,7 +92,7 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         True if verification successful, False otherwise
     """
     # Import here to avoid circular imports
-    from app import CREDENTIALS_FILE, blink
+    from blinkapp import CREDENTIALS_FILE, blink
 
     with error_context("verify 2FA and save credentials", AuthenticationError):
         logger.debug(f"Starting 2FA verification with key: {tfa_key[:2]}***")
@@ -120,8 +120,8 @@ async def load_saved_blink() -> bool:
         True if successfully loaded, False otherwise
     """
     # Import here to avoid circular imports
-    import app
-    from app import CREDENTIALS_FILE
+    import blinkapp
+    from blinkapp import CREDENTIALS_FILE
 
     assert CREDENTIALS_FILE is not None
     cred_file = Path(cast(str, CREDENTIALS_FILE))
@@ -146,7 +146,7 @@ async def load_saved_blink() -> bool:
                 success = await blink.start()
                 if success is True:
                     logger.info("Blink system loaded from saved credentials")
-                    app.blink = blink
+                    blinkapp.blink = blink
                     return True
                 else:
                     logger.warning("Failed to load Blink system from saved credentials")
@@ -172,7 +172,7 @@ def setup_auth_routes(app_instance):
             Login form template or redirect based on authentication result
         """
         # Import here to avoid circular imports
-        from app import CREDENTIALS_FILE, blink, blink_connection
+        from blinkapp import CREDENTIALS_FILE, blink, blink_connection
 
         if request.method == "POST":
             try:
@@ -228,7 +228,7 @@ def setup_auth_routes(app_instance):
             2FA form template or redirect based on verification result
         """
         # Import here to avoid circular imports
-        from app import blink_connection
+        from blinkapp import blink_connection
 
         if "temp_username" not in session:
             return redirect(url_for("login"))
@@ -297,15 +297,15 @@ def setup_auth_routes(app_instance):
             JSON response with success status
         """
         # Import here to avoid circular imports
-        import app
-        from app import CREDENTIALS_FILE, clear_all_caches, executor
+        import blinkapp
+        from blinkapp import CREDENTIALS_FILE, clear_all_caches, executor
 
         # Clear caches first in background
         executor.submit(clear_all_caches)
 
         # Clear session and credentials
         session.clear()
-        app.blink = None
+        blinkapp.blink = None
         assert CREDENTIALS_FILE is not None
         cred_file = Path(CREDENTIALS_FILE)
         if cred_file.exists():

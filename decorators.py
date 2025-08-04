@@ -100,7 +100,7 @@ def requires_blink(
 
         # At this point, type checkers know blink is not None and available
         # Import blink here to avoid circular imports
-        from app import blink
+        from blinkapp import blink
 
         assert blink is not None  # Help type checkers understand this
         assert blink.available  # Additional assertion for Pylance
@@ -117,7 +117,7 @@ def require_blink() -> tuple[ApiResponse, int] | None:
         None if Blink is available, error response tuple if not
     """
     # Import here to avoid circular imports
-    from app import blink, create_api_response
+    from blinkapp import blink, create_api_response
 
     if blink is None:
         return create_api_response(

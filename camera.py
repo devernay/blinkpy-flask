@@ -67,7 +67,7 @@ def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
         Camera object if found, None otherwise
     """
     # Import locally to avoid circular imports
-    from app import blink
+    from blinkapp import blink
 
     if blink is None or not blink.available:
         return None
@@ -111,7 +111,12 @@ def update_camera_thumbnail(
         cached_ts: Cached thumbnail timestamp
     """
     # Import locally to avoid circular imports
-    from app import THUMBNAIL_CACHE_DIR, blink_connection, executor, thumbnail_cache
+    from blinkapp import (
+        THUMBNAIL_CACHE_DIR,
+        blink_connection,
+        executor,
+        thumbnail_cache,
+    )
 
     if current_ts <= cached_ts:
         return
@@ -194,7 +199,7 @@ def setup_camera_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         # Import locally to avoid circular imports
-        from app import THUMBNAIL_CACHE_DIR, blink, executor, thumbnail_cache
+        from blinkapp import THUMBNAIL_CACHE_DIR, blink, executor, thumbnail_cache
 
         assert blink is not None
 
@@ -249,7 +254,7 @@ def setup_camera_routes(app: Flask) -> None:
             ValueError: If camera_id_str is invalid
         """
         # Import locally to avoid circular imports
-        from app import blink_connection, stream_manager
+        from blinkapp import blink_connection, stream_manager
 
         # camera_id is now validated and converted by the decorator
 
@@ -324,7 +329,7 @@ def setup_camera_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         # Import locally to avoid circular imports
-        from app import blink_connection, stream_manager
+        from blinkapp import blink_connection, stream_manager
 
         try:
             # Stop HLS transcoding
@@ -362,7 +367,7 @@ def setup_camera_routes(app: Flask) -> None:
             Flask Response with HLS file content or error
         """
         # Import locally to avoid circular imports
-        from app import stream_manager
+        from blinkapp import stream_manager
 
         if stream_manager is None:
             return create_api_response(
@@ -431,7 +436,7 @@ def setup_camera_routes(app: Flask) -> None:
         # Import locally to avoid circular imports
         from flask import Response
 
-        from app import THUMBNAIL_CACHE_DIR, blink_connection, thumbnail_cache
+        from blinkapp import THUMBNAIL_CACHE_DIR, blink_connection, thumbnail_cache
 
         # camera_id is now validated and converted by the decorator
 
