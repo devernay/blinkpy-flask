@@ -22,17 +22,14 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app import (
-    BaseId,
-    CameraId,
-    ClipId,
     Config,
-    NetworkId,
     app,
     create_api_response,
     extract_thumbnail_timestamp,
     format_time_ago,
     validate_string_input,
 )
+from ids import BaseId, CameraId, ClipId, NetworkId
 
 
 class TestBaseId(unittest.TestCase):
@@ -500,7 +497,8 @@ class TestErrorHandlingExtended(unittest.TestCase):
 
     def test_error_context_manager_with_different_operations(self) -> None:
         """Test error context manager with different operation names."""
-        from app import BlinkError, error_context
+        from decorators import error_context
+        from errors import BlinkError
 
         # Test successful operation
         with error_context("test operation"):
@@ -514,7 +512,7 @@ class TestErrorHandlingExtended(unittest.TestCase):
 
     def test_safe_execute_with_different_exceptions(self) -> None:
         """Test safe_execute with different exception types."""
-        from app import safe_execute
+        from decorators import safe_execute
 
         # Test with ValueError - safe_execute returns operation name on failure
         def failing_func():
@@ -779,7 +777,7 @@ class TestAuthenticationHelpers(unittest.TestCase):
 
     def test_cache_error_class(self) -> None:
         """Test CacheError exception class."""
-        from app import CacheError
+        from errors import CacheError
 
         error = CacheError("Test cache error")
         self.assertEqual(str(error), "Test cache error")
@@ -852,7 +850,7 @@ class TestCacheOperations(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
 
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         self.cache = ThumbnailCache(maxsize=10)
 
@@ -892,7 +890,8 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_error_context_manager(self) -> None:
         """Test error context manager."""
-        from app import BlinkError, error_context
+        from decorators import error_context
+        from errors import BlinkError
 
         with self.assertRaises(BlinkError):
             with error_context("test operation"):
@@ -900,7 +899,7 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_safe_execute_success(self) -> None:
         """Test safe_execute with successful function."""
-        from app import safe_execute
+        from decorators import safe_execute
 
         def success_func():
             return "success"
@@ -910,7 +909,7 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_safe_execute_failure(self) -> None:
         """Test safe_execute with failing function."""
-        from app import safe_execute
+        from decorators import safe_execute
 
         def fail_func():
             raise ValueError("Test error")
@@ -1629,7 +1628,7 @@ class TestErrorContextManager(unittest.TestCase):
 
     def test_error_context_success(self) -> None:
         """Test error_context with successful operation."""
-        from app import error_context
+        from decorators import error_context
 
         with error_context("test operation"):
             # Should not raise any exception
@@ -1639,7 +1638,8 @@ class TestErrorContextManager(unittest.TestCase):
 
     def test_error_context_with_exception(self) -> None:
         """Test error_context with exception."""
-        from app import BlinkError, error_context
+        from decorators import error_context
+        from errors import BlinkError
 
         with self.assertRaises(BlinkError):
             with error_context("test operation"):
@@ -2208,7 +2208,7 @@ class TestBackgroundTaskExecution(unittest.TestCase):
     @patch("app.blink_connection")
     def test_blink_connection_error_handling(self, mock_connection) -> None:
         """Test blink connection error handling."""
-        from app import BlinkError
+        from errors import BlinkError
 
         # Mock connection error
         mock_connection.execute.side_effect = BlinkError("Connection failed")
@@ -2531,7 +2531,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
     @patch("app.blink")
     def test_network_timeout_handling(self, mock_blink) -> None:
         """Test handling of network timeouts."""
-        from app import BlinkError
+        from errors import BlinkError
 
         # Mock timeout error
         mock_blink.cameras = {12345: Mock()}
@@ -2611,7 +2611,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         # Test FIFO cache behavior
         cache = ThumbnailCache(maxsize=2)
@@ -2936,7 +2936,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
     @patch("app.blink_connection")
     def test_get_cloud_clips_api_error(self, mock_connection, mock_blink) -> None:
         """Test getting cloud clips when API returns error."""
-        from app import BlinkError
+        from errors import BlinkError
 
         mock_connection.execute.side_effect = BlinkError("API Error")
 
@@ -3367,7 +3367,7 @@ class TestResourceManagement(unittest.TestCase):
 
     def test_cache_size_enforcement(self) -> None:
         """Test that cache size limits are enforced."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         # Test FIFO cache respects size limits
         cache = ThumbnailCache(maxsize=3)
@@ -3522,7 +3522,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 
     def test_cache_maintenance_with_size_limits(self) -> None:
         """Test cache maintenance respects size limits."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         # Test cache eviction policy
         cache = ThumbnailCache(maxsize=3)
@@ -4745,7 +4745,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_fifo_cache_basic_operations(self) -> None:
         """Test cache basic operations."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         # Test basic cache operations
         cache = ThumbnailCache(maxsize=2)
@@ -4788,7 +4788,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_error_context_manager_basic(self) -> None:
         """Test error_context manager basic functionality."""
-        from app import error_context
+        from decorators import error_context
 
         # Test successful operation
         with error_context("test operation"):
@@ -4925,8 +4925,10 @@ class TestCriticalPathCoverage(unittest.TestCase):
         """Test import statements and module loading."""
         # Test that key modules can be imported
         try:
-            from app import CameraId, ClipId, Config, ThumbnailCache
+            from app import Config
             from app import app as flask_app
+            from cache import ThumbnailCache
+            from ids import CameraId, ClipId
 
             # Test that imports worked by checking they're callable/accessible
             self.assertTrue(callable(CameraId))
@@ -4942,7 +4944,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def test_exception_classes(self) -> None:
         """Test custom exception classes."""
-        from app import BlinkError
+        from errors import BlinkError
 
         # Test that BlinkError can be instantiated
         error = BlinkError("Test error")
@@ -5269,7 +5271,7 @@ class TestPerformanceOptimizationsFixed(unittest.TestCase):
 
     def test_cache_hit_optimization(self) -> None:
         """Test cache hit optimization."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         cache = ThumbnailCache(maxsize=10)
 
@@ -5283,7 +5285,7 @@ class TestPerformanceOptimizationsFixed(unittest.TestCase):
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         cache = ThumbnailCache(maxsize=3)
 
@@ -5368,7 +5370,7 @@ class TestResourceManagementFixed(unittest.TestCase):
 
     def test_cache_size_enforcement(self) -> None:
         """Test cache size enforcement."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         cache = ThumbnailCache(maxsize=5)
 
@@ -5385,7 +5387,7 @@ class TestResourceManagementFixed(unittest.TestCase):
 
     def test_memory_usage_optimization(self) -> None:
         """Test memory usage optimization."""
-        from app import ThumbnailCache
+        from cache import ThumbnailCache
 
         cache = ThumbnailCache(maxsize=100)
 

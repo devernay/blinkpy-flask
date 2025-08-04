@@ -255,7 +255,7 @@ app/
     └── errors.py        # Error handling
 ```
 
-Do it step by step, **one file at a time**.
+Do it **step** by **step**, **one** file at a time.
 
 At each step, check that:
 - the main code and tests pass `ruff check`, `mypy`, and has no error with `pyright` (warnings are ok).
