@@ -320,8 +320,8 @@ class TestFlaskApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertTrue(data["success"])
-        self.assertEqual(len(data["data"]), 1)
-        self.assertEqual(data["data"][0]["name"], "Test System")
+        self.assertEqual(len(data["data"]["systems"]), 1)
+        self.assertEqual(data["data"]["systems"][0]["name"], "Test System")
 
     @patch("app.blink")
     def test_api_devices_invalid_network_id(self, mock_blink) -> None:
@@ -994,21 +994,21 @@ class TestAPIEndpoints(unittest.TestCase):
     @patch("app.blink")
     def test_get_systems_success(self, mock_blink) -> None:
         """Test successful get_systems call."""
-        # Mock blink object with networks
-        mock_network = Mock()
-        mock_network.network_id = 12345
-        mock_network.name = "Test Network"
-        mock_network.armed = True
-        mock_network.online = True
+        # Mock blink object with sync modules
+        mock_sync = Mock()
+        mock_sync.network_id = 12345
+        mock_sync.arm = True
+        mock_sync.online = True
 
-        mock_blink.networks = {"12345": mock_network}
+        mock_blink.available = True
+        mock_blink.sync = {"Test Network": mock_sync}
 
         response = self.client.get("/api/system/list")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
         self.assertTrue(data["success"])
-        self.assertIsInstance(data["data"], list)
+        self.assertIsInstance(data["data"]["systems"], list)
 
     @patch("app.blink")
     def test_get_devices_no_network(self, mock_blink) -> None:
@@ -1159,7 +1159,7 @@ class TestClipManagement(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertTrue(data["success"])
-        self.assertEqual(data["data"], [])
+        self.assertEqual(data["data"]["clips"], [])
 
     @patch("app.blink")
     def test_get_clips_invalid_storage(self, mock_blink) -> None:
@@ -2051,9 +2051,9 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
 
             data = json.loads(response.data)
             self.assertTrue(data["success"])
-            self.assertIsInstance(data["data"], list)
+            self.assertIsInstance(data["data"]["devices"], list)
             # Should have sync module + 2 cameras = 3 devices
-            self.assertEqual(len(data["data"]), 3)
+            self.assertEqual(len(data["data"]["devices"]), 3)
 
     @patch("app.blink")
     @patch("app.blink_connection")
@@ -5058,167 +5058,6 @@ class TestCriticalPathCoverage(unittest.TestCase):
 # ============================================================================
 
 
-class TestCriticalPathCoverageFixed(unittest.TestCase):
-    """Test critical paths and basic functionality with proper mocking."""
-
-    def setUp(self) -> None:
-        """Set up test environment."""
-        app.config["TESTING"] = True
-        self.client = app.test_client()
-
-    @patch("app.is_authenticated")
-    def test_basic_route_accessibility(self, mock_auth) -> None:
-        """Test that basic routes are accessible."""
-        mock_auth.return_value = False
-        response = self.client.get("/")
-        # Should redirect to auth or return 200
-        self.assertIn(response.status_code, [200, 302])
-
-    def test_camera_id_basic_functionality(self) -> None:
-        """Test CameraId basic functionality."""
-        # Test valid camera ID
-        camera_id = CameraId("12345")
-        self.assertEqual(str(camera_id), "12345")
-
-        # Test invalid camera ID should raise ValueError
-        with self.assertRaises(ValueError):
-            CameraId("invalid-id-with-special-chars!")
-
-    def test_clip_id_basic_functionality(self) -> None:
-        """Test ClipId basic functionality."""
-        # Test valid clip ID
-        clip_id = ClipId("67890")
-        self.assertEqual(str(clip_id), "67890")
-
-        # Test invalid clip ID should raise ValueError
-        with self.assertRaises(ValueError):
-            ClipId("invalid@clip#id")
-
-    def test_create_api_response_basic_cases(self) -> None:
-        """Test create_api_response function."""
-        from app import create_api_response
-
-        # Test success response
-        response, status = create_api_response(success=True, data={"test": "data"})
-        self.assertIn("success", response)
-        self.assertIn("data", response)
-        self.assertTrue(response["success"])
-        self.assertEqual(status, 200)
-
-        # Test error response
-        error_response, error_status = create_api_response(
-            success=False, error="Test error"
-        )
-        self.assertIn("success", error_response)
-        self.assertIn("error", error_response)
-        self.assertFalse(error_response["success"])
-        self.assertEqual(error_status, 200)  # Default status
-
-    def test_fifo_cache_basic_operations(self) -> None:
-        """Test cache basic operations."""
-        from app import ThumbnailCache
-
-        cache = ThumbnailCache(maxsize=2)
-
-        # Test setitem and get
-        cache["key1"] = "value1"
-        self.assertEqual(cache.get("key1"), "value1")
-
-        # Test contains
-        self.assertIn("key1", cache)
-        self.assertNotIn("nonexistent", cache)
-
-        # Test FIFO eviction
-        cache["key2"] = "value2"
-        cache["key3"] = "value3"  # Should evict key1
-
-        self.assertNotIn("key1", cache)
-        self.assertIn("key2", cache)
-        self.assertIn("key3", cache)
-
-    @patch("app.blink_connection")
-    @patch("app.thumbnail_cache")
-    def test_global_variable_access(self, mock_cache, mock_connection) -> None:
-        """Test global variable access."""
-        # Test that global variables can be accessed
-        self.assertIsNotNone(app)
-
-        # Test cache variables exist by importing them
-        from app import thumbnail_cache
-
-        # Test cache variables exist
-        mock_cache.get.return_value = None
-        thumbnail_cache.get("test")
-        mock_cache.get.assert_called_with("test")
-
-    def test_import_statements_coverage(self) -> None:
-        """Test that import statements are covered."""
-        # Test that key classes can be imported
-        from app import CameraId, ClipId, Config, ThumbnailCache
-
-        self.assertTrue(callable(CameraId))
-        self.assertTrue(callable(ClipId))
-        self.assertTrue(callable(ThumbnailCache))
-        self.assertTrue(hasattr(Config, "CLIPS_CACHE_SIZE"))
-
-
-class TestCommandLineInterfaceFixed(unittest.TestCase):
-    """Test command line interface functionality."""
-
-    @patch("sys.argv", ["app.py"])
-    def test_parse_arguments_default(self) -> None:
-        """Test argument parsing with defaults."""
-        # Test that argument parsing works
-        try:
-            # Try to import and test parse_arguments if it exists
-            import argparse
-
-            parser = argparse.ArgumentParser()
-            parser.add_argument("--host", default="127.0.0.1")
-            parser.add_argument("--port", type=int, default=5000)
-            parser.add_argument("--debug", action="store_true")
-
-            args = parser.parse_args([])
-            self.assertEqual(args.host, "127.0.0.1")
-            self.assertEqual(args.port, 5000)
-            self.assertFalse(args.debug)
-        except Exception:
-            # If parsing fails, that's also valid for coverage
-            self.assertTrue(True)
-
-    @patch("sys.argv", ["app.py", "--host", "0.0.0.0", "--port", "8080", "--debug"])
-    def test_parse_arguments_all_options(self) -> None:
-        """Test argument parsing with all options."""
-        try:
-            import argparse
-
-            parser = argparse.ArgumentParser()
-            parser.add_argument("--host", default="127.0.0.1")
-            parser.add_argument("--port", type=int, default=5000)
-            parser.add_argument("--debug", action="store_true")
-            parser.add_argument("--cache", default=None)
-            parser.add_argument("--log-level", default="INFO")
-
-            args = parser.parse_args(["--host", "0.0.0.0", "--port", "8080", "--debug"])
-            self.assertEqual(args.host, "0.0.0.0")
-            self.assertEqual(args.port, 8080)
-            self.assertTrue(args.debug)
-        except Exception:
-            self.assertTrue(True)
-
-    def test_parse_arguments_help(self) -> None:
-        """Test help argument handling."""
-        try:
-            import argparse
-
-            parser = argparse.ArgumentParser()
-            parser.add_argument("--help", action="help")
-            # Just test that parser can be created
-            self.assertIsNotNone(parser)
-        except Exception:
-            self.assertTrue(True)
-
-
 class TestApplicationInitializationFixed(unittest.TestCase):
     """Test application initialization sequences."""
 
@@ -5241,27 +5080,6 @@ class TestApplicationInitializationFixed(unittest.TestCase):
 
         # Test that Config class exists
         self.assertTrue(hasattr(sys.modules[__name__], "Config"))
-
-
-class TestDataTypesFixed(unittest.TestCase):
-    """Test custom data types and validation."""
-
-    def test_camera_id_functionality(self) -> None:
-        """Test CameraId class functionality."""
-        # Test valid camera ID
-        valid_id = "12345"
-        camera_id = CameraId(valid_id)
-        self.assertEqual(str(camera_id), valid_id)
-        self.assertEqual(camera_id.value, valid_id)
-
-    def test_clip_id_types(self) -> None:
-        """Test ClipId with different types."""
-        # Test string clip ID
-        clip_id_str = ClipId("67890")
-        self.assertEqual(str(clip_id_str), "67890")
-
-        # Test that ClipId has expected methods
-        self.assertTrue(hasattr(clip_id_str, "_validate"))
 
 
 class TestTemplateRoutesFixed(unittest.TestCase):

@@ -382,6 +382,20 @@ Move all testing code in a subdirectory, and clean up the workspace. Make sure t
 
 Fix all failing tests one by one, except those already marked as "Test Doubts and Unfixable Tests" in `tests/test_doubts.md`. Figure out if each test fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later.
 
+Check what are the most common failure causes in failing tests, and start by working on those to fix these tests.
+
+Make sure that the main code doesn't have lines that are specifically written for tests. Test code should be externalized to tests as much as possible.
+
+Check for any duplicate or redundant tests, and factorize them. Organize unit tests to mimic the main code organization.
+
+Check for any inconsistencies or duplicate code in the main app code.
+
+Check if the app API is still consistent with the API described in api.json.
+
+Clean up main code and test code, remove unnecessary workarounds. There are sometimes duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
+
+Add comments in the code to reach at least a 25% comments-to-code ratio.
+
 Next, we will write a full developer documentation detailing, not necessarily in that order:
 - The general organization of the code, describing the function of each file.
 - How configuration centralization works, what to modify in the Python and javascript code if an additional config constant is needed

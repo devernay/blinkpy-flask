@@ -541,109 +541,13 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
 
 class ThumbnailCache(ThreadSafeCache):
     """
-    Thumbnail cache inheriting from LRUCache with thread-safe methods.
+    Thumbnail cache with specialized methods for camera thumbnails.
 
-    Combines the simplicity of direct LRUCache inheritance with thread-safe
-    operations using both decorators and cachetools @cachedmethod decorators.
+    Inherits all thread-safe cache operations from ThreadSafeCache,
+    adding only thumbnail-specific functionality.
     """
 
-    def __init__(self, maxsize: int = 100) -> None:
-        """Initialize thumbnail cache with specified maximum size.
-
-        Args:
-            maxsize: Maximum number of thumbnails to cache
-        """
-        super().__init__(maxsize=maxsize)
-        self._lock = threading.RLock()
-
-    # Thread-safe overrides for LRUCache methods using decorator
-    @synchronized
-    def get(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe get method.
-
-        Args:
-            key: Cache key to retrieve
-            default: Default value if key not found
-
-        Returns:
-            Cached value or default
-        """
-        return super().get(key, default)
-
-    @synchronized
-    def __getitem__(self, key: CacheKey) -> object:
-        """Thread-safe getitem method.
-
-        Args:
-            key: Cache key to retrieve
-
-        Returns:
-            Cached value
-
-        Raises:
-            KeyError: If key not found
-        """
-        return super().__getitem__(key)
-
-    @synchronized
-    def __setitem__(self, key: CacheKey, value: object) -> None:
-        """Thread-safe setitem method."""
-        super().__setitem__(key, value)
-
-    @synchronized
-    def __delitem__(self, key: CacheKey) -> None:
-        """Thread-safe delitem method."""
-        super().__delitem__(key)
-
-    @synchronized
-    def __contains__(self, key: CacheKey) -> bool:
-        """Thread-safe contains method."""
-        return super().__contains__(key)
-
-    @synchronized
-    def __len__(self) -> int:
-        """Thread-safe len method."""
-        return super().__len__()
-
-    @synchronized
-    def pop(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe pop method."""
-        return super().pop(key, default)
-
-    @synchronized
-    def popitem(self) -> tuple[CacheKey, object]:
-        """Thread-safe popitem method."""
-        return super().popitem()
-
-    @synchronized
-    def clear(self) -> None:
-        """Thread-safe clear method."""
-        super().clear()
-
-    @synchronized
-    def setdefault(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe setdefault method."""
-        return super().setdefault(key, default)
-
-    @synchronized
-    def update(self, *args: object, **kwargs: object) -> None:
-        """Thread-safe update method."""
-        super().update(*args, **kwargs)
-
-    @synchronized
-    def keys(self) -> list[str]:
-        """Thread-safe keys method."""
-        return list(super().keys())
-
-    @synchronized
-    def values(self) -> list[dict[str, object]]:
-        """Thread-safe values method."""
-        return list(super().values())
-
-    @synchronized
-    def items(self) -> list[tuple[str, dict[str, object]]]:
-        """Thread-safe items method."""
-        return list(super().items())
+    # No need to redefine __init__ or any basic cache methods - inherited from ThreadSafeCache!
 
     # Custom methods using @cachedmethod decorator
     @cachedmethod(lambda self: self, lock=lambda self: self._lock)
@@ -768,6 +672,10 @@ class ClipsMetadataCache(ThreadSafeCache):
         cache_key = (self.get_clips_metadata, storage_type)
         self[cache_key] = clips
 
+    def clear_cache(self) -> None:
+        """Clear all cached clips metadata."""
+        self.clear()
+
 
 class ClipsDownloadCache(ThreadSafeCache):
     """
@@ -812,6 +720,10 @@ class ClipsDownloadCache(ThreadSafeCache):
             "filepath": filepath,
             "thumbnail": thumbnail_path,
         }
+
+    def clear_cache(self) -> None:
+        """Clear all cached clip download info."""
+        self.clear()
 
 
 # Cache instances using object-oriented memoizing decorators
@@ -1910,7 +1822,7 @@ def get_systems() -> JsonDict:
             }
         )
 
-    return systems
+    return {"systems": systems}
 
 
 @app.route("/api/system/<network_id_str>/devices")
@@ -1963,7 +1875,7 @@ def get_devices(network_id: NetworkId) -> JsonDict:
         logger.debug(f"Camera device data for {camera.name}: {device_data}")
         devices.append(device_data)
 
-    return devices
+    return {"devices": devices}
 
 
 @app.route("/api/system/<network_id_str>/arm", methods=["POST"])
@@ -2079,7 +1991,7 @@ def get_clips() -> JsonDict:
         else:
             clips = process_local_clips()
 
-    return clips
+    return {"clips": clips}
 
 
 @app.route("/api/system/refresh", methods=["POST"])

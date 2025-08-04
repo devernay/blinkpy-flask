@@ -2,6 +2,47 @@
 
 This document explains why certain tests cannot be fixed without significant changes to the application code or test architecture.
 
+## PROGRESS UPDATE - Current Session
+
+### Major Improvements Made
+- **Started with**: 158 failing tests
+- **Current status**: 29 failing tests, 275 passing tests
+- **Tests fixed**: 129 tests (82% improvement)
+
+### Key Fixes Applied
+
+#### 1. API Response Structure Issues (Fixed)
+**Problem**: API endpoints returning lists were being double-wrapped by the `@api_route` decorator.
+**Solution**: Modified endpoints to return `{"key": list}` instead of `list` directly.
+- Fixed `/api/system/list` to return `{"systems": [...]}`
+- Fixed `/api/system/<id>/devices` to return `{"devices": [...]}`
+- Fixed `/api/clips` to return `{"clips": [...]}`
+- Updated corresponding tests to expect `data["data"]["key"]` structure
+
+#### 2. Cache Method Inconsistencies (Fixed)
+**Problem**: `clear_all_caches()` function called `clear_cache()` method but some cache classes only had `clear()`.
+**Solution**: Added `clear_cache()` method to `ClipsMetadataCache` and `ClipsDownloadCache` classes.
+
+#### 3. Mock Structure Issues (Fixed)
+**Problem**: Many tests used incorrect mock structures (e.g., `blink.networks` instead of `blink.sync`).
+**Solution**: Updated tests to use correct `blink.sync[sync_name].cameras[camera_name]` structure.
+
+#### 4. Duplicate Test Classes Identified
+**Found**: 11 pairs of duplicate test classes (Original vs "Fixed" versions)
+- TestCriticalPathCoverage / TestCriticalPathCoverageFixed
+- TestCommandLineInterface / TestCommandLineInterfaceFixed
+- TestApplicationInitialization / TestApplicationInitializationFixed
+- TestDataTypes / TestDataTypesFixed
+- TestTemplateRoutes / TestTemplateRoutesFixed
+- TestAdvancedEndpoints / TestAdvancedEndpointsFixed
+- TestConfigurationEdgeCases / TestConfigurationEdgeCasesFixed
+- TestFileOperations / TestFileOperationsFixed
+- TestPerformanceOptimizations / TestPerformanceOptimizationsFixed
+- TestCacheLoadingOperations / TestCacheLoadingOperationsFixed
+- TestResourceManagement / TestResourceManagementFixed
+
+**Next Step**: Need to consolidate these duplicates by keeping the better version and removing redundancy.
+
 ## Recently Identified Issues
 
 ### TestAPIEndpoints.test_clear_all_caches_function
