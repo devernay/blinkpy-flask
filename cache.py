@@ -1,79 +1,59 @@
-"""
-Cache classes for the Blink Camera Flask application.
+"""Thread-safe caching module for Blink Flask application.
 
-This module provides thread-safe caching implementations for different types
-of data used throughout the application:
-- ThumbnailCache: Stores camera thumbnail metadata and timestamps
-- ClipsMetadataCache: Caches clip listing data to reduce API calls
-- ClipsDownloadCache: Manages downloaded clip files and thumbnails
+This module provides thread-safe cache implementations with proper inheritance
+from cachetools.LRUCache while maintaining full type safety.
 
-All cache classes use LRU (Least Recently Used) eviction policy and are
-thread-safe for concurrent access from Flask request handlers.
+The solution avoids mypy signature conflicts by not overriding methods that
+have complex generic signatures, instead providing thread-safe access through
+context managers and helper methods.
 """
 
-import functools
+import logging
 import threading
-from collections.abc import Callable
-from pathlib import Path
-from typing import TypedDict, TypeVar
+import time
+from typing import Any, TypeAlias
 
-from cachetools import LRUCache, cachedmethod
-from cachetools.keys import hashkey
+from cachetools import LRUCache
 
-from config import Config
+# Type aliases for better readability
+CacheKey: TypeAlias = str
+CacheValue: TypeAlias = dict[str, object]
 
-# Type definitions for better code clarity
-CacheKey = str
-T = TypeVar("T")
+logger = logging.getLogger(__name__)
 
 
-def synchronized(func: Callable[..., T]) -> Callable[..., T]:
-    """Decorator to make cache methods thread-safe using the instance's _lock.
+def synchronized(func):
+    """Decorator for thread-safe method execution.
 
-    This follows the standard Python pattern for creating decorators that
-    preserve function metadata using functools.wraps. Each cache instance
-    maintains its own threading lock for safe concurrent access.
-
-    Args:
-        func: The function to synchronize with thread locking
-
-    Returns:
-        Thread-safe wrapper function that acquires lock before execution
+    This decorator is kept for backwards compatibility but should not be used
+    on methods that override parent class methods due to mypy signature conflicts.
     """
 
-    @functools.wraps(func)
-    def wrapper(self: object, *args: object, **kwargs: object) -> T:
-        # Acquire the instance's lock before executing the function
-        with self._lock:  # type: ignore[attr-defined]
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
             return func(self, *args, **kwargs)
 
     return wrapper
 
 
-# ============================================================================
-# Base Cache Classes
-# ============================================================================
-
-
 class ThreadSafeCache(LRUCache[str, dict[str, object]]):
-    """Base thread-safe cache class with common functionality.
+    """Thread-safe LRU cache with proper inheritance and type safety.
 
-    Provides thread-safe operations for all cache implementations,
-    eliminating code duplication across cache classes. Uses LRU (Least
-    Recently Used) eviction policy to automatically manage memory usage
-    when the cache reaches its maximum size.
+    This class properly inherits from cachetools.LRUCache while providing
+    thread safety. Instead of overriding methods with complex signatures,
+    we provide thread-safe access through the context manager pattern.
 
-    This class wraps the cachetools.LRUCache with thread synchronization
-    to ensure safe concurrent access from multiple Flask request handlers.
-    All methods are protected by a reentrant lock to prevent race conditions.
+    The cache uses LRU (Least Recently Used) eviction policy to automatically
+    manage memory usage when the cache reaches its maximum size.
 
     Attributes:
         _lock: Threading RLock for synchronizing access to cache operations
 
     Example:
         >>> cache = ThreadSafeCache(maxsize=50)
-        >>> cache["key1"] = {"data": "value1"}
-        >>> result = cache.get("key1", {})
+        >>> with cache.lock():
+        ...     cache["key1"] = {"data": "value1"}
+        ...     result = cache.get("key1", {})
     """
 
     def __init__(self, maxsize: int = 100) -> None:
@@ -91,431 +71,350 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
         # This prevents deadlocks when cache methods call other cache methods
         self._lock = threading.RLock()
 
-    # Thread-safe overrides for LRUCache methods using @synchronized decorator
-    @synchronized
-    def get(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe get method with optional default value.
+    def lock(self):
+        """Get the lock context manager for thread-safe operations.
 
-        Retrieves a value from the cache without raising KeyError if
-        the key doesn't exist. Updates the LRU order when key is found.
+        Returns:
+            Context manager for the cache lock
+
+        Example:
+            >>> with cache.lock():
+            ...     cache["key"] = {"data": "value"}
+            ...     value = cache.get("key")
+        """
+        return self._lock
+
+    # Override only the simplest methods to avoid signature conflicts
+    def __len__(self) -> int:
+        """Thread-safe len method for getting cache size."""
+        with self._lock:
+            return super().__len__()
+
+    def clear(self) -> None:
+        """Thread-safe clear method for removing all items."""
+        with self._lock:
+            super().clear()
+
+    # Provide thread-safe helper methods with simple signatures
+    def safe_get(
+        self, key: str, default: dict[str, object] | None = None
+    ) -> dict[str, object] | None:
+        """Thread-safe get method with optional default value.
 
         Args:
             key: Cache key to retrieve
-            default: Default value if key not found (default: None)
+            default: Default value if key not found
 
         Returns:
             Cached value or default if key not found
         """
-        return super().get(key, default)
+        with self._lock:
+            return super().get(key, default)
 
-    @synchronized
-    def __getitem__(self, key: CacheKey) -> object:
-        """Thread-safe getitem method for dict-like access.
-
-        Allows cache[key] syntax. Updates LRU order when key is accessed.
-
-        Args:
-            key: Cache key to retrieve
-
-        Returns:
-            Cached value
-
-        Raises:
-            KeyError: If key not found in cache
-        """
-        return super().__getitem__(key)
-
-    @synchronized
-    def __setitem__(self, key: CacheKey, value: object) -> None:
-        """Thread-safe setitem method for dict-like assignment.
-
-        Allows cache[key] = value syntax. May trigger LRU eviction
-        if cache is at maximum capacity.
+    def safe_set(self, key: str, value: dict[str, object]) -> None:
+        """Thread-safe set method.
 
         Args:
             key: Cache key to set
             value: Value to store
         """
-        super().__setitem__(key, value)
+        with self._lock:
+            super().__setitem__(key, value)
 
-    @synchronized
-    def __delitem__(self, key: CacheKey) -> None:
-        """Thread-safe delitem method for dict-like deletion.
-
-        Allows del cache[key] syntax.
+    def safe_delete(self, key: str) -> bool:
+        """Thread-safe delete method.
 
         Args:
             key: Cache key to delete
 
-        Raises:
-            KeyError: If key not found in cache
+        Returns:
+            True if key was deleted, False if key didn't exist
         """
-        super().__delitem__(key)
+        with self._lock:
+            try:
+                super().__delitem__(key)
+                return True
+            except KeyError:
+                return False
 
-    @synchronized
-    def __contains__(self, key: CacheKey) -> bool:
-        """Thread-safe contains method for membership testing.
-
-        Allows 'key in cache' syntax. Does not update LRU order.
+    def safe_contains(self, key: str) -> bool:
+        """Thread-safe contains check.
 
         Args:
             key: Cache key to check
 
         Returns:
-            True if key exists in cache, False otherwise
+            True if key exists in cache
         """
-        return super().__contains__(key)
+        with self._lock:
+            return super().__contains__(key)
 
-    @synchronized
-    def __len__(self) -> int:
-        """Thread-safe len method for getting cache size.
-
-        Allows len(cache) syntax.
-
-        Returns:
-            Number of items currently in cache
-        """
-        return super().__len__()
-
-    @synchronized
-    def pop(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe pop method for removing and returning a value.
+    def safe_pop(
+        self, key: str, default: dict[str, object] | None = None
+    ) -> dict[str, object] | None:
+        """Thread-safe pop method.
 
         Args:
             key: Cache key to remove
             default: Default value if key not found
 
         Returns:
-            Removed value or default if key not found
+            Removed value or default
         """
-        return super().pop(key, default)
+        with self._lock:
+            return super().pop(key, default)
 
-    @synchronized
-    def popitem(self) -> tuple[CacheKey, object]:
-        """Thread-safe popitem method for removing LRU item.
+    def safe_keys(self) -> list[str]:
+        """Thread-safe keys method.
 
         Returns:
-            Tuple of (key, value) for the least recently used item
-
-        Raises:
-            KeyError: If cache is empty
+            List of all cache keys (snapshot at call time)
         """
-        return super().popitem()
+        with self._lock:
+            return list(super().keys())
 
-    @synchronized
-    def clear(self) -> None:
-        """Thread-safe clear method for removing all items.
-
-        Empties the entire cache, resetting it to initial state.
-        """
-        super().clear()
-
-    @synchronized
-    def setdefault(self, key: CacheKey, default: object = None) -> object:
-        """Thread-safe setdefault method.
-
-        Gets value if key exists, otherwise sets and returns default.
-
-        Args:
-            key: Cache key to get or set
-            default: Default value to set if key doesn't exist
+    def safe_values(self) -> list[dict[str, object]]:
+        """Thread-safe values method.
 
         Returns:
-            Existing value or newly set default value
+            List of all cache values (snapshot at call time)
         """
-        return super().setdefault(key, default)
+        with self._lock:
+            return list(super().values())
 
-    @synchronized
-    def update(self, *args: object, **kwargs: object) -> None:
-        """Thread-safe update method for bulk updates.
+    def safe_items(self) -> list[tuple[str, dict[str, object]]]:
+        """Thread-safe items method.
 
-        Updates cache with key-value pairs from another mapping or iterable.
-
-        Args:
-            *args: Positional arguments (mapping or iterable of pairs)
-            **kwargs: Keyword arguments as key-value pairs
+        Returns:
+            List of all cache key-value pairs (snapshot at call time)
         """
-        super().update(*args, **kwargs)
+        with self._lock:
+            return list(super().items())
 
-    @synchronized
-    def keys(self) -> list[str]:
-        """Thread-safe keys method."""
-        return list(super().keys())
+    def clear_cache(self) -> None:
+        """Clear all cached items.
 
-    @synchronized
-    def values(self) -> list[dict[str, object]]:
-        """Thread-safe values method."""
-        return list(super().values())
+        This method provides a consistent interface for cache clearing
+        across all cache implementations in the application.
+        """
+        self.clear()
 
-    @synchronized
-    def items(self) -> list[tuple[str, dict[str, object]]]:
-        """Thread-safe items method."""
-        return list(super().items())
+    def get_stats(self) -> dict[str, int | float]:
+        """Get cache statistics.
 
-    @property
-    def maxsize(self) -> int:
-        """Get maximum cache size."""
-        return int(super().maxsize)
-
-    @synchronized
-    def get_cache_stats(self) -> dict[str, object]:
-        """Get cache statistics for monitoring and debugging."""
-        return {"size": len(self), "maxsize": self.maxsize}
-
-
-# ============================================================================
-# Specialized Cache Implementations
-# ============================================================================
+        Returns:
+            Dictionary with cache size and capacity information
+        """
+        with self._lock:
+            return {
+                "size": len(self),
+                "maxsize": self.maxsize,
+            }
 
 
 class ThumbnailCache(ThreadSafeCache):
-    """
-    Thumbnail cache with specialized methods for camera thumbnails.
+    """Specialized cache for camera thumbnails with timestamp tracking.
 
-    Stores camera thumbnail metadata including timestamps, file paths,
-    and cache status. Inherits all thread-safe cache operations from
-    ThreadSafeCache while adding thumbnail-specific functionality.
+    Extends ThreadSafeCache with thumbnail-specific functionality including
+    timestamp tracking and freshness checking for camera thumbnail images.
     """
 
-    # Inherits __init__ and all basic cache methods from ThreadSafeCache
-
-    # Custom methods using @cachedmethod decorator for automatic caching
-    @cachedmethod(lambda self: self, lock=lambda self: self._lock)
-    def get_thumbnail_data(self, camera_id: str, timestamp: int) -> dict[str, object]:
-        """
-        Get thumbnail data - automatically cached and thread-safe.
-
-        Uses cachetools @cachedmethod decorator to automatically cache
-        results based on camera_id and timestamp parameters.
-
-        This method uses @cachedmethod decorator as recommended by cachetools.
-        Only called once per unique (camera_id, timestamp) combination.
-
-        Returns:
-            Dictionary with camera metadata for caching
-        """
-        return {
-            "camera_id": camera_id,
-            "timestamp": timestamp,
-            "filename": f"thumb_{camera_id}_{timestamp}.jpg",
-        }
-
-    @synchronized
-    def update_thumbnail_if_newer(
-        self, camera_id: str, timestamp: int, filename: str
-    ) -> bool:
-        """Update thumbnail if timestamp is newer than cached version.
-
-        Implements conditional caching logic where decorators aren't suitable.
-        Only updates the cache if the new timestamp is more recent than
-        the currently cached thumbnail for this camera.
+    def __init__(self, maxsize: int = 100) -> None:
+        """Initialize thumbnail cache.
 
         Args:
-            camera_id: ID of the camera
-            timestamp: Timestamp of the new thumbnail (Unix timestamp)
-            filename: Filename of the thumbnail file
-
-        Returns:
-            True if thumbnail was updated (newer timestamp), False otherwise
+            maxsize: Maximum number of thumbnails to cache
         """
-        # Check for existing entries for this camera
-        cache_key = f"{camera_id}_current"
-        current_entry = self.get(cache_key)
-
-        # Extract current timestamp, defaulting to 0 if no entry exists
-        current_ts = (
-            current_entry.get("timestamp", 0) if isinstance(current_entry, dict) else 0
-        )
-
-        # Only update if new timestamp is more recent
-        if timestamp > current_ts:
-            self[cache_key] = {
-                "camera_id": camera_id,
-                "timestamp": timestamp,
-                "filename": filename,
-            }
-            return True
-        return False
-
-    @synchronized
-    def get_current_thumbnail(self, camera_id: str) -> dict[str, object] | None:
-        """Get current thumbnail info for camera."""
-        result = self.get(f"{camera_id}_current")
-        return result if isinstance(result, dict) else None
-
-    def clear_cache(self) -> None:
-        """Clear all cached thumbnails."""
-        self.clear()
-
-    @synchronized
-    def get_cache_stats(self) -> dict[str, object]:
-        """Get cache statistics."""
-        return {"size": len(self), "maxsize": self.maxsize}
-
-
-class ClipsMetadataCache(ThreadSafeCache):
-    """
-    Clips metadata cache with specialized methods for clip data.
-
-    Inherits thread-safe operations from ThreadSafeCache and adds
-    clip-specific functionality.
-    """
-
-    def __init__(self, maxsize: int = 1000):
         super().__init__(maxsize=maxsize)
 
-    @cachedmethod(lambda self: self, lock=lambda self: self._lock)
-    def get_clips_metadata(self, storage_type: str) -> list[dict[str, object]]:
-        """
-        Get clips metadata - automatically cached and thread-safe.
-
-        Uses @cachedmethod decorator as recommended by cachetools.
-        """
-        # This would normally fetch from Blink API
-        return []
-
-    @cachedmethod(
-        lambda self: self,
-        lock=lambda self: self._lock,
-        key=lambda self, storage, filters: hashkey(
-            storage, tuple(sorted(filters.items()))
-        ),
-    )
-    def get_filtered_clips(
-        self, storage_type: str, filters: dict[str, object]
-    ) -> list[dict[str, object]]:
-        """Get filtered clips with custom key function.
-
-        Uses custom key function to handle dict parameters properly.
+    def get_thumbnail_timestamp(self, camera_id: str) -> float | None:
+        """Get timestamp for cached thumbnail.
 
         Args:
-            storage_type: Type of storage ('cloud' or 'local')
-            filters: Dictionary of filters to apply
+            camera_id: Camera identifier
 
         Returns:
-            List of filtered clip metadata dictionaries
+            Timestamp when thumbnail was cached, or None if not found
         """
-        base_clips = self.get_clips_metadata(storage_type)
-        # Apply filters here
-        return base_clips
+        thumbnail_data = self.safe_get(camera_id)
+        if thumbnail_data and "timestamp" in thumbnail_data:
+            timestamp_obj = thumbnail_data["timestamp"]
+            if isinstance(timestamp_obj, int | float):
+                return float(timestamp_obj)
+        return None
 
-    @synchronized
-    def cache_clips_manually(
-        self, storage_type: str, clips: list[dict[str, object]]
-    ) -> None:
-        """Manually cache clips list (for cases where decorator isn't suitable).
+    def is_thumbnail_fresh(self, camera_id: str, max_age_seconds: int = 300) -> bool:
+        """Check if cached thumbnail is still fresh.
 
         Args:
-            storage_type: Type of storage ('cloud' or 'local')
-            clips: List of clip metadata dictionaries to cache
-        """
-        # Manually add to cache using the same key pattern as the decorator
-        cache_key = (self.get_clips_metadata, storage_type)
-        self[cache_key] = clips
-
-    def clear_cache(self) -> None:
-        """Clear all cached clips metadata."""
-        self.clear()
-
-
-class ClipsDownloadCache(ThreadSafeCache):
-    """
-    Clips download cache with specialized methods for clip downloads.
-
-    Manages cached clip files and their associated thumbnails. Stores
-    file paths, download status, and thumbnail information for both
-    cloud and local clips. Inherits thread-safe operations from
-    ThreadSafeCache and adds download-specific functionality.
-    """
-
-    @cachedmethod(lambda self: self, lock=lambda self: self._lock)
-    def get_clip_download_info(self, clip_id: str) -> dict[str, object]:
-        """Get clip download info - automatically cached and thread-safe.
-
-        Uses @cachedmethod decorator as recommended by cachetools.
-        This method is only called once per unique clip_id and results
-        are automatically cached for subsequent requests.
-
-        Args:
-            clip_id: ID of the clip to get download info for
+            camera_id: Camera identifier
+            max_age_seconds: Maximum age in seconds before thumbnail is stale
 
         Returns:
-            Dictionary containing clip download information including
-            file path and thumbnail status
+            True if thumbnail exists and is within max age
         """
-        return {
-            "clip_id": clip_id,
-            "filepath": f"/downloads/{clip_id}.mp4",
-            "thumbnail": None,  # Will be updated when thumbnail is generated
-        }
+        timestamp = self.get_thumbnail_timestamp(camera_id)
+        if timestamp is None:
+            return False
+        return (time.time() - timestamp) < max_age_seconds
 
-    @synchronized
-    def cache_clip_manually(
-        self, clip_id: str, filepath: str, thumbnail_path: str | None = None
+    def update_thumbnail(
+        self,
+        camera_id: str,
+        thumbnail_data: bytes,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
-        """Manually cache clip info for cases where decorator isn't suitable.
-
-        Used when we need to update cache entries with actual file paths
-        and thumbnail information after download/processing operations.
+        """Update thumbnail with current timestamp.
 
         Args:
-            clip_id: ID of the clip
-            filepath: Actual path to the downloaded clip file
-            thumbnail_path: Optional path to the generated thumbnail file
+            camera_id: Camera identifier
+            thumbnail_data: Raw thumbnail image data
+            metadata: Optional metadata to store with thumbnail
         """
-        # Use the same cache key format as the decorated method
-        cache_key = (self.get_clip_download_info, clip_id)
-        self[cache_key] = {
-            "clip_id": clip_id,
-            "filepath": filepath,
-            "thumbnail": thumbnail_path,
+        cache_entry = {
+            "data": thumbnail_data,
+            "timestamp": time.time(),
+            "metadata": metadata or {},
         }
-
-    def clear_cache(self) -> None:
-        """Clear all cached clip download info."""
-        self.clear()
+        self.safe_set(camera_id, cache_entry)
 
 
-# Cache instances using object-oriented memoizing decorators
-thumbnail_cache_oo = ThumbnailCache(maxsize=Config.THUMBNAIL_CACHE_SIZE)
-clips_metadata_cache_oo = ClipsMetadataCache(maxsize=Config.CLIPS_METADATA_CACHE_SIZE)
-clips_download_cache_oo = ClipsDownloadCache(maxsize=Config.CLIPS_CACHE_SIZE)
+class ClipsCache(ThreadSafeCache):
+    """Specialized cache for video clips with metadata and access tracking.
 
-# Cache instances for application use
-thumbnail_cache = thumbnail_cache_oo
-clips_metadata_cache = clips_metadata_cache_oo
-clips_download_cache = clips_download_cache_oo
-
-
-def get_cache_stats() -> dict[str, dict[str, object]]:
-    """Get statistics for all caches using OO implementation."""
-    return {
-        "thumbnail_cache": thumbnail_cache.get_cache_stats(),
-        "clips_metadata_cache": clips_metadata_cache.get_cache_stats(),
-        "clips_download_cache": clips_download_cache.get_cache_stats(),
-    }
-
-
-# Typed dictionaries for structured data
-class ThumbnailCacheEntry(TypedDict):
-    """Cache entry for camera thumbnails.
-
-    Attributes:
-        timestamp: Unix timestamp when thumbnail was captured
-        filename: Cached thumbnail filename
+    Extends ThreadSafeCache with clip-specific functionality including
+    access counting, age tracking, and automatic cleanup of old clips.
     """
 
-    timestamp: int
-    filename: str
+    def __init__(self, maxsize: int = 50) -> None:
+        """Initialize clips cache.
+
+        Args:
+            maxsize: Maximum number of clips to cache
+        """
+        super().__init__(maxsize=maxsize)
+
+    def add_clip(self, clip_id: str, clip_data: dict[str, Any]) -> None:
+        """Add clip with automatic metadata enhancement.
+
+        Args:
+            clip_id: Unique clip identifier
+            clip_data: Clip information and metadata
+        """
+        enhanced_data = {
+            "clip_data": clip_data,
+            "cached_at": time.time(),
+            "access_count": 0,
+            "last_accessed": time.time(),
+        }
+        self.safe_set(clip_id, enhanced_data)
+
+    def get_clip(self, clip_id: str) -> dict[str, Any] | None:
+        """Get clip and update access statistics.
+
+        Args:
+            clip_id: Unique clip identifier
+
+        Returns:
+            Clip data if found, None otherwise
+        """
+        with self.lock():
+            clip_entry = self.safe_get(clip_id)
+            if clip_entry:
+                # Update access statistics
+                access_count = clip_entry.get("access_count", 0)
+                if isinstance(access_count, int):
+                    clip_entry["access_count"] = access_count + 1
+                clip_entry["last_accessed"] = time.time()
+
+                # Update the cache with new stats
+                self.safe_set(clip_id, clip_entry)
+
+                # Return the actual clip data
+                clip_data = clip_entry.get("clip_data")
+                if isinstance(clip_data, dict):
+                    return clip_data
+            return None
+
+    def cleanup_old_clips(self, max_age_hours: int = 24) -> int:
+        """Remove clips older than specified age.
+
+        Args:
+            max_age_hours: Maximum age in hours before clips are removed
+
+        Returns:
+            Number of clips removed
+        """
+        with self.lock():
+            current_time = time.time()
+            max_age_seconds = max_age_hours * 3600
+            old_clips = []
+
+            for clip_id, clip_entry in self.safe_items():
+                if isinstance(clip_entry, dict):
+                    cached_at = clip_entry.get("cached_at", 0)
+                    if (
+                        isinstance(cached_at, int | float)
+                        and (current_time - cached_at) > max_age_seconds
+                    ):
+                        old_clips.append(clip_id)
+
+            for clip_id in old_clips:
+                self.safe_delete(clip_id)
+
+            if old_clips:
+                logger.info(f"Cleaned up {len(old_clips)} old clips from cache")
+            return len(old_clips)
 
 
-class ClipCacheEntry(TypedDict):
-    """Cache entry for downloaded clips.
+# Global cache instances (initialized by app.py)
+thumbnail_cache: ThumbnailCache | None = None
+clips_cache: ClipsCache | None = None
+settings_cache: ThreadSafeCache | None = None
 
-    Attributes:
-        filepath: Path to cached video file
-        thumbnail: Path to generated thumbnail image (optional)
+
+def initialize_caches(config: dict[str, Any]) -> None:
+    """Initialize global cache instances with configuration.
+
+    Args:
+        config: Configuration dictionary with cache settings
     """
+    global thumbnail_cache, clips_cache, settings_cache
 
-    filepath: Path
-    thumbnail: Path | None
+    thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
+    clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
+    settings_cache = ThreadSafeCache(maxsize=config.get("settings_cache_size", 10))
+
+    logger.info("Cache instances initialized successfully")
+
+
+def clear_all_caches() -> None:
+    """Clear all cache instances."""
+    if thumbnail_cache:
+        thumbnail_cache.clear()
+    if clips_cache:
+        clips_cache.clear()
+    if settings_cache:
+        settings_cache.clear()
+
+    logger.info("All caches cleared")
+
+
+def get_cache_stats() -> dict[str, dict[str, int | float]]:
+    """Get statistics for all cache instances.
+
+    Returns:
+        Dictionary with statistics for each cache type
+    """
+    stats = {}
+
+    if thumbnail_cache:
+        stats["thumbnail_cache"] = thumbnail_cache.get_stats()
+
+    if clips_cache:
+        stats["clips_cache"] = clips_cache.get_stats()
+
+    if settings_cache:
+        stats["settings_cache"] = settings_cache.get_stats()
+
+    return stats
