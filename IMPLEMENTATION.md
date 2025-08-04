@@ -232,15 +232,15 @@ app/
 ├── __init__.py
 ├── routes/
 │   ├── __init__.py
-│   ├── auth.py          # Authentication routes
-│   ├── camera.py        # Camera operations
+│   ├── auth.py          # Authentication routes (already extracted but not in this directory)
+│   ├── camera.py        # Camera operations (already extracted but not in this directory)
 │   ├── clips.py         # Clip management
 │   ├── system.py        # System management
 │   └── settings.py      # Settings management
 ├── models/
 │   ├── __init__.py
-│   ├── cache.py         # Cache implementations
-│   ├── ids.py           # ID validation classes
+│   ├── cache.py         # Cache implementations (already extracted but not in this directory)
+│   ├── ids.py           # ID validation classes (already extracted but not in this directory)
 │   └── responses.py     # API response models
 ├── services/
 │   ├── __init__.py
@@ -249,9 +249,9 @@ app/
 │   └── stream_service.py # Stream management
 └── utils/
     ├── __init__.py
-    ├── decorators.py    # Route decorators
+    ├── decorators.py    # Route decorators (already extracted but not in this directory)
     ├── validators.py    # Input validation
-    └── errors.py        # Error handling
+    └── errors.py        # Error handling (already extracted but not in this directory)
 ```
 
 Do it **step** by **step**, **one** file at a time.
