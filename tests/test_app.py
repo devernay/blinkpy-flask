@@ -35,40 +35,71 @@ from utils import (
 
 
 class TestBaseId(unittest.TestCase):
-    """Test BaseId base class functionality."""
+    """Test BaseId base class functionality.
+
+    Tests the abstract base class that provides common validation
+    and functionality for all ID types in the application. This
+    includes pattern validation, equality comparison, and hashing.
+    """
 
     def setUp(self) -> None:
-        """Set up test fixtures."""
+        """Set up test fixtures.
+
+        Creates a concrete test implementation of BaseId for testing
+        the abstract base class functionality without depending on
+        specific ID implementations.
+        """
 
         class TestId(BaseId):
+            """Concrete test implementation of BaseId."""
+
             def _get_pattern(self) -> str:
+                """Return regex pattern for alphanumeric IDs."""
                 return r"^[a-zA-Z0-9]+$"
 
             def _get_type_name(self) -> str:
+                """Return human-readable type name for error messages."""
                 return "Test ID"
 
         self.TestId = TestId
 
     def test_valid_id(self) -> None:
-        """Test valid ID creation."""
+        """Test valid ID creation and string representation.
+
+        Verifies that valid IDs are created correctly and that
+        both str() and .value property return the expected value.
+        """
         test_id = self.TestId("test123")
         self.assertEqual(str(test_id), "test123")
         self.assertEqual(test_id.value, "test123")
 
     def test_empty_id_raises_error(self) -> None:
-        """Test empty ID raises ValueError."""
+        """Test empty ID raises ValueError with appropriate message.
+
+        Ensures that empty strings are rejected during ID creation
+        with a clear error message for debugging.
+        """
         with self.assertRaises(ValueError) as cm:
             self.TestId("")
         self.assertIn("cannot be empty", str(cm.exception))
 
     def test_invalid_pattern_raises_error(self) -> None:
-        """Test invalid pattern raises ValueError."""
+        """Test invalid pattern raises ValueError with type-specific message.
+
+        Verifies that IDs not matching the required pattern are rejected
+        with error messages that include the specific ID type name.
+        """
         with self.assertRaises(ValueError) as cm:
             self.TestId("test-invalid!")
         self.assertIn("Invalid Test ID format", str(cm.exception))
 
     def test_equality(self) -> None:
-        """Test ID equality comparison."""
+        """Test ID equality comparison works correctly.
+
+        Ensures that IDs with the same value are considered equal
+        and IDs with different values are not equal. This is
+        important for using IDs as dictionary keys and in sets.
+        """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
         id3 = self.TestId("test456")
@@ -77,7 +108,12 @@ class TestBaseId(unittest.TestCase):
         self.assertNotEqual(id1, id3)
 
     def test_hash(self) -> None:
-        """Test ID hashing for use in sets/dicts."""
+        """Test ID hashing for use in sets and dictionaries.
+
+        Verifies that equal IDs have the same hash value and that
+        duplicate IDs are properly deduplicated in sets. This is
+        critical for using IDs as cache keys.
+        """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
 
@@ -86,63 +122,119 @@ class TestBaseId(unittest.TestCase):
 
 
 class TestCameraId(unittest.TestCase):
-    """Test CameraId validation."""
+    """Test CameraId validation.
+
+    Tests the CameraId class which validates camera identifiers
+    from the Blink API. Camera IDs are used throughout the
+    application for thumbnail requests, live streaming, and
+    device management.
+    """
 
     def test_valid_camera_id(self) -> None:
-        """Test valid camera ID."""
+        """Test valid camera ID creation.
+
+        Verifies that standard alphanumeric camera IDs are
+        accepted and stored correctly.
+        """
         camera_id = CameraId("camera123")
         self.assertEqual(str(camera_id), "camera123")
 
     def test_camera_id_with_underscore(self) -> None:
-        """Test camera ID with underscore."""
+        """Test camera ID with underscore character.
+
+        Ensures that camera IDs containing underscores (which
+        are common in Blink camera IDs) are properly validated
+        and accepted.
+        """
         camera_id = CameraId("camera_123")
         self.assertEqual(str(camera_id), "camera_123")
 
 
 class TestNetworkId(unittest.TestCase):
-    """Test NetworkId validation."""
+    """Test NetworkId validation.
+
+    Tests the NetworkId class which validates Blink network/system
+    identifiers. Network IDs are numeric strings that identify
+    specific Blink sync modules and their associated cameras.
+    """
 
     def test_valid_network_id(self) -> None:
-        """Test valid network ID."""
+        """Test valid numeric network ID.
+
+        Verifies that numeric network IDs (the standard format
+        from Blink API) are accepted and stored correctly.
+        """
         network_id = NetworkId("12345")
         self.assertEqual(str(network_id), "12345")
 
     def test_invalid_network_id(self) -> None:
-        """Test invalid network ID with letters."""
+        """Test invalid network ID with letters is rejected.
+
+        Ensures that non-numeric network IDs are rejected since
+        the Blink API only provides numeric network identifiers.
+        """
         with self.assertRaises(ValueError):
             NetworkId("abc123")
 
 
 class TestClipId(unittest.TestCase):
-    """Test ClipId validation and local clip handling."""
+    """Test ClipId validation and local clip handling.
+
+    Tests the ClipId class which handles both cloud and local
+    clip identifiers. Local clips use a special format with
+    sync module name and item ID separated by a tilde (~).
+    """
 
     def test_cloud_clip_id(self) -> None:
-        """Test cloud clip ID."""
+        """Test cloud clip ID validation.
+
+        Verifies that standard numeric cloud clip IDs are
+        properly validated and identified as non-local clips.
+        """
         clip_id = ClipId("123456")
         self.assertEqual(str(clip_id), "123456")
         self.assertFalse(clip_id.is_local())
 
     def test_local_clip_id(self) -> None:
-        """Test local clip ID."""
+        """Test local clip ID validation.
+
+        Verifies that local clip IDs with the sync~item format
+        are properly validated and identified as local clips.
+        """
         clip_id = ClipId("sync1~789")
         self.assertEqual(str(clip_id), "sync1~789")
         self.assertTrue(clip_id.is_local())
 
     def test_from_local_constructor(self) -> None:
-        """Test ClipId.from_local constructor."""
+        """Test ClipId.from_local constructor method.
+
+        Verifies that the convenience constructor for local clips
+        properly formats the sync module name and item ID into
+        the expected local clip ID format.
+        """
         clip_id = ClipId.from_local("sync_module", 123)
         self.assertEqual(str(clip_id), "sync_module~123")
         self.assertTrue(clip_id.is_local())
 
     def test_get_local_parts(self) -> None:
-        """Test extracting local clip parts."""
+        """Test extracting local clip components.
+
+        Verifies that local clip IDs can be properly parsed
+        back into their sync module name and item ID components
+        for use with the Blink local storage API.
+        """
         clip_id = ClipId("sync1~456")
         sync_name, item_id = clip_id.get_local_parts()
         self.assertEqual(sync_name, "sync1")
         self.assertEqual(item_id, 456)
 
     def test_get_local_parts_cloud_clip_error(self) -> None:
-        """Test get_local_parts raises error for cloud clips."""
+        """Test get_local_parts raises error for cloud clips.
+
+        Ensures that attempting to parse cloud clip IDs as local
+        clips raises an appropriate error, preventing incorrect
+        API calls to the local storage endpoints.
+        """
         clip_id = ClipId("123456")
         with self.assertRaises(ValueError):
             clip_id.get_local_parts()
@@ -2048,7 +2140,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
         mock_blink.sync = {"sync1": mock_sync}
 
         with patch("blinkapp.thumbnail_cache") as mock_cache:
-            mock_cache.get.return_value = {"timestamp": 500}  # Older cache
+            mock_cache.get.return_value = {"timestamp": 500}  # Cached timestamp
 
             response = self.client.get("/api/system/12345/devices")
             self.assertEqual(response.status_code, 200)
@@ -3100,7 +3192,7 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
     """Test advanced thumbnail operations and caching."""
 
     def setUp(self) -> None:
-        """Set up test client."""
+        """Set up test client and initialize test globals."""
         from test_utils import setup_test_globals
 
         app.config["TESTING"] = True
@@ -3115,10 +3207,15 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
     def test_get_camera_thumbnail_with_stale_cache(
         self, mock_cache, mock_blink
     ) -> None:
-        """Test camera thumbnail with stale cache data."""
+        """Test camera thumbnail with stale cache data.
+
+        This test verifies that when the cache contains an older thumbnail
+        than what's available from the camera, the system correctly fetches
+        the newer thumbnail and triggers a background cache update.
+        """
         mock_blink.available = True
 
-        # Mock camera with newer thumbnail
+        # Mock camera with newer thumbnail (timestamp 2000)
         mock_camera = Mock()
         mock_camera.camera_id = 12345
         mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=2000"
@@ -3127,9 +3224,9 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
         mock_sync.cameras = {"camera1": mock_camera}
         mock_blink.sync = {"sync1": mock_sync}
 
-        # Mock stale cache entry
+        # Mock stale cache entry with older timestamp (1000 < 2000)
         mock_cache.get.return_value = {
-            "timestamp": 1000,  # Older than camera thumbnail
+            "timestamp": 1000,  # Earlier timestamp than camera
             "filename": "old_thumb.jpg",
         }
 
@@ -3139,9 +3236,11 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
             mock_response.status = 200  # HTTP_STATUS_OK
 
             # Set up execute to return response first, then image data
+            # First call checks response status, second call gets image bytes
             mock_connection.execute.side_effect = [mock_response, b"new_image_data"]
 
             with patch("blinkapp.executor") as mock_executor:
+                # Mock background task submission for cache update
                 mock_executor.submit.return_value = Mock()
 
                 response = self.client.get("/api/camera/12345/thumbnail")

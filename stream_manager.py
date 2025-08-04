@@ -43,15 +43,38 @@ class StreamConfig:
 
 
 class HLSStream:
-    """Manages a single TCP to HLS transcoding stream for Blink cameras."""
+    """Manages a single TCP to HLS transcoding stream for Blink cameras.
+
+    This class handles the lifecycle of an FFmpeg process that converts
+    MPEG-TS streams from Blink's TCP proxy into HLS format for web browsers.
+    Each stream is isolated in its own temporary directory with automatic
+    cleanup and resource management.
+
+    The class is thread-safe and handles process lifecycle, error recovery,
+    and resource cleanup automatically. It's designed to work with Blink's
+    init_livestream() TCP proxy feature.
+
+    Attributes:
+        stream_id: Unique identifier for this stream instance
+        tcp_url: Source TCP URL from Blink (e.g., tcp://127.0.0.1:12345)
+        config: Stream configuration parameters
+        process: FFmpeg subprocess instance (None if not running)
+        hls_dir: Temporary directory for HLS files
+        playlist_path: Path to the HLS playlist file
+        last_accessed: Timestamp of last access for idle cleanup
+    """
 
     def __init__(self, stream_id: str, tcp_url: str, config: StreamConfig) -> None:
-        """Initialize HLS stream.
+        """Initialize HLS stream instance.
+
+        Creates a new HLS stream manager but doesn't start transcoding yet.
+        Call start() to begin the FFmpeg process and HLS generation.
 
         Args:
-            stream_id: Unique identifier for the stream
-            tcp_url: TCP source URL from Blink's init_livestream() (e.g., tcp://127.0.0.1:12345)
-            config: Stream configuration
+            stream_id: Unique identifier for the stream (typically camera ID)
+            tcp_url: TCP source URL from Blink's init_livestream()
+                    (e.g., tcp://127.0.0.1:12345)
+            config: Stream configuration with timeout and HLS parameters
         """
         self.stream_id = stream_id
         self.tcp_url = tcp_url
@@ -60,59 +83,85 @@ class HLSStream:
         self.hls_dir: Path | None = None
         self.playlist_path: Path | None = None
         self.last_accessed = time.time()
+        # Use lock to ensure thread-safe access to process and file operations
         self._lock = threading.Lock()
 
     def start(self) -> tuple[str | None, str | None]:
         """Start HLS transcoding from TCP stream.
 
+        Launches FFmpeg to convert the MPEG-TS stream from Blink's TCP proxy
+        into HLS format suitable for web browsers. Creates a temporary directory
+        for HLS segments and playlist files.
+
+        The FFmpeg process is configured for low-latency streaming with:
+        - MPEG-TS input format (from Blink TCP stream)
+        - H.264 video encoding with ultrafast preset
+        - AAC audio encoding
+        - HLS output with configurable segment duration
+        - Automatic segment deletion to manage disk space
+
         Returns:
-            Tuple of (playlist_url, error_message)
+            Tuple of (playlist_url, error_message):
+            - If successful: (URL string, None)
+            - If failed: (None, error description)
+
+        Example:
+            >>> stream = HLSStream("camera123", "tcp://127.0.0.1:12345", config)
+            >>> url, error = stream.start()
+            >>> if error:
+            ...     print(f"Stream failed: {error}")
+            ... else:
+            ...     print(f"Stream available at: {url}")
         """
         with self._lock:
+            # Check if stream is already running
             if self.process and self.process.poll() is None:
                 return f"/api/hls/{self.stream_id}/playlist.m3u8", None
 
-            # Create temporary directory
+            # Create temporary directory for HLS files
             self.hls_dir = Path(tempfile.mkdtemp(prefix=f"hls_{self.stream_id}_"))
             self.playlist_path = self.hls_dir / "playlist.m3u8"
 
             # Build FFmpeg command for TCP MPEG-TS input from Blink livestream
+            # This command is optimized for low-latency streaming from Blink cameras
             cmd = [
                 "ffmpeg",
                 "-f",
                 "mpegts",  # Input format is MPEG-TS from Blink TCP stream
                 "-i",
-                self.tcp_url,
+                self.tcp_url,  # TCP source URL from init_livestream()
                 "-c:v",
-                "libx264",
+                "libx264",  # H.264 video codec for broad compatibility
                 "-c:a",
-                "aac",
+                "aac",  # AAC audio codec for web browsers
                 "-preset",
-                "ultrafast",
+                "ultrafast",  # Fastest encoding for low latency
                 "-tune",
-                "zerolatency",
+                "zerolatency",  # Optimize for real-time streaming
                 "-f",
-                "hls",
+                "hls",  # Output format is HLS
                 "-hls_time",
-                str(self.config.segment_time),
+                str(self.config.segment_time),  # Segment duration
                 "-hls_list_size",
-                str(self.config.list_size),
+                str(self.config.list_size),  # Playlist size
                 "-hls_flags",
-                "delete_segments",
-                str(self.playlist_path),
+                "delete_segments",  # Auto-delete old segments
+                str(self.playlist_path),  # Output playlist file
             ]
 
             try:
                 logger.info(
                     f"Starting FFmpeg for Blink TCP stream {self.stream_id} with command: {' '.join(cmd)}"
                 )
+                # Start FFmpeg process with pipe redirection for error handling
                 self.process = subprocess.Popen(
                     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
 
-                # Check if process started successfully
+                # Check if process started successfully (brief delay for initialization)
                 time.sleep(1)
                 if self.process.poll() is not None:
+                    # Process exited immediately - capture error details
                     stdout, stderr = self.process.communicate()
                     return_code = self.process.returncode
                     error_msg = (
@@ -136,13 +185,23 @@ class HLSStream:
                 return None, error_msg
 
     def stop(self) -> None:
-        """Stop HLS transcoding and cleanup resources."""
+        """Stop HLS transcoding and cleanup resources.
+
+        Gracefully terminates the FFmpeg process and cleans up temporary
+        files. Uses SIGTERM first, then SIGKILL if the process doesn't
+        respond within the configured timeout.
+
+        This method is safe to call multiple times and handles cases where
+        the process has already exited.
+        """
         with self._lock:
             if self.process:
                 try:
+                    # Try graceful termination first
                     self.process.terminate()
                     self.process.wait(timeout=Config.PROCESS_WAIT_TIMEOUT)
                 except subprocess.TimeoutExpired:
+                    # Force kill if graceful termination fails
                     logger.warning(
                         f"Force killing FFmpeg process for stream {self.stream_id}"
                     )
@@ -223,36 +282,44 @@ class StreamManager:
     ) -> tuple[str | None, str | None]:
         """Start or get existing HLS stream from Blink TCP source.
 
+        Manages HLS stream lifecycle by either returning an existing active
+        stream or creating a new one. Handles URL changes by stopping the
+        old stream and creating a new one with the updated TCP source.
+
         Args:
-            stream_id: Unique identifier for the stream
-            tcp_url: TCP source URL from Blink's init_livestream()
+            stream_id: Unique identifier for the stream (typically camera ID)
+            tcp_url: TCP source URL from Blink's init_livestream() method
 
         Returns:
-            Tuple of (playlist_url, error_message)
+            Tuple of (playlist_url, error_message). On success, playlist_url
+            contains the HLS playlist endpoint and error_message is None.
+            On failure, playlist_url is None and error_message contains details.
         """
         with self._lock:
-            # Stop existing stream if different URL
+            # Stop existing stream if different URL to handle camera reconnections
             if stream_id in self.streams:
                 existing_stream = self.streams[stream_id]
                 if existing_stream.tcp_url != tcp_url:
+                    # TCP URL changed, need to restart stream
                     existing_stream.stop()
                     del self.streams[stream_id]
                 else:
+                    # Same URL, update access time and return if still running
                     existing_stream.update_access_time()
                     if existing_stream.is_running():
                         return f"/api/hls/{stream_id}/playlist.m3u8", None
 
-            # Create new stream
+            # Create new stream with FFmpeg transcoding
             stream = HLSStream(stream_id, tcp_url, self.config)
             result = stream.start()
 
-            if result[0]:  # Success
+            if result[0]:  # Success - store stream for management
                 self.streams[stream_id] = stream
 
             return result
 
     def stop_stream(self, stream_id: str) -> None:
-        """Stop specific stream.
+        """Stop specific stream and clean up resources.
 
         Args:
             stream_id: Stream identifier to stop
@@ -263,11 +330,11 @@ class StreamManager:
                 del self.streams[stream_id]
 
     def get_stream_file(self, stream_id: str, filename: str) -> Path | None:
-        """Get HLS file path for stream.
+        """Get HLS file path for stream if it exists and is valid.
 
         Args:
             stream_id: Stream identifier
-            filename: HLS file name
+            filename: HLS file name (playlist.m3u8 or segment file)
 
         Returns:
             Path to file if exists, None otherwise

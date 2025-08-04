@@ -8,94 +8,127 @@ between app.py and other modules that need configuration constants.
 class Config:
     """Application configuration constants.
 
-    Centralizes all configuration values for the Blink Flask application.
-    Includes cache settings, timeouts, validation patterns, and limits.
+    Centralizes all configuration values for the Blink Flask application
+    to avoid circular imports and provide a single source of truth for
+    all settings. This includes cache settings, timeouts, validation
+    patterns, limits, and UI timing constants.
+
+    The configuration is organized into logical groups:
+    - Server and networking settings
+    - Cache and storage configuration
+    - Media processing (FFmpeg) settings
+    - API limits and timeouts
+    - UI polling and timing
+    - HTTP status codes and retry logic
+    - File paths and naming conventions
+
+    All timeout values are in seconds unless otherwise specified.
+    All UI timing values are in milliseconds for JavaScript compatibility.
     """
 
-    # Server defaults
-    DEFAULT_HOST = "0.0.0.0"  # Default host to bind to
-    DEFAULT_PORT = 5001  # Default port to bind to
-    DEFAULT_CACHE_DIR = "cache"  # Default cache directory name
+    # ========================================================================
+    # Server Configuration
+    # ========================================================================
+    DEFAULT_HOST = "0.0.0.0"  # Default host to bind to (all interfaces)
+    DEFAULT_PORT = 5001  # Default port to bind to (avoid conflicts with 5000)
+    DEFAULT_CACHE_DIR = "cache"  # Default cache directory name (relative to app)
 
-    # Cache settings
-    CLIPS_CACHE_SIZE = 100  # Maximum clips in cache
+    # ========================================================================
+    # Cache Configuration
+    # ========================================================================
+    # Memory cache sizes (number of items before LRU eviction)
+    CLIPS_CACHE_SIZE = 100  # Maximum downloaded clips in cache
     CLIPS_METADATA_CACHE_SIZE = 1000  # Maximum clips metadata entries in cache
     THUMBNAIL_CACHE_SIZE = 100  # Maximum thumbnail entries in cache
 
-    # Cache subdirectory names
+    # Cache file and directory names (relative to cache directory)
     CREDENTIALS_FILENAME = "blink.json"  # Encrypted credentials file
-    SETTINGS_FILENAME = "settings.json"  # User settings file
+    SETTINGS_FILENAME = "settings.json"  # User settings persistence file
     THUMBNAILS_SUBDIR = "thumbnails"  # Thumbnail cache subdirectory
-    CLIPS_SUBDIR = "clips"  # Clips cache subdirectory
+    CLIPS_SUBDIR = "clips"  # Downloaded clips cache subdirectory
 
-    # FFmpeg settings
-    FFMPEG_TIMEOUT = 30  # FFmpeg operation timeout
-    FFPROBE_TIMEOUT = 10  # FFprobe operation timeout
-    HLS_SEGMENT_TIME = 2  # HLS segment duration in seconds
-    HLS_LIST_SIZE = 3  # Number of segments in HLS playlist
-    STREAM_IDLE_TIMEOUT = 300  # 5 minutes before stream cleanup
+    # ========================================================================
+    # Media Processing Configuration (FFmpeg)
+    # ========================================================================
+    FFMPEG_TIMEOUT = 30  # FFmpeg operation timeout (seconds)
+    FFPROBE_TIMEOUT = 10  # FFprobe metadata extraction timeout (seconds)
+    HLS_SEGMENT_TIME = 2  # HLS segment duration in seconds (balance latency/efficiency)
+    HLS_LIST_SIZE = 3  # Number of segments in HLS playlist (memory vs. seeking)
+    STREAM_IDLE_TIMEOUT = 300  # 5 minutes before idle stream cleanup
 
-    # Process settings
-    PROCESS_TERMINATE_TIMEOUT = 5  # Graceful process termination timeout
-    BLINK_OPERATION_TIMEOUT = 30  # Blink API operation timeout
+    # ========================================================================
+    # Process Management
+    # ========================================================================
+    PROCESS_TERMINATE_TIMEOUT = 5  # Graceful process termination timeout (seconds)
+    PROCESS_WAIT_TIMEOUT = 5  # Process wait timeout in seconds
+    BLINK_OPERATION_TIMEOUT = 30  # Blink API operation timeout (seconds)
+    BLINK_CONNECTION_TIMEOUT = 30  # Blink connection timeout in seconds
 
-    # API settings
-    MAX_VIDEOS_METADATA = 50  # Maximum clips to fetch for metadata
-    CLIPS_PER_STORAGE_TYPE = 5  # Clips to show per storage type
+    # ========================================================================
+    # API Limits and Batch Sizes
+    # ========================================================================
+    MAX_VIDEOS_METADATA = 50  # Maximum clips to fetch from Blink API per request
+    CLIPS_PER_STORAGE_TYPE = 5  # Clips to show per storage type in UI
 
-    # File settings
+    # ========================================================================
+    # File System and Logging
+    # ========================================================================
     LOG_FILE = "blink_app.log"  # Application log file (relative to cache dir)
     LOG_BACKUP_COUNT = 5  # Number of rotated log files to keep
-    SECRET_KEY = "your-secret-key-here"  # Flask session secret
+    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit before rotation
+    SECRET_KEY = "your-secret-key-here"  # Flask session secret (override in production)
 
-    # HTTP settings
-    HTTP_TIMEOUT = 30  # HTTP request timeout
-    DOWNLOAD_TIMEOUT = 60  # File download timeout
+    # ========================================================================
+    # Network and HTTP Configuration
+    # ========================================================================
+    HTTP_TIMEOUT = 30  # General HTTP request timeout (seconds)
+    DOWNLOAD_TIMEOUT = 60  # File download timeout (seconds, longer for large clips)
+    HTTP_RETRY_TOTAL = 3  # Total number of HTTP retries on failure
+    HTTP_RETRY_BACKOFF_FACTOR = 1  # Exponential backoff factor for retries
 
-    # Polling settings
+    # ========================================================================
+    # Background Processing and Polling
+    # ========================================================================
     THUMBNAIL_POLL_INTERVAL = 2  # Thumbnail polling interval in seconds
     THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max polling attempts for thumbnail updates
-    CACHE_CLEAR_TIMEOUT = 30  # Cache clearing operation timeout
+    CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max attempts for clip thumbnail polling
+    CACHE_CLEAR_TIMEOUT = 30  # Cache clearing operation timeout (seconds)
+    FUTURE_RESULT_TIMEOUT = 2  # Future result timeout in seconds
 
-    # UI polling and timing settings
+    # ========================================================================
+    # UI Timing Constants (all in milliseconds for JavaScript)
+    # ========================================================================
     HLS_STREAM_CHECK_INTERVAL = 1000  # HLS stream readiness check interval (ms)
     HLS_STREAM_CHECK_DELAY = 2000  # Initial delay before checking HLS stream (ms)
     HLS_STREAM_MAX_ATTEMPTS = 10  # Maximum attempts to check HLS stream readiness
     THUMBNAIL_UPDATE_POLL_INTERVAL = 2000  # Thumbnail update polling interval (ms)
     THUMBNAIL_SUCCESS_DISPLAY_TIME = 1000  # Time to show success message (ms)
     THUMBNAIL_PROCESSING_DISPLAY_TIME = 3000  # Time to show processing message (ms)
+    THUMBNAIL_ERROR_DISPLAY_TIME = 3000  # Time to show error message (ms)
     CLIP_THUMBNAIL_CHECK_INTERVAL = (
         2000  # Clip thumbnail availability check interval (ms)
     )
 
-    # Time calculation constants
+    # ========================================================================
+    # Conversion Constants
+    # ========================================================================
     MILLISECONDS_TO_SECONDS = 1000  # Conversion factor from milliseconds to seconds
 
-    # Additional timeout and retry constants
-    BLINK_CONNECTION_TIMEOUT = 30  # Blink connection timeout in seconds
-    FUTURE_RESULT_TIMEOUT = 2  # Future result timeout in seconds
-    PROCESS_WAIT_TIMEOUT = 5  # Process wait timeout in seconds
-    CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max attempts for clip thumbnail polling
-    THUMBNAIL_ERROR_DISPLAY_TIME = 3000  # Time to show error message (ms)
-
-    # Log settings
-    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit
-
-    # System name fallback
+    # ========================================================================
+    # Default Values and Fallbacks
+    # ========================================================================
     DEFAULT_SYSTEM_NAME = "Blink System"  # Default system name for cloud clips
 
-    # HTTP Status codes
+    # ========================================================================
+    # HTTP Status Codes (centralized for consistency)
+    # ========================================================================
     HTTP_STATUS_OK = 200  # Success status code
-    HTTP_STATUS_BAD_REQUEST = 400  # Bad request status code
-    HTTP_STATUS_UNAUTHORIZED = 401  # Unauthorized status code
-    HTTP_STATUS_NOT_FOUND = 404  # Not found status code
+    HTTP_STATUS_BAD_REQUEST = 400  # Bad request status code (client error)
+    HTTP_STATUS_UNAUTHORIZED = 401  # Unauthorized status code (auth required)
+    HTTP_STATUS_NOT_FOUND = 404  # Not found status code (resource missing)
     HTTP_STATUS_INTERNAL_ERROR = 500  # Internal server error status code
     HTTP_STATUS_NOT_IMPLEMENTED = 501  # Not implemented status code
     HTTP_STATUS_SERVICE_UNAVAILABLE = 503  # Service unavailable status code
-
-    # HTTP retry configuration
-    HTTP_RETRY_TOTAL = 3  # Total number of retries
-    HTTP_RETRY_BACKOFF_FACTOR = 1  # Backoff factor for retries
 
     # HTTP retry status codes
     HTTP_RETRY_STATUS_CODES = [429, 500, 502, 503, 504]  # Status codes to retry on

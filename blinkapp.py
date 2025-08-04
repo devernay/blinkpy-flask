@@ -38,27 +38,38 @@ from typing import (
     cast,
 )
 
+# Authentication and session management
 from auth import (
     load_saved_blink,
     setup_auth_routes,
 )
+
+# Caching system for thumbnails, clips, and metadata
 from cache import (
     clips_download_cache,
     clips_metadata_cache,
     thumbnail_cache,
 )
+
+# Camera operations and route handlers
 from camera import (
     find_camera_by_id,
     require_camera,
     setup_camera_routes,
     update_camera_thumbnail,
 )
+
+# Route decorators and error handling
 from decorators import error_context, requires_blink
 from errors import (
     CacheError,
     ValidationError,
 )
+
+# ID validation and type safety
 from ids import CameraId, ClipId, NetworkId
+
+# Route decorators for API endpoints
 from route_decorators import (
     api_route,
     api_route_with_validation,
@@ -67,7 +78,11 @@ from route_decorators import (
     method_dispatch_route,
     simple_success_response,
 )
+
+# Live streaming management
 from stream_manager import StreamConfig, StreamManager
+
+# Utility functions for data processing
 from utils import (
     create_api_response,
     format_clips_by_day,
@@ -80,7 +95,10 @@ if TYPE_CHECKING:
 
     from blink_connection import BlinkConnection
 
+# Third-party imports
 import requests
+
+# Flask framework components
 from flask import (
     Flask,
     jsonify,
@@ -94,12 +112,15 @@ from flask import (
 from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
 
+# Blink camera library
 from blinkpy.blinkpy import Blink  # type: ignore
 from blinkpy.camera import BlinkCamera
 from blinkpy.sync_module import BlinkSyncModule
+
+# Application configuration
 from config import Config
 
-# Type definitions
+# Type definitions for better code clarity
 JsonDict = dict[str, object]
 ApiResponse = tuple[JsonDict, int]
 FlaskRouteResponse = ResponseReturnValue
@@ -109,32 +130,39 @@ DeviceDict = dict[str, object]
 ClipDict = dict[str, object]
 SystemDict = dict[str, object]
 
-# Generic type variables
+# Generic type variables for function signatures
 T = TypeVar("T")
+P = ParamSpec("P")
 
-# Create Flask app instance
+# ============================================================================
+# Flask Application Setup
+# ============================================================================
+
+# Create Flask app instance with secure configuration
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 
-# Global variables
-blink: "Blink | None" = None
-blink_connection: "BlinkConnection | None" = None
-executor: "ThreadPoolExecutor | None" = None
-http_session: "requests.Session | None" = None
-stream_manager: "StreamManager | None" = None
+# ============================================================================
+# Global Application State
+# ============================================================================
 
-# Global cache directory variables
-CACHE_DIR: str | None = None
-CREDENTIALS_FILE: str | None = None
-THUMBNAIL_CACHE_DIR: str | None = None
-CLIPS_CACHE_DIR: str | None = None
-SETTINGS_FILE: str | None = None
+# Core Blink integration objects
+blink: "Blink | None" = None  # Main Blink API client
+blink_connection: "BlinkConnection | None" = None  # Async connection manager
+executor: "ThreadPoolExecutor | None" = None  # Background task executor
+http_session: "requests.Session | None" = None  # HTTP session for API calls
+stream_manager: "StreamManager | None" = None  # Live streaming manager
 
-# Type variables for generic functions
-P = ParamSpec("P")
+# File system paths (initialized at startup)
+CACHE_DIR: str | None = None  # Base cache directory
+CREDENTIALS_FILE: str | None = None  # Encrypted credentials storage
+THUMBNAIL_CACHE_DIR: str | None = None  # Camera thumbnail cache
+CLIPS_CACHE_DIR: str | None = None  # Downloaded clips storage
+SETTINGS_FILE: str | None = None  # User settings persistence
 
-
-# find_camera_by_id function moved to camera.py
+# ============================================================================
+# Error Handling and API Response Utilities
+# ============================================================================
 
 
 def handle_api_error(
@@ -144,23 +172,38 @@ def handle_api_error(
 ) -> tuple[ApiResponse, int]:
     """Handle API errors with user-friendly messages.
 
+    Provides centralized error handling for all API endpoints with consistent
+    error response format and appropriate HTTP status codes. This function
+    translates technical exceptions into user-friendly messages while
+    preserving the original error information in logs.
+
     Args:
-        error: Exception that occurred
-        operation: Description of operation that failed
-        status_code: HTTP status code to return
+        error: Exception that occurred during operation
+        operation: Human-readable description of the failed operation
+        status_code: HTTP status code to return (default: 500)
 
     Returns:
-        Standardized error response tuple
+        Standardized error response tuple (response_dict, status_code)
+
+    Example:
+        >>> try:
+        ...     # Some operation that might fail
+        ...     pass
+        ... except Exception as e:
+        ...     return handle_api_error(e, "updating camera settings")
     """
+    # Log the full technical error for debugging
     logger.error(f"Error {operation}: {error}")
 
-    # Handle ValidationError with custom status code
+    # Handle ValidationError with custom status code - these have specific
+    # status codes that should be preserved (e.g., 400 for bad input)
     if isinstance(error, ValidationError):
         return create_api_response(
             success=False, error=str(error), status_code=error.status_code
         )
 
-    # Map common exceptions to user-friendly messages
+    # Map common exceptions to user-friendly messages that don't expose
+    # internal implementation details to end users
     error_message = str(error)
     if isinstance(error, ConnectionError):
         error_message = "Unable to connect to your Blink system. Please check your internet connection and try again."
@@ -169,10 +212,12 @@ def handle_api_error(
     elif isinstance(error, ValueError):
         error_message = "Invalid data provided. Please check your input and try again."
     elif "authentication" in str(error).lower() or "login" in str(error).lower():
+        # Use predefined auth error message for consistency
         error_message = Config.ErrorMessages.AUTH_FAILED
     elif "not found" in str(error).lower():
         error_message = "The requested item could not be found."
     elif status_code >= 500:
+        # For server errors, use generic message to avoid exposing internals
         error_message = Config.ErrorMessages.INTERNAL_ERROR
 
     return create_api_response(
@@ -188,17 +233,34 @@ def require_sync_module(
 ) -> tuple[BlinkSyncModule | None, tuple[ApiResponse, int] | None]:
     """Find sync module by network ID, return error response if not found.
 
+    Searches through all available Blink sync modules to find one matching
+    the provided network ID. This is used by API endpoints that need to
+    operate on specific Blink systems.
+
     Args:
-        network_id: Network ID to find
+        network_id: Network ID to find (validated NetworkId instance)
 
     Returns:
-        Tuple of (sync_module, error_response). One will be None.
+        Tuple of (sync_module, error_response). Exactly one will be None:
+        - If found: (BlinkSyncModule, None)
+        - If not found: (None, error_response_tuple)
+
+    Example:
+        >>> sync, error = require_sync_module(NetworkId("12345"))
+        >>> if error:
+        ...     return error  # Return error response to client
+        >>> # Use sync module for operations
+        >>> sync.arm = True
     """
+    # Ensure blink is initialized - this should be guaranteed by @requires_blink
     assert blink is not None
+
+    # Search through all sync modules for matching network ID
     for name, sync in blink.sync.items():
         if str(sync.network_id) == str(network_id):
             return sync, None
 
+    # Network ID not found - return standardized error response
     error_response = create_api_response(
         success=False, error=Config.ErrorMessages.SYSTEM_NOT_FOUND, status_code=404
     )
@@ -212,27 +274,45 @@ logger = logging.getLogger(__name__)
 def setup_logging() -> None:
     """Configure logging with rotating file handler in cache directory.
 
-    Sets up console and rotating file logging with proper formatting.
-    Must be called after cache paths are initialized.
+    Sets up both console and file logging with consistent formatting.
+    File logs are rotated to prevent disk space issues. This function
+    must be called after cache paths are initialized via initialize_cache_paths().
+
+    The logging configuration includes:
+    - Console handler for immediate feedback during development
+    - Rotating file handler for persistent logs with size limits
+    - Consistent timestamp formatting across all handlers
+    - Automatic log rotation on startup to ensure fresh logs
+
+    Side Effects:
+        - Clears existing handlers to prevent duplicates
+        - Creates log file in cache directory
+        - Configures root logger level and handlers
     """
-    # Clear any existing handlers
+    # Clear any existing handlers to avoid duplicates on app restart
     logger.handlers.clear()
     logging.getLogger().handlers.clear()
 
-    # Create formatter
+    # Create consistent formatter for all handlers with timestamp and level
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Console handler
+    # Console handler for immediate feedback during development/debugging
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
 
-    # Rotating file handler in cache directory
+    # Rotating file handler in cache directory for persistent logs
     from logging.handlers import RotatingFileHandler
 
-    assert CACHE_DIR is not None
+    # Ensure cache directory is initialized before creating log file
+    assert CACHE_DIR is not None, (
+        "Cache directory must be initialized before logging setup"
+    )
     log_file_path = Path(CACHE_DIR) / Config.LOG_FILE
+
+    # Configure file rotation to prevent disk space issues
+    # maxBytes: Maximum size before rotation, backupCount: Number of old logs to keep
     file_handler = RotatingFileHandler(
         log_file_path,
         maxBytes=Config.LOG_MAX_BYTES,
@@ -240,16 +320,21 @@ def setup_logging() -> None:
     )
     file_handler.setFormatter(formatter)
 
-    # Configure root logger
+    # Configure root logger with both handlers for comprehensive logging
     root_logger = logging.getLogger()
     root_logger.setLevel(
         logging.INFO
-    )  # Default level, will be overridden by command line
+    )  # Default level, will be overridden by command line arguments
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
 
-    # Force rotation on startup
+    # Force rotation on startup to ensure we start with a fresh log
     file_handler.doRollover()
+
+
+# ============================================================================
+# Cache and File System Management
+# ============================================================================
 
 
 def initialize_cache_paths() -> None:
@@ -257,10 +342,22 @@ def initialize_cache_paths() -> None:
 
     Sets global path variables for cache directories and credential file.
     Uses Flask app config 'CACHE_DIR' or defaults to Config.DEFAULT_CACHE_DIR.
+    This function must be called before any cache operations or logging setup.
+
+    The cache directory structure created:
+    - CACHE_DIR/: Base cache directory
+    - CACHE_DIR/thumbnails/: Camera thumbnail cache
+    - CACHE_DIR/clips/: Downloaded clips storage
+    - CACHE_DIR/blink.json: Encrypted credentials
+    - CACHE_DIR/settings.json: User preferences
+    - CACHE_DIR/blink_app.log: Application logs
 
     Side Effects:
         Updates global variables: CACHE_DIR, CREDENTIALS_FILE,
         THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR, SETTINGS_FILE
+
+    Raises:
+        OSError: If cache directory cannot be created or accessed
     """
     global \
         CACHE_DIR, \
@@ -268,7 +365,11 @@ def initialize_cache_paths() -> None:
         THUMBNAIL_CACHE_DIR, \
         CLIPS_CACHE_DIR, \
         SETTINGS_FILE
+
+    # Get cache directory from Flask config or use sensible default
     cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
+
+    # Set all cache-related paths using the base cache directory
     CACHE_DIR = str(cache_dir)
     CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
     THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
@@ -276,31 +377,47 @@ def initialize_cache_paths() -> None:
     SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
 
 
-# Cache configuration
+# Cache configuration constants
 CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 
-# Legacy stream variables removed - now handled by StreamManager
-
-# Blink operations delegated to blink_thread module
+# ============================================================================
+# Utility Functions
+# ============================================================================
 
 
 def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
     """Extract timestamp from thumbnail URL.
 
+    Parses the 'ts' parameter from Blink thumbnail URLs to determine
+    when the thumbnail was generated. This timestamp is used for
+    cache invalidation and thumbnail freshness checks.
+
+    The Blink API includes timestamps in thumbnail URLs like:
+    "https://immedia-semi.s3.amazonaws.com/production/...?ts=1234567890"
+
     Args:
-        thumbnail_url: URL containing ts parameter
+        thumbnail_url: URL containing ts parameter (e.g., "...?ts=1234567890")
 
     Returns:
-        Timestamp as integer, 0 if not found
+        Timestamp as integer (Unix epoch), 0 if not found or invalid
+
+    Example:
+        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg?ts=1609459200")
+        1609459200
+        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg")
+        0
     """
     if not thumbnail_url:
         return 0
     try:
         import re
 
+        # Extract numeric timestamp from URL query parameter using regex
+        # Pattern matches 'ts=' followed by one or more digits
         match = re.search(r"ts=([0-9]+)", thumbnail_url)
         return int(match.group(1)) if match else 0
     except (AttributeError, ValueError, TypeError) as e:
+        # Log debug info for troubleshooting but don't fail the operation
         logger.debug(f"Failed to extract timestamp from URL '{thumbnail_url}': {e}")
         return 0
 
@@ -310,24 +427,48 @@ def create_device_data(
 ) -> dict[str, object]:
     """Create device data dictionary for camera.
 
+    Builds a standardized device object for API responses, including
+    camera status, thumbnail information, and human-readable timestamps.
+    This function handles the complex logic of determining the most
+    recent thumbnail timestamp and formatting it for display.
+
     Args:
-        camera: Camera object from blinkpy
-        cache_key: Validated camera ID
-        current_ts: Current thumbnail timestamp
-        cached_ts: Cached thumbnail timestamp
+        camera: Camera object from blinkpy library with device properties
+        cache_key: Validated camera ID for API endpoints
+        current_ts: Current thumbnail timestamp from Blink API
+        cached_ts: Cached thumbnail timestamp from local storage
 
     Returns:
-        Device data dictionary for API response
+        Device data dictionary for API response with standardized fields:
+        - type: Always "camera"
+        - name: Camera display name
+        - id: Camera ID for API calls
+        - thumbnail: Thumbnail endpoint URL
+        - last_updated: Human-readable time since last update
+        - motion_enabled: Boolean motion detection status
+        - battery: Battery level (if available)
+        - temperature: Temperature reading (if available)
+        - wifi_strength: WiFi signal strength (if available)
+
+    Example:
+        >>> device = create_device_data(camera, CameraId("12345"), 1609459200, 1609459100)
+        >>> device["last_updated"]
+        "5m ago"
     """
-    # Format last updated time
+    # Use the most recent timestamp between current and cached
+    # This ensures we show the latest available thumbnail information
     display_ts = max(cached_ts, current_ts)
     last_updated = "Never"
+
     if display_ts > 0:
         try:
+            # Calculate human-readable time difference
             thumbnail_time = datetime.fromtimestamp(display_ts)
             now = datetime.now()
             diff = now - thumbnail_time
             days = diff.days
+
+            # Format time difference in most appropriate unit
             if days == 0:
                 hours = diff.seconds // 3600
                 if hours == 0:
@@ -338,6 +479,7 @@ def create_device_data(
             else:
                 last_updated = f"{days}d ago"
         except (ValueError, TypeError, AttributeError) as e:
+            # Fallback to camera's last record time if timestamp calculation fails
             logger.debug(
                 f"Failed to calculate time difference for camera {camera.name}: {e}"
             )
@@ -345,6 +487,7 @@ def create_device_data(
                 format_time_ago(camera.last_record) if camera.last_record else "Never"
             )
 
+    # Return standardized device object for consistent API responses
     return {
         "type": "camera",
         "name": camera.name,
@@ -366,20 +509,45 @@ def process_cloud_clips(
 ) -> list[dict[str, object]]:
     """Process cloud storage clips into day-grouped format.
 
+    Takes raw video metadata from the Blink API and organizes it into
+    day-based groups for easier browsing in the web interface. This function
+    handles thumbnail caching, timestamp parsing, and creates a standardized
+    format for both cloud and local clips.
+
+    The function prioritizes local thumbnails over Blink's CDN thumbnails
+    when available, as local thumbnails are faster to load and don't count
+    against API rate limits.
+
     Args:
-        videos_metadata: Raw video metadata from Blink API
+        videos_metadata: Raw video metadata from Blink API, each containing:
+            - id: Unique clip identifier
+            - created_at: ISO timestamp string
+            - device_name: Camera name
+            - thumbnail: CDN thumbnail URL
+            - media: Video file URL
 
     Returns:
-        List of day groups with clips
+        List of day groups with clips sorted by date, each containing:
+        - date: Human-readable date string
+        - clips: List of clip objects with standardized fields
+
+    Example:
+        >>> metadata = [{"id": "123", "created_at": "2023-01-01T12:00:00Z", ...}]
+        >>> result = process_cloud_clips(metadata)
+        >>> result[0]["date"]
+        "January 01, 2023"
     """
     clips_by_day: dict[str, dict[str, object]] = {}
+
     for video in videos_metadata:
         try:
+            # Parse ISO timestamp from Blink API (handles Z timezone suffix)
             created_at = datetime.fromisoformat(
                 video["created_at"].replace("Z", "+00:00")
             )
             day_key = created_at.strftime("%Y-%m-%d")
 
+            # Create day group if it doesn't exist
             if day_key not in clips_by_day:
                 clips_by_day[day_key] = {
                     "date": created_at.strftime("%B %d, %Y"),
@@ -390,24 +558,30 @@ def process_cloud_clips(
             thumbnail_url = video.get("thumbnail")
 
             # Check if we have a cached thumbnail for cloud clips
+            # This avoids using Blink's CDN thumbnail if we have a local one
+            # which is faster and doesn't count against API limits
             cached_clip = clips_download_cache.get(clip_id)
             if cached_clip is not None:
                 cached_thumbnail = cached_clip.get("thumbnail")
                 if cached_thumbnail and cached_thumbnail.exists():
+                    # Use our local thumbnail endpoint instead of Blink's CDN
                     thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
 
+            # Build standardized clip object for UI consumption
             clips_by_day[day_key]["clips"].append(
                 {
                     "id": str(clip_id),
                     "camera_name": video.get("device_name", "Unknown"),
                     "system_name": Config.DEFAULT_SYSTEM_NAME,
                     "time": created_at.astimezone().strftime("%I:%M %p"),
-                    "event_type": "Motion",
+                    "event_type": "Motion",  # Cloud clips are always motion events
                     "thumbnail": thumbnail_url,
                     "media_url": video.get("media"),
                 }
             )
         except Exception as e:
+            # Skip malformed video entries but continue processing others
+            # This ensures one bad clip doesn't break the entire list
             logger.warning(f"Skipping invalid video metadata: {e}")
             continue
 
@@ -417,8 +591,14 @@ def process_cloud_clips(
 def process_local_clips() -> list[dict[str, object]]:
     """Process local storage clips into day-grouped format.
 
+    Retrieves clips from USB storage connected to Blink sync modules.
+    Local clips require the sync module to have local storage enabled
+    and the manifest to be ready. Each clip gets a composite ID that
+    includes the sync module name for proper identification.
+
     Returns:
-        List of day groups with clips
+        List of day groups with clips sorted by date, or empty list if
+        no local storage is available or manifest isn't ready
     """
     clips_by_day: dict[str, dict[str, object]] = {}
 
@@ -426,6 +606,7 @@ def process_local_clips() -> list[dict[str, object]]:
     for sync_name, sync_module in blink.sync.items():
         try:
             # Refresh sync module to update local storage manifest
+            # This ensures we have the latest clip information
             blink_connection.execute(sync_module.refresh())
 
             # Get clips from local storage manifest if ready
@@ -436,18 +617,20 @@ def process_local_clips() -> list[dict[str, object]]:
                         created_at = item.created_at
                         day_key = created_at.strftime("%Y-%m-%d")
 
+                        # Create day group if it doesn't exist
                         if day_key not in clips_by_day:
                             clips_by_day[day_key] = {
                                 "date": created_at.strftime("%B %d, %Y"),
                                 "clips": [],
                             }
 
+                        # Create composite clip ID for local clips (sync_name:item_id)
                         clip_id = ClipId.from_local(sync_name, item.id)
                         logger.debug(
                             f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}"
                         )
 
-                        # Check for existing thumbnail only
+                        # Check for existing thumbnail only (no auto-generation for local)
                         thumbnail_url = None
                         cached_clip = clips_download_cache.get(clip_id)
                         if cached_clip is not None:
@@ -455,6 +638,7 @@ def process_local_clips() -> list[dict[str, object]]:
                             if cached_thumbnail and cached_thumbnail.exists():
                                 thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
 
+                        # Build standardized clip object for UI
                         clips_by_day[day_key]["clips"].append(
                             {
                                 "id": str(clip_id),
@@ -547,7 +731,13 @@ def clear_cache() -> JsonDict:
     Returns:
         JSON response with success status
     """
+    # Submit cache clearing task to background executor
     executor.submit(clear_all_caches)
+
+
+# ============================================================================
+# API Routes - System Management
+# ============================================================================
 
 
 @app.route("/api/system/list")
@@ -555,6 +745,10 @@ def clear_cache() -> JsonDict:
 @api_route("get systems")
 def get_systems() -> JsonDict:
     """Get list of available Blink systems.
+
+    Retrieves all configured Blink sync modules and their associated
+    network information. Each system represents a separate Blink hub
+    with its own set of cameras.
 
     Returns:
         JSON response with list of systems or error message
@@ -663,7 +857,9 @@ def arm_system(network_id: NetworkId) -> JsonDict:
         return {"armed": armed}
 
 
-# refresh_camera route moved to camera.py
+# ============================================================================
+# API Routes - Clip Management
+# ============================================================================
 
 
 @app.route("/api/clips")
@@ -675,6 +871,13 @@ def arm_system(network_id: NetworkId) -> JsonDict:
 )
 def get_clips() -> JsonDict:
     """Get clips from cloud or local storage.
+
+    Retrieves video clips from either Blink's cloud storage or local
+    USB storage connected to sync modules. Results are cached and
+    organized by date for efficient browsing.
+
+    Query Parameters:
+        storage: 'cloud' or 'local' (default: 'cloud')
 
     Returns:
         JSON response with list of clips organized by date
@@ -1364,14 +1567,22 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
     logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
+# ============================================================================
+# API Routes - Configuration and Settings
+# ============================================================================
+
+
 @app.route("/api/config")
 @api_route("get config")
 def get_config() -> JsonDict:
     """Get client-side configuration constants.
 
+    Provides configuration values needed by the web interface for
+    timing intervals, polling frequencies, and display durations.
+    This centralizes all client-side configuration in the Config class.
+
     Returns:
         JSON response with configuration values for the client
-    This allows centralizing timing and polling constants in the Config class.
     """
     config_data = {
         "hls_stream_check_interval": Config.HLS_STREAM_CHECK_INTERVAL,
@@ -1936,14 +2147,18 @@ def settings() -> ResponseReturnValue:
     Settings are persisted to cache/settings.json and survive logout/restart.
     """
     if request.method == "GET":
+        # Load existing settings from file
         assert SETTINGS_FILE is not None
         settings_file = Path(cast(str, SETTINGS_FILE))
+
         if settings_file.exists():
             import json
 
+            # Read saved settings from JSON file
             with open(settings_file) as f:
                 settings_data = json.load(f)
         else:
+            # Return default settings if no file exists
             settings_data = {
                 "temperatureUnits": "celsius",
                 "cloudClipRetention": "30",
@@ -1954,7 +2169,8 @@ def settings() -> ResponseReturnValue:
         response, status_code = create_api_response(success=True, data=settings_data)
         return jsonify(response), status_code
 
-    else:  # POST
+    else:  # POST - Save new settings
+        # Validate incoming JSON data
         data = request.get_json()
         if not isinstance(data, dict):
             response, status_code = create_api_response(
@@ -1964,21 +2180,24 @@ def settings() -> ResponseReturnValue:
             )
             return jsonify(response), status_code
 
-        # Load existing settings
+        # Load existing settings to merge with new data
         assert SETTINGS_FILE is not None
         settings_file = Path(cast(str, SETTINGS_FILE))
+
         if settings_file.exists():
             import json
 
+            # Load current settings from file
             with open(settings_file) as f:
                 settings_data = json.load(f)
         else:
+            # Start with empty settings if no file exists
             settings_data = {}
 
-        # Update settings
+        # Merge new settings with existing ones
         settings_data.update(data)
 
-        # Save settings
+        # Persist updated settings to file
         import json
 
         with open(settings_file, "w") as f:
@@ -2161,8 +2380,18 @@ def signal_handler(signum: int, frame: Any) -> None:
 # LRUCache automatically handles eviction, no manual cleanup needed
 
 
+# ============================================================================
+# Application Entry Point and CLI
+# ============================================================================
+
+
 def main() -> None:
-    """Main entry point with command line argument parsing."""
+    """Main entry point with command line argument parsing.
+
+    Parses command line arguments and starts the Flask development server
+    or handles special commands like system dumps. Supports configuration
+    of host, port, debug mode, and cache directory.
+    """
 
     parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
     parser.add_argument(

@@ -404,9 +404,9 @@ Check if the app API is still consistent with the API described in `api.json`. U
 
 Clean up main code and test code, remove unnecessary workarounds. There are sometimes duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
 
-It looks like some tests such as `tests/test_coverage_boost.py`, `tests/test_advanced_overage.py`, `tests/test_critical_coverage.py` were not included in the test suite.
+It looks like some tests such as `tests/test_coverage_boost.py`, `tests/test_advanced_overage.py`, `tests/test_critical_coverage.py` were not included in the test suite. Can you include them, run the full tests again, and report?
 
-Remove useless comments that refer to previous versions of the code, such as "xxx is now yyy". Add comments in the code to reach at least a 25% comments-to-code ratio. Make sure docstrings are complete and up-to-date.
+Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code to reach at least a 25% comments-to-code ratio. Make sure docstrings are complete and up-to-date.
 
 The HLS route should be "/api/camera/{camera_id}/hls/{filename}" rather than "/api/hls/{camera_id}/{filename}". Change this in the Python and Javascript code, as well as in `api.json`.
 

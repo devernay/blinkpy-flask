@@ -41,15 +41,24 @@ logger = logging.getLogger(__name__)
 def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
     """Extract timestamp from thumbnail URL.
 
+    Parses the 'ts' parameter from Blink thumbnail URLs to determine
+    when the thumbnail was generated. This timestamp is used for
+    cache invalidation and thumbnail freshness checks.
+
     Args:
-        thumbnail_url: URL containing ts parameter
+        thumbnail_url: URL containing ts parameter (e.g., "...?ts=1234567890")
 
     Returns:
-        Timestamp as integer, 0 if not found
+        Timestamp as integer (Unix epoch), 0 if not found or invalid
+
+    Example:
+        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg?ts=1609459200")
+        1609459200
     """
     if not thumbnail_url:
         return 0
     try:
+        # Extract numeric timestamp from URL query parameter using regex
         match = re.search(r"ts=([0-9]+)", thumbnail_url)
         return int(match.group(1)) if match else 0
     except (AttributeError, ValueError, TypeError) as e:
@@ -60,18 +69,29 @@ def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
 def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
     """Find camera by ID across all sync modules.
 
+    Searches through all available Blink sync modules and their cameras
+    to find a camera matching the provided ID. This is necessary because
+    cameras are organized under sync modules in the Blink API structure.
+
     Args:
-        camera_id: Camera ID to search for
+        camera_id: Validated camera ID to search for
 
     Returns:
-        Camera object if found, None otherwise
+        BlinkCamera object if found, None if not found or Blink unavailable
+
+    Example:
+        >>> camera = find_camera_by_id(CameraId("12345"))
+        >>> if camera:
+        ...     print(f"Found camera: {camera.name}")
     """
-    # Import locally to avoid circular imports
+    # Import locally to avoid circular imports during module initialization
     from blinkapp import blink
 
+    # Check if Blink system is available and initialized
     if blink is None or not blink.available:
         return None
 
+    # Search through all sync modules and their cameras
     for sync_name, sync in blink.sync.items():
         for cam_name, cam in sync.cameras.items():
             if str(cam.camera_id) == str(camera_id):
@@ -84,11 +104,23 @@ def require_camera(
 ) -> tuple[BlinkCamera | None, tuple[ApiResponse, int] | None]:
     """Find camera by ID, return error response if not found.
 
+    This is a convenience function for API endpoints that need to find
+    a camera and return a standardized error response if it doesn't exist.
+    It combines camera lookup with error handling in a single call.
+
     Args:
-        camera_id: Camera ID to find
+        camera_id: Validated camera ID to find
 
     Returns:
-        Tuple of (camera, error_response). One will be None.
+        Tuple of (camera, error_response). Exactly one will be None:
+        - If found: (BlinkCamera, None)
+        - If not found: (None, error_response_tuple)
+
+    Example:
+        >>> camera, error = require_camera(CameraId("12345"))
+        >>> if error:
+        ...     return error  # Return error response to client
+        >>> # Use camera for operations
     """
     camera = find_camera_by_id(camera_id)
     if camera is None:
@@ -104,13 +136,30 @@ def update_camera_thumbnail(
 ) -> None:
     """Update camera thumbnail in background if needed.
 
+    Compares timestamps and triggers a background thumbnail update if the
+    camera has a newer thumbnail available. This prevents blocking the
+    API response while ensuring thumbnails stay current.
+
+    The function uses a background thread pool to download and cache the
+    new thumbnail without affecting response times. It includes race
+    condition protection and automatic cleanup of old thumbnail files.
+
     Args:
-        camera: Camera object from blinkpy
-        cache_key: Validated camera ID
-        current_ts: Current thumbnail timestamp
-        cached_ts: Cached thumbnail timestamp
+        camera: Camera object from blinkpy library
+        cache_key: Validated camera ID for cache operations
+        current_ts: Current thumbnail timestamp from camera API
+        cached_ts: Previously cached thumbnail timestamp
+
+    Side Effects:
+        - Submits background task to thread pool executor
+        - Updates thumbnail cache when complete
+        - Removes old thumbnail files from disk
+
+    Example:
+        >>> update_camera_thumbnail(camera, CameraId("123"), 1609459200, 1609459100)
+        # Background update starts, function returns immediately
     """
-    # Import locally to avoid circular imports
+    # Import locally to avoid circular imports during module initialization
     from blinkapp import (
         THUMBNAIL_CACHE_DIR,
         blink_connection,
@@ -118,6 +167,7 @@ def update_camera_thumbnail(
         thumbnail_cache,
     )
 
+    # Skip update if cached version is already current or newer
     if current_ts <= cached_ts:
         return
 
@@ -126,14 +176,21 @@ def update_camera_thumbnail(
     )
 
     def update_thumbnail() -> None:
+        """Background task to download and cache new thumbnail.
+
+        This function runs in a background thread to avoid blocking
+        the main request. It handles race conditions, file cleanup,
+        and error recovery automatically.
+        """
         # Double-check timestamp to prevent race condition
+        # Another request might have updated the cache while we were queued
         current_entry = thumbnail_cache.get(cache_key)
         current_cached_ts = current_entry.get("timestamp", 0) if current_entry else 0
         if current_ts <= current_cached_ts:
             logger.debug(f"Thumbnail already updated for {camera.name}, skipping")
             return
 
-        # Remove old cached file if exists
+        # Remove old cached file if exists to prevent disk space accumulation
         old_entry = thumbnail_cache.get(cache_key)
         if old_entry is not None:
             old_filename = old_entry.get("filename")
