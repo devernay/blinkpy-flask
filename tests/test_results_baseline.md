@@ -132,7 +132,7 @@ This baseline establishes the current state for regression testing. Future chang
 
 ### 2. Test-Specific Code Externalization
 - Moved `initialize_for_testing()` function from `app.py` to `tests/test_initialization.py`
-- Kept backward compatibility alias `clips_cache` for test usage
+- **REMOVED** backward compatibility alias `clips_cache` and updated all tests to use `clips_download_cache`
 - Maintained clean separation between production and test code
 
 ### 3. Mock Structure Improvements
@@ -143,7 +143,7 @@ This baseline establishes the current state for regression testing. Future chang
 ## Files Modified in This Session
 
 ### Production Code
-- `app.py` - Removed test-specific `initialize_for_testing()` function
+- `app.py` - Removed test-specific `initialize_for_testing()` function and `clips_cache` alias
 - `static/js/clips.js` - Updated to use `data.data.clips` structure
 - `static/js/app.js` - Updated to use `data.data.systems` and `data.data.devices` structures
 - `api.json` - Enhanced OpenAPI spec with specific response schemas
@@ -151,6 +151,7 @@ This baseline establishes the current state for regression testing. Future chang
 ### Test Code
 - `tests/test_initialization.py` - New file with test-specific initialization
 - `tests/test_utils.py` - Updated imports to use new test initialization
+- `tests/test_app.py` - Updated 14 references from `clips_cache` to `clips_download_cache`
 - `tests/test_doubts.md` - Reviewed and confirmed current status
 - `tests/test_results_baseline.md` - New baseline documentation
 

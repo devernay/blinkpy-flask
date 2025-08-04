@@ -737,9 +737,6 @@ thumbnail_cache = thumbnail_cache_oo
 clips_metadata_cache = clips_metadata_cache_oo
 clips_download_cache = clips_download_cache_oo
 
-# Alias for backward compatibility with tests
-clips_cache = clips_download_cache
-
 
 def is_authenticated() -> bool:
     """Check if user is authenticated with Blink.

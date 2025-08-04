@@ -1506,7 +1506,7 @@ class TestAdvancedEndpoints(unittest.TestCase):
     def test_get_clip_thumbnail_check_success(self, mock_blink) -> None:
         """Test clip thumbnail check endpoint."""
         # Mock clip in cache
-        with patch("app.clips_cache") as mock_cache:
+        with patch("app.clips_download_cache") as mock_cache:
             mock_cache.get.return_value = {"thumbnail_path": "/tmp/test_thumb.jpg"}
 
             with patch("pathlib.Path.exists", return_value=True):
@@ -1896,7 +1896,7 @@ class TestClipDownloadOperations(unittest.TestCase):
                 # Should serve cached file
                 self.assertIn(response.status_code, [200, 500])
 
-    @patch("app.clips_cache")
+    @patch("app.clips_download_cache")
     def test_process_clip_thumbnail_generation(self, mock_cache) -> None:
         """Test clip processing for thumbnail generation."""
         # Mock cached clip
@@ -2112,7 +2112,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
     @patch("app.blink")
     def test_get_clip_thumbnail_not_found(self, mock_blink) -> None:
         """Test getting non-existent clip thumbnail."""
-        with patch("app.clips_cache") as mock_cache:
+        with patch("app.clips_download_cache") as mock_cache:
             mock_cache.get.return_value = None
 
             response = self.client.get("/api/clip/nonexistent/thumbnail")
@@ -2516,7 +2516,7 @@ class TestApplicationInitialization(unittest.TestCase):
         # Test that key global variables exist
         self.assertTrue(hasattr(app, "blink"))
         self.assertTrue(hasattr(app, "thumbnail_cache"))
-        self.assertTrue(hasattr(app, "clips_cache"))
+        self.assertTrue(hasattr(app, "clips_download_cache"))
         self.assertTrue(hasattr(app, "executor"))
 
 
@@ -2945,7 +2945,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
         # Should handle API errors gracefully
         self.assertIn(response.status_code, [500, 400])
 
-    @patch("app.clips_cache")
+    @patch("app.clips_download_cache")
     def test_process_clip_with_existing_thumbnail(self, mock_cache) -> None:
         """Test clip processing when thumbnail already exists."""
         mock_cache.get.return_value = {
@@ -2965,7 +2965,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
             data = json.loads(response.data)
             self.assertTrue(data["success"])
 
-    @patch("app.clips_cache")
+    @patch("app.clips_download_cache")
     def test_process_clip_thumbnail_generation_failure(self, mock_cache) -> None:
         """Test clip processing when thumbnail generation fails."""
         mock_cache.get.return_value = {
@@ -3251,7 +3251,7 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
     def test_memory_pressure_handling(self, mock_blink) -> None:
         """Test handling of memory pressure scenarios."""
         # Simulate memory pressure by filling cache
-        with patch("app.clips_cache") as mock_cache:
+        with patch("app.clips_download_cache") as mock_cache:
             # Mock cache that's at capacity
             mock_cache.__len__.return_value = 1000  # At capacity
             mock_cache.get.return_value = None
@@ -3412,7 +3412,7 @@ class TestResourceManagement(unittest.TestCase):
         self.assertGreater(Config.CLIPS_CACHE_SIZE, 0)
 
         # Test that large objects are not kept in memory unnecessarily
-        with patch("app.clips_cache") as mock_cache:
+        with patch("app.clips_download_cache") as mock_cache:
             mock_cache.__len__.return_value = Config.CLIPS_CACHE_SIZE - 1
 
             # Should allow adding one more item
@@ -3513,7 +3513,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=mock_files):
-                with patch("app.clips_cache") as mock_cache:
+                with patch("app.clips_download_cache") as mock_cache:
                     load_clips_cache()
 
                     # Should only process video files
@@ -3749,7 +3749,7 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
         self.assertEqual(len(errors), 0)
         self.assertEqual(len(results), 10)
 
-    @patch("app.clips_cache")
+    @patch("app.clips_download_cache")
     def test_memory_efficient_caching(self, mock_cache) -> None:
         """Test memory-efficient caching strategies."""
         # Mock cache operations
@@ -4517,7 +4517,7 @@ class TestComplexErrorScenarios(unittest.TestCase):
     def test_resource_exhaustion_handling(self) -> None:
         """Test handling of resource exhaustion scenarios."""
         # Simulate memory pressure
-        with patch("app.clips_cache") as mock_cache:
+        with patch("app.clips_download_cache") as mock_cache:
             # Mock cache at capacity
             mock_cache.__len__.return_value = 1000
             mock_cache.get.return_value = None
@@ -4732,7 +4732,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         # Test that global variables exist and are accessible
         self.assertTrue(hasattr(app, "app"))
         self.assertTrue(hasattr(app, "thumbnail_cache"))
-        self.assertTrue(hasattr(app, "clips_cache"))
+        self.assertTrue(hasattr(app, "clips_download_cache"))
 
     def test_config_class_instantiation(self) -> None:
         """Test Config class and its attributes."""
