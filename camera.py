@@ -15,9 +15,9 @@ import re
 from pathlib import Path
 from typing import cast
 
-from flask import Flask, Response
+from flask import Flask, Response, send_file
 
-from blinkpy.camera import BlinkCamera
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
 from decorators import (
     error_context,
     requires_blink,
@@ -432,7 +432,13 @@ def setup_camera_routes(app: Flask) -> None:
             )
 
         try:
-            return stream_manager.serve_hls_file(str(camera_id), filename)
+            file_path = stream_manager.get_stream_file(str(camera_id), filename)
+            if file_path and file_path.exists():
+                return send_file(str(file_path))
+            else:
+                return create_api_response(
+                    success=False, error="HLS file not found", status_code=404
+                )
         except Exception as e:
             logger.error(
                 f"Error serving HLS file {filename} for camera {camera_id}: {e}"

@@ -26,16 +26,13 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
-# Import BlinkError from app to avoid duplication
-# Note: This creates a dependency on app.py, but eliminates class duplication
-try:
-    from blinkapp import BlinkError
-except ImportError:
-    # Fallback definition if app.py not available (for testing)
-    class BlinkError(Exception):
-        """Base exception for Blink-related errors."""
 
-        pass
+# Import BlinkError from app to avoid duplication
+# Define BlinkError locally to avoid import issues
+class BlinkError(Exception):
+    """Base exception for Blink-related errors."""
+
+    pass
 
 
 class BlinkConnection:

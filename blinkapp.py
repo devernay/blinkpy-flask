@@ -113,9 +113,9 @@ from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
 
 # Blink camera library
-from blinkpy.blinkpy import Blink  # type: ignore
-from blinkpy.camera import BlinkCamera
-from blinkpy.sync_module import BlinkSyncModule
+from blinkpy.blinkpy import Blink  # type: ignore[import-untyped]
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
 
 # Application configuration
 from config import Config

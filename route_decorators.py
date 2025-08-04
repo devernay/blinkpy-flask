@@ -383,7 +383,7 @@ def file_response_route(
     )
 
 
-def method_dispatch_route(operation_name: str = None) -> Callable[[F], F]:
+def method_dispatch_route(operation_name: str | None = None) -> Callable[[F], F]:
     """
     Decorator for routes that handle multiple HTTP methods with different logic.
 
@@ -469,7 +469,7 @@ def template_route_with_validation(
         def wrapper(*args: object, **kwargs: object) -> TemplateResult:
             from flask import render_template, request
 
-            from blinkapp import validate_string_input
+            from utils import validate_string_input
 
             operation = _get_operation_name(func, operation_name)
 

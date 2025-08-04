@@ -196,12 +196,16 @@ def format_clips_by_day(
     for day_key in sorted(clips_by_day.keys(), reverse=True):
         day_data = clips_by_day[day_key]
 
-        # Sort clips within each day by time (newest first)
-        # This ensures consistent ordering regardless of API response order
-        day_data["clips"].sort(key=lambda x: x["time"], reverse=True)
+        # Ensure day_data is a dict and has clips list
+        if isinstance(day_data, dict) and "clips" in day_data:
+            clips_list = day_data["clips"]
+            if isinstance(clips_list, list):
+                # Sort clips within each day by time (newest first)
+                # This ensures consistent ordering regardless of API response order
+                clips_list.sort(key=lambda x: x["time"], reverse=True)
 
-        # Add clip count for UI display (shows "5 clips" in interface)
-        day_data["count"] = len(day_data["clips"])
+                # Add clip count for UI display (shows "5 clips" in interface)
+                day_data["count"] = len(clips_list)
         clips.append(day_data)
     return clips
 

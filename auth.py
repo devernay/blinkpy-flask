@@ -87,8 +87,8 @@ async def initialize_blink(
     with error_context("initialize Blink system", AuthenticationError):
         from aiohttp import ClientSession
 
-        from blinkpy.auth import Auth
-        from blinkpy.blinkpy import Blink
+        from blinkpy.auth import Auth  # type: ignore[import-untyped]
+        from blinkpy.blinkpy import Blink  # type: ignore[import-untyped]
 
         # Create new HTTP session for Blink API communication
         session_obj = ClientSession()
@@ -212,9 +212,9 @@ async def load_saved_blink() -> bool:
         try:
             from aiohttp import ClientSession
 
-            from blinkpy.auth import Auth
-            from blinkpy.blinkpy import Blink
-            from blinkpy.helpers.util import json_load
+            from blinkpy.auth import Auth  # type: ignore[import-untyped]
+            from blinkpy.blinkpy import Blink  # type: ignore[import-untyped]
+            from blinkpy.helpers.util import json_load  # type: ignore[import-untyped]
 
             assert CREDENTIALS_FILE is not None
             # Load encrypted credentials from file
