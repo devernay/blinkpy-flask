@@ -1,65 +1,43 @@
 """Thread-safe caching module for Blink Flask application.
 
 This module provides thread-safe cache implementations with proper inheritance
-from cachetools.LRUCache while maintaining full type safety.
-
-The solution avoids mypy signature conflicts by not overriding methods that
-have complex generic signatures, instead providing thread-safe access through
-context managers and helper methods.
+from cachetools.LRUCache. The ThreadSafeCache class directly overrides LRUCache
+methods with thread-safe versions, eliminating the need for separate safe_* methods.
 """
 
 import logging
 import threading
 import time
-from typing import Any, TypeAlias
+from typing import Any, Generic, TypeVar
 
 from cachetools import LRUCache
 
-# Type aliases for better readability
-CacheKey: TypeAlias = str
-CacheValue: TypeAlias = dict[str, object]
+# Generic type variables for flexible cache typing
+K = TypeVar("K")  # Key type
+V = TypeVar("V")  # Value type
 
 logger = logging.getLogger(__name__)
 
 
-def synchronized(func):
-    """Decorator for thread-safe method execution.
+class ThreadSafeCache(LRUCache[K, V], Generic[K, V]):
+    """Thread-safe LRU cache with direct method overrides.
 
-    This decorator is kept for backwards compatibility but should not be used
-    on methods that override parent class methods due to mypy signature conflicts.
-    """
-
-    def wrapper(self, *args, **kwargs):
-        with self._lock:
-            return func(self, *args, **kwargs)
-
-    return wrapper
-
-
-class ThreadSafeCache(LRUCache[str, dict[str, object]]):
-    """Thread-safe LRU cache with method access control.
-
-    This class properly inherits from cachetools.LRUCache while providing
-    thread safety. It invalidates direct access to unsafe methods and provides
-    safe alternatives, ensuring all cache operations are thread-safe.
+    This class properly inherits from cachetools.LRUCache and directly overrides
+    all methods with thread-safe versions. This eliminates the need for separate
+    safe_* methods and provides a clean, standard dict-like interface.
 
     The cache uses LRU (Least Recently Used) eviction policy to automatically
     manage memory usage when the cache reaches its maximum size.
 
     Attributes:
         _lock: Threading RLock for synchronizing access to cache operations
-        _lock_holder: Thread-local storage to track lock ownership
 
     Example:
-        >>> cache = ThreadSafeCache(maxsize=50)
-        >>> # Recommended: Use safe methods
-        >>> cache.safe_set("key1", {"data": "value1"})
-        >>> result = cache.safe_get("key1", {})
-        >>>
-        >>> # Or use context manager for multiple operations
-        >>> with cache.lock():
-        ...     cache["key2"] = {"data": "value2"}
-        ...     value = cache.get("key1")  # Only works within context
+        >>> cache = ThreadSafeCache[str, dict[str, Any]](maxsize=50)
+        >>> cache["key1"] = {"data": "value1"}
+        >>> result = cache.get("key1", {})
+        >>> if "key2" in cache:
+        ...     value = cache["key2"]
     """
 
     def __init__(self, maxsize: int = 100) -> None:
@@ -76,79 +54,19 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
         # Use RLock to allow recursive locking from same thread
         # This prevents deadlocks when cache methods call other cache methods
         self._lock = threading.RLock()
-        # Thread-local storage to track lock ownership
-        self._lock_holder = threading.local()
 
-    def lock(self):
-        """Get the lock context manager for thread-safe operations.
-
-        Returns:
-            Context manager that enables safe direct method access
-
-        Example:
-            >>> with cache.lock():
-            ...     cache["key"] = {"data": "value"}
-            ...     value = cache.get("key")
-        """
-        return self._LockContext(self)
-
-    class _LockContext:
-        """Context manager for thread-safe cache access."""
-
-        def __init__(self, cache):
-            self.cache = cache
-
-        def __enter__(self):
-            self.cache._lock.acquire()
-            self.cache._lock_holder.has_lock = True
-            return self.cache
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            self.cache._lock_holder.has_lock = False
-            self.cache._lock.release()
-
-    def _check_lock_context(self, method_name: str) -> None:
-        """Check if method is called within proper lock context.
-
-        Args:
-            method_name: Name of the method being called
-
-        Raises:
-            RuntimeError: If method is called outside lock context
-        """
-        # Allow calls when we already hold the lock (from safe methods or context manager)
-        if getattr(self._lock_holder, "has_lock", False):
-            return
-
-        # Block direct calls without proper synchronization
-        safe_method = f"safe_{method_name.replace('__', '').replace('getitem', 'get').replace('setitem', 'set')}"
-        raise RuntimeError(
-            f"Direct use of {method_name}() is not thread-safe. "
-            f"Use {safe_method}() or access within lock() context."
-        )
-
-    # Override only the setitem method (simpler signature, no mypy conflicts)
-    def __setitem__(self, key: str, value: dict[str, object]) -> None:
-        """Context-aware setitem method.
-
-        This method can only be called within a lock() context manager.
-        For automatic thread safety, use safe_set() instead.
+    def __setitem__(self, key: K, value: V) -> None:
+        """Thread-safe setitem method.
 
         Args:
             key: Cache key to set
             value: Value to store
-
-        Raises:
-            RuntimeError: If called outside lock() context
         """
-        self._check_lock_context("__setitem__")
-        super().__setitem__(key, value)
+        with self._lock:
+            super().__setitem__(key, value)
 
-    def __getitem__(self, key: str) -> dict[str, object]:
-        """Context-aware getitem method.
-
-        This method can only be called within a lock() context manager.
-        For automatic thread safety, use safe_get() instead.
+    def __getitem__(self, key: K) -> V:
+        """Thread-safe getitem method.
 
         Args:
             key: Cache key to retrieve
@@ -158,78 +76,23 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
 
         Raises:
             KeyError: If key not found in cache
-            RuntimeError: If called outside lock() context
-        """
-        self._check_lock_context("__getitem__")
-        return super().__getitem__(key)
-
-    # Don't override get() to avoid mypy conflicts, but provide safe alternative
-    # The parent get() method will call __getitem__ which we do control
-
-    # Override only the simplest methods to avoid signature conflicts
-    def __len__(self) -> int:
-        """Thread-safe len method for getting cache size."""
-        with self._lock:
-            return super().__len__()
-
-    def clear(self) -> None:
-        """Thread-safe clear method for removing all items."""
-        with self._lock:
-            super().clear()
-
-    # Provide thread-safe helper methods with simple signatures
-    def safe_get(
-        self, key: str, default: dict[str, object] | None = None
-    ) -> dict[str, object] | None:
-        """Thread-safe get method with optional default value.
-
-        Args:
-            key: Cache key to retrieve
-            default: Default value if key not found
-
-        Returns:
-            Cached value or default if key not found
         """
         with self._lock:
-            # Set the flag to indicate we hold the lock
-            self._lock_holder.has_lock = True
-            try:
-                return super().get(key, default)
-            finally:
-                self._lock_holder.has_lock = False
+            return super().__getitem__(key)
 
-    def safe_set(self, key: str, value: dict[str, object]) -> None:
-        """Thread-safe set method.
-
-        Args:
-            key: Cache key to set
-            value: Value to store
-        """
-        with self._lock:
-            # Set the flag to indicate we hold the lock
-            self._lock_holder.has_lock = True
-            try:
-                super().__setitem__(key, value)
-            finally:
-                self._lock_holder.has_lock = False
-
-    def safe_delete(self, key: str) -> bool:
-        """Thread-safe delete method.
+    def __delitem__(self, key: K) -> None:
+        """Thread-safe delitem method.
 
         Args:
             key: Cache key to delete
 
-        Returns:
-            True if key was deleted, False if key didn't exist
+        Raises:
+            KeyError: If key not found in cache
         """
         with self._lock:
-            try:
-                super().__delitem__(key)
-                return True
-            except KeyError:
-                return False
+            super().__delitem__(key)
 
-    def safe_contains(self, key: str) -> bool:
+    def __contains__(self, key: object) -> bool:
         """Thread-safe contains check.
 
         Args:
@@ -241,9 +104,25 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
         with self._lock:
             return super().__contains__(key)
 
-    def safe_pop(
-        self, key: str, default: dict[str, object] | None = None
-    ) -> dict[str, object] | None:
+    def __len__(self) -> int:
+        """Thread-safe len method for getting cache size."""
+        with self._lock:
+            return super().__len__()
+
+    def get(self, key: K, default: V | None = None) -> V | None:
+        """Thread-safe get method with optional default value.
+
+        Args:
+            key: Cache key to retrieve
+            default: Default value if key not found
+
+        Returns:
+            Cached value or default if key not found
+        """
+        with self._lock:
+            return super().get(key, default)
+
+    def pop(self, key: K, default: V | None = None) -> V | None:
         """Thread-safe pop method.
 
         Args:
@@ -256,32 +135,72 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
         with self._lock:
             return super().pop(key, default)
 
-    def safe_keys(self) -> list[str]:
+    def popitem(self) -> tuple[K, V]:
+        """Thread-safe popitem method.
+
+        Returns:
+            Removed key-value pair
+
+        Raises:
+            KeyError: If cache is empty
+        """
+        with self._lock:
+            return super().popitem()
+
+    def clear(self) -> None:
+        """Thread-safe clear method for removing all items."""
+        with self._lock:
+            super().clear()
+
+    def keys(self):
         """Thread-safe keys method.
 
         Returns:
-            List of all cache keys (snapshot at call time)
+            Keys view (snapshot at call time)
         """
         with self._lock:
             return list(super().keys())
 
-    def safe_values(self) -> list[dict[str, object]]:
+    def values(self):
         """Thread-safe values method.
 
         Returns:
-            List of all cache values (snapshot at call time)
+            Values view (snapshot at call time)
         """
         with self._lock:
             return list(super().values())
 
-    def safe_items(self) -> list[tuple[str, dict[str, object]]]:
+    def items(self):
         """Thread-safe items method.
 
         Returns:
-            List of all cache key-value pairs (snapshot at call time)
+            Items view (snapshot at call time)
         """
         with self._lock:
             return list(super().items())
+
+    def setdefault(self, key: K, default: V | None = None) -> V | None:
+        """Thread-safe setdefault method.
+
+        Args:
+            key: Cache key
+            default: Default value to set if key doesn't exist
+
+        Returns:
+            Existing value or default
+        """
+        with self._lock:
+            return super().setdefault(key, default)
+
+    def update(self, *args, **kwargs) -> None:
+        """Thread-safe update method.
+
+        Args:
+            *args: Positional arguments for update
+            **kwargs: Keyword arguments for update
+        """
+        with self._lock:
+            super().update(*args, **kwargs)
 
     def clear_cache(self) -> None:
         """Clear all cached items.
@@ -304,7 +223,7 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
             }
 
 
-class ThumbnailCache(ThreadSafeCache):
+class ThumbnailCache(ThreadSafeCache[str, dict[str, Any]]):
     """Specialized cache for camera thumbnails with timestamp tracking.
 
     Extends ThreadSafeCache with thumbnail-specific functionality including
@@ -328,7 +247,7 @@ class ThumbnailCache(ThreadSafeCache):
         Returns:
             Timestamp when thumbnail was cached, or None if not found
         """
-        thumbnail_data = self.safe_get(camera_id)
+        thumbnail_data = self.get(camera_id)
         if thumbnail_data and "timestamp" in thumbnail_data:
             timestamp_obj = thumbnail_data["timestamp"]
             if isinstance(timestamp_obj, int | float):
@@ -368,10 +287,10 @@ class ThumbnailCache(ThreadSafeCache):
             "timestamp": time.time(),
             "metadata": metadata or {},
         }
-        self.safe_set(camera_id, cache_entry)
+        self[camera_id] = cache_entry
 
 
-class ClipsCache(ThreadSafeCache):
+class ClipsCache(ThreadSafeCache[str, dict[str, Any]]):
     """Specialized cache for video clips with metadata and access tracking.
 
     Extends ThreadSafeCache with clip-specific functionality including
@@ -399,7 +318,7 @@ class ClipsCache(ThreadSafeCache):
             "access_count": 0,
             "last_accessed": time.time(),
         }
-        self.safe_set(clip_id, enhanced_data)
+        self[clip_id] = enhanced_data
 
     def get_clip(self, clip_id: str) -> dict[str, Any] | None:
         """Get clip and update access statistics.
@@ -410,23 +329,22 @@ class ClipsCache(ThreadSafeCache):
         Returns:
             Clip data if found, None otherwise
         """
-        with self.lock():
-            clip_entry = self.safe_get(clip_id)
-            if clip_entry:
-                # Update access statistics
-                access_count = clip_entry.get("access_count", 0)
-                if isinstance(access_count, int):
-                    clip_entry["access_count"] = access_count + 1
-                clip_entry["last_accessed"] = time.time()
+        clip_entry = self.get(clip_id)
+        if clip_entry:
+            # Update access statistics
+            access_count = clip_entry.get("access_count", 0)
+            if isinstance(access_count, int):
+                clip_entry["access_count"] = access_count + 1
+            clip_entry["last_accessed"] = time.time()
 
-                # Update the cache with new stats
-                self.safe_set(clip_id, clip_entry)
+            # Update the cache with new stats
+            self[clip_id] = clip_entry
 
-                # Return the actual clip data
-                clip_data = clip_entry.get("clip_data")
-                if isinstance(clip_data, dict):
-                    return clip_data
-            return None
+            # Return the actual clip data
+            clip_data = clip_entry.get("clip_data")
+            if isinstance(clip_data, dict):
+                return clip_data
+        return None
 
     def cleanup_old_clips(self, max_age_hours: int = 24) -> int:
         """Remove clips older than specified age.
@@ -437,32 +355,31 @@ class ClipsCache(ThreadSafeCache):
         Returns:
             Number of clips removed
         """
-        with self.lock():
-            current_time = time.time()
-            max_age_seconds = max_age_hours * 3600
-            old_clips = []
+        current_time = time.time()
+        max_age_seconds = max_age_hours * 3600
+        old_clips = []
 
-            for clip_id, clip_entry in self.safe_items():
-                if isinstance(clip_entry, dict):
-                    cached_at = clip_entry.get("cached_at", 0)
-                    if (
-                        isinstance(cached_at, int | float)
-                        and (current_time - cached_at) > max_age_seconds
-                    ):
-                        old_clips.append(clip_id)
+        for clip_id, clip_entry in self.items():
+            if isinstance(clip_entry, dict):
+                cached_at = clip_entry.get("cached_at", 0)
+                if (
+                    isinstance(cached_at, int | float)
+                    and (current_time - cached_at) > max_age_seconds
+                ):
+                    old_clips.append(clip_id)
 
-            for clip_id in old_clips:
-                self.safe_delete(clip_id)
+        for clip_id in old_clips:
+            del self[clip_id]
 
-            if old_clips:
-                logger.info(f"Cleaned up {len(old_clips)} old clips from cache")
-            return len(old_clips)
+        if old_clips:
+            logger.info(f"Cleaned up {len(old_clips)} old clips from cache")
+        return len(old_clips)
 
 
 # Global cache instances (initialized by app.py)
 thumbnail_cache: ThumbnailCache | None = None
 clips_cache: ClipsCache | None = None
-settings_cache: ThreadSafeCache | None = None
+settings_cache: ThreadSafeCache[str, dict[str, Any]] | None = None
 
 
 def initialize_caches(config: dict[str, Any]) -> None:
@@ -475,7 +392,9 @@ def initialize_caches(config: dict[str, Any]) -> None:
 
     thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
     clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
-    settings_cache = ThreadSafeCache(maxsize=config.get("settings_cache_size", 10))
+    settings_cache = ThreadSafeCache[str, dict[str, Any]](
+        maxsize=config.get("settings_cache_size", 10)
+    )
 
     logger.info("Cache instances initialized successfully")
 

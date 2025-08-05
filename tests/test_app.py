@@ -950,31 +950,32 @@ class TestCacheOperations(unittest.TestCase):
 
     def test_cache_set_get(self) -> None:
         """Test cache set and get operations."""
-        self.cache["key1"] = "value1"
-        self.assertEqual(self.cache.get("key1"), "value1")
+        self.cache["key1"] = {"data": "value1"}
+        result = self.cache.get("key1")
+        self.assertEqual(result["data"], "value1")
 
     def test_cache_get_default(self) -> None:
         """Test cache get with default value."""
-        result = self.cache.get("nonexistent", "default")
-        self.assertEqual(result, "default")
+        result = self.cache.get("nonexistent", {"default": "value"})
+        self.assertEqual(result["default"], "value")
 
     def test_cache_contains(self) -> None:
         """Test cache contains operation."""
-        self.cache["key1"] = "value1"
+        self.cache["key1"] = {"data": "value1"}
         self.assertIn("key1", self.cache)
         self.assertNotIn("key2", self.cache)
 
     def test_cache_pop(self) -> None:
         """Test cache pop operation."""
-        self.cache["key1"] = "value1"
+        self.cache["key1"] = {"data": "value1"}
         result = self.cache.pop("key1")
-        self.assertEqual(result, "value1")
+        self.assertEqual(result["data"], "value1")
         self.assertNotIn("key1", self.cache)
 
     def test_cache_clear(self) -> None:
         """Test cache clear operation."""
-        self.cache["key1"] = "value1"
-        self.cache["key2"] = "value2"
+        self.cache["key1"] = {"data": "value1"}
+        self.cache["key2"] = {"data": "value2"}
         self.cache.clear()
         self.assertEqual(len(self.cache), 0)
 
@@ -2714,9 +2715,9 @@ class TestPerformanceOptimizations(unittest.TestCase):
         # Test FIFO cache behavior
         cache = ThumbnailCache(maxsize=2)
 
-        cache["key1"] = "value1"
-        cache["key2"] = "value2"
-        cache["key3"] = "value3"  # Should evict key1
+        cache["key1"] = {"data": "value1"}
+        cache["key2"] = {"data": "value2"}
+        cache["key3"] = {"data": "value3"}  # Should evict key1
 
         self.assertNotIn("key1", cache)
         self.assertIn("key2", cache)
@@ -3480,7 +3481,7 @@ class TestResourceManagement(unittest.TestCase):
 
         # Fill cache beyond capacity
         for i in range(5):
-            cache[f"key{i}"] = f"value{i}"
+            cache[f"key{i}"] = {"data": f"value{i}"}
 
         # Should only contain last 3 items
         self.assertEqual(len(cache), 3)
@@ -3642,7 +3643,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
         ]
 
         for key, value in items:
-            cache[key] = value
+            cache[key] = {"data": value}
 
         # Should maintain size limit
         self.assertEqual(len(cache), 3)
@@ -4860,8 +4861,9 @@ class TestCriticalPathCoverage(unittest.TestCase):
         cache = ThumbnailCache(maxsize=2)
 
         # Test insertion
-        cache["key1"] = "value1"
-        self.assertEqual(cache["key1"], "value1")
+        cache["key1"] = {"data": "value1"}
+        result = cache["key1"]
+        self.assertEqual(result["data"], "value1")
 
         # Test contains
         self.assertIn("key1", cache)
@@ -5385,12 +5387,12 @@ class TestPerformanceOptimizationsFixed(unittest.TestCase):
         cache = ThumbnailCache(maxsize=10)
 
         # Test cache hit performance
-        cache["key1"] = "value1"
+        cache["key1"] = {"data": "value1"}
 
         # Multiple gets should be fast (cache hits)
         for _ in range(5):
             result = cache.get("key1")
-            self.assertEqual(result, "value1")
+            self.assertEqual(result["data"], "value1")
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
@@ -5399,16 +5401,15 @@ class TestPerformanceOptimizationsFixed(unittest.TestCase):
         cache = ThumbnailCache(maxsize=3)
 
         # Fill cache
-        cache["key1"] = "value1"
-        cache["key2"] = "value2"
-        cache["key3"] = "value3"
+        cache["key1"] = {"data": "value1"}
+        cache["key2"] = {"data": "value2"}
+        cache["key3"] = {"data": "value3"}
 
         # Add one more to trigger eviction
-        cache["key4"] = "value4"
+        cache["key4"] = {"data": "value4"}
 
         # First key should be evicted
-        with self.assertRaises(KeyError):
-            cache["key1"]
+        self.assertIsNone(cache.get("key1"))
 
         # Others should still exist
         self.assertEqual(cache.get("key2"), "value2")
