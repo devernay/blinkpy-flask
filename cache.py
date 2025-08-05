@@ -37,23 +37,29 @@ def synchronized(func):
 
 
 class ThreadSafeCache(LRUCache[str, dict[str, object]]):
-    """Thread-safe LRU cache with proper inheritance and type safety.
+    """Thread-safe LRU cache with method access control.
 
     This class properly inherits from cachetools.LRUCache while providing
-    thread safety. Instead of overriding methods with complex signatures,
-    we provide thread-safe access through the context manager pattern.
+    thread safety. It invalidates direct access to unsafe methods and provides
+    safe alternatives, ensuring all cache operations are thread-safe.
 
     The cache uses LRU (Least Recently Used) eviction policy to automatically
     manage memory usage when the cache reaches its maximum size.
 
     Attributes:
         _lock: Threading RLock for synchronizing access to cache operations
+        _lock_holder: Thread-local storage to track lock ownership
 
     Example:
         >>> cache = ThreadSafeCache(maxsize=50)
+        >>> # Recommended: Use safe methods
+        >>> cache.safe_set("key1", {"data": "value1"})
+        >>> result = cache.safe_get("key1", {})
+        >>>
+        >>> # Or use context manager for multiple operations
         >>> with cache.lock():
-        ...     cache["key1"] = {"data": "value1"}
-        ...     result = cache.get("key1", {})
+        ...     cache["key2"] = {"data": "value2"}
+        ...     value = cache.get("key1")  # Only works within context
     """
 
     def __init__(self, maxsize: int = 100) -> None:
@@ -70,19 +76,95 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
         # Use RLock to allow recursive locking from same thread
         # This prevents deadlocks when cache methods call other cache methods
         self._lock = threading.RLock()
+        # Thread-local storage to track lock ownership
+        self._lock_holder = threading.local()
 
     def lock(self):
         """Get the lock context manager for thread-safe operations.
 
         Returns:
-            Context manager for the cache lock
+            Context manager that enables safe direct method access
 
         Example:
             >>> with cache.lock():
             ...     cache["key"] = {"data": "value"}
             ...     value = cache.get("key")
         """
-        return self._lock
+        return self._LockContext(self)
+
+    class _LockContext:
+        """Context manager for thread-safe cache access."""
+
+        def __init__(self, cache):
+            self.cache = cache
+
+        def __enter__(self):
+            self.cache._lock.acquire()
+            self.cache._lock_holder.has_lock = True
+            return self.cache
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.cache._lock_holder.has_lock = False
+            self.cache._lock.release()
+
+    def _check_lock_context(self, method_name: str) -> None:
+        """Check if method is called within proper lock context.
+
+        Args:
+            method_name: Name of the method being called
+
+        Raises:
+            RuntimeError: If method is called outside lock context
+        """
+        # Allow calls when we already hold the lock (from safe methods or context manager)
+        if getattr(self._lock_holder, "has_lock", False):
+            return
+
+        # Block direct calls without proper synchronization
+        safe_method = f"safe_{method_name.replace('__', '').replace('getitem', 'get').replace('setitem', 'set')}"
+        raise RuntimeError(
+            f"Direct use of {method_name}() is not thread-safe. "
+            f"Use {safe_method}() or access within lock() context."
+        )
+
+    # Override only the setitem method (simpler signature, no mypy conflicts)
+    def __setitem__(self, key: str, value: dict[str, object]) -> None:
+        """Context-aware setitem method.
+
+        This method can only be called within a lock() context manager.
+        For automatic thread safety, use safe_set() instead.
+
+        Args:
+            key: Cache key to set
+            value: Value to store
+
+        Raises:
+            RuntimeError: If called outside lock() context
+        """
+        self._check_lock_context("__setitem__")
+        super().__setitem__(key, value)
+
+    def __getitem__(self, key: str) -> dict[str, object]:
+        """Context-aware getitem method.
+
+        This method can only be called within a lock() context manager.
+        For automatic thread safety, use safe_get() instead.
+
+        Args:
+            key: Cache key to retrieve
+
+        Returns:
+            Cached value
+
+        Raises:
+            KeyError: If key not found in cache
+            RuntimeError: If called outside lock() context
+        """
+        self._check_lock_context("__getitem__")
+        return super().__getitem__(key)
+
+    # Don't override get() to avoid mypy conflicts, but provide safe alternative
+    # The parent get() method will call __getitem__ which we do control
 
     # Override only the simplest methods to avoid signature conflicts
     def __len__(self) -> int:
@@ -109,7 +191,12 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
             Cached value or default if key not found
         """
         with self._lock:
-            return super().get(key, default)
+            # Set the flag to indicate we hold the lock
+            self._lock_holder.has_lock = True
+            try:
+                return super().get(key, default)
+            finally:
+                self._lock_holder.has_lock = False
 
     def safe_set(self, key: str, value: dict[str, object]) -> None:
         """Thread-safe set method.
@@ -119,7 +206,12 @@ class ThreadSafeCache(LRUCache[str, dict[str, object]]):
             value: Value to store
         """
         with self._lock:
-            super().__setitem__(key, value)
+            # Set the flag to indicate we hold the lock
+            self._lock_holder.has_lock = True
+            try:
+                super().__setitem__(key, value)
+            finally:
+                self._lock_holder.has_lock = False
 
     def safe_delete(self, key: str) -> bool:
         """Thread-safe delete method.

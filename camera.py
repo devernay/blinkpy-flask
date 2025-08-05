@@ -85,10 +85,15 @@ def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
         ...     print(f"Found camera: {camera.name}")
     """
     # Import locally to avoid circular imports during module initialization
-    from blinkapp import blink
+    from blinkapp import ensure_blink_initialized
 
     # Check if Blink system is available and initialized
-    if blink is None or not blink.available:
+    try:
+        blink = ensure_blink_initialized()
+    except RuntimeError:
+        return None
+
+    if not blink.available:
         return None
 
     # Search through all sync modules and their cameras
@@ -162,10 +167,20 @@ def update_camera_thumbnail(
     # Import locally to avoid circular imports during module initialization
     from blinkapp import (
         THUMBNAIL_CACHE_DIR,
-        blink_connection,
-        executor,
-        thumbnail_cache,
+        ensure_blink_connection_initialized,
+        ensure_cache_paths_initialized,
+        ensure_executor_initialized,
+        ensure_thumbnail_cache_initialized,
     )
+
+    # Ensure all required components are initialized
+    ensure_cache_paths_initialized()
+    blink_connection = ensure_blink_connection_initialized()
+    executor = ensure_executor_initialized()
+    thumbnail_cache = ensure_thumbnail_cache_initialized()
+
+    # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
+    assert THUMBNAIL_CACHE_DIR is not None
 
     # Skip update if cached version is already current or newer
     if current_ts <= cached_ts:
@@ -184,14 +199,16 @@ def update_camera_thumbnail(
         """
         # Double-check timestamp to prevent race condition
         # Another request might have updated the cache while we were queued
-        current_entry = thumbnail_cache.get(cache_key)
-        current_cached_ts = current_entry.get("timestamp", 0) if current_entry else 0
+        current_entry = thumbnail_cache.get(str(cache_key))
+        current_cached_ts = (
+            int(current_entry.get("timestamp", 0)) if current_entry else 0
+        )
         if current_ts <= current_cached_ts:
             logger.debug(f"Thumbnail already updated for {camera.name}, skipping")
             return
 
         # Remove old cached file if exists to prevent disk space accumulation
-        old_entry = thumbnail_cache.get(cache_key)
+        old_entry = thumbnail_cache.get(str(cache_key))
         if old_entry is not None:
             old_filename = old_entry.get("filename")
             if old_filename is not None:
@@ -218,7 +235,7 @@ def update_camera_thumbnail(
             try:
                 filepath.write_bytes(image_data)
                 # Update cache info atomically
-                thumbnail_cache[cache_key] = {
+                thumbnail_cache[str(cache_key)] = {
                     "timestamp": current_ts,
                     "filename": filename,
                 }
@@ -256,13 +273,27 @@ def setup_camera_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         # Import locally to avoid circular imports
-        from blinkapp import THUMBNAIL_CACHE_DIR, blink, executor, thumbnail_cache
+        from blinkapp import (
+            THUMBNAIL_CACHE_DIR,
+            ensure_blink_initialized,
+            ensure_cache_paths_initialized,
+            ensure_executor_initialized,
+            ensure_thumbnail_cache_initialized,
+        )
 
-        assert blink is not None
+        # Ensure all required components are initialized
+        ensure_blink_initialized()  # We don't need the return value
+        executor = ensure_executor_initialized()
+        thumbnail_cache = ensure_thumbnail_cache_initialized()
+        ensure_cache_paths_initialized()
+
+        # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
+        assert THUMBNAIL_CACHE_DIR is not None
 
         camera, error_response = require_camera(camera_id)
         if error_response is not None:
-            raise ValidationError(error_response[0]["error"], error_response[1])
+            error_dict, status_code = error_response
+            raise ValidationError(error_dict["error"], status_code)
 
         assert camera is not None
         with error_context("refresh camera thumbnail", CameraError):
@@ -274,9 +305,8 @@ def setup_camera_routes(app: Flask) -> None:
                     # Remove cached file
                     if "filename" in cached_info:
                         assert THUMBNAIL_CACHE_DIR is not None
-                        cached_file = (
-                            Path(cast(str, THUMBNAIL_CACHE_DIR))
-                            / cached_info["filename"]
+                        cached_file = Path(cast(str, THUMBNAIL_CACHE_DIR)) / str(
+                            cached_info["filename"]
                         )
                         try:
                             if cached_file.exists():
@@ -311,14 +341,22 @@ def setup_camera_routes(app: Flask) -> None:
             ValueError: If camera_id_str is invalid
         """
         # Import locally to avoid circular imports
-        from blinkapp import blink_connection, stream_manager
+        from blinkapp import (
+            ensure_blink_connection_initialized,
+            ensure_stream_manager_initialized,
+        )
+
+        # Ensure required components are initialized
+        blink_connection = ensure_blink_connection_initialized()
+        stream_manager = ensure_stream_manager_initialized()
 
         # camera_id is now validated and converted by the decorator
 
         camera, error_response = require_camera(camera_id)
         if error_response is not None:
             # Re-raise as exception to be handled by decorator
-            raise ValidationError(error_response[0]["error"], error_response[1])
+            error_dict, status_code = error_response
+            raise ValidationError(error_dict["error"], status_code)
 
         assert camera is not None
 
@@ -386,12 +424,18 @@ def setup_camera_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         # Import locally to avoid circular imports
-        from blinkapp import blink_connection, stream_manager
+        from blinkapp import (
+            ensure_blink_connection_initialized,
+            ensure_stream_manager_initialized,
+        )
+
+        # Ensure required components are initialized
+        blink_connection = ensure_blink_connection_initialized()
+        stream_manager = ensure_stream_manager_initialized()
 
         try:
             # Stop HLS transcoding
-            if stream_manager is not None:
-                stream_manager.stop_stream(str(camera_id))
+            stream_manager.stop_stream(str(camera_id))
 
             # Stop and cleanup the TCP stream
             if hasattr(blink_connection, "_active_streams"):
@@ -424,28 +468,32 @@ def setup_camera_routes(app: Flask) -> None:
             Flask Response with HLS file content or error
         """
         # Import locally to avoid circular imports
-        from blinkapp import stream_manager
+        from blinkapp import ensure_stream_manager_initialized
 
-        if stream_manager is None:
-            return create_api_response(
-                success=False, error="Stream manager not available", status_code=503
-            )
+        # Ensure stream manager is initialized
+        stream_manager = ensure_stream_manager_initialized()
 
         try:
             file_path = stream_manager.get_stream_file(str(camera_id), filename)
             if file_path and file_path.exists():
                 return send_file(str(file_path))
             else:
-                return create_api_response(
+                from flask import jsonify
+
+                response, status_code = create_api_response(
                     success=False, error="HLS file not found", status_code=404
                 )
+                return jsonify(response), status_code
         except Exception as e:
             logger.error(
                 f"Error serving HLS file {filename} for camera {camera_id}: {e}"
             )
-            return create_api_response(
+            from flask import jsonify
+
+            response, status_code = create_api_response(
                 success=False, error="Failed to serve HLS file", status_code=500
             )
+            return jsonify(response), status_code
 
     @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
     @requires_blink
@@ -499,7 +547,20 @@ def setup_camera_routes(app: Flask) -> None:
         # Import locally to avoid circular imports
         from flask import Response
 
-        from blinkapp import THUMBNAIL_CACHE_DIR, blink_connection, thumbnail_cache
+        from blinkapp import (
+            THUMBNAIL_CACHE_DIR,
+            ensure_blink_connection_initialized,
+            ensure_cache_paths_initialized,
+            ensure_thumbnail_cache_initialized,
+        )
+
+        # Ensure required components are initialized
+        ensure_cache_paths_initialized()
+        blink_connection = ensure_blink_connection_initialized()
+        thumbnail_cache = ensure_thumbnail_cache_initialized()
+
+        # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
+        assert THUMBNAIL_CACHE_DIR is not None
 
         # camera_id is now validated and converted by the decorator
 
@@ -509,17 +570,20 @@ def setup_camera_routes(app: Flask) -> None:
 
         # Check cache first
         cache_key = str(camera_id)
-        cached_info = thumbnail_cache.get(cache_key)
+        cached_info = thumbnail_cache.get(str(cache_key))
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
+        cached_ts = 0  # Default value
 
         if cached_info is not None:
-            cached_ts = cached_info.get("timestamp", 0)
+            cached_ts = int(cached_info.get("timestamp", 0))
             cached_filename = cached_info.get("filename")
 
             # Check if cached version is current
             if current_ts <= cached_ts and cached_filename is not None:
                 assert THUMBNAIL_CACHE_DIR is not None
-                cached_file = Path(cast(str, THUMBNAIL_CACHE_DIR)) / cached_filename
+                cached_file = Path(cast(str, THUMBNAIL_CACHE_DIR)) / str(
+                    cached_filename
+                )
                 if cached_file.exists():
                     try:
                         image_data = cached_file.read_bytes()
@@ -531,8 +595,8 @@ def setup_camera_routes(app: Flask) -> None:
                     except OSError as e:
                         logger.debug(f"Could not read cached thumbnail: {e}")
 
-            # Update cache in background if needed
-            update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
+        # Update cache in background if needed
+        update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
 
         # Fetch from Blink API
         thumbnail_response = blink_connection.execute(camera.thumbnail)

@@ -88,7 +88,7 @@ async def initialize_blink(
         from aiohttp import ClientSession
 
         from blinkpy.auth import Auth  # type: ignore[import-untyped]
-        from blinkpy.blinkpy import Blink  # type: ignore[import-untyped]
+        from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
 
         # Create new HTTP session for Blink API communication
         session_obj = ClientSession()
@@ -213,7 +213,9 @@ async def load_saved_blink() -> bool:
             from aiohttp import ClientSession
 
             from blinkpy.auth import Auth  # type: ignore[import-untyped]
-            from blinkpy.blinkpy import Blink  # type: ignore[import-untyped]
+            from blinkpy.blinkpy import (
+                Blink,  # type: ignore[import-untyped,attr-defined]
+            )
             from blinkpy.helpers.util import json_load  # type: ignore[import-untyped]
 
             assert CREDENTIALS_FILE is not None
@@ -402,3 +404,5 @@ def setup_auth_routes(app_instance):
         cred_file = Path(CREDENTIALS_FILE)
         if cred_file.exists():
             cred_file.unlink()
+
+        return {}  # Decorator will handle the success response
