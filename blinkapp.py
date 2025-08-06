@@ -103,6 +103,11 @@ if TYPE_CHECKING:
 # Third-party imports
 import requests
 
+# Blink camera library
+from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
+
 # Flask framework components
 from flask import (
     Flask,
@@ -116,11 +121,6 @@ from flask import (
 )
 from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
-
-# Blink camera library
-from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
-from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
-from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
 
 # Application configuration
 from config import Config
@@ -174,7 +174,7 @@ def handle_api_error(
     error: Exception,
     operation: str,
     status_code: int = Config.HTTP_STATUS_INTERNAL_ERROR,
-) -> tuple[ApiResponse, int]:
+) -> ApiResponse:
     """Handle API errors with user-friendly messages.
 
     Provides centralized error handling for all API endpoints with consistent
@@ -235,7 +235,7 @@ def handle_api_error(
 
 def require_sync_module(
     network_id: NetworkId,
-) -> tuple[BlinkSyncModule | None, tuple[ApiResponse, int] | None]:
+) -> tuple[BlinkSyncModule | None, ApiResponse | None]:
     """Find sync module by network ID, return error response if not found.
 
     Searches through all available Blink sync modules to find one matching
@@ -955,7 +955,8 @@ def get_devices(network_id: NetworkId) -> JsonDict:
     sync_module, error_response = require_sync_module(network_id)
     if error_response is not None:
         error_dict, status_code = error_response
-        raise ValidationError(error_dict["error"], status_code)
+        error_message = error_dict.get("error", "Unknown error")
+        raise ValidationError(str(error_message), status_code)
 
     assert sync_module is not None
     # Add sync module
@@ -1014,8 +1015,9 @@ def arm_system(network_id: NetworkId) -> JsonDict:
     # Find the sync module
     sync_module, error_response = require_sync_module(network_id)
     if error_response is not None:
-        response, status_code = error_response
-        return jsonify(response), status_code
+        error_dict, status_code = error_response
+        error_message = error_dict.get("error", "Unknown error")
+        raise ValidationError(str(error_message), status_code)
 
     with error_context("arm/disarm system"):
         if sync_module is not None:
@@ -1122,7 +1124,7 @@ def process_clip(clip_id_str: str) -> JsonDict:
 @app.route("/api/clip/<clip_id_str>/download")
 @requires_blink
 @api_route("download clip")
-def download_clip(clip_id_str: str) -> FlaskResponse:
+def download_clip(clip_id_str: str) -> ResponseReturnValue:
     """Download a specific clip.
 
     Args:
@@ -1163,6 +1165,9 @@ def _download_clip_common(
     Returns:
         Flask response with clip file or error message
     """
+    # Ensure clips cache is initialized
+    clips_cache = ensure_clips_cache_initialized()
+
     # Cache the clip first (without thumbnail)
     clips_cache[clip_id] = {
         "filepath": filepath,
@@ -1369,6 +1374,8 @@ def process_local_clip_background(
         sync_name: Name of the sync module containing the clip
         item_id: Local storage item ID
     """
+    # Ensure clips cache is initialized
+    clips_cache = ensure_clips_cache_initialized()
 
     def process() -> None:
         try:
@@ -1432,6 +1439,8 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
     Args:
         clip_id: Unique identifier for the cloud clip
     """
+    # Ensure clips cache is initialized
+    clips_cache = ensure_clips_cache_initialized()
 
     def process() -> None:
         assert blink is not None
@@ -1516,12 +1525,14 @@ def get_camera_liveview(camera_id: CameraId) -> JsonDict:
         ValueError: If camera_id_str is invalid
     """
     # camera_id is now validated and converted by the decorator
+    blink_connection = ensure_blink_connection_initialized()
 
     camera, error_response = require_camera(camera_id)
     if error_response is not None:
         # Re-raise as exception to be handled by decorator
         error_dict, status_code = error_response
-        raise ValidationError(error_dict["error"], status_code)
+        error_message = error_dict.get("error", "Unknown error")
+        raise ValidationError(str(error_message), status_code)
 
     assert camera is not None
 
@@ -1550,10 +1561,7 @@ def get_camera_liveview(camera_id: CameraId) -> JsonDict:
 
         if hls_url is not None:
             # Store the stream object for later cleanup
-            if not hasattr(blink_connection, "_active_streams"):
-                blink_connection._active_streams = {}
-            active_streams = getattr(blink_connection, "_active_streams", {})
-            active_streams[str(camera_id)] = stream
+            blink_connection._active_streams[str(camera_id)] = stream
 
             return {
                 "tcp_url": tcp_url,
@@ -2107,6 +2115,9 @@ def load_thumbnail_cache() -> None:
         - Missing cameras: Files removed if system available
         - File system errors: Logged, operation continues
     """
+    # Ensure thumbnail cache is initialized
+    thumbnail_cache = ensure_thumbnail_cache_initialized()
+
     assert THUMBNAIL_CACHE_DIR is not None
     cache_dir = Path(cast(str, THUMBNAIL_CACHE_DIR))
     if not cache_dir.exists():

@@ -16,9 +16,7 @@ from config import Config
 from ids import ClipId
 
 if TYPE_CHECKING:
-    from typing import Any
-
-    JsonDict = dict[str, Any]
+    JsonDict = dict[str, object]
     ApiResponse = tuple[JsonDict, int]
 
 # Module-level logger for utility function debugging

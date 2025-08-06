@@ -426,3 +426,5 @@ Next, we will write a full developer documentation detailing, not necessarily in
 You can find some existing documentation in IMPLEMENTATIONS.md and in the various .md files your can find in this repository, but it is not well organized.
 The developper documentation should be in markdown format, in a fine called DOCUMENTATION.md.
 First, you should sketch the plan of the documentation, with sections and subsections, and after I approve you can continue filling in the details.
+
+Fix all typing issues: run ruff check and fix errors, then run mypy and fix errors, then run pyright and fix errors. Avoid using "# type: ignore" as much as possible, as it defeats type checking. If some errors cannot be fixed, even with some efforts, report in a file "LINTING_REPORT.md" and give hints to fix the issues. Do not try to fix anythink in the blinkpy library, which is third-party code.
