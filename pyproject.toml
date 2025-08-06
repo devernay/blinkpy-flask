@@ -1,6 +1,6 @@
 [tool.ruff]
 # Ruff configuration for Blink Flask application
-target-version = "py310"
+target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
@@ -25,4 +25,4 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint.isort]
-known-first-party = ["app", "blink_connection", "stream_manager"]
+known-first-party = ["blinkapp", "blink_connection", "stream_manager"]
