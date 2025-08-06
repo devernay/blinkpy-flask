@@ -10,18 +10,19 @@ import logging
 from collections.abc import Callable
 from typing import Protocol, TypeVar
 
-from flask import Response, jsonify, request
+from flask import jsonify, request
+
+from app_types import (
+    CacheKey,
+    ErrorResponse,
+    FlaskResponse,
+    JsonDict,
+    RouteResult,
+    TemplateResult,
+    ValidationFunction,
+)
 
 logger = logging.getLogger(__name__)
-
-# Type definitions
-JsonDict = dict[str, object]
-FlaskResponse = tuple[Response, int] | Response
-ValidationFunction = Callable[[str], object]
-CacheKey = str
-ErrorResponse = tuple[Response, int]
-RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
-TemplateResult = str | FlaskResponse  # What template functions can return
 
 
 # Import ValidationError from app module (lazy import to avoid circular imports)

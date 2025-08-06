@@ -53,11 +53,13 @@ class TestBaseId(unittest.TestCase):
         class TestId(BaseId):
             """Concrete test implementation of BaseId."""
 
-            def _get_pattern(self) -> str:
+            @classmethod
+            def _get_pattern(cls) -> str:
                 """Return regex pattern for alphanumeric IDs."""
                 return r"^[a-zA-Z0-9]+$"
 
-            def _get_type_name(self) -> str:
+            @classmethod
+            def _get_type_name(cls) -> str:
                 """Return human-readable type name for error messages."""
                 return "Test ID"
 
@@ -433,7 +435,7 @@ class TestAdditionalEndpoints(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         self.app = app
         self.app.config["TESTING"] = True
@@ -856,7 +858,7 @@ class TestAuthenticationHelpers(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         # Initialize globals for testing
         setup_test_globals()
@@ -1077,7 +1079,7 @@ class TestAPIEndpoints(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -1285,7 +1287,7 @@ class TestThumbnailManagement(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -1432,7 +1434,7 @@ class TestFileOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -1703,7 +1705,7 @@ class TestDataTypes(unittest.TestCase):
         cloud_id = ClipId.from_cloud(12345)
         self.assertIsInstance(cloud_id, ClipId)
 
-        local_id = ClipId.from_local("sync1", "clip123")
+        local_id = ClipId.from_local("sync1", 123)
         self.assertIsInstance(local_id, ClipId)
 
     def test_camera_id_functionality(self) -> None:
@@ -1774,7 +1776,7 @@ class TestThumbnailCacheOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -2097,7 +2099,7 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -2184,10 +2186,12 @@ class TestAdvancedAPIEndpoints(unittest.TestCase):
     def test_get_clip_thumbnail_success(self, mock_blink) -> None:
         """Test getting clip thumbnail."""
         with patch("blinkapp.clips_download_cache") as mock_cache:
-            # Mock Path object for thumbnail
-            mock_thumbnail_path = Mock()
+            # Mock Path object for thumbnail using spec
+            from pathlib import Path
+
+            mock_thumbnail_path = Mock(spec=Path)
             mock_thumbnail_path.exists.return_value = True
-            mock_thumbnail_path.__str__ = Mock(return_value="/fake/path/thumbnail.jpg")
+            mock_thumbnail_path.__str__.return_value = "/fake/path/thumbnail.jpg"
 
             mock_cache.get.return_value = {"thumbnail": mock_thumbnail_path}
 
@@ -2447,7 +2451,7 @@ class TestCacheLoadingOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -2671,7 +2675,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -2980,7 +2984,7 @@ class TestAdvancedClipOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3085,7 +3089,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3194,7 +3198,7 @@ class TestThumbnailAdvancedOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client and initialize test globals."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3296,7 +3300,7 @@ class TestErrorRecoveryMechanisms(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3373,7 +3377,7 @@ class TestConcurrencyAndThreadSafety(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3537,7 +3541,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3658,7 +3662,7 @@ class TestAdvancedSystemOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3738,7 +3742,7 @@ class TestAdvancedFileOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3792,7 +3796,7 @@ class TestPerformanceOptimizationAdvanced(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3879,7 +3883,7 @@ class TestSecurityAdvanced(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -3959,7 +3963,7 @@ class TestIntegrationScenarios(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4072,7 +4076,7 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4205,7 +4209,7 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4448,7 +4452,7 @@ class TestAdvancedCacheOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4589,7 +4593,7 @@ class TestComplexErrorScenarios(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4668,7 +4672,7 @@ class TestAdvancedIntegrationWorkflows(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4818,7 +4822,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -4894,7 +4898,7 @@ class TestCriticalPathCoverage(unittest.TestCase):
         self.assertIsInstance(cloud_id, ClipId)
 
         # Test local clip ID creation
-        local_id = ClipId.from_local("sync1", "clip123")
+        local_id = ClipId.from_local("sync1", 123)
         self.assertIsInstance(local_id, ClipId)
 
     def test_error_context_manager_basic(self) -> None:
@@ -5233,7 +5237,7 @@ class TestAdvancedEndpointsFixed(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test client."""
-        from test_utils import setup_test_globals
+        from .test_utils import setup_test_globals
 
         app.config["TESTING"] = True
         self.client = app.test_client()

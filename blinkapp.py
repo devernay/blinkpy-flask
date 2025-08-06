@@ -124,18 +124,14 @@ from flask import (
 from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
 
+# Type definitions for better code clarity
+from app_types import (
+    ApiResponse,
+    JsonDict,
+)
+
 # Application configuration
 from config import Config
-
-# Type definitions for better code clarity
-JsonDict = dict[str, object]
-ApiResponse = tuple[JsonDict, int]
-FlaskRouteResponse = ResponseReturnValue
-CacheKey = str
-SettingsDict = dict[str, str | int | bool]
-DeviceDict = dict[str, object]
-ClipDict = dict[str, object]
-SystemDict = dict[str, object]
 
 # Generic type variables for function signatures
 T = TypeVar("T")

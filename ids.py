@@ -6,7 +6,7 @@ from config import Config
 
 
 class BaseId:
-    """Base class for validated ID types.
+    """Base class for validated ID types using composition.
 
     Provides common validation and comparison functionality for ID classes.
     Subclasses must implement _get_pattern() and _get_type_name().
@@ -15,14 +15,11 @@ class BaseId:
         value: The validated ID string value
     """
 
-    def __new__(cls, value: str | int | float) -> "BaseId":
-        """Create new ID instance with validation.
+    def __init__(self, value: str | int | float) -> None:
+        """Initialize ID instance with validation.
 
         Args:
             value: String or numeric ID to validate
-
-        Returns:
-            New validated ID instance
 
         Raises:
             ValueError: If value is empty or doesn't match pattern
@@ -31,25 +28,8 @@ class BaseId:
         if isinstance(value, int | float):
             value = str(value)
 
-        # Validate the value
-        validated_value = cls._validate_static(value)
-
-        # Create the string instance
-        instance = super().__new__(cls, validated_value)
-        return instance
-
-    def __init__(self, value: str | int | float) -> None:
-        """Initialize ID instance.
-
-        Args:
-            value: String or numeric ID to validate (already validated in __new__)
-        """
-        # Convert to string if needed for consistency
-        if isinstance(value, int | float):
-            value = str(value)
-
-        # Store the validated value as an attribute for easy access
-        self.value = str(self)
+        # Validate and store the value
+        self.value = self._validate_static(value)
 
     @classmethod
     def _validate_static(cls, value: str) -> str:
@@ -88,6 +68,47 @@ class BaseId:
         """
         return self._validate_static(value)
 
+    def __str__(self) -> str:
+        """Return string representation."""
+        return self.value
+
+    def __repr__(self) -> str:
+        """Return detailed string representation."""
+        return f"{self.__class__.__name__}('{self.value}')"
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another ID or string."""
+        if isinstance(other, BaseId):
+            return self.value == other.value
+        if isinstance(other, str):
+            return self.value == other
+        return False
+
+    def __hash__(self) -> int:
+        """Return hash for use in sets and dicts."""
+        return hash(self.value)
+
+    def __len__(self) -> int:
+        """Return length of the ID string."""
+        return len(self.value)
+
+    def __contains__(self, item: str) -> bool:
+        """Check if substring is in the ID."""
+        return item in self.value
+
+    def __getitem__(self, key: int | slice) -> str:
+        """Get character or slice from the ID."""
+        return self.value[key]
+
+    def __iter__(self):
+        """Iterate over characters in the ID."""
+        return iter(self.value)
+
+    # String methods delegation (only methods actually used in the app)
+    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[str]:
+        """Split the ID string."""
+        return self.value.split(sep, maxsplit)
+
     @classmethod
     def _get_pattern(cls) -> str:
         """Get validation regex pattern.
@@ -111,18 +132,6 @@ class BaseId:
             NotImplementedError: Must be implemented by subclasses
         """
         raise NotImplementedError("Subclasses must implement _get_type_name")
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
-
-    def __eq__(self, other: object) -> bool:
-        """Check equality with another BaseId instance."""
-        return isinstance(other, self.__class__) and self.value == other.value
-
-    def __hash__(self) -> int:
-        """Return hash for use in sets and dicts."""
-        return hash(self.value)
 
     def __int__(self) -> int:
         """Convert to integer if possible."""

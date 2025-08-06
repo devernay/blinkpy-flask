@@ -14,21 +14,17 @@ with credentials securely stored in encrypted format for session persistence.
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, cast
+from typing import Literal, cast
 
 from flask import redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 
+from app_types import AuthJsonDict as JsonDict
 from config import Config
 from decorators import error_context
 from errors import AuthenticationError
 from route_decorators import simple_success_response
 from utils import validate_string_input
-
-if TYPE_CHECKING:
-    from typing import Any
-
-    JsonDict = dict[str, Any]
 
 logger = logging.getLogger(__name__)
 

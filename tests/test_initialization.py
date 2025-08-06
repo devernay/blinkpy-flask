@@ -4,11 +4,6 @@ This module contains functions that are only needed for testing,
 moved out of the main application code to keep it clean.
 """
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
-
 
 def initialize_for_testing() -> None:
     """Initialize global variables for testing.

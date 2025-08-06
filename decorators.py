@@ -9,13 +9,13 @@ from typing import ParamSpec, TypeVar
 from flask import jsonify
 from flask.typing import ResponseReturnValue
 
+from app_types import ApiResponse
 from config import Config
 from errors import BlinkError
 
 # Type definitions
 T = TypeVar("T")
 P = ParamSpec("P")
-ApiResponse = tuple[dict[str, object], int]
 
 
 @contextmanager

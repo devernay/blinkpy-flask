@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, Mock, mock_open, patch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
-import blinkapp
+from blinkapp import app
 
 
 class TestLiveStreamOperations(unittest.TestCase):
@@ -23,8 +23,8 @@ class TestLiveStreamOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        blinkapp.config["TESTING"] = True
-        self.client = blinkapp.test_client()
+        app.config["TESTING"] = True
+        self.client = app.test_client()
 
     @patch("blinkblinkapp.stream_manager")
     @patch("blinkblinkapp.blink_connection")
@@ -108,8 +108,8 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        blinkapp.config["TESTING"] = True
-        self.client = blinkapp.test_client()
+        app.config["TESTING"] = True
+        self.client = app.test_client()
 
     @patch("blinkblinkapp.clips_download_cache")
     @patch("blinkblinkapp.send_file")
@@ -128,7 +128,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         try:
             from blinkapp import ClipId, download_local_clip
 
-            with blinkapp.app_context():
+            with app.app_context():
                 result = download_local_clip(ClipId("clip123"), "sync1", 123)
                 # Should return file response
                 self.assertIsNotNone(result)
@@ -148,7 +148,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         try:
             from blinkapp import ClipId, download_local_clip
 
-            with blinkapp.app_context():
+            with app.app_context():
                 result = download_local_clip(ClipId("clip123"), "nonexistent_sync", 123)
                 # Should return error response
                 self.assertIsNotNone(result)
@@ -171,7 +171,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         try:
             from blinkapp import ClipId, download_local_clip
 
-            with blinkapp.app_context():
+            with app.app_context():
                 result = download_local_clip(ClipId("clip123"), "sync1", 123)
                 # Should return error response
                 self.assertIsNotNone(result)
@@ -195,7 +195,7 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         try:
             from blinkapp import ClipId, download_local_clip
 
-            with blinkapp.app_context():
+            with app.app_context():
                 result = download_local_clip(ClipId("nonexistent_clip"), "sync1", 123)
                 # Should return error response
                 self.assertIsNotNone(result)
@@ -306,8 +306,8 @@ class TestCloudClipOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        blinkapp.config["TESTING"] = True
-        self.client = blinkapp.test_client()
+        app.config["TESTING"] = True
+        self.client = app.test_client()
 
     @patch("blinkblinkapp.clips_download_cache")
     @patch("blinkblinkapp.blink")
@@ -386,8 +386,8 @@ class TestSystemDeviceOperations(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        blinkapp.config["TESTING"] = True
-        self.client = blinkapp.test_client()
+        app.config["TESTING"] = True
+        self.client = app.test_client()
 
     def test_arm_system_success(self) -> None:
         """Test successful system arm/disarm."""
@@ -398,7 +398,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         self.assertNotEqual(
             response.status_code,
             404,
-            f"Route not found. Available routes: {[str(rule) for rule in blinkapp.url_map.iter_rules() if 'arm' in str(rule)]}",
+            f"Route not found. Available routes: {[str(rule) for rule in app.url_map.iter_rules() if 'arm' in str(rule)]}",
         )
 
         # Should return 500 (system not initialized) or success
@@ -539,8 +539,8 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        blinkapp.config["TESTING"] = True
-        self.client = blinkapp.test_client()
+        app.config["TESTING"] = True
+        self.client = app.test_client()
 
     @patch("blinkblinkapp.blink_connection")
     def test_connection_error_recovery(self, mock_connection: Mock) -> None:
@@ -591,7 +591,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
 
     def test_cache_efficiency(self) -> None:
         """Test cache efficiency and hit rates."""
-        from blinkapp import LRUCache
+        from cachetools import LRUCache
 
         cache: LRUCache[str, str] = LRUCache(maxsize=100)
 
@@ -610,7 +610,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
 
     def test_memory_usage_optimization(self) -> None:
         """Test memory usage optimization."""
-        from blinkapp import LRUCache
+        from cachetools import LRUCache
 
         cache: LRUCache[str, str] = LRUCache(maxsize=10)
 
@@ -640,8 +640,8 @@ class TestSecurityValidation(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        blinkapp.config["TESTING"] = True
-        self.client = blinkapp.test_client()
+        app.config["TESTING"] = True
+        self.client = app.test_client()
 
     def test_input_sanitization(self) -> None:
         """Test input sanitization for security."""

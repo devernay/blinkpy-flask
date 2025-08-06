@@ -15,9 +15,10 @@ import re
 from pathlib import Path
 from typing import cast
 
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
 from flask import Flask, Response, send_file
 
-from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from app_types import ApiResponse, FlaskResponse, JsonDict
 from decorators import (
     error_context,
     requires_blink,
@@ -29,11 +30,6 @@ from utils import (
     Config,
     create_api_response,
 )
-
-# Type definitions (matching app.py)
-JsonDict = dict[str, object]
-ApiResponse = tuple[JsonDict, int]
-FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict]
 
 logger = logging.getLogger(__name__)
 
@@ -547,7 +543,6 @@ def setup_camera_routes(app: Flask) -> None:
             ValueError: If camera_id_str is invalid
         """
         # Import locally to avoid circular imports
-        from flask import Response
 
         from blinkapp import (
             THUMBNAIL_CACHE_DIR,

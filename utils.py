@@ -10,14 +10,10 @@ and reusable across different modules.
 import argparse
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
 
+from app_types import ApiResponse, JsonDict
 from config import Config
 from ids import ClipId
-
-if TYPE_CHECKING:
-    JsonDict = dict[str, object]
-    ApiResponse = tuple[JsonDict, int]
 
 # Module-level logger for utility function debugging
 logger = logging.getLogger(__name__)
