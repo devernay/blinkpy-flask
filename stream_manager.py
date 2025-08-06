@@ -76,6 +76,7 @@ class HLSStream:
                     (e.g., tcp://127.0.0.1:12345)
             config: Stream configuration with timeout and HLS parameters
         """
+        super().__init__()
         self.stream_id = stream_id
         self.tcp_url = tcp_url
         self.config = config

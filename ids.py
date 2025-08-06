@@ -15,11 +15,14 @@ class BaseId:
         value: The validated ID string value
     """
 
-    def __init__(self, value: str | int | float) -> None:
-        """Initialize and validate ID value.
+    def __new__(cls, value: str | int | float) -> "BaseId":
+        """Create new ID instance with validation.
 
         Args:
             value: String or numeric ID to validate
+
+        Returns:
+            New validated ID instance
 
         Raises:
             ValueError: If value is empty or doesn't match pattern
@@ -28,7 +31,48 @@ class BaseId:
         if isinstance(value, int | float):
             value = str(value)
 
-        self.value = self._validate(value)
+        # Validate the value
+        validated_value = cls._validate_static(value)
+
+        # Create the string instance
+        instance = super().__new__(cls, validated_value)
+        return instance
+
+    def __init__(self, value: str | int | float) -> None:
+        """Initialize ID instance.
+
+        Args:
+            value: String or numeric ID to validate (already validated in __new__)
+        """
+        # Convert to string if needed for consistency
+        if isinstance(value, int | float):
+            value = str(value)
+
+        # Store the validated value as an attribute for easy access
+        self.value = str(self)
+
+    @classmethod
+    def _validate_static(cls, value: str) -> str:
+        """Static validation method for use in __new__.
+
+        Args:
+            value: String to validate
+
+        Returns:
+            Validated string value
+
+        Raises:
+            ValueError: If validation fails
+        """
+        if not value or not value.strip():
+            raise ValueError(f"{cls._get_type_name()} cannot be empty")
+
+        cleaned_value = value.strip()
+        pattern = cls._get_pattern()
+        if pattern and not re.match(pattern, cleaned_value):
+            raise ValueError(f"Invalid {cls._get_type_name()} format: {cleaned_value}")
+
+        return cleaned_value
 
     def _validate(self, value: str) -> str:
         """Validate ID value against pattern.
@@ -42,20 +86,10 @@ class BaseId:
         Raises:
             ValueError: If validation fails
         """
-        if not isinstance(value, str):
-            raise ValueError(f"{self._get_type_name()} must be a string")
+        return self._validate_static(value)
 
-        value = value.strip()
-        if not value:
-            raise ValueError(f"{self._get_type_name()} cannot be empty")
-
-        # Use the specific pattern from the subclass
-        pattern = self._get_pattern()
-        if not re.match(pattern, value):
-            raise ValueError(f"Invalid {self._get_type_name()} format")
-        return value
-
-    def _get_pattern(self) -> str:
+    @classmethod
+    def _get_pattern(cls) -> str:
         """Get validation regex pattern.
 
         Returns:
@@ -66,7 +100,8 @@ class BaseId:
         """
         raise NotImplementedError("Subclasses must implement _get_pattern")
 
-    def _get_type_name(self) -> str:
+    @classmethod
+    def _get_type_name(cls) -> str:
         """Get human-readable type name.
 
         Returns:
@@ -107,11 +142,13 @@ class CameraId(BaseId):
     Used throughout the application to ensure type safety for camera operations.
     """
 
-    def _get_pattern(self) -> str:
+    @classmethod
+    def _get_pattern(cls) -> str:
         """Get camera ID validation pattern."""
         return Config.VALID_CAMERA_ID_PATTERN
 
-    def _get_type_name(self) -> str:
+    @classmethod
+    def _get_type_name(cls) -> str:
         """Get type name for error messages."""
         return "Camera ID"
 
@@ -123,11 +160,13 @@ class NetworkId(BaseId):
     Used for system-level operations like arming/disarming.
     """
 
-    def _get_pattern(self) -> str:
+    @classmethod
+    def _get_pattern(cls) -> str:
         """Get network ID validation pattern."""
         return Config.VALID_NETWORK_ID_PATTERN
 
-    def _get_type_name(self) -> str:
+    @classmethod
+    def _get_type_name(cls) -> str:
         """Get type name for error messages."""
         return "Network ID"
 
@@ -139,11 +178,13 @@ class ClipId(BaseId):
     Local clips use format 'sync_name~item_id', cloud clips use numeric IDs.
     """
 
-    def _get_pattern(self) -> str:
+    @classmethod
+    def _get_pattern(cls) -> str:
         """Get clip ID validation pattern."""
         return Config.VALID_CLIP_ID_PATTERN
 
-    def _get_type_name(self) -> str:
+    @classmethod
+    def _get_type_name(cls) -> str:
         """Get type name for error messages."""
         return "Clip ID"
 

@@ -42,6 +42,8 @@ if TYPE_CHECKING:
     from cache import ThumbnailCache
 
 # Authentication and session management
+# TODO: Fix circular import between blinkapp.py -> camera.py -> decorators.py -> blinkapp.py
+# This requires architectural refactoring to extract shared interfaces/protocols
 from auth import (
     load_saved_blink,
     setup_auth_routes,
@@ -103,6 +105,8 @@ if TYPE_CHECKING:
 import requests
 
 # Blink camera library
+# TODO: The blinkpy library lacks proper type annotations, causing 400+ pyright warnings
+# Consider creating type stubs or contacting maintainers to add py.typed support
 from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
 from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
 from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
@@ -158,6 +162,9 @@ http_session: "requests.Session | None" = None  # HTTP session for API calls
 stream_manager: "StreamManager | None" = None  # Live streaming manager
 
 # File system paths (initialized at startup)
+# TODO: Refactor to use a configuration class instead of module-level variables
+# These variables are reassigned at runtime which triggers pyright warnings
+# about constant redefinition. A proper configuration singleton would be better.
 CACHE_DIR: str | None = None  # Base cache directory
 CREDENTIALS_FILE: str | None = None  # Encrypted credentials storage
 THUMBNAIL_CACHE_DIR: str | None = None  # Camera thumbnail cache
@@ -530,7 +537,7 @@ def ensure_clips_cache_initialized() -> "ClipsCache":
     return clips_cache
 
 
-def ensure_settings_cache_initialized() -> "ThreadSafeCache":
+def ensure_settings_cache_initialized() -> ThreadSafeCache:
     """Ensure settings_cache global is initialized, raising an error if not.
 
     Returns:

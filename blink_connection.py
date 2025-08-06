@@ -49,6 +49,7 @@ class BlinkConnection:
             timeout: Default timeout in seconds for Blink operations.
                     If None, uses Config.BLINK_CONNECTION_TIMEOUT
         """
+        super().__init__()
         self.timeout: int = (
             timeout if timeout is not None else Config.BLINK_CONNECTION_TIMEOUT
         )
