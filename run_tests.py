@@ -43,7 +43,12 @@ def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
         try:
             import unittest
 
-            import test_app
+            # Try to import test_app with better error handling
+            try:
+                import test_app  # type: ignore[import-not-found]
+            except ImportError as e:
+                logger.error(f"Could not import test_app: {e}")
+                return False
 
             # Create test suite
             loader = unittest.TestLoader()
@@ -51,7 +56,7 @@ def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
 
             # Run tests
             runner = unittest.TextTestRunner(verbosity=2)
-            result = runner.run(suite)
+            test_result = runner.run(suite)
 
             # Stop coverage and save
             cov.stop()
@@ -67,7 +72,7 @@ def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
                 cov.html_report(directory="htmlcov")
                 logger.info("\nHTML coverage report generated in htmlcov/index.html")
 
-            return result.wasSuccessful()
+            return test_result.wasSuccessful()
 
         except Exception as e:
             logger.error(f"Error running tests with coverage: {e}")
@@ -75,11 +80,11 @@ def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
     else:
         # Run tests without coverage
         try:
-            result = subprocess.run(
+            subprocess_result = subprocess.run(
                 [sys.executable, "-m", "unittest", "test_app", "-v"],
                 cwd=os.path.dirname(__file__),
             )
-            return result.returncode == 0
+            return subprocess_result.returncode == 0
         except Exception as e:
             logger.error(f"Error running tests: {e}")
             return False

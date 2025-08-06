@@ -78,7 +78,6 @@ from ids import CameraId, ClipId, NetworkId
 from route_decorators import (
     api_route,
     api_route_with_validation,
-    cached_api_route,
     file_response_route,
     method_dispatch_route,
     simple_success_response,
@@ -523,7 +522,6 @@ def ensure_clips_cache_initialized() -> "ClipsCache":
         RuntimeError: If clips_cache hasn't been initialized
     """
     # Import here to avoid circular imports
-    from cache import clips_cache
 
     if clips_cache is None:
         raise RuntimeError(
@@ -726,7 +724,8 @@ def process_cloud_clips(
             # Check if we have a cached thumbnail for cloud clips
             # This avoids using Blink's CDN thumbnail if we have a local one
             # which is faster and doesn't count against API limits
-            cached_clip = clips_cache.get(clip_id)
+            clips_cache_instance = ensure_clips_cache_initialized()
+            cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None:
                 cached_thumbnail = cached_clip.get("thumbnail")
                 if cached_thumbnail and cached_thumbnail.exists():
@@ -743,7 +742,9 @@ def process_cloud_clips(
                 "thumbnail": thumbnail_url,
                 "media_url": video.get("media"),
             }
-            clips_by_day[day_key]["clips"].append(clip_data)
+            clips_list = clips_by_day[day_key]["clips"]
+            if isinstance(clips_list, list):
+                clips_list.append(clip_data)
         except Exception as e:
             # Skip malformed video entries but continue processing others
             # This ensures one bad clip doesn't break the entire list
@@ -797,7 +798,8 @@ def process_local_clips() -> list[dict[str, object]]:
 
                         # Check for existing thumbnail only (no auto-generation for local)
                         thumbnail_url = None
-                        cached_clip = clips_cache.get(clip_id)
+                        clips_cache_instance = ensure_clips_cache_initialized()
+                        cached_clip = clips_cache_instance.get(clip_id)
                         if cached_clip is not None:
                             cached_thumbnail = cached_clip.get("thumbnail")
                             if cached_thumbnail and cached_thumbnail.exists():
@@ -815,7 +817,9 @@ def process_local_clips() -> list[dict[str, object]]:
                                 sync_module._local_storage["last_manifest_id"]
                             ),
                         }
-                        clips_by_day[day_key]["clips"].append(clip_data)
+                        clips_list = clips_by_day[day_key]["clips"]
+                        if isinstance(clips_list, list):
+                            clips_list.append(clip_data)
                     except Exception as e:
                         logger.warning(f"Skipping invalid local clip metadata: {e}")
                         continue
@@ -849,9 +853,11 @@ def clear_all_caches() -> dict[str, object]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
         # Clear memory caches first (fast operation) using OO cache methods
-        thumbnail_cache.clear_cache()
-        clips_cache.clear_cache()
-        clips_cache.clear_cache()
+        thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
+        clips_cache_instance = ensure_clips_cache_initialized()
+
+        thumbnail_cache_instance.clear()
+        clips_cache_instance.clear()
 
         # Clear file caches (slow I/O operations)
         def clear_file_cache(cache_dir: str, cache_name: str) -> None:
@@ -1032,11 +1038,7 @@ def arm_system(network_id: NetworkId) -> JsonDict:
 
 @app.route("/api/clips")
 @requires_blink
-@cached_api_route(
-    "get clips",
-    cache_dict=clips_cache,
-    cache_key_func=lambda: request.args.get("storage", "cloud"),
-)
+@api_route("get clips")
 def get_clips() -> JsonDict:
     """Get clips from cloud or local storage.
 
@@ -1166,10 +1168,10 @@ def _download_clip_common(
         Flask response with clip file or error message
     """
     # Ensure clips cache is initialized
-    clips_cache = ensure_clips_cache_initialized()
+    clips_cache_instance = ensure_clips_cache_initialized()
 
     # Cache the clip first (without thumbnail)
-    clips_cache[clip_id] = {
+    clips_cache_instance[clip_id] = {
         "filepath": filepath,
         "thumbnail": None,
     }
@@ -1181,12 +1183,12 @@ def _download_clip_common(
         )
         if thumbnail_path is not None:
             # Update cache with thumbnail atomically
-            cached_clip = clips_cache.get(clip_id)
+            cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None:
                 # Create new dict to avoid race conditions
                 updated_clip = cached_clip.copy()
                 updated_clip["thumbnail"] = thumbnail_path
-                clips_cache[clip_id] = updated_clip
+                clips_cache_instance[clip_id] = updated_clip
             # Notify clients that thumbnail is ready
             notify_thumbnail_ready(clip_id)
 
@@ -1201,7 +1203,8 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     """Download cloud storage clip."""
     assert blink is not None
     # Check if already cached
-    cached_clip = clips_cache.get(clip_id)
+    clips_cache_instance = ensure_clips_cache_initialized()
+    cached_clip = clips_cache_instance.get(clip_id)
     if cached_clip is not None:
         try:
             # Quick existence check - if it fails, we'll re-download
@@ -1290,7 +1293,8 @@ def download_local_clip(
     """Download local storage clip using blinkpy methods."""
     assert blink is not None
     # Check if already cached
-    cached_clip = clips_cache.get(clip_id)
+    clips_cache_instance = ensure_clips_cache_initialized()
+    cached_clip = clips_cache_instance.get(clip_id)
     if cached_clip is not None:
         try:
             # Quick existence check - if it fails, we'll re-download
@@ -1375,12 +1379,12 @@ def process_local_clip_background(
         item_id: Local storage item ID
     """
     # Ensure clips cache is initialized
-    clips_cache = ensure_clips_cache_initialized()
+    clips_cache_instance = ensure_clips_cache_initialized()
 
     def process() -> None:
         try:
             # Check if already cached
-            cached_clip = clips_cache.get(clip_id)
+            cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None and cached_clip["filepath"].exists():
                 return
 
@@ -1414,16 +1418,16 @@ def process_local_clip_background(
                     return
 
             # Cache the clip and generate thumbnail
-            clips_cache[clip_id] = {"filepath": filepath, "thumbnail": None}
+            clips_cache_instance[clip_id] = {"filepath": filepath, "thumbnail": None}
             thumbnail_path = generate_clip_thumbnail(
                 filepath, filename, middle_frame=True
             )
             if thumbnail_path is not None:
-                cached_clip = clips_cache.get(clip_id)
+                cached_clip = clips_cache_instance.get(clip_id)
                 if cached_clip is not None:
                     updated_clip = cached_clip.copy()
                     updated_clip["thumbnail"] = thumbnail_path
-                    clips_cache[clip_id] = updated_clip
+                    clips_cache_instance[clip_id] = updated_clip
         except Exception as e:
             logger.error(f"Error processing local clip {clip_id}: {e}")
 
@@ -1440,13 +1444,13 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         clip_id: Unique identifier for the cloud clip
     """
     # Ensure clips cache is initialized
-    clips_cache = ensure_clips_cache_initialized()
+    clips_cache_instance = ensure_clips_cache_initialized()
 
     def process() -> None:
         assert blink is not None
         try:
             # Check if already cached
-            cached_clip = clips_cache.get(clip_id)
+            cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None and cached_clip["filepath"].exists():
                 return
 
@@ -1488,16 +1492,16 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                     return
 
             # Cache the clip and generate thumbnail
-            clips_cache[clip_id] = {"filepath": filepath, "thumbnail": None}
+            clips_cache_instance[clip_id] = {"filepath": filepath, "thumbnail": None}
             thumbnail_path = generate_clip_thumbnail(
                 filepath, filename, middle_frame=False
             )
             if thumbnail_path is not None:
-                cached_clip = clips_cache.get(clip_id)
+                cached_clip = clips_cache_instance.get(clip_id)
                 if cached_clip is not None:
                     updated_clip = cached_clip.copy()
                     updated_clip["thumbnail"] = thumbnail_path
-                    clips_cache[clip_id] = updated_clip
+                    clips_cache_instance[clip_id] = updated_clip
         except Exception as e:
             logger.error(f"Error processing cloud clip {clip_id}: {e}")
 
@@ -1652,7 +1656,8 @@ def serve_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
 def get_clip_thumbnail(clip_id) -> ResponseReturnValue:
     """Serve clip thumbnail."""
 
-    cached_clip = clips_cache.get(clip_id)
+    clips_cache_instance = ensure_clips_cache_initialized()
+    cached_clip = clips_cache_instance.get(clip_id)
     if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
         if thumbnail_path is not None and thumbnail_path.exists():
@@ -2220,6 +2225,9 @@ def load_clips_cache() -> None:
         logger.warning(f"Clips cache directory does not exist: {cache_dir}")
         return
 
+    # Ensure clips cache is initialized
+    clips_cache_instance = ensure_clips_cache_initialized()
+
     try:
         files_to_remove = []
 
@@ -2287,7 +2295,7 @@ def load_clips_cache() -> None:
                         continue
 
                 # Add to cache
-                clips_cache[clip_id] = {
+                clips_cache_instance[clip_id] = {
                     "filepath": video_file,
                     "thumbnail": thumbnail_path if thumbnail_path.exists() else None,
                 }
@@ -2404,7 +2412,8 @@ def check_clip_thumbnail(clip_id: ClipId) -> JsonDict:
     """
     # clip_id is now validated and converted by the decorator
 
-    cached_clip = clips_cache.get(clip_id)
+    clips_cache_instance = ensure_clips_cache_initialized()
+    cached_clip = clips_cache_instance.get(clip_id)
     if cached_clip is not None:
         thumbnail_path = cached_clip.get("thumbnail")
         if thumbnail_path is not None and thumbnail_path.exists():
