@@ -46,7 +46,7 @@ def is_authenticated() -> bool:
     # Import here to avoid circular imports
     from blinkapp import blink
 
-    return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete
+    return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete  # type: ignore[attr-defined]
 
 
 async def initialize_blink(
@@ -222,14 +222,14 @@ async def load_saved_blink() -> bool:
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
             # Type ignore for mypy issue with blinkpy's json_load function
-            auth_data: dict[str, object] | None = await json_load(
+            auth_data: dict[str, object] | None = await json_load(  # type: ignore[misc]
                 cast(str, CREDENTIALS_FILE)
             )
 
             # Create new HTTP session and attempt authentication with saved data
             session_obj = ClientSession()
             try:
-                auth = Auth(auth_data, session=session_obj)
+                auth = Auth(auth_data, session=session_obj)  # type: ignore[arg-type]
                 blink = Blink(session=session_obj)
                 blink.auth = auth
 

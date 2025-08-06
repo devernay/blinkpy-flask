@@ -121,7 +121,7 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
 
 def parse_clip_id(
     clip_id_str: str,
-) -> tuple[ClipId | None, tuple["ApiResponse", int] | None]:
+) -> tuple[ClipId | None, ApiResponse | None]:
     """Parse and validate clip ID from URL parameter.
 
     Handles URL decoding and validates the clip ID format to ensure

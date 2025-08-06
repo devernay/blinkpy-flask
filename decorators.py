@@ -110,7 +110,7 @@ def requires_blink(
     return wrapper
 
 
-def require_blink() -> tuple[ApiResponse, int] | None:
+def require_blink() -> ApiResponse | None:
     """Check if Blink is available, return error response if not.
 
     Returns:

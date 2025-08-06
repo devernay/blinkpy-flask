@@ -1,8 +1,8 @@
 """Thread-safe caching module for Blink Flask application.
 
-This module provides thread-safe cache implementations with proper inheritance
-from cachetools.LRUCache. The ThreadSafeCache class directly overrides LRUCache
-methods with thread-safe versions, eliminating the need for separate safe_* methods.
+This module provides thread-safe cache implementations using a generic wrapper
+approach. ThreadSafeCache provides thread-safety for any cache implementation
+through multiple inheritance.
 """
 
 import logging
@@ -10,97 +10,65 @@ import threading
 import time
 from typing import Any, Generic, TypeVar
 
-from cachetools import LRUCache
+from cachetools import Cache, LRUCache
 
-# Generic type variables for flexible cache typing
-K = TypeVar("K")  # Key type
-V = TypeVar("V")  # Value type
+# Import ClipId for type hints
+try:
+    from ids import ClipId
+except ImportError:
+    # Fallback for when ids module is not available
+    ClipId = str  # type: ignore
+
+# Generic type variable for cache implementation
+CacheImpl = TypeVar("CacheImpl", bound=Cache)
 
 logger = logging.getLogger(__name__)
 
 
-class ThreadSafeCache(LRUCache[K, V], Generic[K, V]):
-    """Thread-safe LRU cache with direct method overrides.
+class ThreadSafeCache(Cache, Generic[CacheImpl]):
+    """Thread-safe cache wrapper using multiple inheritance.
 
-    This class properly inherits from cachetools.LRUCache and directly overrides
-    all methods with thread-safe versions. This eliminates the need for separate
-    safe_* methods and provides a clean, standard dict-like interface.
-
-    The cache uses LRU (Least Recently Used) eviction policy to automatically
-    manage memory usage when the cache reaches its maximum size.
+    This class provides thread-safe access to any cache implementation
+    through a lock. The actual cache implementation is specified when
+    creating specialized subclasses.
 
     Attributes:
         _lock: Threading RLock for synchronizing access to cache operations
 
     Example:
-        >>> cache = ThreadSafeCache[str, dict[str, Any]](maxsize=50)
-        >>> cache["key1"] = {"data": "value1"}
-        >>> result = cache.get("key1", {})
-        >>> if "key2" in cache:
-        ...     value = cache["key2"]
+        >>> class MyLRUCache(ThreadSafeCache[LRUCache], LRUCache):
+        ...     pass
+        >>> cache = MyLRUCache(maxsize=50)
     """
 
-    def __init__(self, maxsize: int = 100) -> None:
-        """Initialize cache with specified maximum size.
-
-        Creates an LRU cache with the given capacity and initializes
-        the threading lock for safe concurrent access.
+    def __init__(self, *args, **kwargs) -> None:
+        """Initialize cache with thread safety.
 
         Args:
-            maxsize: Maximum number of items to cache before LRU eviction begins
-                    (default: 100)
+            *args: Arguments passed to the underlying cache implementation
+            **kwargs: Keyword arguments passed to the underlying cache implementation
         """
-        super().__init__(maxsize=maxsize)
+        super().__init__(*args, **kwargs)
         # Use RLock to allow recursive locking from same thread
-        # This prevents deadlocks when cache methods call other cache methods
         self._lock = threading.RLock()
 
-    def __setitem__(self, key: K, value: V) -> None:
-        """Thread-safe setitem method.
-
-        Args:
-            key: Cache key to set
-            value: Value to store
-        """
+    def __setitem__(self, key, value) -> None:
+        """Thread-safe setitem method."""
         with self._lock:
             super().__setitem__(key, value)
 
-    def __getitem__(self, key: K) -> V:
-        """Thread-safe getitem method.
-
-        Args:
-            key: Cache key to retrieve
-
-        Returns:
-            Cached value
-
-        Raises:
-            KeyError: If key not found in cache
-        """
+    def __getitem__(self, key):
+        """Thread-safe getitem method."""
         with self._lock:
             return super().__getitem__(key)
 
-    def __delitem__(self, key: K) -> None:
-        """Thread-safe delitem method.
-
-        Args:
-            key: Cache key to delete
-
-        Raises:
-            KeyError: If key not found in cache
-        """
+    def __delitem__(self, key) -> None:
+        """Thread-safe delitem method."""
         with self._lock:
             super().__delitem__(key)
 
-    def __contains__(self, key: object) -> bool:
-        """Thread-safe contains check.
-
-        Args:
-            key: Cache key to check
-
-        Returns:
-            True if key exists in cache
-        """
+    def __contains__(self, key) -> bool:
+        """Thread-safe contains method for membership testing."""
         with self._lock:
             return super().__contains__(key)
 
@@ -109,121 +77,68 @@ class ThreadSafeCache(LRUCache[K, V], Generic[K, V]):
         with self._lock:
             return super().__len__()
 
-    def get(self, key: K, default: V | None = None) -> V | None:
-        """Thread-safe get method with optional default value.
+    def __iter__(self):
+        """Thread-safe iterator over cache keys."""
+        with self._lock:
+            # Create a list to avoid iteration during lock
+            return iter(list(super().keys()))
 
-        Args:
-            key: Cache key to retrieve
-            default: Default value if key not found
-
-        Returns:
-            Cached value or default if key not found
-        """
+    def get(self, key, default=None):
+        """Thread-safe get method with optional default value."""
         with self._lock:
             return super().get(key, default)
 
-    def pop(self, key: K, default: V | None = None) -> V | None:
-        """Thread-safe pop method.
-
-        Args:
-            key: Cache key to remove
-            default: Default value if key not found
-
-        Returns:
-            Removed value or default
-        """
+    def pop(self, key, *args):
+        """Thread-safe pop method."""
         with self._lock:
-            return super().pop(key, default)
+            return super().pop(key, *args)
 
-    def popitem(self) -> tuple[K, V]:
-        """Thread-safe popitem method.
-
-        Returns:
-            Removed key-value pair
-
-        Raises:
-            KeyError: If cache is empty
-        """
+    def setdefault(self, key, default=None):
+        """Thread-safe setdefault method."""
         with self._lock:
-            return super().popitem()
+            return super().setdefault(key, default)
 
     def clear(self) -> None:
-        """Thread-safe clear method for removing all items."""
+        """Thread-safe clear method to remove all items."""
         with self._lock:
             super().clear()
 
     def keys(self):
-        """Thread-safe keys method.
-
-        Returns:
-            Keys view (snapshot at call time)
-        """
+        """Thread-safe keys method."""
         with self._lock:
             return list(super().keys())
 
     def values(self):
-        """Thread-safe values method.
-
-        Returns:
-            Values view (snapshot at call time)
-        """
+        """Thread-safe values method."""
         with self._lock:
             return list(super().values())
 
     def items(self):
-        """Thread-safe items method.
-
-        Returns:
-            Items view (snapshot at call time)
-        """
+        """Thread-safe items method."""
         with self._lock:
             return list(super().items())
-
-    def setdefault(self, key: K, default: V | None = None) -> V | None:
-        """Thread-safe setdefault method.
-
-        Args:
-            key: Cache key
-            default: Default value to set if key doesn't exist
-
-        Returns:
-            Existing value or default
-        """
-        with self._lock:
-            return super().setdefault(key, default)
-
-    def update(self, *args, **kwargs) -> None:
-        """Thread-safe update method.
-
-        Args:
-            *args: Positional arguments for update
-            **kwargs: Keyword arguments for update
-        """
-        with self._lock:
-            super().update(*args, **kwargs)
-
-    def clear_cache(self) -> None:
-        """Clear all cached items.
-
-        This method provides a consistent interface for cache clearing
-        across all cache implementations in the application.
-        """
-        self.clear()
 
     def get_stats(self) -> dict[str, int | float]:
         """Get cache statistics.
 
         Returns:
-            Dictionary with cache size and capacity information
+            Dictionary containing cache statistics including size,
+            hit rate, and other performance metrics
         """
         with self._lock:
             return {
                 "size": len(self),
-                "maxsize": self.maxsize,
+                "maxsize": getattr(self, "maxsize", 0),
+                "hits": getattr(self, "hits", 0),
+                "misses": getattr(self, "misses", 0),
+                "hit_rate": (
+                    getattr(self, "hits", 0)
+                    / max(getattr(self, "hits", 0) + getattr(self, "misses", 0), 1)
+                ),
             }
 
 
-class ThumbnailCache(ThreadSafeCache[str, dict[str, Any]]):
+class ThumbnailCache(ThreadSafeCache[LRUCache], LRUCache):
     """Specialized cache for camera thumbnails with timestamp tracking.
 
     Extends ThreadSafeCache with thumbnail-specific functionality including
@@ -290,7 +205,7 @@ class ThumbnailCache(ThreadSafeCache[str, dict[str, Any]]):
         self[camera_id] = cache_entry
 
 
-class ClipsCache(ThreadSafeCache[str, dict[str, Any]]):
+class ClipsCache(ThreadSafeCache[LRUCache], LRUCache):
     """Specialized cache for video clips with metadata and access tracking.
 
     Extends ThreadSafeCache with clip-specific functionality including
@@ -379,7 +294,7 @@ class ClipsCache(ThreadSafeCache[str, dict[str, Any]]):
 # Global cache instances (initialized by app.py)
 thumbnail_cache: ThumbnailCache | None = None
 clips_cache: ClipsCache | None = None
-settings_cache: ThreadSafeCache[str, dict[str, Any]] | None = None
+settings_cache: ThreadSafeCache | None = None
 
 
 def initialize_caches(config: dict[str, Any]) -> None:
@@ -392,9 +307,12 @@ def initialize_caches(config: dict[str, Any]) -> None:
 
     thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
     clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
-    settings_cache = ThreadSafeCache[str, dict[str, Any]](
-        maxsize=config.get("settings_cache_size", 10)
-    )
+
+    # Create a simple settings cache using ThreadSafeCache with LRUCache
+    class SettingsCache(ThreadSafeCache[LRUCache], LRUCache):
+        pass
+
+    settings_cache = SettingsCache(maxsize=config.get("settings_cache_size", 10))
 
     logger.info("Cache instances initialized successfully")
 

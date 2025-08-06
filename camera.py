@@ -33,7 +33,7 @@ from utils import (
 # Type definitions (matching app.py)
 JsonDict = dict[str, object]
 ApiResponse = tuple[JsonDict, int]
-FlaskResponse = Response
+FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict]
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
 
 def require_camera(
     camera_id: CameraId,
-) -> tuple[BlinkCamera | None, tuple[ApiResponse, int] | None]:
+) -> tuple[BlinkCamera | None, ApiResponse | None]:
     """Find camera by ID, return error response if not found.
 
     This is a convenience function for API endpoints that need to find
@@ -275,6 +275,7 @@ def setup_camera_routes(app: Flask) -> None:
         # Import locally to avoid circular imports
         from blinkapp import (
             THUMBNAIL_CACHE_DIR,
+            ensure_blink_connection_initialized,
             ensure_blink_initialized,
             ensure_cache_paths_initialized,
             ensure_executor_initialized,
@@ -283,6 +284,7 @@ def setup_camera_routes(app: Flask) -> None:
 
         # Ensure all required components are initialized
         ensure_blink_initialized()  # We don't need the return value
+        blink_connection = ensure_blink_connection_initialized()
         executor = ensure_executor_initialized()
         thumbnail_cache = ensure_thumbnail_cache_initialized()
         ensure_cache_paths_initialized()
@@ -293,7 +295,8 @@ def setup_camera_routes(app: Flask) -> None:
         camera, error_response = require_camera(camera_id)
         if error_response is not None:
             error_dict, status_code = error_response
-            raise ValidationError(error_dict["error"], status_code)
+            error_message = error_dict.get("error", "Unknown error")
+            raise ValidationError(str(error_message), status_code)
 
         assert camera is not None
         with error_context("refresh camera thumbnail", CameraError):
@@ -319,7 +322,7 @@ def setup_camera_routes(app: Flask) -> None:
             executor.submit(remove_thumbnail_cache)
 
             # Trigger thumbnail update
-            camera.snap_picture()
+            blink_connection.execute(camera.snap_picture())
 
             return {"success": True, "message": "Camera thumbnail refresh initiated"}
 
@@ -356,7 +359,8 @@ def setup_camera_routes(app: Flask) -> None:
         if error_response is not None:
             # Re-raise as exception to be handled by decorator
             error_dict, status_code = error_response
-            raise ValidationError(error_dict["error"], status_code)
+            error_message = error_dict.get("error", "Unknown error")
+            raise ValidationError(str(error_message), status_code)
 
         assert camera is not None
 
@@ -391,8 +395,6 @@ def setup_camera_routes(app: Flask) -> None:
 
             if hls_url is not None:
                 # Store the stream object for later cleanup
-                if not hasattr(blink_connection, "_active_streams"):
-                    blink_connection._active_streams = {}
                 blink_connection._active_streams[str(camera_id)] = stream
 
                 return {
@@ -493,7 +495,7 @@ def setup_camera_routes(app: Flask) -> None:
             response, status_code = create_api_response(
                 success=False, error="Failed to serve HLS file", status_code=500
             )
-            return jsonify(response), status_code
+            return jsonify(response), status_code  # type: ignore[return-value]
 
     @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
     @requires_blink
@@ -596,7 +598,7 @@ def setup_camera_routes(app: Flask) -> None:
                         logger.debug(f"Could not read cached thumbnail: {e}")
 
         # Update cache in background if needed
-        update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
+        update_camera_thumbnail(camera, camera_id, current_ts, cached_ts)
 
         # Fetch from Blink API
         thumbnail_response = blink_connection.execute(camera.thumbnail)

@@ -56,6 +56,7 @@ class BlinkConnection:
         self.loop: asyncio.AbstractEventLoop | None = None
         self.blink: Any | None = None
         self._started: bool = False
+        self._active_streams: dict[str, Any] = {}
 
     def start(self) -> None:
         """Start Blink thread and event loop.
