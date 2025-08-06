@@ -52,7 +52,6 @@ from auth import (
 # Caching system for thumbnails, clips, and metadata
 from cache import (
     ClipsCache,
-    ThreadSafeCache,
     ThumbnailCache,
     clips_cache,
     thumbnail_cache,
@@ -535,25 +534,6 @@ def ensure_clips_cache_initialized() -> "ClipsCache":
             "Clips cache not initialized. Call initialize_caches() first."
         )
     return clips_cache
-
-
-def ensure_settings_cache_initialized() -> ThreadSafeCache:
-    """Ensure settings_cache global is initialized, raising an error if not.
-
-    Returns:
-        The initialized ThreadSafeCache instance
-
-    Raises:
-        RuntimeError: If settings_cache hasn't been initialized
-    """
-    # Import here to avoid circular imports
-    from cache import settings_cache
-
-    if settings_cache is None:
-        raise RuntimeError(
-            "Settings cache not initialized. Call initialize_caches() first."
-        )
-    return settings_cache
 
 
 def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:

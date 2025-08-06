@@ -294,7 +294,6 @@ class ClipsCache(ThreadSafeCache[LRUCache], LRUCache):
 # Global cache instances (initialized by app.py)
 thumbnail_cache: ThumbnailCache | None = None
 clips_cache: ClipsCache | None = None
-settings_cache: ThreadSafeCache | None = None
 
 
 def initialize_caches(config: dict[str, Any]) -> None:
@@ -303,16 +302,10 @@ def initialize_caches(config: dict[str, Any]) -> None:
     Args:
         config: Configuration dictionary with cache settings
     """
-    global thumbnail_cache, clips_cache, settings_cache
+    global thumbnail_cache, clips_cache
 
     thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
     clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
-
-    # Create a simple settings cache using ThreadSafeCache with LRUCache
-    class SettingsCache(ThreadSafeCache[LRUCache], LRUCache):
-        pass
-
-    settings_cache = SettingsCache(maxsize=config.get("settings_cache_size", 10))
 
     logger.info("Cache instances initialized successfully")
 
@@ -323,8 +316,6 @@ def clear_all_caches() -> None:
         thumbnail_cache.clear()
     if clips_cache:
         clips_cache.clear()
-    if settings_cache:
-        settings_cache.clear()
 
     logger.info("All caches cleared")
 
@@ -342,8 +333,5 @@ def get_cache_stats() -> dict[str, dict[str, int | float]]:
 
     if clips_cache:
         stats["clips_cache"] = clips_cache.get_stats()
-
-    if settings_cache:
-        stats["settings_cache"] = settings_cache.get_stats()
 
     return stats
