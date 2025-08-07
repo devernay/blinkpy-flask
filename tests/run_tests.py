@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
-def run_command(cmd, description):
+def run_command(cmd: list[str], description: str) -> bool:
     """Run a command and handle errors."""
     print(f"\n🔄 {description}")
     print(f"Command: {' '.join(cmd)}")

@@ -18,6 +18,40 @@ ignore = [
     "B007", # loop control variable not used (common pattern)
 ]
 
+[tool.pyright]
+# Python version
+pythonVersion = "3.12"
+
+# Exclude third-party directories and cache files
+exclude = [
+    "blinkpy/",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/node_modules",
+    ".venv/",
+    "venv/"
+]
+
+# Ignore third-party library issues
+reportMissingImports = false
+reportMissingTypeStubs = false
+
+# Reduce noise from third-party libraries while keeping strict checking for our code
+reportUnknownMemberType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownParameterType = "warning"
+
+# Keep strict checking for our application code
+reportUntypedFunctionDecorator = true
+reportUntypedClassDecorator = true
+reportUntypedBaseClass = true
+reportUntypedNamedTuple = true
+
+# Allow some flexibility for test files
+reportPrivateUsage = "warning"
+reportConstantRedefinition = "warning"
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

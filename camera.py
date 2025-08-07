@@ -451,7 +451,7 @@ def setup_camera_routes(app: Flask) -> None:
             logger.error(f"Error stopping live stream for camera {camera_id}: {e}")
             return {"success": False, "error": "Failed to stop live stream"}
 
-    @app.route("/api/hls/<camera_id_str>/<path:filename>")
+    @app.route("/api/camera/<camera_id_str>/hls/<path:filename>")
     @api_route_with_validation(
         "serve HLS file", validate_params={"camera_id_str": CameraId}
     )

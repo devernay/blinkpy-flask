@@ -117,7 +117,7 @@ class HLSStream:
         with self._lock:
             # Check if stream is already running
             if self.process and self.process.poll() is None:
-                return f"/api/hls/{self.stream_id}/playlist.m3u8", None
+                return f"/api/camera/{self.stream_id}/hls/playlist.m3u8", None
 
             # Create temporary directory for HLS files
             self.hls_dir = Path(tempfile.mkdtemp(prefix=f"hls_{self.stream_id}_"))
@@ -177,7 +177,7 @@ class HLSStream:
                     return None, error_msg
 
                 logger.info(f"Started HLS stream {self.stream_id}")
-                return f"/api/hls/{self.stream_id}/playlist.m3u8", None
+                return f"/api/camera/{self.stream_id}/hls/playlist.m3u8", None
 
             except (OSError, subprocess.SubprocessError, PermissionError) as e:
                 error_msg = f"Error starting stream {self.stream_id}: {e}"
@@ -308,7 +308,7 @@ class StreamManager:
                     # Same URL, update access time and return if still running
                     existing_stream.update_access_time()
                     if existing_stream.is_running():
-                        return f"/api/hls/{stream_id}/playlist.m3u8", None
+                        return f"/api/camera/{stream_id}/hls/playlist.m3u8", None
 
             # Create new stream with FFmpeg transcoding
             stream = HLSStream(stream_id, tcp_url, self.config)

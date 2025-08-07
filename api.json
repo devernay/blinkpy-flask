@@ -514,7 +514,7 @@
         }
       }
     },
-    "/api/hls/{camera_id}/{filename}": {
+    "/api/camera/{camera_id}/hls/{filename}": {
       "get": {
         "summary": "Serve HLS playlist and segment files",
         "operationId": "getHLSFile",
