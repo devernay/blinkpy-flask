@@ -9,7 +9,7 @@ and reusable across different modules.
 
 import argparse
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app_types import ApiResponse, JsonDict
 from config import Config
@@ -245,7 +245,7 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
         # Handle different input types from various Blink API endpoints
         if isinstance(timestamp_str, int):
             # Unix timestamp (seconds since epoch) from some API responses
-            timestamp = datetime.fromtimestamp(timestamp_str, tz=timezone.utc)
+            timestamp = datetime.fromtimestamp(timestamp_str, tz=UTC)
         elif isinstance(timestamp_str, str):
             # ISO format timestamp string from Blink API (handle Z suffix)
             timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))

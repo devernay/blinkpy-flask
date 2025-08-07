@@ -27,13 +27,7 @@ def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
     sys.path.insert(0, os.path.dirname(__file__))
 
     if with_coverage:
-        try:
-            import coverage
-        except ImportError:
-            logger.error(
-                "Coverage package not installed. Install with: pip install coverage"
-            )
-            return False
+        import coverage
 
         # Start coverage
         cov = coverage.Coverage()
@@ -43,12 +37,7 @@ def run_tests(with_coverage: bool = False, html_report: bool = False) -> bool:
         try:
             import unittest
 
-            # Try to import test_app with better error handling
-            try:
-                import test_app  # type: ignore[import-not-found]
-            except ImportError as e:
-                logger.error(f"Could not import test_app: {e}")
-                return False
+            import test_app
 
             # Create test suite
             loader = unittest.TestLoader()

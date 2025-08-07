@@ -103,13 +103,6 @@ if TYPE_CHECKING:
 # Third-party imports
 import requests
 
-# Blink camera library
-# TODO: The blinkpy library lacks proper type annotations, causing 400+ pyright warnings
-# Consider creating type stubs or contacting maintainers to add py.typed support
-from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
-from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
-from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
-
 # Flask framework components
 from flask import (
     Flask,
@@ -129,6 +122,13 @@ from app_types import (
     ApiResponse,
     JsonDict,
 )
+
+# Blink camera library
+# TODO: The blinkpy library lacks proper type annotations, causing 400+ pyright warnings
+# Consider creating type stubs or contacting maintainers to add py.typed support
+from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
 
 # Application configuration
 from config import Config

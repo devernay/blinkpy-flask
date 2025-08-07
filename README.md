@@ -31,7 +31,7 @@ A professional-grade Flask web application providing comprehensive access to Bli
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.12+
 - FFmpeg (for live streaming)
 - Flask and dependencies (see requirements.txt)
 

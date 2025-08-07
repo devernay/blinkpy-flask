@@ -74,17 +74,10 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_cache_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CACHE_DIR is None."""
-        try:
-            from blinkapp import ensure_cache_paths_initialized
+        from blinkapp import ensure_cache_paths_initialized
 
-            with self.assertRaises(RuntimeError):
-                ensure_cache_paths_initialized()
-        except ImportError:
-            # Function may not exist, create equivalent test
-            if blinkapp.CACHE_DIR is None:
-                with self.assertRaises((RuntimeError, AttributeError)):
-                    # This should fail due to None cache dir
-                    str(Path(blinkapp.CACHE_DIR) / "test")
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
 
     @patch("blinkblinkapp.CACHE_DIR", "test")
     @patch("blinkblinkapp.CREDENTIALS_FILE", None)
@@ -92,15 +85,10 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_credentials_file_none(self) -> None:
         """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
-        try:
-            from blinkapp import ensure_cache_paths_initialized
+        from blinkapp import ensure_cache_paths_initialized
 
-            with self.assertRaises(RuntimeError):
-                ensure_cache_paths_initialized()
-        except ImportError:
-            # Test equivalent condition
-            if blinkapp.CREDENTIALS_FILE is None:
-                self.assertTrue(True)  # Condition met
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
 
     @patch("blinkblinkapp.CACHE_DIR", "test")
     @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
@@ -108,14 +96,10 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
-        try:
-            from blinkapp import ensure_cache_paths_initialized
+        from blinkapp import ensure_cache_paths_initialized
 
-            with self.assertRaises(RuntimeError):
-                ensure_cache_paths_initialized()
-        except ImportError:
-            if blinkapp.THUMBNAIL_CACHE_DIR is None:
-                self.assertTrue(True)
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
 
     @patch("blinkblinkapp.CACHE_DIR", "test")
     @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
@@ -123,14 +107,10 @@ class TestCachePathValidation(unittest.TestCase):
     @patch("blinkblinkapp.CLIPS_CACHE_DIR", None)
     def test_ensure_cache_paths_clips_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
-        try:
-            from blinkapp import ensure_cache_paths_initialized
+        from blinkapp import ensure_cache_paths_initialized
 
-            with self.assertRaises(RuntimeError):
-                ensure_cache_paths_initialized()
-        except ImportError:
-            if blinkapp.CLIPS_CACHE_DIR is None:
-                self.assertTrue(True)
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
 
 
 class TestValidationClassMethods(unittest.TestCase):
@@ -295,18 +275,13 @@ class TestUtilityFunctions(unittest.TestCase):
 
     def test_format_time_ago_function(self) -> None:
         """Test format_time_ago function if it exists."""
-        try:
-            from blinkapp import format_time_ago
+        from blinkapp import format_time_ago
 
-            # Test with recent timestamp - convert datetime to timestamp
-            recent_time = datetime.now() - timedelta(minutes=5)
-            timestamp = int(recent_time.timestamp())
-            result = format_time_ago(timestamp)
-            self.assertIsInstance(result, str)
-
-        except ImportError:
-            # Function may not exist
-            self.assertTrue(True)
+        # Test with recent timestamp - convert datetime to timestamp
+        recent_time = datetime.now() - timedelta(minutes=5)
+        timestamp = int(recent_time.timestamp())
+        result = format_time_ago(timestamp)
+        self.assertIsInstance(result, str)
 
 
 class TestErrorHandlingPaths(unittest.TestCase):

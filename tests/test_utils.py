@@ -10,7 +10,7 @@ import os
 import sys
 import unittest
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def with_app_initialized(func: F) -> F:
+def with_app_initialized[F](func: F) -> F:
     """Decorator to ensure app globals are initialized for testing.
 
     This decorator should be applied to test methods that need
@@ -44,8 +44,8 @@ def with_app_initialized(func: F) -> F:
         should mock dependencies instead.
     """
 
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    @functools.wraps(func)  # type: ignore[arg-type]
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         # Import here to avoid circular imports during module loading
         from tests.test_initialization import initialize_for_testing
 
@@ -54,9 +54,9 @@ def with_app_initialized(func: F) -> F:
         initialize_for_testing()
 
         # Call the original test function with initialized context
-        return func(*args, **kwargs)
+        return cast(Any, func)(*args, **kwargs)
 
-    return wrapper
+    return cast(F, wrapper)
 
 
 def setup_test_globals():

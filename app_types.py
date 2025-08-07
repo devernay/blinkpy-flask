@@ -7,10 +7,14 @@ defining them locally in individual modules.
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 
 from flask import Response
 from flask.typing import ResponseReturnValue
+
+# Type variables for generic functions
+P = ParamSpec("P")
+T = TypeVar("T")
 
 # Basic data types
 JsonDict = dict[str, object]  # Standard JSON-serializable dictionary
@@ -23,11 +27,19 @@ SystemDict = dict[str, object]  # System information dictionary
 ApiResponse = tuple[JsonDict, int]  # Standard API response (data, status_code)
 ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 
-# Flask response types
-FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict]
+# Flask response types - more specific typing
+FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, Any]]
 FlaskRouteResponse = ResponseReturnValue  # What Flask route functions can return
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
+
+# Decorated route function types - simplified for better compatibility
+DecoratedRouteFunction = Callable[
+    ..., FlaskResponse
+]  # What decorated route functions return
+DecoratorFunction = Callable[
+    [Callable[..., Any]], DecoratedRouteFunction
+]  # Decorator type
 
 # Cache and utility types
 CacheKey = str  # Cache key identifier

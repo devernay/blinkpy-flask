@@ -9,7 +9,7 @@ import sys
 import threading
 import unittest
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 # Add the app directory to the path
@@ -432,7 +432,9 @@ class TestAPIResponseCreation(unittest.TestCase):
         # Should have ISO format timestamp
         timestamp = response["timestamp"]
         self.assertIsInstance(timestamp, str)
-        self.assertIn("T", timestamp)  # ISO format contains T
+        # Cast to str since we just asserted it's a string
+        timestamp_str = cast(str, timestamp)
+        self.assertIn("T", timestamp_str)  # ISO format contains T
 
 
 class TestLRUCacheAdvanced(unittest.TestCase):

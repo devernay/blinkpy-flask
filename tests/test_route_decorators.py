@@ -9,9 +9,10 @@ in Flask route handlers.
 import json
 import sys
 import unittest
+from typing import cast
 from unittest.mock import MagicMock, Mock
 
-from flask import Flask, request
+from flask import Flask, Response, request
 
 
 # Mock the app module dependencies for testing
@@ -62,6 +63,14 @@ class TestRouteDecorators(unittest.TestCase):
     def setUp(self) -> None:
         self.app = app
         self.client = app.test_client()
+
+    def _parse_response(self, response: object) -> tuple[dict, int]:
+        """Helper to parse response tuple and extract JSON data."""
+        response_tuple = cast(tuple[object, int], response)
+        response_obj = cast(Response, response_tuple[0])
+        json_response = json.loads(response_obj.data)
+        status_code = response_tuple[1]
+        return json_response, status_code
         app.config["TESTING"] = True
 
     def test_api_route_success(self) -> None:
@@ -69,19 +78,24 @@ class TestRouteDecorators(unittest.TestCase):
 
         @app.route("/test/success")
         @api_route("test operation")
-        def test_success() -> None:
+        def test_success() -> dict[str, object]:
             return {"message": "success", "data": [1, 2, 3]}
 
         with app.test_request_context():
             response = test_success()
 
         # Should return jsonified response with status code
+        # The decorator always returns a tuple, so we can assert this
         self.assertIsInstance(response, tuple)
-        self.assertEqual(len(response), 2)
+
+        # Now that we've asserted it's a tuple, cast it for type safety
+        response_tuple = cast(tuple[object, int], response)
+        self.assertEqual(len(response_tuple), 2)
 
         # Parse the JSON response
-        json_response = json.loads(response[0].data)
-        status_code = response[1]
+        response_obj = cast(Response, response_tuple[0])
+        json_response = json.loads(response_obj.data)
+        status_code = response_tuple[1]
 
         self.assertEqual(status_code, 200)
         self.assertTrue(json_response["success"])
@@ -92,14 +106,16 @@ class TestRouteDecorators(unittest.TestCase):
 
         @app.route("/test/error")
         @api_route("test error operation")
-        def test_error() -> None:
+        def test_error() -> dict[str, object]:
             raise ValueError("Test error message")
 
         with app.test_request_context():
             response = test_error()
 
-        json_response = json.loads(response[0].data)
-        status_code = response[1]
+        response_tuple = cast(tuple[object, int], response)
+        response_obj = cast(Response, response_tuple[0])
+        json_response = json.loads(response_obj.data)
+        status_code = response_tuple[1]
 
         self.assertEqual(status_code, 500)
         self.assertFalse(json_response["success"])
@@ -116,7 +132,7 @@ class TestRouteDecorators(unittest.TestCase):
         @api_route_with_validation(
             "test validation", validate_params={"id_str": validate_id}
         )
-        def test_validate(**kwargs) -> None:
+        def test_validate(**kwargs: object) -> dict[str, object]:
             # The decorator should have converted id_str to id
             validated_id = kwargs.get("id") or kwargs.get("id_str")
             if isinstance(validated_id, str):
@@ -127,7 +143,7 @@ class TestRouteDecorators(unittest.TestCase):
             # Call the function with the parameter
             response = test_validate(id_str="123")
 
-        json_response = json.loads(response[0].data)
+        json_response, status_code = self._parse_response(response)
         self.assertTrue(json_response["success"])
         self.assertEqual(json_response["data"]["validated_id"], 123)
         self.assertEqual(json_response["data"]["type"], "int")
@@ -145,15 +161,14 @@ class TestRouteDecorators(unittest.TestCase):
         @api_route_with_validation(
             "test validation", validate_params={"id_str": validate_id}
         )
-        def test_validate_invalid(**kwargs) -> None:
+        def test_validate_invalid(**kwargs: object) -> dict[str, object]:
             validated_id = kwargs.get("id") or kwargs.get("id_str")
             return {"validated_id": validated_id}
 
         with app.test_request_context("/test/validate/abc"):
             response = test_validate_invalid(id_str="abc")
 
-        json_response = json.loads(response[0].data)
-        status_code = response[1]
+        json_response, status_code = self._parse_response(response)
 
         self.assertEqual(status_code, 400)
         self.assertFalse(json_response["success"])
@@ -168,7 +183,7 @@ class TestRouteDecorators(unittest.TestCase):
             validate_json=True,
             required_fields=["name", "value"],
         )
-        def test_json_validation() -> None:
+        def test_json_validation() -> dict[str, object]:
             data = request.get_json()
             return {"received": data}
 
@@ -177,7 +192,7 @@ class TestRouteDecorators(unittest.TestCase):
         ):
             response = test_json_validation()
 
-        json_response = json.loads(response[0].data)
+        json_response, status_code = self._parse_response(response)
         self.assertTrue(json_response["success"])
         self.assertEqual(json_response["data"]["received"]["name"], "test")
         self.assertEqual(json_response["data"]["received"]["value"], 42)
@@ -191,7 +206,7 @@ class TestRouteDecorators(unittest.TestCase):
             validate_json=True,
             required_fields=["name", "value"],
         )
-        def test_json_validation_missing() -> None:
+        def test_json_validation_missing() -> dict[str, object]:
             data = request.get_json()
             return {"received": data}
 
@@ -200,8 +215,7 @@ class TestRouteDecorators(unittest.TestCase):
         ):  # Missing "value"
             response = test_json_validation_missing()
 
-        json_response = json.loads(response[0].data)
-        status_code = response[1]
+        json_response, status_code = self._parse_response(response)
 
         self.assertEqual(status_code, 400)
         self.assertFalse(json_response["success"])
@@ -221,8 +235,13 @@ class TestRouteDecorators(unittest.TestCase):
         with app.test_request_context("/test/simple-success", method="POST"):
             response = test_simple_success()
 
-        json_response = json.loads(response[0].data)
-        status_code = response[1]
+        # The decorator returns a tuple (Response, status_code)
+        self.assertIsInstance(response, tuple)
+
+        response_tuple = cast(tuple[object, int], response)
+        self.assertEqual(len(response_tuple), 2)
+
+        json_response, status_code = self._parse_response(response)
 
         self.assertEqual(status_code, 200)
         self.assertTrue(json_response["success"])
@@ -242,8 +261,13 @@ class TestRouteDecorators(unittest.TestCase):
         with app.test_request_context("/test/simple-error", method="POST"):
             response = test_simple_error()
 
-        json_response = json.loads(response[0].data)
-        status_code = response[1]
+        # The decorator returns a tuple (Response, status_code) even for errors
+        self.assertIsInstance(response, tuple)
+
+        response_tuple = cast(tuple[object, int], response)
+        self.assertEqual(len(response_tuple), 2)
+
+        json_response, status_code = self._parse_response(response)
 
         self.assertEqual(status_code, 500)
         self.assertFalse(json_response["success"])

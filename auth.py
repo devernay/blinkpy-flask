@@ -82,6 +82,7 @@ async def initialize_blink(
 
     with error_context("initialize Blink system", AuthenticationError):
         from aiohttp import ClientSession
+
         from blinkpy.auth import Auth  # type: ignore[import-untyped]
         from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
 
@@ -206,6 +207,7 @@ async def load_saved_blink() -> bool:
     if cred_file.exists():
         try:
             from aiohttp import ClientSession
+
             from blinkpy.auth import Auth  # type: ignore[import-untyped]
             from blinkpy.blinkpy import (
                 Blink,  # type: ignore[import-untyped,attr-defined]

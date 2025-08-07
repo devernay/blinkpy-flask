@@ -15,10 +15,10 @@ import re
 from pathlib import Path
 from typing import cast
 
-from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
 from flask import Flask, Response, send_file
 
 from app_types import ApiResponse, FlaskResponse, JsonDict
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
 from decorators import (
     error_context,
     requires_blink,
@@ -491,7 +491,7 @@ def setup_camera_routes(app: Flask) -> None:
             response, status_code = create_api_response(
                 success=False, error="Failed to serve HLS file", status_code=500
             )
-            return jsonify(response), status_code  # type: ignore[return-value]
+            return jsonify(response), status_code
 
     @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
     @requires_blink

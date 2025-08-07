@@ -8,16 +8,9 @@ through multiple inheritance.
 import logging
 import threading
 import time
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from cachetools import Cache, LRUCache
-
-# Import ClipId for type hints
-try:
-    from ids import ClipId
-except ImportError:
-    # Fallback for when ids module is not available
-    ClipId = str  # type: ignore
 
 # Generic type variable for cache implementation
 CacheImpl = TypeVar("CacheImpl", bound=Cache)
@@ -25,7 +18,7 @@ CacheImpl = TypeVar("CacheImpl", bound=Cache)
 logger = logging.getLogger(__name__)
 
 
-class ThreadSafeCache(Cache, Generic[CacheImpl]):
+class ThreadSafeCache[CacheImpl](Cache):
     """Thread-safe cache wrapper using multiple inheritance.
 
     This class provides thread-safe access to any cache implementation

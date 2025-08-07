@@ -105,7 +105,7 @@ class BlinkConnection:
         try:
             future = asyncio.run_coroutine_threadsafe(coro, self.loop)
             return future.result(timeout=operation_timeout)
-        except (asyncio.TimeoutError, concurrent.futures.TimeoutError) as e:
+        except (TimeoutError, concurrent.futures.TimeoutError) as e:
             raise BlinkError(f"Blink operation timed out: {str(e)}") from e
         except (RuntimeError, OSError) as e:
             raise BlinkError(f"Blink operation failed: {str(e)}") from e
@@ -125,7 +125,7 @@ class BlinkConnection:
                             self.blink.close(), self.loop
                         )
                         future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
-            except (asyncio.TimeoutError, RuntimeError, OSError) as e:
+            except (TimeoutError, RuntimeError, OSError) as e:
                 logger.debug(f"Session cleanup: {e}")
 
         # Stop event loop

@@ -8,15 +8,16 @@ including error handling, response formatting, and validation.
 import functools
 import logging
 from collections.abc import Callable
-from typing import Protocol, TypeVar
+from typing import Any, Protocol, TypeVar, cast
 
 from flask import jsonify, request
 
 from app_types import (
     CacheKey,
+    DecoratedRouteFunction,
+    DecoratorFunction,
     ErrorResponse,
     FlaskResponse,
-    JsonDict,
     RouteResult,
     TemplateResult,
     ValidationFunction,
@@ -25,31 +26,19 @@ from app_types import (
 logger = logging.getLogger(__name__)
 
 
-# Import ValidationError from app module (lazy import to avoid circular imports)
-def _get_validation_error() -> type[Exception]:
-    """Lazy import of ValidationError to avoid circular imports.
-
-    Returns:
-        ValidationError class from app module
-    """
-    from blinkapp import ValidationError
-
-    return ValidationError
-
-
-F = TypeVar("F", bound=Callable[..., RouteResult])
+# Type variables for template functions
 TemplateF = TypeVar("TemplateF", bound=Callable[..., TemplateResult])
 
 
 class CacheProtocol(Protocol):
     """Protocol for cache-like objects."""
 
-    def get(self, key: CacheKey, default: object = None) -> object: ...
-    def __setitem__(self, key: CacheKey, value: object) -> None: ...
+    def get(self, key: CacheKey, default: Any = None) -> Any: ...
+    def __setitem__(self, key: CacheKey, value: Any) -> None: ...
 
 
 def _get_operation_name(
-    func: Callable[..., object], operation_name: str | None = None
+    func: Callable[..., Any], operation_name: str | None = None
 ) -> str:
     """Get operation name for logging and error messages."""
     return operation_name or func.__name__.replace("_", " ")
@@ -62,11 +51,14 @@ def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
 
     # If the function already returns a Flask response, pass it through
     if hasattr(result, "status_code") or isinstance(result, tuple):
-        return result  # type: ignore[return-value]
+        # Type narrowing: result is now FlaskResponse
+        return cast(FlaskResponse, result)
 
     # Otherwise, wrap in standard API response
     if isinstance(result, dict):
-        response, status_code = create_api_response(success=True, data=result)
+        # For dict results, cast to the expected type
+        dict_result = cast(dict[str, object], result)
+        response, status_code = create_api_response(success=True, data=dict_result)
         return jsonify(response), status_code
     else:
         # For non-dict results, wrap in success response
@@ -88,8 +80,8 @@ def _handle_error(e: Exception, operation_name: str) -> ErrorResponse:
 
 def _validate_json_payload(
     required_fields: list[str] | None = None,
-) -> JsonDict | ErrorResponse:
-    """Validate JSON payload and return data or error response."""
+) -> ErrorResponse | None:
+    """Validate JSON payload and return error response or None on success."""
     # Import here to avoid circular import
     from blinkapp import Config, create_api_response
 
@@ -113,13 +105,16 @@ def _validate_json_payload(
             )
             return jsonify(response), status_code
 
-    return data
+    return None  # Success - data is available via request.get_json()
 
 
 def _validate_parameters(
-    kwargs: dict[str, object], validate_params: dict[str, ValidationFunction]
-) -> dict[str, object] | ErrorResponse:
-    """Validate URL parameters and return updated kwargs or error response."""
+    kwargs: dict[str, Any], validate_params: dict[str, ValidationFunction]
+) -> ErrorResponse | None:
+    """Validate URL parameters and return error response or None on success.
+
+    On success, the kwargs dict is modified in place with validated parameters.
+    """
     # Import here to avoid circular import
     from blinkapp import create_api_response
 
@@ -141,7 +136,7 @@ def _validate_parameters(
                 )
                 return jsonify(response), status_code
 
-    return kwargs
+    return None  # Success - kwargs has been modified in place
 
 
 def _create_base_decorator(
@@ -153,7 +148,7 @@ def _create_base_decorator(
     cache_dict: CacheProtocol | None = None,
     cache_key_func: Callable[..., CacheKey] | None = None,
     skip_response_formatting: bool = False,
-) -> Callable[[F], F]:
+) -> DecoratorFunction:
     """
     Base decorator that handles all common patterns.
 
@@ -171,9 +166,9 @@ def _create_base_decorator(
         skip_response_formatting: If True, return result directly (for file responses)
     """
 
-    def decorator(func: F) -> F:
+    def decorator(func: Callable[..., Any]) -> DecoratedRouteFunction:
         @functools.wraps(func)
-        def wrapper(*args: object, **kwargs: object) -> RouteResult:
+        def wrapper(*args: Any, **kwargs: Any) -> FlaskResponse:
             op_name = _get_operation_name(func, operation_name)
 
             try:
@@ -186,17 +181,21 @@ def _create_base_decorator(
 
                 # Validate JSON if required
                 if validate_json:
-                    json_result = _validate_json_payload(required_fields)
-                    if _is_error_response(json_result):
-                        return json_result
+                    json_error = _validate_json_payload(required_fields)
+                    if json_error is not None:
+                        return json_error
+                    # json validation passed, data is available via request.get_json()
 
                 # Validate parameters
                 if validate_params:
-                    param_result = _validate_parameters(kwargs, validate_params)
-                    if _is_error_response(param_result):
-                        return param_result
-                    if isinstance(param_result, dict):
-                        kwargs = param_result
+                    # Convert kwargs to mutable dict for validation
+                    kwargs_dict = dict(kwargs)
+                    param_error = _validate_parameters(kwargs_dict, validate_params)
+                    if param_error is not None:
+                        return param_error
+                    # parameter validation passed, update kwargs
+                    # We need to cast back to the original type for the function call
+                    kwargs = cast(Any, kwargs_dict)
 
                 # Call the original function
                 result = func(*args, **kwargs)
@@ -212,22 +211,24 @@ def _create_base_decorator(
 
                 # Handle response formatting
                 if skip_response_formatting:
-                    return result
+                    # For file responses and method dispatch, the function should return FlaskResponse
+                    # Cast to FlaskResponse as this is the expected contract for these decorators
+                    return cast(FlaskResponse, result)
                 else:
                     return _handle_response_formatting(result)
 
             except Exception as e:
                 return _handle_error(e, op_name)
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper
 
     return decorator
 
 
 def _get_cache_key(
     cache_key_func: Callable[..., CacheKey] | None = None,
-    args: tuple[object, ...] | None = None,
-    kwargs: dict[str, object] | None = None,
+    args: tuple[Any, ...] | None = None,
+    kwargs: dict[str, Any] | None = None,
 ) -> CacheKey:
     """Generate cache key from function arguments."""
     if cache_key_func:
@@ -236,7 +237,7 @@ def _get_cache_key(
         return str(args[0]) if args else "default"
 
 
-def _create_cached_response(cached_result: object) -> FlaskResponse:
+def _create_cached_response(cached_result: Any) -> FlaskResponse:
     """Create response for cached data."""
     # Import here to avoid circular import
     from blinkapp import create_api_response
@@ -254,12 +255,12 @@ def _create_success_message_response(message: str) -> FlaskResponse:
     return jsonify(response), status_code
 
 
-def _is_error_response(result: object) -> bool:
+def _is_error_response(result: Any) -> bool:
     """Check if result is an error response (has status_code or is tuple)."""
     return hasattr(result, "status_code") or isinstance(result, tuple)
 
 
-def api_route(operation_name: str | None = None) -> Callable[[F], F]:
+def api_route(operation_name: str | None = None) -> DecoratorFunction:
     """
     Decorator that handles common API route patterns including:
     - Try-catch error handling with standardized responses
@@ -285,7 +286,7 @@ def api_route_with_validation(
     validate_json: bool = False,
     required_fields: list[str] | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
-) -> Callable[[F], F]:
+) -> DecoratorFunction:
     """
     Enhanced API route decorator with built-in validation.
 
@@ -315,7 +316,7 @@ def api_route_with_validation(
     )
 
 
-def simple_success_response(message: str | None = None) -> Callable[[F], F]:
+def simple_success_response(message: str | None = None) -> DecoratorFunction:
     """
     Decorator for endpoints that just need to return a simple success message.
 
@@ -334,7 +335,7 @@ def simple_success_response(message: str | None = None) -> Callable[[F], F]:
 
 def cached_response(
     cache_dict: CacheProtocol, cache_key_func: Callable[..., CacheKey] | None = None
-) -> Callable[[F], F]:
+) -> DecoratorFunction:
     """
     Decorator that adds caching to API responses.
 
@@ -358,7 +359,7 @@ def cached_response(
 def file_response_route(
     operation_name: str | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
-) -> Callable[[F], F]:
+) -> DecoratorFunction:
     """
     Decorator for routes that return file responses (send_file).
 
@@ -384,7 +385,7 @@ def file_response_route(
     )
 
 
-def method_dispatch_route(operation_name: str | None = None) -> Callable[[F], F]:
+def method_dispatch_route(operation_name: str | None = None) -> DecoratorFunction:
     """
     Decorator for routes that handle multiple HTTP methods with different logic.
 
@@ -415,7 +416,7 @@ def cached_api_route(
     cache_dict: CacheProtocol | None = None,
     cache_key_func: Callable[..., CacheKey] | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
-) -> Callable[[F], F]:
+) -> DecoratorFunction:
     """
     Combined decorator for API routes with caching and validation.
 
@@ -467,7 +468,7 @@ def template_route_with_validation(
 
     def decorator(func: TemplateF) -> TemplateF:
         @functools.wraps(func)
-        def wrapper(*args: object, **kwargs: object) -> TemplateResult:
+        def wrapper(*args: Any, **kwargs: Any) -> TemplateResult:
             from flask import render_template, request
 
             from utils import validate_string_input
@@ -477,7 +478,7 @@ def template_route_with_validation(
             try:
                 # Validate form data if POST request and validation enabled
                 if request.method == "POST" and validate_form and form_fields:
-                    validated_data = {}
+                    validated_data: dict[str, Any] = {}
                     for field_name, (max_length, display_name) in form_fields.items():
                         field_value = request.form.get(field_name, "")
                         try:
@@ -498,8 +499,9 @@ def template_route_with_validation(
                 return result
 
             except Exception as e:
-                return _handle_error(e, operation)
+                # _handle_error returns ErrorResponse which is compatible with TemplateResult
+                return cast(TemplateResult, _handle_error(e, operation))
 
-        return wrapper  # type: ignore[return-value]
+        return cast(TemplateF, wrapper)
 
     return decorator
