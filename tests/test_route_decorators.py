@@ -46,7 +46,7 @@ mock_blinkapp.handle_api_error = handle_api_error
 mock_blinkapp.ResponseReturnValue = tuple
 sys.modules["blinkapp"] = mock_blinkapp
 
-# Now import our decorators
+# Import decorators after mocking dependencies
 from route_decorators import (  # noqa: E402
     api_route,
     api_route_with_validation,
@@ -88,7 +88,7 @@ class TestRouteDecorators(unittest.TestCase):
         # The decorator always returns a tuple, so we can assert this
         self.assertIsInstance(response, tuple)
 
-        # Now that we've asserted it's a tuple, cast it for type safety
+        # Cast to tuple for type safety after assertion
         response_tuple = cast(tuple[object, int], response)
         self.assertEqual(len(response_tuple), 2)
 

@@ -351,6 +351,16 @@ class TestFlaskApp(unittest.TestCase):
         self.client = app.test_client()
         self.temp_dir = app.config["CACHE_DIR"]
 
+        # Initialize caches for testing
+        from cache import initialize_caches
+
+        initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
+
+        # Initialize cache paths
+        import blinkapp
+
+        blinkapp.initialize_cache_paths()
+
     def tearDown(self) -> None:
         """Clean up test fixtures."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
@@ -1172,18 +1182,14 @@ class TestAPIEndpoints(unittest.TestCase):
 
     @patch("blinkapp.executor")
     @patch("blinkapp.thumbnail_cache")
-    @patch("blinkapp.clips_download_cache")
-    @patch("blinkapp.clips_metadata_cache")
+    @patch("blinkapp.clips_cache")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
-    def test_clear_all_caches_function(
-        self, mock_clips_meta, mock_clips_dl, mock_thumb, mock_executor
-    ):
+    def test_clear_all_caches_function(self, mock_clips, mock_thumb, mock_executor):
         """Test clear_all_caches function exists and works."""
         # Setup mocks
         mock_thumb.clear_cache = MagicMock()
-        mock_clips_dl.clear_cache = MagicMock()
-        mock_clips_meta.clear_cache = MagicMock()
+        mock_clips.clear_cache = MagicMock()
 
         # Mock executor.submit to return a mock future
         mock_future = MagicMock()
@@ -1202,8 +1208,7 @@ class TestAPIEndpoints(unittest.TestCase):
 
         # Verify cache clearing was called
         mock_thumb.clear_cache.assert_called_once()
-        mock_clips_dl.clear_cache.assert_called_once()
-        mock_clips_meta.clear_cache.assert_called_once()
+        mock_clips.clear_cache.assert_called_once()
 
     """Test configuration and setup functions."""
 
@@ -1602,8 +1607,8 @@ class TestAdvancedEndpoints(unittest.TestCase):
     def test_get_clip_thumbnail_check_success(self, mock_blink) -> None:
         """Test clip thumbnail check endpoint."""
         # Mock clip in cache
-        with patch("blinkapp.clips_download_cache") as mock_cache:
-            mock_cache.get.return_value = {"thumbnail_path": "/tmp/test_thumb.jpg"}
+        with patch("blinkapp.clips_cache") as mock_cache:
+            mock_cache.get.return_value = {"thumbnail": Path("/tmp/test_thumb.jpg")}
 
             with patch("pathlib.Path.exists", return_value=True):
                 response = self.client.get("/api/clip/test_clip/thumbnail/check")
@@ -1615,7 +1620,7 @@ class TestAdvancedEndpoints(unittest.TestCase):
     @patch("blinkapp.blink")
     def test_get_clip_thumbnail_check_not_found(self, mock_blink) -> None:
         """Test clip thumbnail check when not found."""
-        with patch("blinkapp.clips_download_cache") as mock_cache:
+        with patch("blinkapp.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
 
             response = self.client.get("/api/clip/nonexistent/thumbnail/check")

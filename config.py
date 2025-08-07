@@ -23,7 +23,7 @@ class Config:
     - File paths and naming conventions
 
     All timeout values are in seconds unless otherwise specified.
-    All UI timing values are in milliseconds for JavaScript compatibility.
+    All UI timing values are in milliseconds for JavaScript frontend.
     """
 
     # ========================================================================

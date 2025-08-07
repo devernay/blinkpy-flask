@@ -73,7 +73,7 @@ def setup_test_globals():
     Usage in test setUp:
         def setUp(self) -> None:
             setup_test_globals()
-            # rest of setup code - globals are now available
+            # Additional test setup can be added here
 
     Example:
         class MyTestClass(unittest.TestCase):

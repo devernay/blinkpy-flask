@@ -113,7 +113,19 @@ def _validate_parameters(
 ) -> ErrorResponse | None:
     """Validate URL parameters and return error response or None on success.
 
-    On success, the kwargs dict is modified in place with validated parameters.
+    Transforms string URL parameters into validated objects using provided
+    validation functions. For example, converts "camera_id_str" to a CameraId
+    object and replaces it in kwargs as "camera_id".
+
+    Args:
+        kwargs: Route function keyword arguments (modified in place)
+        validate_params: Mapping of parameter names to validation functions
+
+    Returns:
+        Error response tuple if validation fails, None if successful
+
+    Side Effects:
+        Modifies kwargs in place, replacing validated parameters
     """
     # Import here to avoid circular import
     from blinkapp import create_api_response
@@ -121,12 +133,14 @@ def _validate_parameters(
     for param_name, validator in validate_params.items():
         if param_name in kwargs:
             try:
-                # Apply validation (e.g., CameraId(camera_id_str))
+                # Apply validation function (e.g., CameraId(camera_id_str))
                 param_value = kwargs[param_name]
                 if not isinstance(param_value, str):
                     raise ValueError(f"Parameter {param_name} must be a string")
                 validated_value = validator(param_value)
-                # Replace the string parameter with validated object
+
+                # Replace string parameter with validated object
+                # Remove "_str" suffix from parameter name for cleaner API
                 del kwargs[param_name]
                 new_param_name = param_name.replace("_str", "")
                 kwargs[new_param_name] = validated_value

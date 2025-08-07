@@ -1900,15 +1900,16 @@ def startup() -> None:
     from blink_connection import BlinkConnection
 
     try:
-        # Initialize executor for background tasks
+        # Initialize thread pool for background operations (thumbnail updates, clip processing)
         executor = ThreadPoolExecutor(max_workers=Config.THREAD_POOL_MAX_WORKERS)
 
-        # Initialize Blink connection
+        # Initialize async Blink connection manager for API operations
         blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
-        # Initialize cache paths
+
+        # Set up file system paths for cache storage
         initialize_cache_paths()
 
-        # Create cache directories if they don't exist
+        # Create cache directories with proper permissions
         assert CACHE_DIR is not None
         Path(CACHE_DIR).mkdir(exist_ok=True)
         assert THUMBNAIL_CACHE_DIR is not None
@@ -1916,35 +1917,36 @@ def startup() -> None:
         Path(cast(str, THUMBNAIL_CACHE_DIR)).mkdir(exist_ok=True)
         Path(cast(str, CLIPS_CACHE_DIR)).mkdir(exist_ok=True)
 
-        # Setup logging with rotation in cache directory
+        # Configure logging with file rotation after cache paths are ready
         setup_logging()
 
-        # Initialize stream manager for server mode
+        # Initialize HLS streaming manager for live video transcoding
         stream_config = StreamConfig(
-            segment_time=Config.HLS_SEGMENT_TIME,
-            list_size=Config.HLS_LIST_SIZE,
-            timeout=Config.FFMPEG_TIMEOUT,
-            idle_timeout=Config.STREAM_IDLE_TIMEOUT,
+            segment_time=Config.HLS_SEGMENT_TIME,  # Duration of each HLS segment
+            list_size=Config.HLS_LIST_SIZE,  # Number of segments in playlist
+            timeout=Config.FFMPEG_TIMEOUT,  # FFmpeg process timeout
+            idle_timeout=Config.STREAM_IDLE_TIMEOUT,  # Auto-cleanup idle streams
         )
         stream_manager = StreamManager(stream_config)
 
-        # Load existing thumbnails from cache
+        # Restore cached thumbnails from previous sessions
         load_thumbnail_cache()
 
-        # Load existing clips from cache
+        # Restore cached clips metadata from previous sessions
         load_clips_cache()
 
-        # Initialize Blink thread for startup
+        # Start the async Blink connection thread
         blink_connection.start()
 
         try:
+            # Attempt to restore previous Blink session from encrypted credentials
             success = blink_connection.execute(load_saved_blink())
             if success is not True:
                 logger.info(
                     "No valid saved credentials found - user will need to login"
                 )
             elif logger.isEnabledFor(logging.INFO):
-                # Dump system info if info logging is enabled
+                # Log system information for debugging if verbose logging enabled
                 dump_blink_system_info()
         except Exception as e:
             logger.error(f"Error loading saved Blink credentials: {e}")

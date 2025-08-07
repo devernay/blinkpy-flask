@@ -48,20 +48,20 @@ class HLSStream:
     This class handles the lifecycle of an FFmpeg process that converts
     MPEG-TS streams from Blink's TCP proxy into HLS format for web browsers.
     Each stream is isolated in its own temporary directory with automatic
-    cleanup and resource management.
+    cleanup when the stream ends.
 
-    The class is thread-safe and handles process lifecycle, error recovery,
-    and resource cleanup automatically. It's designed to work with Blink's
-    init_livestream() TCP proxy feature.
+    The transcoding process uses FFmpeg with optimized settings for low-latency
+    streaming from Blink cameras, producing .m3u8 playlists and .ts segments
+    that can be consumed by HTML5 video players.
 
     Attributes:
-        stream_id: Unique identifier for this stream instance
-        tcp_url: Source TCP URL from Blink (e.g., tcp://127.0.0.1:12345)
-        config: Stream configuration parameters
-        process: FFmpeg subprocess instance (None if not running)
+        stream_id: Unique identifier for this stream (typically camera ID)
+        tcp_url: Source TCP URL from Blink's init_livestream()
+        config: Stream configuration with timeouts and HLS settings
+        process: FFmpeg subprocess handle (None when not running)
         hls_dir: Temporary directory for HLS files
-        playlist_path: Path to the HLS playlist file
-        last_accessed: Timestamp of last access for idle cleanup
+        playlist_path: Path to the main .m3u8 playlist file
+        last_access: Timestamp of last access for idle cleanup
     """
 
     def __init__(self, stream_id: str, tcp_url: str, config: StreamConfig) -> None:

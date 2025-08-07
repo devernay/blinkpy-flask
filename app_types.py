@@ -33,7 +33,7 @@ FlaskRouteResponse = ResponseReturnValue  # What Flask route functions can retur
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
 
-# Decorated route function types - simplified for better compatibility
+# Decorated route function types
 DecoratedRouteFunction = Callable[
     ..., FlaskResponse
 ]  # What decorated route functions return
@@ -45,5 +45,5 @@ DecoratorFunction = Callable[
 CacheKey = str  # Cache key identifier
 ValidationFunction = Callable[[str], object]  # Input validation function type
 
-# Auth-specific types (using Any for broader compatibility)
-AuthJsonDict = dict[str, Any]  # Auth module JSON dict (allows Any values)
+# Auth-specific types
+AuthJsonDict = dict[str, Any]  # Auth module JSON dict

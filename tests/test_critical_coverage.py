@@ -172,7 +172,7 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
         mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
         mock_exists.return_value = True
 
-        # Test that old files are cleaned up
+        # Test file cleanup during thumbnail update
         try:
             # This would be part of the update_thumbnail inner function
             old_entry = mock_cache.get("test_key")

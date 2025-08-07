@@ -216,15 +216,18 @@ class ClipsCache(ThreadSafeCache[LRUCache], LRUCache):
     def add_clip(self, clip_id: str, clip_data: dict[str, Any]) -> None:
         """Add clip with automatic metadata enhancement.
 
+        Stores clip data with additional tracking metadata for cache management
+        including access statistics and timestamps for cleanup operations.
+
         Args:
             clip_id: Unique clip identifier
-            clip_data: Clip information and metadata
+            clip_data: Clip information and metadata from Blink API
         """
         enhanced_data = {
             "clip_data": clip_data,
-            "cached_at": time.time(),
-            "access_count": 0,
-            "last_accessed": time.time(),
+            "cached_at": time.time(),  # When clip was added to cache
+            "access_count": 0,  # Track access frequency
+            "last_accessed": time.time(),  # Most recent access time
         }
         self[clip_id] = enhanced_data
 

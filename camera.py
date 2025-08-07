@@ -193,7 +193,7 @@ def update_camera_thumbnail(
         the main request. It handles race conditions, file cleanup,
         and error recovery automatically.
         """
-        # Double-check timestamp to prevent race condition
+        # Double-check timestamp to prevent race condition with concurrent requests
         # Another request might have updated the cache while we were queued
         current_entry = thumbnail_cache.get(str(cache_key))
         current_cached_ts = (
@@ -203,7 +203,7 @@ def update_camera_thumbnail(
             logger.debug(f"Thumbnail already updated for {camera.name}, skipping")
             return
 
-        # Remove old cached file if exists to prevent disk space accumulation
+        # Clean up old cached file to prevent disk space accumulation
         old_entry = thumbnail_cache.get(str(cache_key))
         if old_entry is not None:
             old_filename = old_entry.get("filename")
