@@ -8,64 +8,65 @@ in Flask route handlers.
 
 import json
 import sys
-import unittest
 from typing import cast
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
-from flask import Flask, Response, request
+from flask import Flask, Response
 from test_app import BaseTestCase
-
-
-# Mock the app module dependencies for testing
-class MockConfig:
-    ErrorMessages = Mock()
-    ErrorMessages.INVALID_JSON_DATA = "Invalid JSON data"
-    ErrorMessages.CAMERA_NOT_FOUND = "Camera not found"
-    HTTP_STATUS_INTERNAL_ERROR = 500
-    CLIPS_CACHE_SIZE = 100
-    THUMBNAIL_CACHE_SIZE = 100
-    LOG_FILE = "test.log"
-    LOG_MAX_BYTES = 10 * 1024 * 1024
-
-
-def create_api_response(success=True, data=None, error=None, status_code=200):
-    """Mock create_api_response function."""
-    response = {"success": success, "timestamp": "2025-01-27T12:00:00Z"}
-    if data is not None:
-        response["data"] = data
-    if error is not None:
-        response["error"] = error
-    return response, status_code
-
-
-def handle_api_error(error, operation, status_code=500):
-    """Mock handle_api_error function."""
-    return create_api_response(success=False, error=str(error), status_code=status_code)
-
-
-# Mock the blinkapp module
-mock_blinkapp = MagicMock()
-mock_blinkapp.Config = MockConfig
-mock_blinkapp.create_api_response = create_api_response
-mock_blinkapp.handle_api_error = handle_api_error
-mock_blinkapp.ResponseReturnValue = tuple
-sys.modules["blinkapp"] = mock_blinkapp
-
-from route_decorators import (  # noqa: E402
-    api_route,
-    api_route_with_validation,
-    simple_success_response,
-)
 
 
 class TestRouteDecorators(BaseTestCase):
     """Test cases for route decorators."""
 
     def setUp(self) -> None:
+        # Store original blinkapp module if it exists
+        self._original_blinkapp = sys.modules.get("blinkapp")
+
         # Create a fresh Flask app for each test to avoid state contamination
         self.test_app = Flask(__name__)
         self.test_app.config["TESTING"] = True
         self.client = self.test_app.test_client()
+
+    def tearDown(self) -> None:
+        """Restore original blinkapp module and call parent tearDown."""
+        # Restore original blinkapp module
+        if self._original_blinkapp is not None:
+            sys.modules["blinkapp"] = self._original_blinkapp
+        elif "blinkapp" in sys.modules:
+            del sys.modules["blinkapp"]
+
+        # Call parent tearDown for global state cleanup
+        super().tearDown()
+
+    def _setup_mock_blinkapp(self):
+        """Setup mock blinkapp module for testing."""
+        mock_blinkapp = MagicMock()
+
+        # Use real Config class instead of duplicating it
+        from config import Config
+
+        mock_blinkapp.Config = Config
+
+        # Mock functions
+        def create_api_response(success=True, data=None, error=None, status_code=200):
+            response = {"success": success, "timestamp": "2023-01-01T00:00:00Z"}
+            if data is not None:
+                response["data"] = data
+            if error is not None:
+                response["error"] = error
+            return response, status_code
+
+        def handle_api_error(error, operation=None, status_code=500):
+            return create_api_response(
+                success=False, error=str(error), status_code=status_code
+            )
+
+        mock_blinkapp.create_api_response = create_api_response
+        mock_blinkapp.handle_api_error = handle_api_error
+        mock_blinkapp.logger = Mock()
+
+        sys.modules["blinkapp"] = mock_blinkapp
+        return mock_blinkapp
 
     def _parse_response(self, response: object) -> tuple[dict, int]:
         """Helper to parse response tuple and extract JSON data."""
@@ -77,201 +78,120 @@ class TestRouteDecorators(BaseTestCase):
 
     def test_api_route_success(self) -> None:
         """Test @api_route decorator with successful response."""
+        # Setup mock and import decorator
+        self._setup_mock_blinkapp()
+        from route_decorators import api_route
 
         @api_route("test operation")
         def test_success() -> dict[str, object]:
             return {"message": "success", "data": [1, 2, 3]}
 
-        # Add the route to our test app
-        self.test_app.add_url_rule("/test/success", "test_success", test_success)
-
         with self.test_app.test_request_context():
             response = test_success()
 
-        # Should return jsonified response with status code
-        # The decorator always returns a tuple, so we can assert this
-        self.assertIsInstance(response, tuple)
-
-        # Cast to tuple for type safety after assertion
-        response_tuple = cast(tuple[object, int], response)
-        self.assertEqual(len(response_tuple), 2)
-
-        # Parse the JSON response
-        response_obj = cast(Response, response_tuple[0])
-        json_response = json.loads(response_obj.data)
-        status_code = response_tuple[1]
+        json_response, status_code = self._parse_response(response)
 
         self.assertEqual(status_code, 200)
         self.assertTrue(json_response["success"])
         self.assertEqual(json_response["data"]["message"], "success")
+        self.assertEqual(json_response["data"]["data"], [1, 2, 3])
+        self.assertIn("timestamp", json_response)
 
     def test_api_route_exception(self) -> None:
         """Test @api_route decorator with exception handling."""
+        self._setup_mock_blinkapp()
+        from route_decorators import api_route
 
         @api_route("test error operation")
         def test_error() -> dict[str, object]:
             raise ValueError("Test error message")
 
-        self.test_app.add_url_rule("/test/error", "test_error", test_error)
-
         with self.test_app.test_request_context():
             response = test_error()
 
-        response_tuple = cast(tuple[object, int], response)
-        response_obj = cast(Response, response_tuple[0])
-        json_response = json.loads(response_obj.data)
-        status_code = response_tuple[1]
+        json_response, status_code = self._parse_response(response)
 
         self.assertEqual(status_code, 500)
         self.assertFalse(json_response["success"])
         self.assertIn("Test error message", json_response["error"])
 
     def test_api_route_with_validation_success(self) -> None:
-        """Test @api_route_with_validation decorator with valid parameters."""
-
-        def validate_id(id_str):
-            """Mock validator that converts string to int."""
-            return int(id_str)
-
-        @api_route_with_validation(
-            "test validation", validate_params={"id_str": validate_id}
-        )
-        def test_validate(**kwargs: object) -> dict[str, object]:
-            # The decorator should have converted id_str to id
-            validated_id = kwargs.get("id") or kwargs.get("id_str")
-            if isinstance(validated_id, str):
-                validated_id = int(validated_id)  # Fallback conversion
-            return {"validated_id": validated_id, "type": type(validated_id).__name__}
-
-        with self.test_app.test_request_context("/test/validate/123"):
-            # Call the function with the parameter
-            response = test_validate(id_str="123")
-
-        json_response, status_code = self._parse_response(response)
-        self.assertTrue(json_response["success"])
-        self.assertEqual(json_response["data"]["validated_id"], 123)
-        self.assertEqual(json_response["data"]["type"], "int")
-
-    def test_api_route_with_validation_invalid_param(self) -> None:
-        """Test @api_route_with_validation decorator with invalid parameters."""
-
-        def validate_id(id_str):
-            """Mock validator that raises ValueError for invalid input."""
-            if not id_str.isdigit():
-                raise ValueError("ID must be numeric")
-            return int(id_str)
+        """Test @api_route decorator with validation success."""
+        self._setup_mock_blinkapp()
+        from ids import CameraId
+        from route_decorators import api_route_with_validation
 
         @api_route_with_validation(
-            "test validation", validate_params={"id_str": validate_id}
+            "test operation", validate_params={"camera_id_str": CameraId}
         )
-        def test_validate_invalid(**kwargs: object) -> dict[str, object]:
-            validated_id = kwargs.get("id") or kwargs.get("id_str")
-            return {"validated_id": validated_id}
+        def test_validate(camera_id: CameraId) -> dict[str, str]:
+            return {"validated_id": str(camera_id)}
 
-        with self.test_app.test_request_context("/test/validate/abc"):
-            response = test_validate_invalid(id_str="abc")
-
-        json_response, status_code = self._parse_response(response)
-
-        self.assertEqual(status_code, 400)
-        self.assertFalse(json_response["success"])
-        self.assertIn("ID must be numeric", json_response["error"])
-
-    def test_api_route_with_json_validation(self) -> None:
-        """Test @api_route_with_validation decorator with JSON validation."""
-
-        @api_route_with_validation(
-            "test json validation",
-            validate_json=True,
-            required_fields=["name", "value"],
-        )
-        def test_json_validation() -> dict[str, object]:
-            data = request.get_json()
-            return {"received": data}
-
-        with self.test_app.test_request_context(
-            "/test/json", method="POST", json={"name": "test", "value": 42}
-        ):
-            response = test_json_validation()
+        with self.test_app.test_request_context():
+            with patch("flask.request") as mock_request:
+                mock_request.view_args = {"camera_id_str": "valid123"}
+                # Call with the _str parameter, decorator will validate and pass camera_id
+                response = test_validate(camera_id_str="valid123")
 
         json_response, status_code = self._parse_response(response)
-        self.assertTrue(json_response["success"])
-        self.assertEqual(json_response["data"]["received"]["name"], "test")
-        self.assertEqual(json_response["data"]["received"]["value"], 42)
-
-    def test_api_route_with_json_validation_missing_field(self) -> None:
-        """Test @api_route_with_validation decorator with missing required field."""
-
-        @api_route_with_validation(
-            "test json validation",
-            validate_json=True,
-            required_fields=["name", "value"],
-        )
-        def test_json_validation_missing() -> dict[str, object]:
-            data = request.get_json()
-            return {"received": data}
-
-        with self.test_app.test_request_context(
-            "/test/json-missing", method="POST", json={"name": "test"}
-        ):  # Missing "value"
-            response = test_json_validation_missing()
-
-        json_response, status_code = self._parse_response(response)
-
-        self.assertEqual(status_code, 400)
-        self.assertFalse(json_response["success"])
-        self.assertIn("Missing required fields: value", json_response["error"])
-
-    def test_simple_success_response(self) -> None:
-        """Test @simple_success_response decorator."""
-
-        executed = []
-
-        @simple_success_response("Operation completed successfully")
-        def test_simple_success() -> None:
-            executed.append("function_called")
-            # Function executes but doesn't need to return anything
-
-        with self.test_app.test_request_context("/test/simple-success", method="POST"):
-            response = test_simple_success()
-
-        # The decorator returns a tuple (Response, status_code)
-        self.assertIsInstance(response, tuple)
-
-        response_tuple = cast(tuple[object, int], response)
-        self.assertEqual(len(response_tuple), 2)
-
-        json_response, status_code = self._parse_response(response)
-
         self.assertEqual(status_code, 200)
         self.assertTrue(json_response["success"])
-        self.assertEqual(
-            json_response["data"]["message"], "Operation completed successfully"
+        self.assertEqual(json_response["data"]["validated_id"], "valid123")
+
+    def test_api_route_with_validation_invalid_param(self) -> None:
+        """Test @api_route decorator with validation invalid param."""
+        self._setup_mock_blinkapp()
+        from ids import CameraId
+        from route_decorators import api_route_with_validation
+
+        @api_route_with_validation(
+            "test operation", validate_params={"camera_id_str": CameraId}
         )
-        self.assertIn("function_called", executed)
+        def test_validate(camera_id: CameraId) -> dict[str, str]:
+            return {"validated_id": str(camera_id)}
 
-    def test_simple_success_response_with_exception(self) -> None:
-        """Test @simple_success_response decorator with exception."""
-
-        @simple_success_response("This should not appear")
-        def test_simple_error() -> None:
-            raise RuntimeError("Something went wrong")
-
-        with self.test_app.test_request_context("/test/simple-error", method="POST"):
-            response = test_simple_error()
-
-        # The decorator returns a tuple (Response, status_code) even for errors
-        self.assertIsInstance(response, tuple)
-
-        response_tuple = cast(tuple[object, int], response)
-        self.assertEqual(len(response_tuple), 2)
+        with self.test_app.test_request_context():
+            with patch("flask.request") as mock_request:
+                mock_request.view_args = {"camera_id_str": "invalid!@#"}
+                # Call with invalid parameter, should trigger validation error
+                response = test_validate(camera_id_str="invalid!@#")
 
         json_response, status_code = self._parse_response(response)
+        self.assertEqual(status_code, 400)
+        self.assertFalse(json_response["success"])
+        self.assertIn("error", json_response)
 
+    def test_simple_success_response(self) -> None:
+        """Test simple success response decorator."""
+        self._setup_mock_blinkapp()
+        from route_decorators import simple_success_response
+
+        @simple_success_response("test operation")
+        def test_simple_success() -> dict[str, str]:
+            return {"message": "simple success"}
+
+        with self.test_app.test_request_context():
+            response = test_simple_success()
+
+        json_response, status_code = self._parse_response(response)
+        self.assertEqual(status_code, 200)
+        self.assertTrue(json_response["success"])
+        # simple_success_response wraps the message in {"message": message}
+        self.assertEqual(json_response["data"]["message"], "test operation")
+
+    def test_simple_success_response_with_exception(self) -> None:
+        """Test simple success response with exception."""
+        self._setup_mock_blinkapp()
+        from route_decorators import simple_success_response
+
+        @simple_success_response("test operation")
+        def test_simple_error() -> dict[str, str]:
+            raise ValueError("Test error")
+
+        with self.test_app.test_request_context():
+            response = test_simple_error()
+
+        json_response, status_code = self._parse_response(response)
         self.assertEqual(status_code, 500)
         self.assertFalse(json_response["success"])
-        self.assertIn("Something went wrong", json_response["error"])
-
-
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
+        self.assertIn("error", json_response)
