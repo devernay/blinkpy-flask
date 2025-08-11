@@ -8,12 +8,13 @@ the application for testing without modifying production code.
 import functools
 import os
 import sys
-import unittest
 from collections.abc import Callable
 from typing import Any, TypeVar, cast
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from test_app import BaseTestCase
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -76,7 +77,7 @@ def setup_test_globals():
             # Additional test setup can be added here
 
     Example:
-        class MyTestClass(unittest.TestCase):
+        class MyTestClass(BaseTestCase):
             def setUp(self) -> None:
                 setup_test_globals()
                 self.mock_blink = Mock()
@@ -88,10 +89,10 @@ def setup_test_globals():
     initialize_for_testing()
 
 
-class BaseTestCase(unittest.TestCase):
+class BaseTestCase(BaseTestCase):
     """Base test case that automatically initializes app globals.
 
-    Test classes can inherit from this instead of unittest.TestCase
+    Test classes can inherit from this instead of BaseTestCase
     to automatically get proper initialization without needing to
     remember to call setup functions or use decorators.
 

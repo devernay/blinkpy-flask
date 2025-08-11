@@ -15,12 +15,14 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
+from test_app import BaseTestCase
+
 import blinkapp
 from blinkapp import CameraId, ClipId, Config
 from ids import BaseId
 
 
-class TestBaseIdNotImplementedMethods(unittest.TestCase):
+class TestBaseIdNotImplementedMethods(BaseTestCase):
     """Test BaseId NotImplementedError methods - lines 211, 222."""
 
     def test_base_id_get_pattern_not_implemented(self) -> None:
@@ -68,7 +70,7 @@ class TestBaseIdNotImplementedMethods(unittest.TestCase):
             TestId("")
 
 
-class TestCachePathValidation(unittest.TestCase):
+class TestCachePathValidation(BaseTestCase):
     """Test cache path validation - lines 747-751."""
 
     @patch("blinkapp.CACHE_DIR", None)
@@ -116,7 +118,7 @@ class TestCachePathValidation(unittest.TestCase):
             ensure_cache_paths_initialized()
 
 
-class TestValidationClassMethods(unittest.TestCase):
+class TestValidationClassMethods(BaseTestCase):
     """Test validation class methods that are currently untested."""
 
     def test_camera_id_str_method(self) -> None:
@@ -177,7 +179,7 @@ class TestValidationClassMethods(unittest.TestCase):
             self.assertTrue(True)
 
 
-class TestConfigurationValues(unittest.TestCase):
+class TestConfigurationValues(BaseTestCase):
     """Test configuration values and constants."""
 
     def test_config_constants_exist(self) -> None:
@@ -215,7 +217,7 @@ class TestConfigurationValues(unittest.TestCase):
             self.assertTrue(hasattr(Config.ErrorMessages, "SYNC_MODULE_NOT_FOUND"))
 
 
-class TestGlobalVariableAccess(unittest.TestCase):
+class TestGlobalVariableAccess(BaseTestCase):
     """Test global variable access patterns."""
 
     def test_app_instance_access(self) -> None:
@@ -253,7 +255,7 @@ class TestGlobalVariableAccess(unittest.TestCase):
         # stream_manager might be None initially
 
 
-class TestUtilityFunctions(unittest.TestCase):
+class TestUtilityFunctions(BaseTestCase):
     """Test utility functions that are currently untested."""
 
     def test_create_api_response_variations(self) -> None:
@@ -290,7 +292,7 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertIsInstance(result, str)
 
 
-class TestErrorHandlingPaths(unittest.TestCase):
+class TestErrorHandlingPaths(BaseTestCase):
     """Test error handling code paths."""
 
     def test_exception_handling_patterns(self) -> None:
@@ -322,7 +324,7 @@ class TestErrorHandlingPaths(unittest.TestCase):
         self.assertIsNotNone(result)
 
 
-class TestImportAndModuleLoading(unittest.TestCase):
+class TestImportAndModuleLoading(BaseTestCase):
     """Test import statements and module loading."""
 
     def test_flask_imports(self) -> None:
@@ -361,7 +363,7 @@ class TestImportAndModuleLoading(unittest.TestCase):
         self.assertTrue(callable(blinkapp.ClipId))
 
 
-class TestBasicOperations(unittest.TestCase):
+class TestBasicOperations(BaseTestCase):
     """Test basic operations that should increase coverage."""
 
     def test_string_formatting_operations(self) -> None:

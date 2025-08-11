@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
 from cachetools import LRUCache
+from test_app import BaseTestCase
 
 from blinkapp import (
     CameraId,
@@ -27,7 +28,7 @@ from blinkapp import (
 )
 
 
-class TestLoggingSetup(unittest.TestCase):
+class TestLoggingSetup(BaseTestCase):
     """Test logging setup functionality - lines 441-452."""
 
     @patch("logging.getLogger")
@@ -63,7 +64,7 @@ class TestLoggingSetup(unittest.TestCase):
         self.assertTrue(hasattr(Config, "LOG_BACKUP_COUNT"))
 
 
-class TestBlinkInitialization(unittest.TestCase):
+class TestBlinkInitialization(BaseTestCase):
     """Test Blink system initialization - lines 800-820."""
 
     @patch("blinkapp.blink_connection")
@@ -130,7 +131,7 @@ class TestBlinkInitialization(unittest.TestCase):
             self.assertTrue(True)
 
 
-class TestThumbnailCacheUpdate(unittest.TestCase):
+class TestThumbnailCacheUpdate(BaseTestCase):
     """Test thumbnail cache update mechanism - lines 939-992."""
 
     def setUp(self) -> None:
@@ -191,7 +192,7 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
             self.assertTrue(True)
 
 
-class TestTimeFormatting(unittest.TestCase):
+class TestTimeFormatting(BaseTestCase):
     """Test time formatting functions - lines 890-915."""
 
     def test_time_difference_calculation(self) -> None:
@@ -230,22 +231,22 @@ class TestTimeFormatting(unittest.TestCase):
 
         self.assertEqual(expected, "2d ago")
 
-    @patch("blinkapp.format_time_ago")
-    def test_time_formatting_error_handling(self, mock_format: Mock) -> None:
+    def test_time_formatting_error_handling(self) -> None:
         """Test error handling in time formatting."""
-        mock_format.return_value = "Never"
+        with patch("blinkapp.format_time_ago") as mock_format:
+            mock_format.return_value = "Never"
 
-        # Test invalid timestamp handling
-        try:
-            # This will raise TypeError when passing string to fromtimestamp
-            datetime.fromtimestamp("invalid")  # type: ignore
-        except (ValueError, TypeError):
-            # Should fall back to format_time_ago
-            result = mock_format("fallback_value")
-            self.assertEqual(result, "Never")
+            # Test invalid timestamp handling
+            try:
+                # This will raise TypeError when passing string to fromtimestamp
+                datetime.fromtimestamp("invalid")  # type: ignore
+            except (ValueError, TypeError):
+                # Should fall back to format_time_ago
+                result = mock_format("fallback_value")
+                self.assertEqual(result, "Never")
 
 
-class TestCacheDirectoryOperations(unittest.TestCase):
+class TestCacheDirectoryOperations(BaseTestCase):
     """Test cache directory operations - lines 1316-1322."""
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
@@ -285,7 +286,7 @@ class TestCacheDirectoryOperations(unittest.TestCase):
         self.assertTrue(mock_executor.called)
 
 
-class TestErrorContextManager(unittest.TestCase):
+class TestErrorContextManager(BaseTestCase):
     """Test error context manager functionality."""
 
     def test_error_context_success(self) -> None:
@@ -312,7 +313,7 @@ class TestErrorContextManager(unittest.TestCase):
             self.assertTrue(True)
 
 
-class TestValidationClasses(unittest.TestCase):
+class TestValidationClasses(BaseTestCase):
     """Test validation classes and their patterns."""
 
     def test_camera_id_validation_patterns(self) -> None:
@@ -364,7 +365,7 @@ class TestValidationClasses(unittest.TestCase):
             self.assertTrue(True)
 
 
-class TestCachePathInitialization(unittest.TestCase):
+class TestCachePathInitialization(BaseTestCase):
     """Test cache path initialization - lines 754-775."""
 
     @patch("blinkapp.app")
@@ -400,7 +401,7 @@ class TestCachePathInitialization(unittest.TestCase):
         self.assertTrue(success or mock_app.config.get.called)
 
 
-class TestAPIResponseCreation(unittest.TestCase):
+class TestAPIResponseCreation(BaseTestCase):
     """Test API response creation functionality."""
 
     def test_create_api_response_success_with_data(self) -> None:
@@ -443,7 +444,7 @@ class TestAPIResponseCreation(unittest.TestCase):
         self.assertIn("T", timestamp_str)  # ISO format contains T
 
 
-class TestLRUCacheAdvanced(unittest.TestCase):
+class TestLRUCacheAdvanced(BaseTestCase):
     """Test advanced LRU cache functionality."""
 
     def test_lru_cache_thread_safety(self) -> None:
