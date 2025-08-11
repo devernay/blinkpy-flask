@@ -12,13 +12,16 @@ from typing import Any, TypeVar
 
 from cachetools import Cache, LRUCache
 
-# Generic type variable for cache implementation
-CacheImpl = TypeVar("CacheImpl", bound=Cache)
+from ids import CameraId, ClipId
+
+# Generic type variables for key and value types
+K = TypeVar("K")  # Key type
+V = TypeVar("V")  # Value type
 
 logger = logging.getLogger(__name__)
 
 
-class ThreadSafeCache[CacheImpl](Cache):
+class ThreadSafeCache[K, V](Cache[K, V]):
     """Thread-safe cache wrapper using multiple inheritance.
 
     This class provides thread-safe access to any cache implementation
@@ -34,7 +37,7 @@ class ThreadSafeCache[CacheImpl](Cache):
         >>> cache = MyLRUCache(maxsize=50)
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize cache with thread safety.
 
         Args:
@@ -45,22 +48,22 @@ class ThreadSafeCache[CacheImpl](Cache):
         # Use RLock to allow recursive locking from same thread
         self._lock = threading.RLock()
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key: K, value: V) -> None:
         """Thread-safe setitem method."""
         with self._lock:
             super().__setitem__(key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: K) -> V:
         """Thread-safe getitem method."""
         with self._lock:
             return super().__getitem__(key)
 
-    def __delitem__(self, key) -> None:
+    def __delitem__(self, key: K) -> None:
         """Thread-safe delitem method."""
         with self._lock:
             super().__delitem__(key)
 
-    def __contains__(self, key) -> bool:
+    def __contains__(self, key: K) -> bool:
         """Thread-safe contains method for membership testing."""
         with self._lock:
             return super().__contains__(key)
@@ -76,17 +79,17 @@ class ThreadSafeCache[CacheImpl](Cache):
             # Create a list to avoid iteration during lock
             return iter(list(super().keys()))
 
-    def get(self, key, default=None):
+    def get(self, key: K, default: V | None = None) -> V | None:
         """Thread-safe get method with optional default value."""
         with self._lock:
             return super().get(key, default)
 
-    def pop(self, key, *args):
+    def pop(self, key: K, *args: V) -> V:
         """Thread-safe pop method."""
         with self._lock:
             return super().pop(key, *args)
 
-    def setdefault(self, key, default=None):
+    def setdefault(self, key: K, default: V | None = None) -> V | None:
         """Thread-safe setdefault method."""
         with self._lock:
             return super().setdefault(key, default)
@@ -131,7 +134,15 @@ class ThreadSafeCache[CacheImpl](Cache):
             }
 
 
-class ThumbnailCache(ThreadSafeCache[LRUCache], LRUCache):
+class ThreadSafeLRUCache[K, V](ThreadSafeCache[K, V], LRUCache[K, V]):
+    """Thread-safe LRU cache implementation."""
+
+    def __init__(self, maxsize: int = 128, **kwargs: Any) -> None:
+        """Initialize with LRU eviction policy."""
+        super().__init__(maxsize, **kwargs)
+
+
+class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
     """Specialized cache for camera thumbnails with timestamp tracking.
 
     Extends ThreadSafeCache with thumbnail-specific functionality including
@@ -198,7 +209,7 @@ class ThumbnailCache(ThreadSafeCache[LRUCache], LRUCache):
         self[camera_id] = cache_entry
 
 
-class ClipsCache(ThreadSafeCache[LRUCache], LRUCache):
+class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
     """Specialized cache for video clips with metadata and access tracking.
 
     Extends ThreadSafeCache with clip-specific functionality including

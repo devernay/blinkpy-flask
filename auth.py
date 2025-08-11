@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 from typing import Literal, cast
 
-from flask import redirect, render_template, request, session, url_for
+from flask import Flask, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 
 from app_types import AuthJsonDict as JsonDict
@@ -40,7 +40,9 @@ def is_authenticated() -> bool:
         True if authenticated and ready for API calls, False otherwise
     """
     # Import here to avoid circular imports
-    from blinkapp import blink
+    import blinkapp
+
+    blink = blinkapp.blink
 
     return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete  # type: ignore[attr-defined]
 
@@ -78,7 +80,9 @@ async def initialize_blink(
         ...     pass
     """
     # Import here to avoid circular imports during module initialization
-    from blinkapp import blink_connection
+    import blinkapp
+
+    blink_connection = blinkapp.blink_connection
 
     with error_context("initialize Blink system", AuthenticationError):
         from aiohttp import ClientSession
@@ -251,7 +255,7 @@ async def load_saved_blink() -> bool:
     return False
 
 
-def setup_auth_routes(app_instance):
+def setup_auth_routes(app_instance: Flask) -> None:
     """Set up authentication routes on the Flask app instance."""
 
     @app_instance.route("/login", methods=["GET", "POST"])

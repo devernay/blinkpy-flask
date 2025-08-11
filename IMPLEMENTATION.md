@@ -384,9 +384,9 @@ This refactoring would improve maintainability, reduce bugs, and make the codeba
 
 ---
 
-Check that Python type hints are used thoroughly through the code. Try to avoid using `Any` if possible: infer the type by reading the app code or the blinkpy code. Check that docstrings are complete with parameters description.
+This code is using Python 3.12. Fix all typing issues in the main application code *and* in tests: first, run ruff check and fix errors. Then run pyright and fix errors. Avoid using "# type: ignore" as much as possible, as it defeats type checking, and document clearly why there's no other solution using code comments. Make sure to use best practices to fix these issues, and do not apply any quick-and-dirty fix. If some errors cannot be fixed, even with some efforts, or require dirty fixes: mark these in the code with a TODO comment, report in a file "LINTING_REPORT.md", and give hints to fix the issues. Do not try to fix anything in the blinkpy library, which is third-party code.
 
-Move all testing code in a subdirectory, and clean up the workspace. Make sure that instructions to launch tests are available in README.md. Check that README.md is up-to-date with the code.
+Check and update `tests/test_doubts.md`: do these tests still exist? are there new doubts that should be added? Also update the file `tests/tests_results_baseline.md` with all the current test results, starting with a summary. This file will be used to check for any regression in future changes.
 
 Fix all failing tests one by one, except those already marked as "Test Doubts and Unfixable Tests" in `tests/test_doubts.md`. Figure out if each test fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later.
 
@@ -396,7 +396,6 @@ Make sure that the main code doesn't have lines that are specifically written fo
 
 Check for any duplicate or redundant tests, and factorize them. Organize unit tests to mimic the main code organization.
 
-Check and update `tests/test_doubts.md`: do these tests still exist? are there new doubts that should be added? Also create a file `tests/tests_results_baseline.md` with the current test results, starting with a summary. This file will be used to check for any regression in future changes.
 
 Check for any inconsistencies or duplicate code in the main app code.
 
@@ -406,9 +405,8 @@ Clean up main code and test code, remove unnecessary workarounds. There are some
 
 It looks like some tests such as `tests/test_coverage_boost.py`, `tests/test_advanced_overage.py`, `tests/test_critical_coverage.py` were not included in the test suite. Can you include them, run the full tests again, and report?
 
-Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code to reach at least a 25% comments-to-code ratio. Make sure docstrings are complete and up-to-date.
+Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
 
-The HLS route should be "/api/camera/{camera_id}/hls/{filename}" rather than "/api/hls/{camera_id}/{filename}". Change this in the Python and Javascript code, as well as in `api.json`.
 
 Next, we will write a full developer documentation detailing, not necessarily in that order:
 - The general organization of the code, describing the function of each file.
@@ -426,5 +424,3 @@ Next, we will write a full developer documentation detailing, not necessarily in
 You can find some existing documentation in IMPLEMENTATIONS.md and in the various .md files your can find in this repository, but it is not well organized.
 The developper documentation should be in markdown format, in a fine called DOCUMENTATION.md.
 First, you should sketch the plan of the documentation, with sections and subsections, and after I approve you can continue filling in the details.
-
-Fix all typing issues in the main application code *and* in tests: first, run ruff check and fix errors. Then run mypy and fix errors. Then run pyright and fix errors. Avoid using "# type: ignore" as much as possible, as it defeats type checking, and document clearly why there's no other solution using code comments. Make sure to use best practices to fix these issues, and do not apply any quick-and-dirty fix. If some errors cannot be fixed, even with some efforts, or require dirty fixes: mark these in the code with a TODO comment, report in a file "LINTING_REPORT.md", and give hints to fix the issues. Do not try to fix anything in the blinkpy library, which is third-party code.

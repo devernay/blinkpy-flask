@@ -195,7 +195,7 @@ def update_camera_thumbnail(
         """
         # Double-check timestamp to prevent race condition with concurrent requests
         # Another request might have updated the cache while we were queued
-        current_entry = thumbnail_cache.get(str(cache_key))
+        current_entry = thumbnail_cache.get(cache_key)
         current_cached_ts = (
             int(current_entry.get("timestamp", 0)) if current_entry else 0
         )
@@ -204,7 +204,7 @@ def update_camera_thumbnail(
             return
 
         # Clean up old cached file to prevent disk space accumulation
-        old_entry = thumbnail_cache.get(str(cache_key))
+        old_entry = thumbnail_cache.get(cache_key)
         if old_entry is not None:
             old_filename = old_entry.get("filename")
             if old_filename is not None:
@@ -231,7 +231,7 @@ def update_camera_thumbnail(
             try:
                 filepath.write_bytes(image_data)
                 # Update cache info atomically
-                thumbnail_cache[str(cache_key)] = {
+                thumbnail_cache[cache_key] = {
                     "timestamp": current_ts,
                     "filename": filename,
                 }
@@ -382,6 +382,7 @@ def setup_camera_routes(app: Flask) -> None:
             logger.info(f"Livestream TCP URL for camera {camera_id}: {tcp_url}")
 
             # Start HLS transcoding from the TCP stream
+            error_msg = "Failed to start HLS transcoding"  # Default error message
             if stream_manager is not None:
                 hls_url, error_msg = stream_manager.start_stream(
                     str(camera_id), tcp_url
@@ -567,7 +568,7 @@ def setup_camera_routes(app: Flask) -> None:
 
         # Check cache first
         cache_key = str(camera_id)
-        cached_info = thumbnail_cache.get(str(cache_key))
+        cached_info = thumbnail_cache.get(cache_key)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
         cached_ts = 0  # Default value
 

@@ -2,7 +2,8 @@
 """
 Blink Camera Flask Web Interface
 
-A comprehensive web application for managing Blink camera systems with features including:
+A comprehensive web application for managing Blink camera systems with features
+including:
 - Multi-system support with real-time camera thumbnails
 - Live streaming via TCP to HLS transcoding using Blink's init_livestream()
 - Cloud and local clip management with thumbnail generation
@@ -205,7 +206,10 @@ def handle_api_error(
     # internal implementation details to end users
     error_message = str(error)
     if isinstance(error, ConnectionError):
-        error_message = "Unable to connect to your Blink system. Please check your internet connection and try again."
+        error_message = (
+            "Unable to connect to your Blink system. Please check your "
+            "internet connection and try again."
+        )
     elif isinstance(error, TimeoutError):
         error_message = "The request timed out. Please try again in a moment."
     elif isinstance(error, ValueError):
@@ -591,7 +595,9 @@ def create_device_data(
         - wifi_strength: WiFi signal strength (if available)
 
     Example:
-        >>> device = create_device_data(camera, CameraId("12345"), 1609459200, 1609459100)
+        >>> device = create_device_data(
+        ...     camera, CameraId("12345"), 1609459200, 1609459100
+        ... )
         >>> device["last_updated"]
         "5m ago"
     """
@@ -769,10 +775,12 @@ def process_local_clips() -> list[dict[str, object]]:
                         # Create composite clip ID for local clips (sync_name:item_id)
                         clip_id = ClipId.from_local(sync_name, item.id)
                         logger.debug(
-                            f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}"
+                            f"Created local clip ID: {clip_id} from sync: "
+                            f"{sync_name}, item: {item.id}"
                         )
 
-                        # Check for existing thumbnail only (no auto-generation for local)
+                        # Check for existing thumbnail only
+                        # (no auto-generation for local)
                         thumbnail_url = None
                         clips_cache_instance = ensure_clips_cache_initialized()
                         cached_clip = clips_cache_instance.get(clip_id)
@@ -925,7 +933,8 @@ def get_devices(network_id: NetworkId) -> JsonDict:
     """Get devices for a specific Blink system.
 
     Args:
-        network_id: Validated NetworkId object (converted from network_id_str by decorator)
+        network_id: Validated NetworkId object (converted from network_id_str
+            by decorator)
 
     Returns:
         JSON response with list of devices or error message
@@ -959,7 +968,7 @@ def get_devices(network_id: NetworkId) -> JsonDict:
 
         cache_key = CameraId(camera.camera_id)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
-        cached_entry = thumbnail_cache.get(str(cache_key))
+        cached_entry = thumbnail_cache.get(cache_key)
         cached_ts = cached_entry.get("timestamp", 0) if cached_entry else 0
 
         # Update thumbnail if needed
@@ -985,7 +994,8 @@ def arm_system(network_id: NetworkId) -> JsonDict:
     """Arm or disarm a Blink system.
 
     Args:
-        network_id: Validated NetworkId object (converted from network_id_str by decorator)
+        network_id: Validated NetworkId object (converted from network_id_str
+            by decorator)
 
     Returns:
         JSON response with success status or error message
@@ -1629,7 +1639,7 @@ def serve_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
 
 @app.route("/api/clip/<clip_id_str>/thumbnail")
 @file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
-def get_clip_thumbnail(clip_id) -> ResponseReturnValue:
+def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:
     """Serve clip thumbnail."""
 
     clips_cache_instance = ensure_clips_cache_initialized()
@@ -1700,7 +1710,7 @@ def get_camera_thumbnail(camera_id: CameraId) -> FlaskResponse:
         raise ValidationError(Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND, 404)
 
     # Check cache first
-    cached_thumbnail = thumbnail_cache.get(str(camera_id))
+    cached_thumbnail = thumbnail_cache.get(camera_id)
     if cached_thumbnail is not None:
         logger.debug(f"Serving cached thumbnail for camera {camera_id}")
         filename = cached_thumbnail["filename"]
@@ -2159,7 +2169,7 @@ def load_thumbnail_cache() -> None:
             # Keep the newest, mark others for removal
             if thumbnails:
                 newest_ts, newest_filename, newest_path = thumbnails[0]
-                thumbnail_cache[str(CameraId(camera_id))] = {
+                thumbnail_cache[CameraId(camera_id)] = {
                     "timestamp": newest_ts,
                     "filename": newest_filename,
                 }

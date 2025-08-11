@@ -75,7 +75,7 @@ def safe_execute(
         return default
 
 
-def requires_blink[P, T](
+def requires_blink(  # noqa: UP047
     func: Callable[P, T],
 ) -> Callable[P, T]:
     """Decorator that ensures blink is available before calling the function.
@@ -101,8 +101,9 @@ def requires_blink[P, T](
 
         # At this point, type checkers know blink is not None and available
         # Import blink here to avoid circular imports
-        from blinkapp import blink
+        import blinkapp
 
+        blink = blinkapp.blink
         assert blink is not None  # Help type checkers understand this
         assert blink.available  # Additional assertion for Pylance
 
@@ -118,7 +119,10 @@ def require_blink() -> ApiResponse | None:
         None if Blink is available, error response tuple if not
     """
     # Import here to avoid circular imports
-    from blinkapp import blink, create_api_response
+    import blinkapp
+
+    blink = blinkapp.blink
+    create_api_response = blinkapp.create_api_response
 
     if blink is None:
         return create_api_response(
