@@ -28,10 +28,12 @@ class TestBaseIdNotImplementedMethods(unittest.TestCase):
 
         # Create a test subclass that implements the abstract methods
         class TestId(BaseId):
-            def _get_pattern(self):
+            @classmethod
+            def _get_pattern(cls):
                 return r"^test$"
 
-            def _get_type_name(self):
+            @classmethod
+            def _get_type_name(cls):
                 return "Test ID"
 
         # Test that the base class methods work
@@ -40,7 +42,8 @@ class TestBaseIdNotImplementedMethods(unittest.TestCase):
 
         # Test that a subclass without _get_type_name raises NotImplementedError
         class IncompleteTestId1(BaseId):
-            def _get_pattern(self):
+            @classmethod
+            def _get_pattern(cls):
                 return r"^test$"
 
             # Missing _get_type_name
@@ -68,10 +71,10 @@ class TestBaseIdNotImplementedMethods(unittest.TestCase):
 class TestCachePathValidation(unittest.TestCase):
     """Test cache path validation - lines 747-751."""
 
-    @patch("blinkblinkapp.CACHE_DIR", None)
-    @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
-    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "test")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
+    @patch("blinkapp.CACHE_DIR", None)
+    @patch("blinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_cache_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CACHE_DIR is None."""
         from blinkapp import ensure_cache_paths_initialized
@@ -79,10 +82,10 @@ class TestCachePathValidation(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
 
-    @patch("blinkblinkapp.CACHE_DIR", "test")
-    @patch("blinkblinkapp.CREDENTIALS_FILE", None)
-    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "test")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
+    @patch("blinkapp.CACHE_DIR", "test")
+    @patch("blinkapp.CREDENTIALS_FILE", None)
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_credentials_file_none(self) -> None:
         """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
         from blinkapp import ensure_cache_paths_initialized
@@ -90,10 +93,10 @@ class TestCachePathValidation(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
 
-    @patch("blinkblinkapp.CACHE_DIR", "test")
-    @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
-    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", None)
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "test")
+    @patch("blinkapp.CACHE_DIR", "test")
+    @patch("blinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", None)
+    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
         from blinkapp import ensure_cache_paths_initialized
@@ -101,10 +104,10 @@ class TestCachePathValidation(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
 
-    @patch("blinkblinkapp.CACHE_DIR", "test")
-    @patch("blinkblinkapp.CREDENTIALS_FILE", "test")
-    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "test")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", None)
+    @patch("blinkapp.CACHE_DIR", "test")
+    @patch("blinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkapp.CLIPS_CACHE_DIR", None)
     def test_ensure_cache_paths_clips_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
         from blinkapp import ensure_cache_paths_initialized
@@ -222,7 +225,13 @@ class TestGlobalVariableAccess(unittest.TestCase):
 
     def test_cache_instance_access(self) -> None:
         """Test cache instance access."""
+        # Initialize caches first
+        from cache import initialize_caches
+
+        initialize_caches({})
+
         # Import caches from cache module, not blinkapp
+        import blinkapp
         from cache import clips_cache, thumbnail_cache
 
         self.assertIsNotNone(thumbnail_cache)
@@ -232,7 +241,13 @@ class TestGlobalVariableAccess(unittest.TestCase):
         # Test cache methods exist
         if thumbnail_cache:
             self.assertTrue(hasattr(thumbnail_cache, "get"))
-        self.assertTrue(hasattr(blinkapp.thumbnail_cache, "clear"))
+
+        # Test that ensure functions work correctly
+        thumbnail_cache_instance = blinkapp.ensure_thumbnail_cache_initialized()
+        clips_cache_instance = blinkapp.ensure_clips_cache_initialized()
+
+        self.assertTrue(hasattr(thumbnail_cache_instance, "clear"))
+        self.assertTrue(hasattr(clips_cache_instance, "clear"))
 
     def test_blink_connection_access(self) -> None:
         """Test blink_connection access."""
@@ -335,7 +350,8 @@ class TestImportAndModuleLoading(unittest.TestCase):
         self.assertTrue(hasattr(app_module, "sys"))
         # json is not imported at module level in blinkapp.py
         self.assertTrue(hasattr(app_module, "datetime"))
-        self.assertTrue(hasattr(app_module, "threading"))
+        # threading is not imported at module level in blinkapp.py
+        # self.assertTrue(hasattr(app_module, "threading"))
 
     def test_third_party_imports(self) -> None:
         """Test third-party imports."""

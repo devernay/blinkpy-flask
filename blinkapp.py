@@ -23,7 +23,6 @@ License: MIT
 """
 
 import argparse
-import asyncio
 import atexit
 import logging
 import os
@@ -58,8 +57,6 @@ from cache import (
 
 # Camera operations and route handlers
 from camera import (
-    find_camera_by_id,
-    require_camera,
     setup_camera_routes,
     update_camera_thumbnail,
 )
@@ -89,6 +86,7 @@ from stream_manager import StreamConfig, StreamManager
 # Utility functions for data processing
 from utils import (
     create_api_response,
+    extract_thumbnail_timestamp,
     format_clips_by_day,
     format_time_ago,
     parse_clip_id,
@@ -113,7 +111,6 @@ from flask import (
     session,
     url_for,
 )
-from flask import Response as FlaskResponse
 from flask.typing import ResponseReturnValue
 
 # Type definitions for better code clarity
@@ -502,7 +499,6 @@ def ensure_thumbnail_cache_initialized() -> "ThumbnailCache":
         RuntimeError: If thumbnail_cache hasn't been initialized
     """
     # Import here to avoid circular imports
-    from cache import thumbnail_cache
 
     if thumbnail_cache is None:
         raise RuntimeError(
@@ -527,43 +523,6 @@ def ensure_clips_cache_initialized() -> "ClipsCache":
             "Clips cache not initialized. Call initialize_caches() first."
         )
     return clips_cache
-
-
-def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
-    """Extract timestamp from thumbnail URL.
-
-    Parses the 'ts' parameter from Blink thumbnail URLs to determine
-    when the thumbnail was generated. This timestamp is used for
-    cache invalidation and thumbnail freshness checks.
-
-    The Blink API includes timestamps in thumbnail URLs like:
-    "https://immedia-semi.s3.amazonaws.com/production/...?ts=1234567890"
-
-    Args:
-        thumbnail_url: URL containing ts parameter (e.g., "...?ts=1234567890")
-
-    Returns:
-        Timestamp as integer (Unix epoch), 0 if not found or invalid
-
-    Example:
-        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg?ts=1609459200")
-        1609459200
-        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg")
-        0
-    """
-    if not thumbnail_url:
-        return 0
-    try:
-        import re
-
-        # Extract numeric timestamp from URL query parameter using regex
-        # Pattern matches 'ts=' followed by one or more digits
-        match = re.search(r"ts=([0-9]+)", thumbnail_url)
-        return int(match.group(1)) if match else 0
-    except (AttributeError, ValueError, TypeError) as e:
-        # Log debug info for troubleshooting but don't fail the operation
-        logger.debug(f"Failed to extract timestamp from URL '{thumbnail_url}': {e}")
-        return 0
 
 
 def create_device_data(
@@ -857,11 +816,14 @@ def clear_all_caches() -> dict[str, object]:
 
         # Execute file operations in parallel
         assert THUMBNAIL_CACHE_DIR is not None
-        thumbnail_future = executor.submit(
+        executor_instance = ensure_executor_initialized()
+        thumbnail_future = executor_instance.submit(
             clear_file_cache, THUMBNAIL_CACHE_DIR, "thumbnail"
         )
         assert CLIPS_CACHE_DIR is not None
-        clips_future = executor.submit(clear_file_cache, CLIPS_CACHE_DIR, "clips")
+        clips_future = executor_instance.submit(
+            clear_file_cache, CLIPS_CACHE_DIR, "clips"
+        )
 
         # Wait for completion with timeout
         try:
@@ -886,7 +848,7 @@ def clear_cache() -> JsonDict:
         JSON response with success status
     """
     # Submit cache clearing task to background executor
-    executor.submit(clear_all_caches)
+    ensure_executor_initialized().submit(clear_all_caches)
     return {}  # Decorator will handle the actual response
 
 
@@ -961,6 +923,7 @@ def get_devices(network_id: NetworkId) -> JsonDict:
     )
 
     # Add cameras - refresh thumbnails in Blink thread
+    thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
     for camera_name, camera in sync_module.cameras.items():
         logger.debug(
             f"Processing camera: {camera.name}, current thumbnail: {camera.thumbnail}"
@@ -968,7 +931,7 @@ def get_devices(network_id: NetworkId) -> JsonDict:
 
         cache_key = CameraId(camera.camera_id)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
-        cached_entry = thumbnail_cache.get(cache_key)
+        cached_entry = thumbnail_cache_instance.get(cache_key)
         cached_ts = cached_entry.get("timestamp", 0) if cached_entry else 0
 
         # Update thumbnail if needed
@@ -1178,7 +1141,7 @@ def _download_clip_common(
             # Notify clients that thumbnail is ready
             notify_thumbnail_ready(clip_id)
 
-    executor.submit(generate_thumbnail_bg)
+    ensure_executor_initialized().submit(generate_thumbnail_bg)
     response = send_file(str(filepath), as_attachment=True, download_name=filename)
     return response, 200
     return response, 200
@@ -1250,7 +1213,7 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
                 return False
 
         # Execute download synchronously since we need the file immediately
-        future = executor.submit(download_file)
+        future = ensure_executor_initialized().submit(download_file)
         try:
             success = future.result(timeout=Config.DOWNLOAD_TIMEOUT)
             if not success:
@@ -1417,7 +1380,7 @@ def process_local_clip_background(
         except Exception as e:
             logger.error(f"Error processing local clip {clip_id}: {e}")
 
-    executor.submit(process)
+    ensure_executor_initialized().submit(process)
 
 
 def process_cloud_clip_background(clip_id: ClipId) -> None:
@@ -1491,150 +1454,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         except Exception as e:
             logger.error(f"Error processing cloud clip {clip_id}: {e}")
 
-    executor.submit(process)
-
-
-# Stream management functions moved to StreamManager class
-
-
-# @app.route("/api/camera/<camera_id_str>/liveview")
-@requires_blink
-@api_route_with_validation(
-    "start camera liveview", validate_params={"camera_id_str": CameraId}
-)
-def get_camera_liveview(camera_id: CameraId) -> JsonDict:
-    """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md.
-
-    Args:
-        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-
-    Returns:
-        JSON response with stream URLs (TCP and HLS) or error message
-
-    Raises:
-        ValueError: If camera_id_str is invalid
-    """
-    # camera_id is now validated and converted by the decorator
-    blink_connection = ensure_blink_connection_initialized()
-
-    camera, error_response = require_camera(camera_id)
-    if error_response is not None:
-        # Re-raise as exception to be handled by decorator
-        error_dict, status_code = error_response
-        error_message = error_dict.get("error", "Unknown error")
-        raise ValidationError(str(error_message), status_code)
-
-    assert camera is not None
-
-    # Use init_livestream() as specified in IMPLEMENTATION.md
-    async def init_stream() -> object:
-        stream = await camera.init_livestream()
-        if stream is not None and hasattr(stream, "start") and hasattr(stream, "feed"):
-            await stream.start()
-            # Start feeding the stream in the background
-            asyncio.create_task(stream.feed())
-        return stream
-
-    # Execute the async livestream initialization
-    stream = blink_connection.execute(init_stream())
-
-    if stream is not None:
-        # Get the TCP URL from the stream
-        tcp_url = stream.url
-        logger.info(f"Livestream TCP URL for camera {camera_id}: {tcp_url}")
-
-        # Start HLS transcoding from the TCP stream
-        if stream_manager is not None:
-            hls_url, error_msg = stream_manager.start_stream(str(camera_id), tcp_url)
-        else:
-            hls_url = None
-
-        if hls_url is not None:
-            # Store the stream object for later cleanup
-            blink_connection._active_streams[str(camera_id)] = stream
-
-            return {
-                "tcp_url": tcp_url,
-                "hls_url": hls_url,
-                "stream_id": str(camera_id),
-            }
-        else:
-            # Clean up the stream if HLS transcoding failed
-            if hasattr(stream, "stop"):
-                try:
-                    stream.stop()
-                except Exception as e:
-                    logger.warning(f"Error stopping stream during cleanup: {e}")
-
-            raise RuntimeError(Config.ErrorMessages.HLS_TRANSCODING_FAILED)
-    else:
-        raise RuntimeError(Config.ErrorMessages.LIVE_VIEW_FAILED)
-
-
-# @app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
-@api_route_with_validation(
-    "stop camera liveview", validate_params={"camera_id_str": CameraId}
-)
-def stop_camera_liveview(camera_id: CameraId) -> JsonDict:
-    """Stop live view stream for camera.
-
-    Args:
-        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-
-    Returns:
-        JSON response with success status or error message
-    """
-
-    # Stop the HLS stream
-    if stream_manager is not None:
-        stream_manager.stop_stream(str(camera_id))
-
-    # Stop the TCP livestream if it exists
-    if hasattr(blink_connection, "_active_streams"):
-        stream = blink_connection._active_streams.get(str(camera_id))
-        if stream and hasattr(stream, "stop"):
-            try:
-                stream.stop()
-                logger.info(f"Stopped livestream for camera {camera_id}")
-            except Exception as e:
-                logger.warning(f"Error stopping livestream for camera {camera_id}: {e}")
-            finally:
-                # Remove from active streams
-                del blink_connection._active_streams[str(camera_id)]
-
-    return {"message": "Livestream stopped successfully"}
-
-
-# @app.route("/api/camera/<camera_id_str>/hls/<path:filename>")
-@file_response_route("serve HLS file", validate_params={"camera_id_str": CameraId})
-def serve_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
-    """Serve HLS playlist and segment files.
-
-    Args:
-        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-        filename: Name of the HLS file to serve
-
-    Returns:
-        Flask response with HLS file content or error message
-    """
-    if not stream_manager:
-        raise RuntimeError(Config.ErrorMessages.STREAM_MANAGER_UNAVAILABLE)
-
-    file_path = stream_manager.get_stream_file(str(camera_id), filename)
-
-    if file_path is None:
-        raise FileNotFoundError(Config.ErrorMessages.STREAM_NOT_FOUND)
-
-    if filename.endswith(".m3u8"):
-        file_response = send_file(
-            str(file_path), mimetype="application/vnd.apple.mpegurl"
-        )
-        return file_response
-    elif filename.endswith(".ts"):
-        file_response = send_file(str(file_path), mimetype="video/mp2t")
-        return file_response
-    else:
-        raise ValueError(Config.ErrorMessages.INVALID_FILE_TYPE)
+    ensure_executor_initialized().submit(process)
 
 
 @app.route("/api/clip/<clip_id_str>/thumbnail")
@@ -1651,85 +1471,6 @@ def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:
             return response, 200
 
     raise ValidationError(Config.ErrorMessages.THUMBNAIL_NOT_FOUND, 404)
-
-
-# @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
-@requires_blink
-@api_route_with_validation(
-    "get camera thumbnail timestamp", validate_params={"camera_id_str": CameraId}
-)
-def get_camera_thumbnail_timestamp(camera_id: CameraId) -> JsonDict:
-    """Get camera thumbnail timestamp for polling.
-
-    Args:
-        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-
-    Returns:
-        JSON response with timestamp or error message
-
-    Raises:
-        ValueError: If camera_id_str is invalid
-    """
-    # camera_id is now validated and converted by the decorator
-
-    camera = find_camera_by_id(camera_id)
-    if camera is None:
-        raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
-
-    timestamp = extract_thumbnail_timestamp(camera.thumbnail)
-    logger.info(
-        f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
-    )
-    return {"timestamp": timestamp}
-
-
-# @app.route("/api/camera/<camera_id_str>/thumbnail")
-@requires_blink
-@api_route_with_validation(
-    "get camera thumbnail", validate_params={"camera_id_str": CameraId}
-)
-def get_camera_thumbnail(camera_id: CameraId) -> FlaskResponse:
-    """Proxy camera thumbnail with authentication.
-
-    Args:
-        camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-
-    Returns:
-        Flask Response with image data or error message
-
-    Returns:
-        JPEG image file or JSON error response
-
-    Raises:
-        ValueError: If camera_id_str is invalid
-    """
-    # camera_id is now validated and converted by the decorator
-
-    camera = find_camera_by_id(camera_id)
-    if camera is None or camera.thumbnail is None:
-        raise ValidationError(Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND, 404)
-
-    # Check cache first
-    cached_thumbnail = thumbnail_cache.get(camera_id)
-    if cached_thumbnail is not None:
-        logger.debug(f"Serving cached thumbnail for camera {camera_id}")
-        filename = cached_thumbnail["filename"]
-        assert THUMBNAIL_CACHE_DIR is not None
-        filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
-        if filepath.exists():
-            file_response = send_file(str(filepath), mimetype="image/jpeg")
-            file_response.headers["Cache-Control"] = (
-                "no-cache, no-store, must-revalidate"
-            )
-            return file_response
-
-    # If not cached, fetch via blink operation
-    response = blink_connection.execute(camera.thumbnail)
-    if response is not None and response.status == Config.HTTP_STATUS_OK:
-        image_data = blink_connection.execute(response.read())
-        return FlaskResponse(image_data, mimetype="image/jpeg")
-    else:
-        raise RuntimeError(Config.ErrorMessages.THUMBNAIL_FETCH_FAILED)
 
 
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
@@ -1798,7 +1539,7 @@ def placeholder() -> JsonDict:
         error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
         status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
     )
-    return response  # Return just the dict, decorator handles the response
+    return jsonify(response), status_code
 
 
 def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
@@ -1921,11 +1662,18 @@ def startup() -> None:
 
         # Create cache directories with proper permissions
         assert CACHE_DIR is not None
-        Path(CACHE_DIR).mkdir(exist_ok=True)
+        try:
+            Path(CACHE_DIR).mkdir(exist_ok=True)
+        except OSError as e:
+            logger.error(f"Failed to create cache directory {CACHE_DIR}: {e}")
+
         assert THUMBNAIL_CACHE_DIR is not None
         assert CLIPS_CACHE_DIR is not None
-        Path(cast(str, THUMBNAIL_CACHE_DIR)).mkdir(exist_ok=True)
-        Path(cast(str, CLIPS_CACHE_DIR)).mkdir(exist_ok=True)
+        try:
+            Path(cast(str, THUMBNAIL_CACHE_DIR)).mkdir(exist_ok=True)
+            Path(cast(str, CLIPS_CACHE_DIR)).mkdir(exist_ok=True)
+        except OSError as e:
+            logger.error(f"Failed to create cache subdirectories: {e}")
 
         # Configure logging with file rotation after cache paths are ready
         setup_logging()
@@ -1938,6 +1686,16 @@ def startup() -> None:
             idle_timeout=Config.STREAM_IDLE_TIMEOUT,  # Auto-cleanup idle streams
         )
         stream_manager = StreamManager(stream_config)
+
+        # Initialize cache instances
+        from cache import initialize_caches
+
+        initialize_caches(
+            {
+                "thumbnail_cache_size": Config.THUMBNAIL_CACHE_SIZE,
+                "clips_cache_size": Config.CLIPS_CACHE_SIZE,
+            }
+        )
 
         # Restore cached thumbnails from previous sessions
         load_thumbnail_cache()
@@ -2194,7 +1952,7 @@ def load_thumbnail_cache() -> None:
                     logger.warning(f"Could not remove thumbnail file {file_path}: {e}")
 
         if files_to_remove:
-            executor.submit(remove_files, files_to_remove)
+            ensure_executor_initialized().submit(remove_files, files_to_remove)
 
     except Exception as e:
         logger.error(f"Error scanning thumbnail cache: {e}")
@@ -2303,7 +2061,7 @@ def load_clips_cache() -> None:
                     logger.warning(f"Could not remove file {file_path}: {e}")
 
         if files_to_remove:
-            executor.submit(remove_files, files_to_remove)
+            ensure_executor_initialized().submit(remove_files, files_to_remove)
 
     except (OSError, PermissionError) as e:
         logger.error(f"Error scanning clips cache: {e}")

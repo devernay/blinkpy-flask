@@ -43,8 +43,10 @@ class TestLoggingSetup(unittest.TestCase):
         mock_file.return_value = mock_file_handler
 
         try:
-            from blinkapp import setup_logging
+            from blinkapp import initialize_cache_paths, setup_logging
 
+            # Initialize cache paths before logging setup
+            initialize_cache_paths()
             setup_logging()
             # Should create handlers and configure logger
             mock_logger.assert_called()
@@ -153,8 +155,12 @@ class TestThumbnailCacheUpdate(unittest.TestCase):
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         try:
+            from blinkapp import initialize_cache_paths, initialize_caches
             from camera import update_camera_thumbnail
 
+            # Initialize cache paths and caches before thumbnail operations
+            initialize_cache_paths()
+            initialize_caches()
             camera_id = CameraId("test123")
             update_camera_thumbnail(self.mock_camera, camera_id, 2000, 1000)
             # Should submit task to executor

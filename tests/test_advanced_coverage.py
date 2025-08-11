@@ -26,8 +26,8 @@ class TestLiveStreamOperations(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkblinkapp.stream_manager")
-    @patch("blinkblinkapp.blink_connection")
+    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.blink_connection")
     @patch("camera.find_camera_by_id")
     def test_get_camera_liveview_success(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
@@ -57,8 +57,8 @@ class TestLiveStreamOperations(unittest.TestCase):
             response.status_code, [200, 500]
         )  # May fail due to async complexity
 
-    @patch("blinkblinkapp.stream_manager")
-    @patch("blinkblinkapp.blink_connection")
+    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.blink_connection")
     @patch("camera.find_camera_by_id")
     def test_get_camera_liveview_no_stream_manager(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
@@ -84,8 +84,8 @@ class TestLiveStreamOperations(unittest.TestCase):
         # Should return error
         self.assertIn(response.status_code, [404, 500])
 
-    @patch("blinkblinkapp.stream_manager")
-    @patch("blinkblinkapp.blink_connection")
+    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.blink_connection")
     @patch("camera.find_camera_by_id")
     def test_get_camera_liveview_stream_init_failure(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
@@ -111,8 +111,8 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.send_file")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.send_file")
     @patch("pathlib.Path.exists")
     def test_download_local_clip_cached_success(
         self, mock_exists: Mock, mock_send_file: Mock, mock_cache: Mock
@@ -135,8 +135,8 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.blink")
     def test_download_local_clip_sync_not_found(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -155,8 +155,8 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.blink")
     def test_download_local_clip_no_local_storage(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -178,8 +178,8 @@ class TestLocalClipDownloadOperations(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.blink")
     def test_download_local_clip_item_not_found(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -208,7 +208,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_generate_clip_thumbnail_success(
         self, mock_exists: Mock, mock_subprocess: Mock
     ) -> None:
@@ -231,7 +231,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_generate_clip_thumbnail_existing_file(
         self, mock_exists: Mock, mock_subprocess: Mock
     ) -> None:
@@ -254,7 +254,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_generate_clip_thumbnail_ffmpeg_error(
         self, mock_exists: Mock, mock_subprocess: Mock
     ) -> None:
@@ -279,7 +279,7 @@ class TestVideoProcessingOperations(unittest.TestCase):
 
     @patch("subprocess.run")
     @patch("pathlib.Path.exists")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_generate_clip_thumbnail_exception_handling(
         self, mock_exists: Mock, mock_subprocess: Mock
     ):
@@ -309,9 +309,9 @@ class TestCloudClipOperations(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.blink")
-    @patch("blinkblinkapp.send_file")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.blink")
+    @patch("blinkapp.send_file")
     def test_download_cloud_clip_cached(
         self, mock_send_file: Mock, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -331,8 +331,8 @@ class TestCloudClipOperations(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.blink")
     def test_download_cloud_clip_not_found(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -350,8 +350,8 @@ class TestCloudClipOperations(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.blink")
     @patch("requests.get")
     def test_download_cloud_clip_download_success(
         self, mock_requests: Mock, mock_blink: Mock, mock_cache: Mock
@@ -404,7 +404,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         # Should return 500 (system not initialized) or success
         self.assertIn(response.status_code, [200, 401, 500])
 
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.blink")
     def test_arm_system_network_not_found(self, mock_blink: Mock) -> None:
         """Test arm system when network not found."""
         mock_blink.networks = {}  # No networks
@@ -421,7 +421,7 @@ class TestSystemDeviceOperations(unittest.TestCase):
         # Should return device information or system not initialized error
         self.assertIn(response.status_code, [200, 401, 500])
 
-    @patch("blinkblinkapp.blink")
+    @patch("blinkapp.blink")
     def test_get_devices_network_not_found(self, mock_blink: Mock) -> None:
         """Test get devices when network not found."""
         mock_blink.networks = {}
@@ -435,12 +435,12 @@ class TestSystemDeviceOperations(unittest.TestCase):
 class TestCacheMaintenanceOperations(unittest.TestCase):
     """Test cache maintenance operations - lines 1316-1322."""
 
-    @patch("blinkblinkapp.thumbnail_cache")
-    @patch("blinkblinkapp.clips_download_cache")
-    @patch("blinkblinkapp.clips_metadata_cache")
-    @patch("blinkblinkapp.executor")
-    @patch("blinkblinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.thumbnail_cache")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.executor")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_clear_all_caches_parallel_execution(
         self,
         mock_executor: Mock,
@@ -488,7 +488,7 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
         mock_rmtree.assert_called_with(cache_dir)
         mock_makedirs.assert_called_with(cache_dir, exist_ok=True)
 
-    @patch("blinkblinkapp.thumbnail_cache")
+    @patch("blinkapp.thumbnail_cache")
     @patch("os.listdir")
     @patch("os.path.exists")
     def test_load_thumbnail_cache_with_files(
@@ -508,10 +508,10 @@ class TestCacheMaintenanceOperations(unittest.TestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkblinkapp.clips_metadata_cache")
+    @patch("blinkapp.clips_cache")
     @patch("pathlib.Path.glob")
     @patch("pathlib.Path.exists")
-    @patch("blinkblinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
     def test_load_clips_cache_with_files(
         self, mock_exists: Mock, mock_glob: Mock, mock_cache: Mock
     ) -> None:
@@ -542,7 +542,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkblinkapp.blink_connection")
+    @patch("blinkapp.blink_connection")
     def test_connection_error_recovery(self, mock_connection: Mock) -> None:
         """Test connection error recovery mechanisms."""
         # Setup mock to simulate connection error
@@ -554,7 +554,7 @@ class TestErrorHandlingAdvanced(unittest.TestCase):
         # Should handle connection error gracefully
         self.assertIn(response.status_code, [200, 500])
 
-    @patch("blinkblinkapp.logger")
+    @patch("blinkapp.logger")
     def test_logging_error_scenarios(self, mock_logger: Mock) -> None:
         """Test logging in error scenarios."""
         # Test that logger is called in error conditions
@@ -621,7 +621,7 @@ class TestPerformanceOptimizations(unittest.TestCase):
         # Should maintain size limit
         self.assertEqual(len(cache), 10)
 
-    @patch("blinkblinkapp.thumbnail_cache")
+    @patch("blinkapp.thumbnail_cache")
     def test_thumbnail_cache_optimization(self, mock_cache: Mock) -> None:
         """Test thumbnail cache optimization."""
         # Setup mock cache with optimization features

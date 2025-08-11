@@ -21,6 +21,10 @@ class MockConfig:
     ErrorMessages.INVALID_JSON_DATA = "Invalid JSON data"
     ErrorMessages.CAMERA_NOT_FOUND = "Camera not found"
     HTTP_STATUS_INTERNAL_ERROR = 500
+    CLIPS_CACHE_SIZE = 100
+    THUMBNAIL_CACHE_SIZE = 100
+    LOG_FILE = "test.log"
+    LOG_MAX_BYTES = 10 * 1024 * 1024
 
 
 def create_api_response(success=True, data=None, error=None, status_code=200):

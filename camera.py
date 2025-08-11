@@ -11,7 +11,6 @@ Extracted from app.py to improve code organization and maintainability.
 
 import asyncio
 import logging
-import re
 from pathlib import Path
 from typing import cast
 
@@ -19,6 +18,7 @@ from flask import Flask, Response, send_file
 
 from app_types import ApiResponse, FlaskResponse, JsonDict
 from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from config import Config
 from decorators import (
     error_context,
     requires_blink,
@@ -27,39 +27,11 @@ from errors import CameraError, ValidationError
 from ids import CameraId
 from route_decorators import api_route_with_validation
 from utils import (
-    Config,
     create_api_response,
+    extract_thumbnail_timestamp,
 )
 
 logger = logging.getLogger(__name__)
-
-
-def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
-    """Extract timestamp from thumbnail URL.
-
-    Parses the 'ts' parameter from Blink thumbnail URLs to determine
-    when the thumbnail was generated. This timestamp is used for
-    cache invalidation and thumbnail freshness checks.
-
-    Args:
-        thumbnail_url: URL containing ts parameter (e.g., "...?ts=1234567890")
-
-    Returns:
-        Timestamp as integer (Unix epoch), 0 if not found or invalid
-
-    Example:
-        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg?ts=1609459200")
-        1609459200
-    """
-    if not thumbnail_url:
-        return 0
-    try:
-        # Extract numeric timestamp from URL query parameter using regex
-        match = re.search(r"ts=([0-9]+)", thumbnail_url)
-        return int(match.group(1)) if match else 0
-    except (AttributeError, ValueError, TypeError) as e:
-        logger.debug(f"Failed to extract timestamp from URL '{thumbnail_url}': {e}")
-        return 0
 
 
 def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:

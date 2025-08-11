@@ -388,24 +388,19 @@ This code is using Python 3.12. Fix all typing issues in the main application co
 
 Check and update `tests/test_doubts.md`: do these tests still exist? are there new doubts that should be added? Also update the file `tests/tests_results_baseline.md` with all the current test results, starting with a summary. This file will be used to check for any regression in future changes.
 
-Fix all failing tests one by one, except those already marked as "Test Doubts and Unfixable Tests" in `tests/test_doubts.md`. Figure out if each test fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later.
+Fix all failing tests (for the full test suite) one by one, except those already marked as "Test Doubts and Unfixable Tests" in `tests/test_doubts.md`, which may or may not be fixable (re-analyze those failures if they still happen). Figure out, for each failing test, if it fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later. Check what are the most common failure causes in failing tests, and start by working on those to fix these tests. Make sure that the main code doesn't have lines that are specifically written for tests. Test code should be externalized to tests as much as possible.
 
-Check what are the most common failure causes in failing tests, and start by working on those to fix these tests.
-
-Make sure that the main code doesn't have lines that are specifically written for tests. Test code should be externalized to tests as much as possible.
+Check for functions that have the same name in the various python files, and verify if this is duplicate code. If yes, resolve the issue by keeping just one instance of each function.
 
 Check for any duplicate or redundant tests, and factorize them. Organize unit tests to mimic the main code organization.
-
 
 Check for any inconsistencies or duplicate code in the main app code.
 
 Check if the app API is still consistent with the API described in `api.json`. Update `api.json` if needed, and also fix the javascript code that uses this API.
 
-Clean up main code and test code, remove unnecessary workarounds. There are sometimes duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
+Clean up main code and test code, remove unnecessary workarounds. There may sometimes be duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
 
-It looks like some tests such as `tests/test_coverage_boost.py`, `tests/test_advanced_overage.py`, `tests/test_critical_coverage.py` were not included in the test suite. Can you include them, run the full tests again, and report?
-
-Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
+Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx moved to yyy", "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
 
 
 Next, we will write a full developer documentation detailing, not necessarily in that order:

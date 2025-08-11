@@ -9,6 +9,7 @@ and reusable across different modules.
 
 import argparse
 import logging
+import re
 from datetime import UTC, datetime
 
 from app_types import ApiResponse, JsonDict
@@ -17,6 +18,41 @@ from ids import ClipId
 
 # Module-level logger for utility function debugging
 logger = logging.getLogger(__name__)
+
+
+def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
+    """Extract timestamp from thumbnail URL.
+
+    Parses the 'ts' parameter from Blink thumbnail URLs to determine
+    when the thumbnail was generated. This timestamp is used for
+    cache invalidation and thumbnail freshness checks.
+
+    The Blink API includes timestamps in thumbnail URLs like:
+    "https://immedia-semi.s3.amazonaws.com/production/...?ts=1234567890"
+
+    Args:
+        thumbnail_url: URL containing ts parameter (e.g., "...?ts=1234567890")
+
+    Returns:
+        Timestamp as integer (Unix epoch), 0 if not found or invalid
+
+    Example:
+        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg?ts=1609459200")
+        1609459200
+        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg")
+        0
+    """
+    if not thumbnail_url:
+        return 0
+    try:
+        # Extract numeric timestamp from URL query parameter using regex
+        # Pattern matches 'ts=' followed by one or more digits
+        match = re.search(r"ts=([0-9]+)", thumbnail_url)
+        return int(match.group(1)) if match else 0
+    except (AttributeError, ValueError, TypeError) as e:
+        # Log debug info for troubleshooting but don't fail the operation
+        logger.debug(f"Failed to extract timestamp from URL '{thumbnail_url}': {e}")
+        return 0
 
 
 # ============================================================================
@@ -67,7 +103,8 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
 
     Performs comprehensive validation on user input strings to prevent
     security issues and ensure data quality. This includes type checking,
-    length limits, and basic XSS prevention.
+    length limits, XSS prevention, SQL injection detection, and other
+    malicious input patterns.
 
     Args:
         value: Input string to validate (may contain leading/trailing whitespace)
@@ -99,10 +136,41 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
     if len(value) > max_length:
         raise ValueError(f"{field_name} too long (max {max_length} characters)")
 
-    # Basic XSS prevention - reject HTML-like content that could be dangerous
-    # This is a simple check; more sophisticated validation may be needed
-    # for specific use cases
+    # Convert to lowercase for case-insensitive pattern matching
+    value_lower = value.lower()
+
+    # XSS prevention - reject HTML-like content
     if "<" in value or ">" in value or "&" in value:
+        raise ValueError(f"{field_name} contains invalid characters")
+
+    # SQL injection prevention - detect common SQL injection patterns
+    sql_patterns = [
+        "'",
+        '"',
+        ";",
+        "--",
+        "/*",
+        "*/",
+        "drop",
+        "select",
+        "insert",
+        "update",
+        "delete",
+        "union",
+        "exec",
+        "execute",
+    ]
+    if any(pattern in value_lower for pattern in sql_patterns):
+        raise ValueError(f"{field_name} contains invalid characters")
+
+    # JavaScript injection prevention
+    js_patterns = ["javascript:", "vbscript:", "onload", "onerror", "onclick"]
+    if any(pattern in value_lower for pattern in js_patterns):
+        raise ValueError(f"{field_name} contains invalid characters")
+
+    # Template injection prevention
+    template_patterns = ["<%", "%>", "${", "#{"]
+    if any(pattern in value for pattern in template_patterns):
         raise ValueError(f"{field_name} contains invalid characters")
 
     return value
@@ -305,31 +373,3 @@ def create_api_response(
     }
 
     return response, status_code
-
-
-def ensure_cache_paths_initialized() -> None:
-    """Ensure cache paths are initialized, raising an error if not.
-
-    This function serves as a type guard for mypy to understand that
-    the cache path variables are not None after this call.
-
-    Raises:
-        RuntimeError: If cache paths haven't been initialized
-    """
-    # Import here to avoid circular imports
-    from blinkapp import (
-        CACHE_DIR,
-        CLIPS_CACHE_DIR,
-        CREDENTIALS_FILE,
-        THUMBNAIL_CACHE_DIR,
-    )
-
-    if (
-        CACHE_DIR is None
-        or CREDENTIALS_FILE is None
-        or THUMBNAIL_CACHE_DIR is None
-        or CLIPS_CACHE_DIR is None
-    ):
-        raise RuntimeError(
-            "Cache paths not initialized. Call initialize_cache_paths() first."
-        )
