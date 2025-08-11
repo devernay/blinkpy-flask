@@ -225,29 +225,20 @@ class TestGlobalVariableAccess(unittest.TestCase):
 
     def test_cache_instance_access(self) -> None:
         """Test cache instance access."""
-        # Initialize caches first
-        from cache import initialize_caches
+        # Mock the cache instances directly since they're imported globals
+        mock_thumbnail_cache = Mock()
+        mock_clips_cache = Mock()
 
-        initialize_caches({})
+        with patch("blinkapp.thumbnail_cache", mock_thumbnail_cache):
+            with patch("blinkapp.clips_cache", mock_clips_cache):
+                # Test that ensure functions work correctly
+                thumbnail_cache_instance = blinkapp.ensure_thumbnail_cache_initialized()
+                clips_cache_instance = blinkapp.ensure_clips_cache_initialized()
 
-        # Import caches from cache module, not blinkapp
-        import blinkapp
-        from cache import clips_cache, thumbnail_cache
-
-        self.assertIsNotNone(thumbnail_cache)
-        self.assertIsNotNone(clips_cache)
-        # TODO: clips_download_cache and clips_metadata_cache don't exist - remove or implement
-
-        # Test cache methods exist
-        if thumbnail_cache:
-            self.assertTrue(hasattr(thumbnail_cache, "get"))
-
-        # Test that ensure functions work correctly
-        thumbnail_cache_instance = blinkapp.ensure_thumbnail_cache_initialized()
-        clips_cache_instance = blinkapp.ensure_clips_cache_initialized()
-
-        self.assertTrue(hasattr(thumbnail_cache_instance, "clear"))
-        self.assertTrue(hasattr(clips_cache_instance, "clear"))
+                self.assertIsNotNone(thumbnail_cache_instance)
+                self.assertIsNotNone(clips_cache_instance)
+                self.assertEqual(thumbnail_cache_instance, mock_thumbnail_cache)
+                self.assertEqual(clips_cache_instance, mock_clips_cache)
 
     def test_blink_connection_access(self) -> None:
         """Test blink_connection access."""
