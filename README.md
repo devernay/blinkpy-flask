@@ -238,7 +238,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ## Testing
 
 ### Test Suite Overview
-The project includes a comprehensive test suite with **50% code coverage** and **257 passing tests** across multiple test files.
+The project includes a comprehensive test suite with **50% code coverage** and **393 passing tests** across multiple test files.
 
 ### Quick Start
 ```bash
@@ -261,6 +261,54 @@ python run_tests.py --fast
 cd tests
 python run_tests.py --html
 ```
+
+### Regression Testing
+
+The project uses a baseline-driven regression testing system to detect test failures and ensure code quality.
+
+#### Checking for Regressions
+```bash
+# Check for regressions against baseline
+cd tests
+python check_regression.py
+```
+
+This will:
+- ✅ **Pass**: No regressions detected
+- ⚠️ **Warn**: New tests added/removed (update baseline needed)
+- ❌ **Fail**: Regressions detected (tests that were passing now fail)
+
+#### Updating Test Baseline
+When you add new tests or expect test changes:
+
+```bash
+# Update baseline with current test results
+cd tests
+python update_baseline.py
+```
+
+**Note**: The update script will only succeed if all tests are currently passing.
+
+#### Regression Check Output
+```bash
+🔍 Running regression check...
+
+📊 Test Summary:
+   Current: 393 tests
+   Baseline: 393 tests
+
+✅ NO REGRESSIONS DETECTED
+```
+
+#### Integration with CI/CD
+Add to your CI pipeline:
+```bash
+cd tests && python check_regression.py
+```
+
+The script exits with:
+- `0`: No regressions (safe to deploy)
+- `1`: Regressions detected (block deployment)
 
 ### Using pytest directly
 ```bash
