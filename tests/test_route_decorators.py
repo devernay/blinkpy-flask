@@ -12,14 +12,8 @@ import unittest
 from typing import cast
 from unittest.mock import MagicMock, Mock
 
-import pytest
 from flask import Flask, Response, request
 from test_app import BaseTestCase
-
-# Skip entire module to avoid Flask app contamination during test discovery
-pytestmark = pytest.mark.skip(
-    reason="Route decorator tests modify global Flask app state causing test isolation issues"
-)
 
 
 # Mock the app module dependencies for testing
@@ -63,19 +57,15 @@ from route_decorators import (  # noqa: E402
     simple_success_response,
 )
 
-# Create test Flask app
-app = Flask(__name__)
 
-
-@pytest.mark.skip(
-    reason="Route decorator tests modify global Flask app state causing test isolation issues"
-)
 class TestRouteDecorators(BaseTestCase):
     """Test cases for route decorators."""
 
     def setUp(self) -> None:
-        self.app = app
-        self.client = app.test_client()
+        # Create a fresh Flask app for each test to avoid state contamination
+        self.test_app = Flask(__name__)
+        self.test_app.config["TESTING"] = True
+        self.client = self.test_app.test_client()
 
     def _parse_response(self, response: object) -> tuple[dict, int]:
         """Helper to parse response tuple and extract JSON data."""
@@ -84,17 +74,18 @@ class TestRouteDecorators(BaseTestCase):
         json_response = json.loads(response_obj.data)
         status_code = response_tuple[1]
         return json_response, status_code
-        app.config["TESTING"] = True
 
     def test_api_route_success(self) -> None:
         """Test @api_route decorator with successful response."""
 
-        @app.route("/test/success")
         @api_route("test operation")
         def test_success() -> dict[str, object]:
             return {"message": "success", "data": [1, 2, 3]}
 
-        with app.test_request_context():
+        # Add the route to our test app
+        self.test_app.add_url_rule("/test/success", "test_success", test_success)
+
+        with self.test_app.test_request_context():
             response = test_success()
 
         # Should return jsonified response with status code
@@ -117,12 +108,13 @@ class TestRouteDecorators(BaseTestCase):
     def test_api_route_exception(self) -> None:
         """Test @api_route decorator with exception handling."""
 
-        @app.route("/test/error")
         @api_route("test error operation")
         def test_error() -> dict[str, object]:
             raise ValueError("Test error message")
 
-        with app.test_request_context():
+        self.test_app.add_url_rule("/test/error", "test_error", test_error)
+
+        with self.test_app.test_request_context():
             response = test_error()
 
         response_tuple = cast(tuple[object, int], response)
@@ -141,7 +133,6 @@ class TestRouteDecorators(BaseTestCase):
             """Mock validator that converts string to int."""
             return int(id_str)
 
-        @app.route("/test/validate/<id_str>")
         @api_route_with_validation(
             "test validation", validate_params={"id_str": validate_id}
         )
@@ -152,7 +143,7 @@ class TestRouteDecorators(BaseTestCase):
                 validated_id = int(validated_id)  # Fallback conversion
             return {"validated_id": validated_id, "type": type(validated_id).__name__}
 
-        with app.test_request_context("/test/validate/123"):
+        with self.test_app.test_request_context("/test/validate/123"):
             # Call the function with the parameter
             response = test_validate(id_str="123")
 
@@ -170,7 +161,6 @@ class TestRouteDecorators(BaseTestCase):
                 raise ValueError("ID must be numeric")
             return int(id_str)
 
-        @app.route("/test/validate/<id_str>")
         @api_route_with_validation(
             "test validation", validate_params={"id_str": validate_id}
         )
@@ -178,7 +168,7 @@ class TestRouteDecorators(BaseTestCase):
             validated_id = kwargs.get("id") or kwargs.get("id_str")
             return {"validated_id": validated_id}
 
-        with app.test_request_context("/test/validate/abc"):
+        with self.test_app.test_request_context("/test/validate/abc"):
             response = test_validate_invalid(id_str="abc")
 
         json_response, status_code = self._parse_response(response)
@@ -190,7 +180,6 @@ class TestRouteDecorators(BaseTestCase):
     def test_api_route_with_json_validation(self) -> None:
         """Test @api_route_with_validation decorator with JSON validation."""
 
-        @app.route("/test/json", methods=["POST"])
         @api_route_with_validation(
             "test json validation",
             validate_json=True,
@@ -200,7 +189,7 @@ class TestRouteDecorators(BaseTestCase):
             data = request.get_json()
             return {"received": data}
 
-        with app.test_request_context(
+        with self.test_app.test_request_context(
             "/test/json", method="POST", json={"name": "test", "value": 42}
         ):
             response = test_json_validation()
@@ -213,7 +202,6 @@ class TestRouteDecorators(BaseTestCase):
     def test_api_route_with_json_validation_missing_field(self) -> None:
         """Test @api_route_with_validation decorator with missing required field."""
 
-        @app.route("/test/json-missing", methods=["POST"])
         @api_route_with_validation(
             "test json validation",
             validate_json=True,
@@ -223,7 +211,7 @@ class TestRouteDecorators(BaseTestCase):
             data = request.get_json()
             return {"received": data}
 
-        with app.test_request_context(
+        with self.test_app.test_request_context(
             "/test/json-missing", method="POST", json={"name": "test"}
         ):  # Missing "value"
             response = test_json_validation_missing()
@@ -239,13 +227,12 @@ class TestRouteDecorators(BaseTestCase):
 
         executed = []
 
-        @app.route("/test/simple-success", methods=["POST"])
         @simple_success_response("Operation completed successfully")
         def test_simple_success() -> None:
             executed.append("function_called")
             # Function executes but doesn't need to return anything
 
-        with app.test_request_context("/test/simple-success", method="POST"):
+        with self.test_app.test_request_context("/test/simple-success", method="POST"):
             response = test_simple_success()
 
         # The decorator returns a tuple (Response, status_code)
@@ -266,12 +253,11 @@ class TestRouteDecorators(BaseTestCase):
     def test_simple_success_response_with_exception(self) -> None:
         """Test @simple_success_response decorator with exception."""
 
-        @app.route("/test/simple-error", methods=["POST"])
         @simple_success_response("This should not appear")
         def test_simple_error() -> None:
             raise RuntimeError("Something went wrong")
 
-        with app.test_request_context("/test/simple-error", method="POST"):
+        with self.test_app.test_request_context("/test/simple-error", method="POST"):
             response = test_simple_error()
 
         # The decorator returns a tuple (Response, status_code) even for errors
