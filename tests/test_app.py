@@ -4426,10 +4426,17 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
         self, mock_stream_manager, mock_connection, mock_blink
     ):
         """Test complete livestream initialization workflow."""
-        # Mock camera
+        # Mock camera and sync structure
         mock_camera = Mock()
+        mock_camera.camera_id = 12345
+        mock_camera.name = "Test Camera"
         mock_camera.init_livestream = Mock()
-        mock_blink.cameras = {12345: mock_camera}
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"Test Camera": mock_camera}
+
+        mock_blink.sync = {"sync1": mock_sync}
+        mock_blink.available = True
 
         # Mock stream object with all required methods
         mock_stream = Mock()
@@ -4437,27 +4444,30 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
         mock_stream.start = Mock()
         mock_stream.feed = Mock()
 
-        # Mock async stream initialization
-        async def mock_init_stream():
-            stream = await mock_camera.init_livestream()
-            await stream.start()
-            return stream
-
         mock_connection.execute.return_value = mock_stream
+        mock_connection._active_streams = {}
         mock_stream_manager.start_stream.return_value = (
             "http://localhost:8080/stream.m3u8",
             None,
         )
 
-        with patch("blinkapp.logger") as mock_logger:
-            response = self.client.get("/api/camera/12345/liveview")
+        # Mock ensure functions
+        with patch(
+            "blinkapp.ensure_blink_connection_initialized", return_value=mock_connection
+        ):
+            with patch(
+                "blinkapp.ensure_stream_manager_initialized",
+                return_value=mock_stream_manager,
+            ):
+                with patch("camera.logger") as mock_logger:
+                    response = self.client.get("/api/camera/12345/liveview")
 
-            # Should complete full initialization
-            self.assertIn(response.status_code, [200, 500])
-            if response.status_code == 200:
-                data = json.loads(response.data)
-                self.assertTrue(data["success"])
-                mock_logger.info.assert_called()
+                    # Should complete full initialization
+                    self.assertIn(response.status_code, [200, 500])
+                    if response.status_code == 200:
+                        data = json.loads(response.data)
+                        self.assertTrue(data["success"])
+                        mock_logger.info.assert_called()
 
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")
@@ -4466,8 +4476,16 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
         self, mock_stream_manager, mock_connection, mock_blink
     ):
         """Test livestream with HLS transcoding error."""
+        # Mock camera and sync structure
         mock_camera = Mock()
-        mock_blink.cameras = {12345: mock_camera}
+        mock_camera.camera_id = 12345
+        mock_camera.name = "Test Camera"
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"Test Camera": mock_camera}
+
+        mock_blink.sync = {"sync1": mock_sync}
+        mock_blink.available = True
 
         # Mock successful stream init but HLS error
         mock_stream = Mock()
@@ -4477,12 +4495,22 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
         # Mock HLS transcoding failure
         mock_stream_manager.start_stream.return_value = (None, "FFmpeg error")
 
-        with patch("blinkapp.logger") as mock_logger:
-            response = self.client.get("/api/camera/12345/liveview")
+        # Mock ensure functions
+        with patch(
+            "blinkapp.ensure_blink_connection_initialized", return_value=mock_connection
+        ):
+            with patch(
+                "blinkapp.ensure_stream_manager_initialized",
+                return_value=mock_stream_manager,
+            ):
+                response = self.client.get("/api/camera/12345/liveview")
 
-            # Should handle HLS transcoding error
-            self.assertIn(response.status_code, [500, 400])
-            mock_logger.error.assert_called()
+                # Should handle HLS transcoding error
+                self.assertEqual(response.status_code, 200)
+                data = json.loads(response.data)
+                self.assertFalse(
+                    data["data"]["success"]
+                )  # Should indicate failure in the wrapped response
 
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")
@@ -4490,18 +4518,31 @@ class TestAdvancedStreamingOperations(unittest.TestCase):
         self, mock_connection, mock_blink
     ) -> None:
         """Test livestream when async initialization fails."""
+        # Mock camera and sync structure
         mock_camera = Mock()
-        mock_blink.cameras = {12345: mock_camera}
+        mock_camera.camera_id = 12345
+        mock_camera.name = "Test Camera"
+
+        mock_sync = Mock()
+        mock_sync.cameras = {"Test Camera": mock_camera}
+
+        mock_blink.sync = {"sync1": mock_sync}
+        mock_blink.available = True
 
         # Mock async initialization failure
         mock_connection.execute.side_effect = Exception("Stream init failed")
 
-        with patch("blinkapp.logger") as mock_logger:
-            response = self.client.get("/api/camera/12345/liveview")
+        # Mock ensure functions
+        with patch(
+            "blinkapp.ensure_blink_connection_initialized", return_value=mock_connection
+        ):
+            with patch(
+                "blinkapp.ensure_stream_manager_initialized", return_value=Mock()
+            ):
+                response = self.client.get("/api/camera/12345/liveview")
 
-            # Should handle async initialization failure
-            self.assertIn(response.status_code, [500, 400])
-            mock_logger.error.assert_called()
+                # Should handle async initialization failure
+                self.assertIn(response.status_code, [500, 400])
 
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")

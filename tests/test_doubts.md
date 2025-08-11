@@ -22,17 +22,9 @@ This document explains why certain tests cannot be fixed without significant cha
 - **Improvement**: 95 tests fixed (77% reduction in failures)
 - **Pass Rate**: Improved from ~65% to 92.1%
 
-## CURRENT FAILING TEST CATEGORIES (8 tests)
+## CURRENT FAILING TEST CATEGORIES (5 tests)
 
-### Category 1: System/Network Mock Complexity (3 tests)
-**Streaming Operations (3 tests):**
-- `TestAdvancedStreamingOperations::test_livestream_async_initialization_failure`
-- `TestAdvancedStreamingOperations::test_livestream_complete_initialization`
-- `TestAdvancedStreamingOperations::test_livestream_hls_transcoding_error`
-
-**Issue**: Complex streaming infrastructure mocking with async operations and external dependencies.
-
-### Category 2: Test Design Issues (1 test)
+### Category 1: Test Design Issues (1 test)
 Tests that expect behavior not implemented or test the wrong functions:
 
 **File System Operations (1 test):**
@@ -40,19 +32,19 @@ Tests that expect behavior not implemented or test the wrong functions:
 
 **Issue**: Test expects specific error handling behavior that may not be implemented.
 
-### Category 3: Integration Test Complexity (2 tests)
+### Category 2: Integration Test Complexity (2 tests)
 Tests that require complex end-to-end mocking:
 - `TestIntegrationScenarios::test_complete_camera_workflow`
 - `TestPerformanceOptimizationAdvanced::test_thumbnail_cache_hit_optimization`
 
 **Issue**: These tests require coordinated mocking of multiple systems (Blink API, caches, file system, network operations) with proper state management.
 
-### Category 4: Cache Loading Issues (1 test)
+### Category 3: Cache Loading Issues (1 test)
 - `TestCacheMaintenanceOperations::test_load_thumbnail_cache_with_valid_files`
 
 **Issue**: Needs investigation - may be related to ensure_* function mocking patterns.
 
-### Category 5: Other Issues (1 test)
+### Category 4: Other Issues (1 test)
 - Additional test requiring investigation
 
 ## ANALYSIS OF REMAINING ISSUES
@@ -122,15 +114,14 @@ Achieved 94.1% test pass rate (333/354 tests passing), representing an 81% reduc
 - **Assessment**: Current pass rate is excellent for a complex application
 
 ### Remaining Work Assessment
-The remaining 8 failing tests fall into categories that require significant effort:
-- **3 tests**: System/network mock complexity (streaming operations)
+The remaining 5 failing tests fall into categories that require significant effort:
 - **2 tests**: Integration test complexity
 - **1 test**: Test design issues
 - **1 test**: Cache loading (needs investigation)
 - **1 test**: Other issues
 
 **Recent Fixes**:
-- Fixed 16 sophisticated mocking, async/coroutine, and system operations tests by applying proper ensure_* function patterns, correct logger patching, and proper Blink system hierarchy mocking
+- Fixed 19 sophisticated mocking, async/coroutine, system operations, and streaming operations tests by applying proper ensure_* function patterns, correct logger patching, proper Blink system hierarchy mocking, and camera lookup structure
 - Enhanced input validation and directory creation error handling
 - Resolved architecture vs testing pattern mismatches through dependency injection testing patterns
 
