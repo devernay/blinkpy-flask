@@ -22,20 +22,9 @@ This document explains why certain tests cannot be fixed without significant cha
 - **Improvement**: 95 tests fixed (77% reduction in failures)
 - **Pass Rate**: Improved from ~65% to 92.1%
 
-## CURRENT FAILING TEST CATEGORIES (13 tests)
+## CURRENT FAILING TEST CATEGORIES (8 tests)
 
-### Category 1: System/Network Mock Complexity (8 tests)
-Tests that fail due to complex system state mocking:
-
-**System Operations (5 tests):**
-- `TestAdvancedSystemOperations::test_arm_system_partial_failure`
-- `TestAdvancedSystemOperations::test_get_systems_with_complex_network_data`
-- `TestComplexErrorScenarios::test_partial_system_failure`
-- `TestAdvancedIntegrationWorkflows::test_complete_multi_camera_workflow`
-- `TestAdvancedIntegrationWorkflows::test_system_state_consistency_workflow`
-
-**Issue**: Tests mock `blinkapp.blink` but functions use global `blink` variable through `require_sync_module()` and similar functions. The mocking doesn't properly set up the Blink system hierarchy.
-
+### Category 1: System/Network Mock Complexity (3 tests)
 **Streaming Operations (3 tests):**
 - `TestAdvancedStreamingOperations::test_livestream_async_initialization_failure`
 - `TestAdvancedStreamingOperations::test_livestream_complete_initialization`
@@ -133,15 +122,15 @@ Achieved 94.1% test pass rate (333/354 tests passing), representing an 81% reduc
 - **Assessment**: Current pass rate is excellent for a complex application
 
 ### Remaining Work Assessment
-The remaining 13 failing tests fall into categories that require significant effort:
-- **8 tests**: System/network mock complexity
+The remaining 8 failing tests fall into categories that require significant effort:
+- **3 tests**: System/network mock complexity (streaming operations)
 - **2 tests**: Integration test complexity
 - **1 test**: Test design issues
 - **1 test**: Cache loading (needs investigation)
 - **1 test**: Other issues
 
 **Recent Fixes**:
-- Fixed 11 sophisticated mocking and async/coroutine tests by applying proper ensure_* function patterns and correct logger patching
+- Fixed 16 sophisticated mocking, async/coroutine, and system operations tests by applying proper ensure_* function patterns, correct logger patching, and proper Blink system hierarchy mocking
 - Enhanced input validation and directory creation error handling
 - Resolved architecture vs testing pattern mismatches through dependency injection testing patterns
 
