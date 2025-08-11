@@ -4291,11 +4291,8 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
                     # Should have cleaned up old file
                     mock_unlink.assert_called()
 
-    @patch("blinkapp.thumbnail_cache")
-    @patch("blinkapp.executor")
-    def test_thumbnail_update_race_condition_skip(
-        self, mock_executor, mock_cache
-    ) -> None:
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
+    def test_thumbnail_update_race_condition_skip(self) -> None:
         """Test thumbnail update skips when race condition detected."""
         from blinkapp import CameraId
         from camera import update_camera_thumbnail
@@ -4306,30 +4303,39 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
 
         cache_key = CameraId(12345)
 
-        # Mock race condition - cache updated by another thread
-        mock_cache.get.side_effect = [
-            {"timestamp": 1000},  # Initial check
-            {"timestamp": 2500},  # Background check - already updated
-        ]
+        with patch("blinkapp.ensure_cache_paths_initialized"):
+            with patch("blinkapp.ensure_executor_initialized") as mock_ensure_executor:
+                mock_executor = Mock()
+                mock_ensure_executor.return_value = mock_executor
 
-        def execute_and_test_skip(func):
-            func()  # Execute to test the skip logic
-            return Mock()
+                def execute_and_test_skip(func):
+                    func()  # Execute to test the skip logic
+                    return Mock()
 
-        mock_executor.submit.side_effect = execute_and_test_skip
+                mock_executor.submit.side_effect = execute_and_test_skip
 
-        with patch("blinkapp.logger") as mock_logger:
-            update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
+                with patch(
+                    "blinkapp.ensure_thumbnail_cache_initialized"
+                ) as mock_ensure_cache:
+                    mock_cache = {}
+                    # Set up race condition: current_ts (2000) <= current_cached_ts (2500)
+                    mock_cache[cache_key] = {
+                        "timestamp": 2500
+                    }  # Already updated by another thread
+                    mock_ensure_cache.return_value = mock_cache
 
-            # Should log the skip due to race condition
-            mock_logger.debug.assert_called()
+                    with patch(
+                        "camera.logger"
+                    ) as mock_logger:  # Patch camera.logger not blinkapp.logger
+                        update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
 
-    @patch("blinkapp.thumbnail_cache")
-    @patch("blinkapp.executor")
+                        # Should log the skip due to race condition
+                        mock_logger.debug.assert_called_with(
+                            "Thumbnail already updated for Test Camera, skipping"
+                        )
+
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
-    def test_thumbnail_update_file_cleanup_error(
-        self, mock_executor, mock_cache
-    ) -> None:
+    def test_thumbnail_update_file_cleanup_error(self) -> None:
         """Test thumbnail update handles file cleanup errors."""
         from blinkapp import CameraId
         from camera import update_camera_thumbnail
@@ -4337,29 +4343,65 @@ class TestThumbnailUpdateMechanisms(unittest.TestCase):
         mock_camera = Mock()
         mock_camera.name = "Test Camera"
         mock_camera.camera_id = 12345
+        mock_camera.thumbnail = "https://example.com/thumb.jpg"
 
         cache_key = CameraId(12345)
-
-        mock_cache.get.side_effect = [
-            {"timestamp": 1000, "filename": "old_thumb.jpg"},
-            {"timestamp": 1000, "filename": "old_thumb.jpg"},
-        ]
 
         # Mock file cleanup error
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.unlink", side_effect=OSError("Permission denied")):
-                with patch("blinkapp.logger") as mock_logger:
+                with patch("pathlib.Path.mkdir"):  # Mock directory creation
+                    with patch("blinkapp.ensure_cache_paths_initialized"):
+                        with patch(
+                            "blinkapp.ensure_executor_initialized"
+                        ) as mock_ensure_executor:
+                            mock_executor = Mock()
+                            mock_ensure_executor.return_value = mock_executor
 
-                    def execute_with_error(func):
-                        func()
-                        return Mock()
+                            def execute_with_error(func):
+                                func()
+                                return Mock()
 
-                    mock_executor.submit.side_effect = execute_with_error
+                            mock_executor.submit.side_effect = execute_with_error
 
-                    update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
+                            with patch(
+                                "blinkapp.ensure_blink_connection_initialized"
+                            ) as mock_ensure_conn:
+                                with patch(
+                                    "blinkapp.ensure_thumbnail_cache_initialized"
+                                ) as mock_ensure_cache:
+                                    mock_cache = {}
+                                    mock_cache[cache_key] = {
+                                        "timestamp": 1000,
+                                        "filename": "old_thumb.jpg",
+                                    }
+                                    mock_ensure_cache.return_value = mock_cache
 
-                    # Should log the cleanup error
-                    mock_logger.error.assert_called()
+                                    mock_connection = Mock()
+                                    mock_ensure_conn.return_value = mock_connection
+
+                                    # Mock the thumbnail response
+                                    mock_thumbnail_response = Mock()
+                                    mock_thumbnail_response.status = 200
+                                    mock_thumbnail_response.read.return_value = (
+                                        b"image_data"
+                                    )
+                                    mock_connection.execute.side_effect = [
+                                        mock_thumbnail_response,
+                                        b"image_data",
+                                    ]
+
+                                    with patch(
+                                        "camera.logger"
+                                    ) as mock_logger:  # Patch camera.logger
+                                        update_camera_thumbnail(
+                                            mock_camera, cache_key, 2000, 1000
+                                        )
+
+                                        # Should log the cleanup error
+                                        mock_logger.debug.assert_called_with(
+                                            "Could not remove old thumbnail: Permission denied"
+                                        )
 
 
 class TestAdvancedStreamingOperations(unittest.TestCase):

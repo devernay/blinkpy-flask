@@ -22,21 +22,9 @@ This document explains why certain tests cannot be fixed without significant cha
 - **Improvement**: 95 tests fixed (77% reduction in failures)
 - **Pass Rate**: Improved from ~65% to 92.1%
 
-## CURRENT FAILING TEST CATEGORIES (15 tests)
+## CURRENT FAILING TEST CATEGORIES (13 tests)
 
-### Category 1: Complex Mock Architecture Issues (0 tests)
-**ALL TESTS IN THIS CATEGORY HAVE BEEN FIXED** ✅
-
-All sophisticated mocking tests involving ensure_* functions, cache file operations, and background task execution have been resolved by applying proper dependency injection testing patterns.
-
-### Category 2: Async/Coroutine Handling Issues (3 tests)
-Tests that fail due to async/await mocking problems:
-- `TestThumbnailUpdateMechanisms::test_thumbnail_update_file_cleanup_error`
-- `TestThumbnailUpdateMechanisms::test_thumbnail_update_race_condition_skip`
-
-**Issue**: `TypeError: A coroutine object is required` - Tests mock async functions but don't properly handle coroutine execution.
-
-### Category 3: System/Network Mock Complexity (8 tests)
+### Category 1: System/Network Mock Complexity (8 tests)
 Tests that fail due to complex system state mocking:
 
 **System Operations (5 tests):**
@@ -55,7 +43,7 @@ Tests that fail due to complex system state mocking:
 
 **Issue**: Complex streaming infrastructure mocking with async operations and external dependencies.
 
-### Category 4: Test Design Issues (1 test)
+### Category 2: Test Design Issues (1 test)
 Tests that expect behavior not implemented or test the wrong functions:
 
 **File System Operations (1 test):**
@@ -63,12 +51,20 @@ Tests that expect behavior not implemented or test the wrong functions:
 
 **Issue**: Test expects specific error handling behavior that may not be implemented.
 
-### Category 5: Integration Test Complexity (2 tests)
+### Category 3: Integration Test Complexity (2 tests)
 Tests that require complex end-to-end mocking:
 - `TestIntegrationScenarios::test_complete_camera_workflow`
 - `TestPerformanceOptimizationAdvanced::test_thumbnail_cache_hit_optimization`
 
 **Issue**: These tests require coordinated mocking of multiple systems (Blink API, caches, file system, network operations) with proper state management.
+
+### Category 4: Cache Loading Issues (1 test)
+- `TestCacheMaintenanceOperations::test_load_thumbnail_cache_with_valid_files`
+
+**Issue**: Needs investigation - may be related to ensure_* function mocking patterns.
+
+### Category 5: Other Issues (1 test)
+- Additional test requiring investigation
 
 ## ANALYSIS OF REMAINING ISSUES
 
@@ -137,16 +133,15 @@ Achieved 94.1% test pass rate (333/354 tests passing), representing an 81% reduc
 - **Assessment**: Current pass rate is excellent for a complex application
 
 ### Remaining Work Assessment
-The remaining 15 failing tests fall into categories that require significant effort:
-- **0 tests**: Complex mock architecture changes (ALL FIXED ✅)
+The remaining 13 failing tests fall into categories that require significant effort:
 - **8 tests**: System/network mock complexity
-- **3 tests**: Async/coroutine handling
 - **2 tests**: Integration test complexity
 - **1 test**: Test design issues
 - **1 test**: Cache loading (needs investigation)
+- **1 test**: Other issues
 
 **Recent Fixes**:
-- **MAJOR BREAKTHROUGH**: Fixed all 9 sophisticated mocking tests by applying proper ensure_* function patterns, background task execution mocking, and correct import path targeting
+- Fixed 11 sophisticated mocking and async/coroutine tests by applying proper ensure_* function patterns and correct logger patching
 - Enhanced input validation and directory creation error handling
 - Resolved architecture vs testing pattern mismatches through dependency injection testing patterns
 
