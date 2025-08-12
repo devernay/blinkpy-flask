@@ -82,9 +82,9 @@ def update_camera_thumbnail(
         THUMBNAIL_CACHE_DIR,
         ensure_blink_connection_initialized,
         ensure_cache_paths_initialized,
-        ensure_executor_initialized,
     )
     from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+    from blinkapp.services.connection_service import ensure_executor_initialized
 
     # Ensure all required components are initialized
     ensure_cache_paths_initialized()
@@ -201,9 +201,9 @@ def setup_camera_routes(app: Flask) -> None:
             ensure_blink_connection_initialized,
             ensure_blink_initialized,
             ensure_cache_paths_initialized,
-            ensure_executor_initialized,
         )
         from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+        from blinkapp.services.connection_service import ensure_executor_initialized
 
         # Ensure all required components are initialized
         ensure_blink_initialized()  # We don't need the return value

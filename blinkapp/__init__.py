@@ -88,7 +88,7 @@ from route_decorators import (
 
 
 if TYPE_CHECKING:
-    from concurrent.futures import ThreadPoolExecutor
+    pass
 
     from blink_connection import BlinkConnection
 
@@ -131,7 +131,6 @@ __all__ = [
     # Core initialization functions
     "ensure_blink_initialized",
     "ensure_blink_connection_initialized",
-    "ensure_executor_initialized",
     "ensure_http_session_initialized",
     "ensure_cache_paths_initialized",
     # Utility functions
@@ -175,7 +174,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 # Core Blink integration objects
 blink: "Blink | None" = None  # Main Blink API client
 blink_connection: "BlinkConnection | None" = None  # Async connection manager
-executor: "ThreadPoolExecutor | None" = None  # Background task executor
 http_session: "requests.Session | None" = None  # HTTP session for API calls
 
 # File system paths for application data storage
@@ -448,22 +446,6 @@ def ensure_blink_connection_initialized() -> "BlinkConnection":
     return blink_connection
 
 
-def ensure_executor_initialized() -> "ThreadPoolExecutor":
-    """Ensure executor global is initialized, raising an error if not.
-
-    Returns:
-        The initialized ThreadPoolExecutor instance
-
-    Raises:
-        RuntimeError: If executor hasn't been initialized
-    """
-    if executor is None:
-        raise RuntimeError(
-            "Thread executor not initialized. Call initialize_blink() first."
-        )
-    return executor
-
-
 def ensure_http_session_initialized() -> "requests.Session":
     """Ensure http_session global is initialized, raising an error if not.
 
@@ -552,6 +534,8 @@ def clear_all_caches() -> dict[str, object]:
 
         # Execute file operations in parallel
         assert THUMBNAIL_CACHE_DIR is not None
+        from blinkapp.services.connection_service import ensure_executor_initialized
+
         executor_instance = ensure_executor_initialized()
         thumbnail_future = executor_instance.submit(
             clear_file_cache, THUMBNAIL_CACHE_DIR, "thumbnail"
@@ -584,6 +568,8 @@ def clear_cache() -> JsonDict:
         JSON response with success status
     """
     # Submit cache clearing task to background executor
+    from blinkapp.services.connection_service import ensure_executor_initialized
+
     ensure_executor_initialized().submit(clear_all_caches)
     return {}  # Decorator will handle the actual response
 
@@ -642,6 +628,8 @@ def _download_clip_common(
             from blinkapp.services.thumbnail_service import notify_thumbnail_ready
 
             notify_thumbnail_ready(clip_id)
+
+    from blinkapp.services.connection_service import ensure_executor_initialized
 
     ensure_executor_initialized().submit(generate_thumbnail_bg)
     response = send_file(str(filepath), as_attachment=True, download_name=filename)
@@ -751,16 +739,17 @@ def startup() -> None:
         If no valid credentials found, user must login via web interface.
         All errors are logged but don't prevent application startup.
     """
-    global blink_connection, executor
+    global blink_connection
 
     # Import here to avoid circular imports
-    from concurrent.futures import ThreadPoolExecutor
 
     from blink_connection import BlinkConnection
 
     try:
-        # Initialize thread pool for background operations (thumbnail updates, clip processing)
-        executor = ThreadPoolExecutor(max_workers=Config.THREAD_POOL_MAX_WORKERS)
+        # Initialize connections (executor and HTTP session)
+        from blinkapp.services.connection_service import initialize_connections
+
+        initialize_connections()
 
         # Initialize async Blink connection manager for API operations
         blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
@@ -945,6 +934,8 @@ def load_thumbnail_cache() -> None:
                     logger.warning(f"Could not remove thumbnail file {file_path}: {e}")
 
         if files_to_remove:
+            from blinkapp.services.connection_service import ensure_executor_initialized
+
             ensure_executor_initialized().submit(remove_files, files_to_remove)
 
     except Exception as e:
@@ -1056,6 +1047,8 @@ def load_clips_cache() -> None:
                     logger.warning(f"Could not remove file {file_path}: {e}")
 
         if files_to_remove:
+            from blinkapp.services.connection_service import ensure_executor_initialized
+
             ensure_executor_initialized().submit(remove_files, files_to_remove)
 
     except (OSError, PermissionError) as e:
@@ -1089,6 +1082,8 @@ def cleanup_resources() -> None:
         logger.info("Cleaning up resources...")
 
         # Shutdown executor
+        from blinkapp.services.connection_service import executor
+
         if executor is not None:
             executor.shutdown(wait=False)
 

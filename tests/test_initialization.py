@@ -19,17 +19,15 @@ def initialize_for_testing() -> None:
     when testing individual functions.
     """
     # Import here to avoid circular imports
-    from concurrent.futures import ThreadPoolExecutor
 
     import blinkapp
     from blink_connection import BlinkConnection
+
+    # Initialize connections (executor and HTTP session) if not already initialized
+    from blinkapp.services.connection_service import initialize_connections
     from config import Config
 
-    # Initialize executor for background tasks if not already initialized
-    if blinkapp.executor is None:
-        blinkapp.executor = ThreadPoolExecutor(
-            max_workers=Config.THREAD_POOL_MAX_WORKERS
-        )
+    initialize_connections()
 
     # Initialize Blink connection if not already initialized
     if blinkapp.blink_connection is None:

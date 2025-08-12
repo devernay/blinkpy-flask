@@ -152,7 +152,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.thumbnail_cache")
     @patch("blinkapp.blink_connection")
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     def test_update_camera_thumbnail_cache(
         self, mock_executor: Mock, mock_connection: Mock, mock_cache: Mock

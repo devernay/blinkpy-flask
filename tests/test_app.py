@@ -79,8 +79,10 @@ class BaseTestCase(unittest.TestCase):
             blinkapp.blink_connection = None
 
             # Reset other global state that might affect tests
-            if hasattr(blinkapp, "executor"):
-                blinkapp.executor = None
+            from blinkapp.services import connection_service
+
+            if hasattr(connection_service, "executor"):
+                connection_service.executor = None
 
             # Clear mock registry to prevent mock persistence
             from unittest.mock import _mock_registry
@@ -913,7 +915,7 @@ class TestAuthenticationFlows(BaseTestCase):
         self.assertIn(b"verify your code", response.data)
 
     @patch("blinkapp.CREDENTIALS_FILE", "/tmp/test_credentials.json")
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.blink")
     def test_logout_success(self, mock_blink, mock_executor) -> None:
         """Test successful logout."""
@@ -1287,7 +1289,10 @@ class TestAPIEndpoints(BaseTestCase):
                 "blinkapp.services.cache_service.ensure_clips_cache_initialized",
                 return_value=Mock(),
             ):
-                with patch("blinkapp.ensure_executor_initialized", return_value=Mock()):
+                with patch(
+                    "blinkapp.services.connection_service.ensure_executor_initialized",
+                    return_value=Mock(),
+                ):
                     with patch("blinkapp.CACHE_DIR", "/tmp/cache"):
                         with patch(
                             "blinkapp.CREDENTIALS_FILE", "/tmp/cache/blink.json"
@@ -1518,7 +1523,7 @@ class TestAsyncOperations(BaseTestCase):
         self.assertTrue(inspect.iscoroutinefunction(initialize_blink))
         self.assertTrue(inspect.iscoroutinefunction(verify_2fa_and_save))
 
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")
     def test_refresh_system_endpoint(
@@ -1925,7 +1930,7 @@ class TestThumbnailCacheOperations(BaseTestCase):
         setup_test_globals()
 
     @patch("blinkapp.services.cache_service.thumbnail_cache")
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.routes.camera.logger")
     def test_update_camera_thumbnail_race_condition(
         self, mock_logger, mock_executor, mock_cache
@@ -1962,7 +1967,8 @@ class TestThumbnailCacheOperations(BaseTestCase):
                 "blinkapp.ensure_blink_connection_initialized"
             ) as mock_blink_conn:
                 with patch(
-                    "blinkapp.ensure_executor_initialized", return_value=mock_executor
+                    "blinkapp.services.connection_service.ensure_executor_initialized",
+                    return_value=mock_executor,
                 ):
                     with patch(
                         "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
@@ -2013,7 +2019,9 @@ class TestThumbnailCacheOperations(BaseTestCase):
         mock_exists.return_value = True
 
         with patch("blinkapp.ensure_cache_paths_initialized"):
-            with patch("blinkapp.ensure_executor_initialized") as mock_ensure_executor:
+            with patch(
+                "blinkapp.services.connection_service.ensure_executor_initialized"
+            ) as mock_ensure_executor:
                 mock_executor = Mock()
                 mock_ensure_executor.return_value = mock_executor
 
@@ -2472,7 +2480,7 @@ class TestBackgroundTaskExecution(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.cache_service.ensure_thumbnail_cache_initialized")
     def test_background_task_submission(
@@ -2827,11 +2835,11 @@ class TestApplicationInitialization(BaseTestCase):
         # Test that key global variables exist
         self.assertTrue(hasattr(blinkapp, "blink"))
         # Cache globals are now in cache service
-        from blinkapp.services import cache_service
+        from blinkapp.services import cache_service, connection_service
 
         self.assertTrue(hasattr(cache_service, "thumbnail_cache"))
         self.assertTrue(hasattr(cache_service, "clips_cache"))
-        self.assertTrue(hasattr(blinkapp, "executor"))
+        self.assertTrue(hasattr(connection_service, "executor"))
 
 
 class TestErrorHandlingAdvanced(BaseTestCase):
@@ -2873,7 +2881,8 @@ class TestErrorHandlingAdvanced(BaseTestCase):
                         return_value=Mock(),
                     ):
                         with patch(
-                            "blinkapp.ensure_executor_initialized", return_value=Mock()
+                            "blinkapp.services.connection_service.ensure_executor_initialized",
+                            return_value=Mock(),
                         ):
                             with patch(
                                 "blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"
@@ -3507,7 +3516,9 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
             # First call checks response status, second call gets image bytes
             mock_connection.execute.side_effect = [mock_response, b"new_image_data"]
 
-            with patch("blinkapp.executor") as mock_executor:
+            with patch(
+                "blinkapp.services.connection_service.executor"
+            ) as mock_executor:
                 # Mock background task submission for cache update
                 mock_executor.submit.return_value = Mock()
 
@@ -3650,7 +3661,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.services.cache_service.thumbnail_cache")
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.blink_connection")
     def test_concurrent_thumbnail_updates(
         self, mock_connection, mock_executor, mock_cache
@@ -3691,7 +3702,8 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
                 return_value=mock_connection,
             ):
                 with patch(
-                    "blinkapp.ensure_executor_initialized", return_value=mock_executor
+                    "blinkapp.services.connection_service.ensure_executor_initialized",
+                    return_value=mock_executor,
                 ):
                     with patch(
                         "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
@@ -3796,7 +3808,8 @@ class TestResourceManagement(BaseTestCase):
                         return_value=Mock(),
                     ):
                         with patch(
-                            "blinkapp.ensure_executor_initialized", return_value=Mock()
+                            "blinkapp.services.connection_service.ensure_executor_initialized",
+                            return_value=Mock(),
                         ):
                             with patch(
                                 "blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"
@@ -3907,7 +3920,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                     return_value={},
                 ):
                     with patch(
-                        "blinkapp.ensure_executor_initialized"
+                        "blinkapp.services.connection_service.ensure_executor_initialized"
                     ) as mock_ensure_executor:
                         mock_executor = Mock()
                         mock_ensure_executor.return_value = mock_executor
@@ -4011,7 +4024,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         mock_blink.refresh = Mock()
         mock_connection.execute.return_value = None
 
-        with patch("blinkapp.executor") as mock_executor:
+        with patch("blinkapp.services.connection_service.executor") as mock_executor:
             mock_executor.submit.return_value = Mock()
 
             response = self.client.post("/api/system/refresh")
@@ -4446,7 +4459,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
             with patch("pathlib.Path.unlink") as mock_unlink:
                 with patch("blinkapp.ensure_cache_paths_initialized"):
                     with patch(
-                        "blinkapp.ensure_executor_initialized"
+                        "blinkapp.services.connection_service.ensure_executor_initialized"
                     ) as mock_ensure_executor:
                         mock_executor = Mock()
                         mock_ensure_executor.return_value = mock_executor
@@ -4511,7 +4524,9 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
         cache_key = CameraId(12345)
 
         with patch("blinkapp.ensure_cache_paths_initialized"):
-            with patch("blinkapp.ensure_executor_initialized") as mock_ensure_executor:
+            with patch(
+                "blinkapp.services.connection_service.ensure_executor_initialized"
+            ) as mock_ensure_executor:
                 mock_executor = Mock()
                 mock_ensure_executor.return_value = mock_executor
 
@@ -4560,7 +4575,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                 with patch("pathlib.Path.mkdir"):  # Mock directory creation
                     with patch("blinkapp.ensure_cache_paths_initialized"):
                         with patch(
-                            "blinkapp.ensure_executor_initialized"
+                            "blinkapp.services.connection_service.ensure_executor_initialized"
                         ) as mock_ensure_executor:
                             mock_executor = Mock()
                             mock_ensure_executor.return_value = mock_executor
@@ -4955,7 +4970,7 @@ class TestAdvancedCacheOperations(BaseTestCase):
                     return_value={},
                 ):
                     with patch(
-                        "blinkapp.ensure_executor_initialized"
+                        "blinkapp.services.connection_service.ensure_executor_initialized"
                     ) as mock_ensure_executor:
                         mock_executor = Mock()
                         mock_ensure_executor.return_value = mock_executor
@@ -5013,7 +5028,7 @@ class TestAdvancedCacheOperations(BaseTestCase):
                     return_value={},
                 ):
                     with patch(
-                        "blinkapp.ensure_executor_initialized"
+                        "blinkapp.services.connection_service.ensure_executor_initialized"
                     ) as mock_ensure_executor:
                         mock_executor = Mock()
                         mock_ensure_executor.return_value = mock_executor

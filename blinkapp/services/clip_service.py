@@ -208,9 +208,9 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
         _download_clip_common,
         blink,
         blink_connection,
-        ensure_executor_initialized,
         http_session,
     )
+    from blinkapp.services.connection_service import ensure_executor_initialized
 
     assert blink is not None
     # Check if already cached
@@ -396,10 +396,10 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         CLIPS_CACHE_DIR,
         blink,
         blink_connection,
-        ensure_executor_initialized,
         http_session,
         logger,
     )
+    from blinkapp.services.connection_service import ensure_executor_initialized
     from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
     # Ensure clips cache is initialized
@@ -484,9 +484,9 @@ def process_local_clip_background(
         CLIPS_CACHE_DIR,
         blink,
         blink_connection,
-        ensure_executor_initialized,
         logger,
     )
+    from blinkapp.services.connection_service import ensure_executor_initialized
     from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
     # Ensure clips cache is initialized

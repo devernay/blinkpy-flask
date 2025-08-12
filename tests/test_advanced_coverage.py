@@ -450,7 +450,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
     @patch("blinkapp.services.cache_service.thumbnail_cache")
     @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.executor")
+    @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.CACHE_DIR", "/tmp/cache")
     @patch("blinkapp.CREDENTIALS_FILE", "/tmp/cache/blink.json")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
@@ -484,7 +484,8 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                 return_value=mock_clips_dl,
             ):
                 with patch(
-                    "blinkapp.ensure_executor_initialized", return_value=mock_executor
+                    "blinkapp.services.connection_service.ensure_executor_initialized",
+                    return_value=mock_executor,
                 ):
                     result = clear_all_caches()
 

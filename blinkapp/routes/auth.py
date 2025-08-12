@@ -179,9 +179,11 @@ def setup_auth_routes(app_instance: Flask) -> None:
         """
         # Import here to avoid circular imports
         import blinkapp
-        from blinkapp import CREDENTIALS_FILE, clear_all_caches, executor
+        from blinkapp import CREDENTIALS_FILE, clear_all_caches
+        from blinkapp.services.connection_service import ensure_executor_initialized
 
         # Clear caches first in background
+        executor = ensure_executor_initialized()
         executor.submit(clear_all_caches)
 
         # Clear session and credentials
