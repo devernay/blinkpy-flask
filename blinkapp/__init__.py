@@ -68,6 +68,9 @@ from blinkapp.routes.camera import (
 # Clip management routes
 from blinkapp.routes.clips import setup_clips_routes
 
+# Settings management routes
+from blinkapp.routes.settings import setup_settings_routes
+
 # System management routes
 from blinkapp.routes.system import setup_system_routes
 
@@ -91,8 +94,10 @@ from blinkapp.utils.validators import (
 # Route decorators for API endpoints
 from route_decorators import (
     api_route,
-    method_dispatch_route,
     simple_success_response,
+)
+from route_decorators import (
+    method_dispatch_route as method_dispatch_route,
 )
 
 # Live streaming management
@@ -112,10 +117,12 @@ from flask import (
     jsonify,
     redirect,
     render_template,
-    request,
     send_file,
     session,
     url_for,
+)
+from flask import (
+    request as request,
 )
 from flask.typing import ResponseReturnValue
 
@@ -1820,79 +1827,6 @@ def load_clips_cache() -> None:
 # Removed generate_thumbnail_async - thumbnails only generated on clip download
 
 
-@app.route("/api/settings", methods=["GET", "POST"])
-@method_dispatch_route("settings")
-def settings() -> ResponseReturnValue:
-    """Get or save application settings.
-
-    GET: Returns current user settings (temperature units, clip retention, etc.)
-    POST: Updates settings with provided JSON data
-
-    Settings are persisted to cache/settings.json and survive logout/restart.
-    """
-    if request.method == "GET":
-        # Load existing settings from file
-        assert SETTINGS_FILE is not None
-        settings_file = Path(cast(str, SETTINGS_FILE))
-
-        if settings_file.exists():
-            import json
-
-            # Read saved settings from JSON file
-            with open(settings_file) as f:
-                settings_data = json.load(f)
-        else:
-            # Return default settings if no file exists
-            settings_data = {
-                "temperatureUnits": "celsius",
-                "cloudClipRetention": "30",
-                "localClipRetention": "never",
-                "clipThumbnailSize": "medium",
-            }
-
-        response, status_code = create_api_response(success=True, data=settings_data)
-        return jsonify(response), status_code
-
-    else:  # POST - Save new settings
-        # Validate incoming JSON data
-        data = request.get_json()
-        if not isinstance(data, dict):
-            response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.INVALID_JSON_DATA,
-                status_code=400,
-            )
-            return jsonify(response), status_code
-
-        # Load existing settings to merge with new data
-        assert SETTINGS_FILE is not None
-        settings_file = Path(cast(str, SETTINGS_FILE))
-
-        if settings_file.exists():
-            import json
-
-            # Load current settings from file
-            with open(settings_file) as f:
-                settings_data = json.load(f)
-        else:
-            # Start with empty settings if no file exists
-            settings_data = {}
-
-        # Merge new settings with existing ones
-        settings_data.update(data)
-
-        # Persist updated settings to file
-        import json
-
-        with open(settings_file, "w") as f:
-            json.dump(settings_data, f, indent=2)
-
-        response, status_code = create_api_response(
-            success=True, data={"message": "Settings saved"}
-        )
-        return jsonify(response), status_code
-
-
 # Stream management functionality
 
 
@@ -2126,6 +2060,9 @@ setup_clips_routes(app)
 
 # Set up system routes
 setup_system_routes(app)
+
+# Set up settings routes
+setup_settings_routes(app)
 
 
 if __name__ == "__main__":

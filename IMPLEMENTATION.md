@@ -267,9 +267,8 @@ Do not over-engineer the solution. This is just about reorganizing the existing 
 
 ### **Next Steps**
 Now continue with the remaining refactoring steps:
-1. Extract settings routes to routes/settings.py
-2. Create API response models in models/responses.py
-3. Extract service layer functionality to the services/ modules
+1. Create API response models in models/responses.py
+2. Extract service layer functionality to the services/ modules
 Do it **step** by **step**, **one** file at a time. For each file from the list above:
 - create the file if it does not exist yet
 - move it to the right directory
@@ -277,7 +276,7 @@ Do it **step** by **step**, **one** file at a time. For each file from the list 
 - fix all imports in the code to refer to the new location
 - run `ruff check` and `pyright` and fix any issues with the code
 - check that all 388 tests from the full test suite still pass
-Do not change the API itself: the parameters passed to each function or class should be the same. This should just be about moving code around, not modifying it.
+Do not change the API itself: the parameters passed to each function or class should be the same as the original implementation. This should just be about moving code around, not modifying it.
 Do not over-engineer the solution. This is just about reorganizing the existing code, not modifying it.
 
 #### JavaScript Code (1,496 total lines across 4 files)
