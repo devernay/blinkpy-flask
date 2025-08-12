@@ -164,6 +164,16 @@ def update_camera_thumbnail(
     executor.submit(update_thumbnail)
 
 
+async def _init_camera_stream(camera) -> object:
+    """Initialize camera livestream."""
+    stream = await camera.init_livestream()
+    if stream is not None and hasattr(stream, "start") and hasattr(stream, "feed"):
+        await stream.start()
+        # Start feeding the stream in the background
+        asyncio.create_task(stream.feed())
+    return stream
+
+
 def setup_camera_routes(app: Flask) -> None:
     """Register camera routes with the Flask app.
 
@@ -273,20 +283,8 @@ def setup_camera_routes(app: Flask) -> None:
         assert camera is not None
 
         # Use init_livestream() as specified in IMPLEMENTATION.md
-        async def init_stream() -> object:
-            stream = await camera.init_livestream()
-            if (
-                stream is not None
-                and hasattr(stream, "start")
-                and hasattr(stream, "feed")
-            ):
-                await stream.start()
-                # Start feeding the stream in the background
-                asyncio.create_task(stream.feed())
-            return stream
-
         # Execute the async livestream initialization
-        stream = blink_connection.execute(init_stream())
+        stream = blink_connection.execute(_init_camera_stream(camera))
 
         if stream is not None:
             # Get the TCP URL from the stream

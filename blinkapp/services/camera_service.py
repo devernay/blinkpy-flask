@@ -6,6 +6,11 @@ camera lookup and validation.
 
 from __future__ import annotations
 
+__all__ = [
+    "find_camera_by_id",
+    "require_camera",
+]
+
 import logging
 from typing import TYPE_CHECKING
 

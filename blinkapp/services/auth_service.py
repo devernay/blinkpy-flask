@@ -6,6 +6,13 @@ Blink system initialization, 2FA verification, and credential management.
 
 from __future__ import annotations
 
+__all__ = [
+    "is_authenticated",
+    "initialize_blink",
+    "verify_2fa_and_save",
+    "load_saved_blink",
+]
+
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast

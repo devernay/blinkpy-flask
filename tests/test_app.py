@@ -18,9 +18,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
-# Add the app directory to Python path
-sys.path.insert(0, os.path.dirname(__file__))
-
 from blinkapp import (
     Config,
     app,
@@ -32,6 +29,41 @@ from blinkapp.utils.validators import (
     format_time_ago,
     validate_string_input,
 )
+
+
+# Global patch to prevent coroutine creation during tests
+def mock_init_camera_stream(camera):
+    """Mock version that returns a regular mock instead of a coroutine."""
+    return Mock()
+
+
+# Apply the patch at module level
+patch("blinkapp.routes.camera._init_camera_stream", mock_init_camera_stream).start()
+
+# Add the app directory to Python path
+sys.path.insert(0, os.path.dirname(__file__))
+
+
+def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
+    """Create a mock execute function that properly handles coroutines."""
+
+    def mock_execute(coro):
+        # Close the coroutine to prevent warnings
+        if hasattr(coro, "close"):
+            coro.close()
+        elif hasattr(coro, "__aenter__"):  # Handle async context managers
+            try:
+                coro.close()
+            except Exception:
+                pass
+        if side_effect:
+            if isinstance(side_effect, Exception):
+                raise side_effect
+            else:
+                raise side_effect
+        return return_value
+
+    return Mock(side_effect=mock_execute)
 
 
 class BaseTestCase(unittest.TestCase):
@@ -751,7 +783,14 @@ class TestAuthenticationFlows(BaseTestCase):
         # Mock blink_connection to raise an exception
         with patch("blinkapp.blink_connection") as mock_connection:
             mock_connection.start = Mock()
-            mock_connection.execute = Mock(side_effect=Exception("Unexpected error"))
+
+            def mock_execute(coro):
+                # Close the coroutine to prevent warnings
+                if hasattr(coro, "close"):
+                    coro.close()
+                raise Exception("Unexpected error")
+
+            mock_connection.execute = Mock(side_effect=mock_execute)
 
             response = self.client.post(
                 "/login",
@@ -807,7 +846,7 @@ class TestAuthenticationFlows(BaseTestCase):
             sess["temp_password"] = "password123"
 
         # Mock successful 2FA verification
-        mock_connection.execute = Mock(return_value=True)
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=True)
 
         response = self.client.post("/2fa", data={"key": "123456"})
 
@@ -823,7 +862,9 @@ class TestAuthenticationFlows(BaseTestCase):
             sess["temp_password"] = "password123"
 
         # Mock failed 2FA verification
-        mock_connection.execute = Mock(return_value=False)
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            return_value=False
+        )
 
         response = self.client.post("/2fa", data={"key": "000000"})
         self.assertEqual(response.status_code, 200)
@@ -840,7 +881,7 @@ class TestAuthenticationFlows(BaseTestCase):
             sess["temp_password"] = "password123"
 
         # Mock authentication error during 2FA
-        mock_connection.execute = Mock(
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
             side_effect=AuthenticationError("2FA auth failed")
         )
 
@@ -855,8 +896,14 @@ class TestAuthenticationFlows(BaseTestCase):
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
-        # Mock unexpected error during 2FA
-        mock_connection.execute = Mock(side_effect=Exception("Unexpected 2FA error"))
+        # Mock unexpected error during 2FA - consume the coroutine argument
+        def mock_execute(coro):
+            # Close the coroutine to prevent warnings
+            if hasattr(coro, "close"):
+                coro.close()
+            raise Exception("Unexpected 2FA error")
+
+        mock_connection.execute = Mock(side_effect=mock_execute)
 
         response = self.client.post("/2fa", data={"key": "123456"})
         self.assertEqual(response.status_code, 200)
@@ -1288,7 +1335,7 @@ class TestClipManagement(BaseTestCase):
     def test_get_clips_no_storage_param(self, mock_blink, mock_connection) -> None:
         """Test get_clips without storage parameter defaults to cloud."""
         # Mock the connection to return empty list
-        mock_connection.execute.return_value = []
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=[])
         response = self.client.get("/api/clips")
         # Should default to cloud storage and return 200
         self.assertEqual(response.status_code, 200)
@@ -1378,7 +1425,7 @@ class TestThumbnailManagement(BaseTestCase):
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
 
-        mock_connection.execute.return_value = None
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=None)
 
         with patch("blinkapp.ensure_thumbnail_cache_initialized", return_value={}):
             response = self.client.post("/api/camera/12345/refresh")
@@ -1448,11 +1495,13 @@ class TestAsyncOperations(BaseTestCase):
 
     def test_async_functions_exist(self) -> None:
         """Test that async functions exist and are callable."""
+        import inspect
+
         from blinkapp.routes.auth import initialize_blink, verify_2fa_and_save
 
-        # Test functions exist and are callable
-        self.assertTrue(callable(initialize_blink))
-        self.assertTrue(callable(verify_2fa_and_save))
+        # Test functions exist and are async
+        self.assertTrue(inspect.iscoroutinefunction(initialize_blink))
+        self.assertTrue(inspect.iscoroutinefunction(verify_2fa_and_save))
 
     @patch("blinkapp.executor")
     @patch("blinkapp.blink")
@@ -3060,7 +3109,9 @@ class TestLiveStreamOperations(BaseTestCase):
         async def mock_init_stream():
             return mock_stream
 
-        mock_connection.execute.return_value = mock_stream
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            return_value=mock_stream
+        )
 
         with patch("blinkapp.stream_manager") as mock_stream_manager:
             mock_stream_manager.start_stream.return_value = (
@@ -3112,7 +3163,9 @@ class TestLiveStreamOperations(BaseTestCase):
         # Mock successful stream initialization
         mock_stream = Mock()
         mock_stream.url = "tcp://localhost:8080"
-        mock_connection.execute.return_value = mock_stream
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            return_value=mock_stream
+        )
 
         with patch("blinkapp.stream_manager") as mock_stream_manager:
             # Mock stream manager success
@@ -3189,7 +3242,9 @@ class TestAdvancedClipOperations(BaseTestCase):
         """Test getting cloud clips when API returns error."""
         from blinkapp.utils.errors import BlinkError
 
-        mock_connection.execute.side_effect = BlinkError("API Error")
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            side_effect=BlinkError("API Error")
+        )
 
         response = self.client.get("/api/clips?storage=cloud")
 
@@ -4523,6 +4578,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         mock_sync.cameras = {"Test Camera": mock_camera}
 
         mock_blink.sync = {"sync1": mock_sync}
+        mock_blink.cameras = {12345: mock_camera}  # Add camera to blink.cameras
         mock_blink.available = True
 
         # Mock stream object with all required methods
@@ -4531,7 +4587,9 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         mock_stream.start = Mock()
         mock_stream.feed = Mock()
 
-        mock_connection.execute.return_value = mock_stream
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            return_value=mock_stream
+        )
         mock_connection._active_streams = {}
         mock_stream_manager.start_stream.return_value = (
             "http://localhost:8080/stream.m3u8",
@@ -4968,26 +5026,42 @@ class TestComplexErrorScenarios(BaseTestCase):
         mock_blink.cameras = {12345: Mock()}
 
         # First request fails with connection error
-        mock_connection.execute.side_effect = Exception("Connection failed")
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            side_effect=Exception("Connection failed")
+        )
 
         response1 = self.client.get("/api/camera/12345/thumbnail")
         self.assertIn(response1.status_code, [500, 404])
 
         # Second request fails with different error
-        mock_connection.execute.side_effect = Exception("Timeout")
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            side_effect=Exception("Timeout")
+        )
 
         response2 = self.client.get("/api/camera/12345/thumbnail")
         self.assertIn(response2.status_code, [500, 404])
 
         # Third request succeeds (recovery)
-        mock_connection.execute.side_effect = None
-        mock_connection.execute.return_value = b"image_data"
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            return_value=b"image_data"
+        )
 
         response3 = self.client.get("/api/camera/12345/thumbnail")
         self.assertIn(response3.status_code, [200, 500])
 
-    def test_resource_exhaustion_handling(self) -> None:
+    @patch("blinkapp.routes.camera._init_camera_stream")
+    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.blink")
+    def test_resource_exhaustion_handling(
+        self, mock_blink, mock_connection, mock_init_stream
+    ) -> None:
         """Test handling of resource exhaustion scenarios."""
+        # Mock blink system
+        mock_blink.available = True
+        mock_blink.get_videos_metadata.return_value = []
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=[])
+        mock_init_stream.return_value = Mock()  # Return a mock instead of coroutine
+
         # Simulate memory pressure
         with patch("blinkapp.clips_cache") as mock_cache:
             # Mock cache at capacity
@@ -5053,7 +5127,9 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.cameras = {}
-        mock_connection.execute.return_value = b"image_data"
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(
+            return_value=b"image_data"
+        )
 
         # Test basic multi-step workflow
         # 1. List systems
@@ -5109,9 +5185,17 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         # State should have changed
         self.assertNotEqual(initial_armed_state, final_armed_state)
 
-    def test_concurrent_operations_stability(self) -> None:
+    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.blink")
+    def test_concurrent_operations_stability(self, mock_blink, mock_connection) -> None:
         """Test system stability under concurrent operations."""
         import threading
+
+        # Mock blink system to prevent coroutine creation
+        mock_blink.available = True
+        mock_blink.cameras = {}
+        mock_blink.sync = {}
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=None)
 
         results = []
         errors = []
@@ -5359,11 +5443,13 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_async_function_existence(self) -> None:
         """Test that async functions exist."""
+        import inspect
+
         from blinkapp.routes.auth import initialize_blink, verify_2fa_and_save
 
-        # Test that async functions exist and are callable
-        self.assertTrue(callable(initialize_blink))
-        self.assertTrue(callable(verify_2fa_and_save))
+        # Test that async functions exist and are async
+        self.assertTrue(inspect.iscoroutinefunction(initialize_blink))
+        self.assertTrue(inspect.iscoroutinefunction(verify_2fa_and_save))
 
     def test_constants_and_globals(self) -> None:
         """Test constants and global variables."""

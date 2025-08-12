@@ -1,4 +1,7 @@
-"""Utilities package for the Blink Flask application."""
+"""Utility modules for the Blink Camera Flask application.
 
-# Explicitly define what this module exports
+This package contains utility functions and helper classes that are
+used across multiple parts of the application.
+"""
+
 __all__ = []
