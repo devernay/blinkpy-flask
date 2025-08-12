@@ -231,14 +231,17 @@ class TestGlobalVariableAccess(BaseTestCase):
         mock_thumbnail_cache = Mock()
         mock_clips_cache = Mock()
 
-        with patch("blinkapp.thumbnail_cache", mock_thumbnail_cache):
-            with patch("blinkapp.clips_cache", mock_clips_cache):
+        with patch(
+            "blinkapp.services.cache_service.thumbnail_cache", mock_thumbnail_cache
+        ):
+            with patch("blinkapp.services.cache_service.clips_cache", mock_clips_cache):
                 # Test that ensure functions work correctly
-                thumbnail_cache_instance = blinkapp.ensure_thumbnail_cache_initialized()
                 from blinkapp.services.cache_service import (
                     ensure_clips_cache_initialized,
+                    ensure_thumbnail_cache_initialized,
                 )
 
+                thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
                 clips_cache_instance = ensure_clips_cache_initialized()
 
                 self.assertIsNotNone(thumbnail_cache_instance)

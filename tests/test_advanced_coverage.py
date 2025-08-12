@@ -113,7 +113,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.send_file")
     @patch("pathlib.Path.exists")
     def test_download_local_clip_cached_success(
@@ -137,7 +137,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.blink")
     def test_download_local_clip_sync_not_found(
         self, mock_blink: Mock, mock_cache: Mock
@@ -157,7 +157,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.blink")
     def test_download_local_clip_no_local_storage(
         self, mock_blink: Mock, mock_cache: Mock
@@ -180,7 +180,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.blink")
     def test_download_local_clip_item_not_found(
         self, mock_blink: Mock, mock_cache: Mock
@@ -321,7 +321,7 @@ class TestCloudClipOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.blink")
     @patch("blinkapp.send_file")
     def test_download_cloud_clip_cached(
@@ -343,7 +343,7 @@ class TestCloudClipOperations(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.blink")
     def test_download_cloud_clip_not_found(
         self, mock_blink: Mock, mock_cache: Mock
@@ -362,7 +362,7 @@ class TestCloudClipOperations(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.blink")
     @patch("requests.get")
     def test_download_cloud_clip_download_success(
@@ -447,9 +447,9 @@ class TestSystemDeviceOperations(BaseTestCase):
 class TestCacheMaintenanceOperations(BaseTestCase):
     """Test cache maintenance operations - lines 1316-1322."""
 
-    @patch("blinkapp.thumbnail_cache")
-    @patch("blinkapp.clips_cache")
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.executor")
     @patch("blinkapp.CACHE_DIR", "/tmp/cache")
     @patch("blinkapp.CREDENTIALS_FILE", "/tmp/cache/blink.json")
@@ -476,7 +476,8 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         from blinkapp import clear_all_caches
 
         with patch(
-            "blinkapp.ensure_thumbnail_cache_initialized", return_value=mock_thumb
+            "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
+            return_value=mock_thumb,
         ):
             with patch(
                 "blinkapp.services.cache_service.ensure_clips_cache_initialized",
@@ -524,7 +525,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         mock_rmtree.assert_called_with(cache_dir)
         mock_makedirs.assert_called_with(cache_dir, exist_ok=True)
 
-    @patch("blinkapp.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.thumbnail_cache")
     @patch("pathlib.Path.glob")
     @patch("pathlib.Path.exists")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
@@ -541,7 +542,8 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         mock_glob.return_value = [mock_file1, mock_file2]
 
         with patch(
-            "blinkapp.ensure_thumbnail_cache_initialized", return_value=mock_cache
+            "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
+            return_value=mock_cache,
         ):
             with patch("blinkapp.blink") as mock_blink:
                 mock_blink.available = True
@@ -559,7 +561,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                 except (ImportError, AttributeError):
                     self.assertTrue(True)
 
-    @patch("blinkapp.clips_cache")
+    @patch("blinkapp.services.cache_service.clips_cache")
     @patch("pathlib.Path.glob")
     @patch("pathlib.Path.exists")
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
@@ -676,7 +678,7 @@ class TestPerformanceOptimizations(BaseTestCase):
         # Should maintain size limit
         self.assertEqual(len(cache), 10)
 
-    @patch("blinkapp.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.thumbnail_cache")
     def test_thumbnail_cache_optimization(self, mock_cache: Mock) -> None:
         """Test thumbnail cache optimization."""
         # Setup mock cache with optimization features

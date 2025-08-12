@@ -38,14 +38,10 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from cache import ThumbnailCache
+    pass
 
 # Authentication and session management
 # Caching system for thumbnails, clips, and metadata
-from blinkapp.models.cache import (
-    ThumbnailCache,
-    thumbnail_cache,
-)
 
 # ID validation and type safety
 from blinkapp.models.ids import CameraId, ClipId, NetworkId
@@ -138,7 +134,6 @@ __all__ = [
     "ensure_executor_initialized",
     "ensure_http_session_initialized",
     "ensure_cache_paths_initialized",
-    "ensure_thumbnail_cache_initialized",
     # Utility functions
     "handle_api_error",
     "require_sync_module",
@@ -506,24 +501,6 @@ def ensure_cache_paths_initialized() -> None:
         )
 
 
-def ensure_thumbnail_cache_initialized() -> "ThumbnailCache":
-    """Ensure thumbnail_cache global is initialized, raising an error if not.
-
-    Returns:
-        The initialized ThumbnailCache instance
-
-    Raises:
-        RuntimeError: If thumbnail_cache hasn't been initialized
-    """
-    # Import here to avoid circular imports
-
-    if thumbnail_cache is None:
-        raise RuntimeError(
-            "Thumbnail cache not initialized. Call initialize_caches() first."
-        )
-    return thumbnail_cache
-
-
 # Camera thumbnail update functionality
 
 
@@ -550,9 +527,12 @@ def clear_all_caches() -> dict[str, object]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
         # Clear memory caches first (fast operation) using OO cache methods
-        thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
-        from blinkapp.services.cache_service import ensure_clips_cache_initialized
+        from blinkapp.services.cache_service import (
+            ensure_clips_cache_initialized,
+            ensure_thumbnail_cache_initialized,
+        )
 
+        thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
         clips_cache_instance = ensure_clips_cache_initialized()
 
         thumbnail_cache_instance.clear()
@@ -812,7 +792,7 @@ def startup() -> None:
         initialize_stream_manager()
 
         # Initialize cache instances
-        from cache import initialize_caches
+        from blinkapp.services.cache_service import initialize_caches
 
         initialize_caches(
             {
@@ -878,6 +858,8 @@ def load_thumbnail_cache() -> None:
         - File system errors: Logged, operation continues
     """
     # Ensure thumbnail cache is initialized
+    from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+
     thumbnail_cache = ensure_thumbnail_cache_initialized()
 
     assert THUMBNAIL_CACHE_DIR is not None

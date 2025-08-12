@@ -69,7 +69,13 @@ def initialize_for_testing() -> None:
 
         import blinkapp
 
-        if not hasattr(blinkapp, "clips_cache") or blinkapp.clips_cache is None:
-            blinkapp.clips_cache = MagicMock()
-        if not hasattr(blinkapp, "thumbnail_cache") or blinkapp.thumbnail_cache is None:
-            blinkapp.thumbnail_cache = MagicMock()
+        if (
+            not hasattr(blinkapp, "clips_cache")
+            or blinkapp.services.cache_service.clips_cache is None
+        ):
+            blinkapp.services.cache_service.clips_cache = MagicMock()
+        if (
+            not hasattr(blinkapp, "thumbnail_cache")
+            or blinkapp.services.cache_service.thumbnail_cache is None
+        ):
+            blinkapp.services.cache_service.thumbnail_cache = MagicMock()

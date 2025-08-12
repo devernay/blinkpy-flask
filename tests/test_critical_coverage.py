@@ -150,7 +150,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
         self.mock_camera.name = "Test Camera"
         self.mock_camera.thumbnail = "http://example.com/thumb.jpg"
 
-    @patch("blinkapp.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.thumbnail_cache")
     @patch("blinkapp.blink_connection")
     @patch("blinkapp.executor")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
@@ -179,7 +179,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.thumbnail_cache")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.unlink")
     def test_thumbnail_file_cleanup(
