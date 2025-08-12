@@ -366,7 +366,7 @@
         }
       }
     },
-    "/api/clips": {
+    "/api/clip/list": {
       "get": {
         "summary": "Get clips from cloud or local storage",
         "operationId": "getClips",
@@ -505,6 +505,31 @@
         "responses": {
           "200": {
             "description": "Thumbnail availability status",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clip/{clip_id}/delete": {
+      "delete": {
+        "summary": "Delete a clip and its cached files",
+        "operationId": "deleteClip",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Clip ID (cloud ID or local sync~item format)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deletion status",
             "content": {
               "application/json": {
                 "schema": {"$ref": "#/components/schemas/ApiResponse"}

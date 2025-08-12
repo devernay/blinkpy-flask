@@ -552,7 +552,7 @@ class TestAdditionalEndpoints(BaseTestCase):
 
     def test_api_clips_invalid_storage(self) -> None:
         """Test clips API with invalid storage type."""
-        response = self.client.get("/api/clips?storage=invalid")
+        response = self.client.get("/api/clip/list?storage=invalid")
         # Returns 500 due to validation error, not 400
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
@@ -1357,7 +1357,7 @@ class TestClipManagement(BaseTestCase):
         """Test get_clips without storage parameter defaults to cloud."""
         # Mock the connection to return empty list
         mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=[])
-        response = self.client.get("/api/clips")
+        response = self.client.get("/api/clip/list")
         # Should default to cloud storage and return 200
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
@@ -1367,7 +1367,7 @@ class TestClipManagement(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_clips_invalid_storage(self, mock_blink) -> None:
         """Test get_clips with invalid storage parameter."""
-        response = self.client.get("/api/clips?storage=invalid")
+        response = self.client.get("/api/clip/list?storage=invalid")
         # Should return 400 for invalid storage type
         self.assertEqual(response.status_code, 400)
 
@@ -1490,7 +1490,7 @@ class TestClipProcessing(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/clips?storage=local")
+        response = self.client.get("/api/clip/list?storage=local")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1789,7 +1789,7 @@ class TestAdvancedEndpoints(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_clips_invalid_storage_type(self, mock_blink) -> None:
         """Test get_clips with invalid storage type."""
-        response = self.client.get("/api/clips?storage=invalid")
+        response = self.client.get("/api/clip/list?storage=invalid")
         self.assertEqual(response.status_code, 400)
 
         data = json.loads(response.data)
@@ -1807,7 +1807,7 @@ class TestAdvancedEndpoints(BaseTestCase):
         ) as mock_connection:
             mock_connection.execute.return_value = []
 
-            response = self.client.get("/api/clips")
+            response = self.client.get("/api/clip/list")
             # Should default to cloud storage and return 200
             self.assertEqual(response.status_code, 200)
 
@@ -2239,7 +2239,7 @@ class TestLocalClipOperations(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/clips?storage=local")
+        response = self.client.get("/api/clip/list?storage=local")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -2259,7 +2259,7 @@ class TestLocalClipOperations(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/clips?storage=local")
+        response = self.client.get("/api/clip/list?storage=local")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -2278,7 +2278,7 @@ class TestLocalClipOperations(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.side_effect = Exception("Sync error")
 
-        response = self.client.get("/api/clips?storage=local")
+        response = self.client.get("/api/clip/list?storage=local")
 
         # Should handle sync errors gracefully
         self.assertIn(response.status_code, [200, 500])
@@ -3281,7 +3281,7 @@ class TestAdvancedClipOperations(BaseTestCase):
         mock_blink.get_videos_metadata.return_value = mock_clips
         mock_connection.execute.return_value = mock_clips
 
-        response = self.client.get("/api/clips?storage=cloud")
+        response = self.client.get("/api/clip/list?storage=cloud")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -3297,7 +3297,7 @@ class TestAdvancedClipOperations(BaseTestCase):
         mock_blink.get_videos_metadata.return_value = []
         mock_connection.execute.return_value = []
 
-        response = self.client.get("/api/clips?storage=cloud")
+        response = self.client.get("/api/clip/list?storage=cloud")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -3314,7 +3314,7 @@ class TestAdvancedClipOperations(BaseTestCase):
             side_effect=BlinkError("API Error")
         )
 
-        response = self.client.get("/api/clips?storage=cloud")
+        response = self.client.get("/api/clip/list?storage=cloud")
 
         # Should handle API errors gracefully
         self.assertIn(response.status_code, [500, 400])
@@ -3654,7 +3654,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
             mock_cache.__len__.return_value = 1000  # At capacity
             mock_cache.get.return_value = None
 
-            response = self.client.get("/api/clips?storage=cloud")
+            response = self.client.get("/api/clip/list?storage=cloud")
 
             # Should handle memory pressure gracefully
             self.assertIn(response.status_code, [200, 500])
@@ -4411,7 +4411,7 @@ class TestIntegrationScenarios(BaseTestCase):
 
         # Test complete workflow
         # 1. Get clips list
-        response1 = self.client.get("/api/clips?storage=cloud")
+        response1 = self.client.get("/api/clip/list?storage=cloud")
         self.assertEqual(response1.status_code, 200)
 
         # 2. Download specific clip
@@ -5178,7 +5178,7 @@ class TestComplexErrorScenarios(BaseTestCase):
             mock_cache.get.return_value = None
 
             # Should handle resource exhaustion gracefully
-            response = self.client.get("/api/clips?storage=cloud")
+            response = self.client.get("/api/clip/list?storage=cloud")
             self.assertIn(response.status_code, [200, 500])
 
     @patch("blinkapp.services.blink_service.blink")
@@ -5701,7 +5701,7 @@ class TestCriticalPathCoverage(BaseTestCase):
     def test_url_parameter_handling(self) -> None:
         """Test URL parameter handling."""
         # Test URL with parameters
-        response = self.client.get("/api/clips?storage=cloud")
+        response = self.client.get("/api/clip/list?storage=cloud")
 
         # Should handle URL parameters
         self.assertIn(response.status_code, [200, 400, 500])
@@ -5813,7 +5813,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         mock_connection.execute.return_value = []
         mock_cache.get.return_value = []
 
-        response = self.client.get("/api/clips")
+        response = self.client.get("/api/clip/list")
         # Should return success with default storage type (cloud)
         self.assertEqual(response.status_code, 200)
 

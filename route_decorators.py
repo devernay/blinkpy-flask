@@ -371,7 +371,7 @@ def cached_response(
                        If not provided, uses the first argument as key
 
     Usage:
-        @app.route("/api/clips")
+        @app.route("/api/clip/list")
         @cached_response(clips_metadata_cache, lambda storage_type: storage_type)
         @api_route("get clips")
         def get_clips():
@@ -456,7 +456,7 @@ def cached_api_route(
         validate_params: Dict mapping parameter names to validation functions
 
     Usage:
-        @app.route("/api/clips")
+        @app.route("/api/clip/list")
         @cached_api_route(
             "get clips",
             cache_dict=clips_metadata_cache,

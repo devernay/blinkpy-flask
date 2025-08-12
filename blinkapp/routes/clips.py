@@ -24,7 +24,7 @@ __all__ = [
 def setup_clips_routes(app):
     """Set up clip management routes."""
 
-    @app.route("/api/clips")
+    @app.route("/api/clip/list")
     @ensure_blink_available
     @api_route("get clips")
     def get_clips() -> JsonDict:
@@ -212,3 +212,36 @@ def setup_clips_routes(app):
                     return {"available": True, "type": "cloud"}
 
         return {"available": False}
+
+    @app.route("/api/clip/<clip_id_str>/delete", methods=["DELETE"])
+    @api_route_with_validation("delete clip", validate_params={"clip_id_str": ClipId})
+    def delete_clip(clip_id: ClipId) -> JsonDict:
+        """Delete a clip.
+
+        Args:
+            clip_id: The clip ID to delete
+
+        Returns:
+            JSON response indicating success or failure
+        """
+        from blinkapp.services.cache_service import ensure_clips_cache_initialized
+
+        clips_cache_instance = ensure_clips_cache_initialized()
+        cached_clip = clips_cache_instance.get(clip_id)
+
+        if cached_clip is not None:
+            # Remove cached files
+            filepath = cached_clip.get("filepath")
+            if filepath and filepath.exists():
+                filepath.unlink()
+
+            thumbnail_path = cached_clip.get("thumbnail")
+            if thumbnail_path and thumbnail_path.exists():
+                thumbnail_path.unlink()
+
+            # Remove from cache
+            del clips_cache_instance[clip_id]
+
+            return {"deleted": True}
+
+        return {"deleted": False, "error": "Clip not found"}

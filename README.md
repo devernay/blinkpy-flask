@@ -113,7 +113,7 @@ git checkout pr-1078
 ```
 
 ### Clip Management
-- `GET /api/clips?storage=cloud|local` - List clips by storage type
+- `GET /api/clip/list?storage=cloud|local` - List clips by storage type
 - `GET /api/clip/<clip_id>/download` - Download clip file
 - `POST /api/clip/<clip_id>/process` - Process clip (generate thumbnail)
 - `GET /api/clip/<clip_id>/thumbnail` - Get clip thumbnail

@@ -258,7 +258,7 @@ class ApiClient {
 }
 
 // Usage in modules:
-const clips = await ApiClient.get('/api/clips?storage=cloud');
+const clips = await ApiClient.get('/api/clip/list?storage=cloud');
 ```
 
 ### 3. Performance Optimizations

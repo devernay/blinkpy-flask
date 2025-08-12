@@ -744,7 +744,7 @@ class TestSecurityValidation(BaseTestCase):
             "/api/system/list",
             "/api/system/12345/arm",
             "/api/camera/123/thumbnail",
-            "/api/clips",
+            "/api/clip/list",
         ]
 
         for endpoint in protected_endpoints:

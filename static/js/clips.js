@@ -24,7 +24,7 @@ async function loadClips() {
     `;
 
     try {
-        const response = await fetch(`/api/clips?storage=${storageType}`);
+        const response = await fetch(`/api/clip/list?storage=${storageType}`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -183,6 +183,14 @@ async function playClip(clip) {
             modal.innerHTML = `
                 <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button class="clip-action-btn" onclick="window.Clips.downloadClip('${clip.id}')" title="Download clip">
+                                📥
+                            </button>
+                            <button class="clip-action-btn" onclick="window.Clips.showDeleteConfirmation('${clip.id}')" title="Delete clip">
+                                🗑️
+                            </button>
+                        </div>
                         <h2 style="font-size: 16px; font-weight: 600;">${clip.camera_name} - ${formatClipDate(clip)} - ${clip.time}</h2>
                         <button class="close-btn" onclick="window.Clips.closeVideoModal(this)">&times;</button>
                     </div>
@@ -217,6 +225,77 @@ function closeVideoModal(button) {
         URL.revokeObjectURL(video.src);
     }
     modal.remove();
+}
+
+/**
+ * Download clip
+ */
+function downloadClip(clipId) {
+    const downloadUrl = `/api/clip/${clipId}/download`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
+ * Show delete confirmation modal
+ */
+function showDeleteConfirmation(clipId) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Delete Clip</h2>
+                <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <b>Are you sure?</b><br />
+                This will delete the clip and cannot be undone.
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="this.closest('.modal').remove()" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+                    Nevermind
+                </button>
+                <button onclick="window.Clips.deleteClip('${clipId}'); this.closest('.modal').remove();" style="padding: 8px 16px; border: none; background: #dc3545; color: white; border-radius: 6px; cursor: pointer;">
+                    Delete Clip
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+/**
+ * Delete clip
+ */
+async function deleteClip(clipId) {
+    try {
+        const response = await fetch(`/api/clip/${clipId}/delete`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            // Close video modal if open
+            const videoModal = document.querySelector('.modal video');
+            if (videoModal) {
+                videoModal.closest('.modal').remove();
+            }
+
+            // Reload clips to reflect deletion
+            loadClips();
+        } else {
+            const error = await response.json();
+            alert('Failed to delete clip: ' + (error.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error deleting clip:', error);
+        alert('Failed to delete clip. Please try again.');
+    }
 }
 
 /**
@@ -493,6 +572,9 @@ window.Clips = {
     renderClips,
     playClip,
     closeVideoModal,
+    downloadClip,
+    showDeleteConfirmation,
+    deleteClip,
     selectStorage,
     startThumbnailPolling,
     stopThumbnailPolling,
