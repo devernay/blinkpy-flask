@@ -175,7 +175,74 @@ def dump_blink_system_info() -> None:
 
 
 def handle_dump_system() -> None:
-    """Handle system dump request."""
-    from blinkapp import handle_dump_system as _handle_dump_system
+    """Handle dump-system command line option."""
+    import logging
+    import sys
+    from pathlib import Path
+    from typing import cast
 
-    _handle_dump_system()
+    from blinkapp import (
+        CREDENTIALS_FILE,
+        Config,
+        blink,
+        blink_connection,
+        cleanup_blink_session,
+        dump_cloud_videos,
+        initialize_cache_paths,
+        load_saved_blink,
+        logger,
+    )
+
+    initialize_cache_paths()
+
+    # Add console handler for CLI output
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter("%(message)s")
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
+    assert CREDENTIALS_FILE is not None
+    cred_file = Path(cast(str, CREDENTIALS_FILE))
+    if not cred_file.exists():
+        logger.error("No saved credentials found.")
+        logger.error("Please start the server and login first to save credentials.")
+        sys.exit(1)
+
+    blink_connection.start()
+    try:
+        success = blink_connection.execute(load_saved_blink())
+        if success:
+            # Update local storage manifests first
+            assert blink is not None
+            for sync_name, sync in blink.sync.items():
+                if sync.local_storage:
+                    blink_connection.execute(sync.update_local_storage_manifest())
+
+            # Get cloud videos in blink thread
+            assert blink is not None
+            videos = blink_connection.execute(
+                blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+            )
+
+            # Dump system info (non-async)
+            dump_blink_system_info()
+
+            # Dump cloud videos
+            dump_cloud_videos(videos)
+
+            logger.info("System dump completed successfully.")
+        else:
+            logger.error("Failed to load Blink system from saved credentials.")
+            sys.exit(1)
+    except Exception as e:
+        logger.error(f"System dump error: {e}")
+        sys.exit(1)
+    finally:
+        # Clean up Blink session and shutdown connection
+        if blink is not None:
+            blink_connection.execute(cleanup_blink_session())
+
+        # Remove console handler
+        logger.removeHandler(console_handler)
+        blink_connection.shutdown()
