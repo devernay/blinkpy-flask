@@ -99,7 +99,6 @@ def requires_blink(  # noqa: UP047
             # Consider using Union type or separate error decorator
             return jsonify(response), status_code  # type: ignore[return-value]
 
-        # At this point, type checkers know blink is not None and available
         # Import blink here to avoid circular imports
         import blinkapp
 

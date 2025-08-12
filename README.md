@@ -238,7 +238,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ## Testing
 
 ### Test Suite Overview
-The project includes a comprehensive test suite with **50% code coverage** and **393 passing tests** across multiple test files.
+The project includes a comprehensive test suite with **50% code coverage** and **388 passing tests** across multiple test files.
 
 ### Quick Start
 ```bash

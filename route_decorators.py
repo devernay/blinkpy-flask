@@ -51,7 +51,6 @@ def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
 
     # If the function already returns a Flask response, pass it through
     if hasattr(result, "status_code") or isinstance(result, tuple):
-        # Type narrowing: result is now FlaskResponse
         return cast(FlaskResponse, result)
 
     # Otherwise, wrap in standard API response

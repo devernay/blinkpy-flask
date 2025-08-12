@@ -225,7 +225,7 @@ def handle_api_error(
     )
 
 
-# require_camera function moved to camera.py
+# Decorators for authentication and error handling
 
 
 def require_sync_module(
@@ -606,7 +606,7 @@ def create_device_data(
     }
 
 
-# update_camera_thumbnail function moved to camera.py
+# Camera thumbnail update functionality
 
 
 def process_cloud_clips(
@@ -895,13 +895,11 @@ def get_devices(network_id: NetworkId) -> JsonDict:
     """Get devices for a specific Blink system.
 
     Args:
-        network_id: Validated NetworkId object (converted from network_id_str
-            by decorator)
+        network_id: Validated NetworkId object
 
     Returns:
         JSON response with list of devices or error message
     """
-    # network_id is now validated and converted by the decorator
     devices = []
 
     # Find the sync module for this network
@@ -957,13 +955,11 @@ def arm_system(network_id: NetworkId) -> JsonDict:
     """Arm or disarm a Blink system.
 
     Args:
-        network_id: Validated NetworkId object (converted from network_id_str
-            by decorator)
+        network_id: Validated NetworkId object
 
     Returns:
         JSON response with success status or error message
     """
-    # network_id and armed are now validated and converted by the decorator
     data = request.get_json()
     armed = data["armed"]
 
@@ -2151,12 +2147,11 @@ def check_clip_thumbnail(clip_id: ClipId) -> JsonDict:
     """Check if thumbnail is available for clip.
 
     Args:
-        clip_id: Validated ClipId object (converted from clip_id_str by decorator)
+        clip_id: Validated ClipId object
 
     Returns:
         JSON response with thumbnail availability status
     """
-    # clip_id is now validated and converted by the decorator
 
     clips_cache_instance = ensure_clips_cache_initialized()
     cached_clip = clips_cache_instance.get(clip_id)
@@ -2168,7 +2163,7 @@ def check_clip_thumbnail(clip_id: ClipId) -> JsonDict:
     return {"available": False}
 
 
-# Stream cleanup functions moved to StreamManager class
+# Stream management functionality
 
 
 async def cleanup_blink_session() -> None:

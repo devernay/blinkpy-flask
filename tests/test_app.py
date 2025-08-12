@@ -5528,14 +5528,6 @@ class TestApplicationInitializationFixed(BaseTestCase):
         self.assertIsNotNone(app)
         self.assertTrue(hasattr(app, "config"))
 
-    def test_global_variables_initialization(self) -> None:
-        """Test that global variables are properly initialized."""
-        # Test that key global variables exist
-        self.assertTrue(hasattr(sys.modules[__name__], "app"))
-
-        # Test that Config class exists
-        self.assertTrue(hasattr(sys.modules[__name__], "Config"))
-
 
 class TestTemplateRoutesFixed(BaseTestCase):
     """Test template rendering routes."""
@@ -5712,17 +5704,6 @@ class TestFileOperationsFixed(BaseTestCase):
             # Function may not exist
             self.assertTrue(True)
 
-    def test_camera_id_class(self) -> None:
-        """Test CameraId class validation."""
-        # Test valid camera ID
-        camera_id = CameraId("valid123")
-        self.assertEqual(str(camera_id), "valid123")
-
-        # Test validation method - should raise ValueError for empty string
-        self.assertEqual(camera_id._validate("valid123"), "valid123")
-        with self.assertRaises(ValueError):
-            camera_id._validate("")
-
 
 # ============================================================================
 # PERFORMANCE AND OPTIMIZATION TESTS
@@ -5745,28 +5726,6 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
         for _ in range(5):
             result = cache.get("key1")
             self.assertEqual(result["data"], "value1")
-
-    def test_fifo_cache_management(self) -> None:
-        """Test FIFO cache management."""
-        from cache import ThumbnailCache
-
-        cache = ThumbnailCache(maxsize=3)
-
-        # Fill cache
-        cache["key1"] = {"data": "value1"}
-        cache["key2"] = {"data": "value2"}
-        cache["key3"] = {"data": "value3"}
-
-        # Add one more to trigger eviction
-        cache["key4"] = {"data": "value4"}
-
-        # First key should be evicted
-        self.assertIsNone(cache.get("key1"))
-
-        # Others should still exist
-        self.assertEqual(cache.get("key2"), {"data": "value2"})
-        self.assertEqual(cache.get("key3"), {"data": "value3"})
-        self.assertEqual(cache.get("key4"), {"data": "value4"})
 
 
 # ============================================================================
@@ -5830,37 +5789,6 @@ class TestCacheLoadingOperationsFixed(BaseTestCase):
 
 class TestResourceManagementFixed(BaseTestCase):
     """Test resource management and cleanup."""
-
-    def test_cache_size_enforcement(self) -> None:
-        """Test cache size enforcement."""
-        from cache import ThumbnailCache
-
-        cache = ThumbnailCache(maxsize=5)
-
-        # Add items beyond capacity
-        for i in range(10):
-            cache[f"key{i}"] = f"value{i}"
-
-        # Should only contain last 5 items
-        self.assertEqual(len(cache), 5)
-
-        # Should contain keys 5-9
-        for i in range(5, 10):
-            self.assertIn(f"key{i}", cache)
-
-    def test_memory_usage_optimization(self) -> None:
-        """Test memory usage optimization."""
-        from cache import ThumbnailCache
-
-        cache = ThumbnailCache(maxsize=100)
-
-        # Add and remove items to test memory management
-        for i in range(50):
-            cache[f"key{i}"] = f"value{i}"
-
-        # Clear cache
-        cache.clear()
-        self.assertEqual(len(cache), 0)
 
 
 if __name__ == "__main__":

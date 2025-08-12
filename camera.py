@@ -300,16 +300,13 @@ def setup_camera_routes(app: Flask) -> None:
         "start camera liveview", validate_params={"camera_id_str": CameraId}
     )
     def get_camera_liveview(camera_id: CameraId) -> JsonDict:
-        """Get live view stream for camera using init_livestream() as specified in IMPLEMENTATION.md.
+        """Get live view stream for camera using init_livestream().
 
         Args:
-            camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+            camera_id: Validated CameraId object
 
         Returns:
             JSON response with stream URLs (TCP and HLS) or error message
-
-        Raises:
-            ValueError: If camera_id_str is invalid
         """
         # Import locally to avoid circular imports
         from blinkapp import (
@@ -320,8 +317,6 @@ def setup_camera_routes(app: Flask) -> None:
         # Ensure required components are initialized
         blink_connection = ensure_blink_connection_initialized()
         stream_manager = ensure_stream_manager_initialized()
-
-        # camera_id is now validated and converted by the decorator
 
         camera, error_response = require_camera(camera_id)
         if error_response is not None:
@@ -475,16 +470,11 @@ def setup_camera_routes(app: Flask) -> None:
         """Get camera thumbnail timestamp for polling.
 
         Args:
-            camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+            camera_id: Validated CameraId object
 
         Returns:
             JSON response with timestamp or error message
-
-        Raises:
-            ValueError: If camera_id_str is invalid
         """
-        # camera_id is now validated and converted by the decorator
-
         camera = find_camera_by_id(camera_id)
         if camera is None:
             raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
@@ -504,16 +494,10 @@ def setup_camera_routes(app: Flask) -> None:
         """Proxy camera thumbnail with authentication.
 
         Args:
-            camera_id: Validated CameraId object (converted from camera_id_str by decorator)
+            camera_id: Validated CameraId object
 
         Returns:
             Flask Response with image data or error message
-
-        Returns:
-            JPEG image file or JSON error response
-
-        Raises:
-            ValueError: If camera_id_str is invalid
         """
         # Import locally to avoid circular imports
 
