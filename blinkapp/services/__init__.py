@@ -1,4 +1,5 @@
-"""Service layer modules for the Blink Flask application."""
+"""Service layer for the Blink Camera Flask application.
 
-# Explicitly define what this module exports
-__all__ = []
+This module contains business logic and service classes that handle
+core application functionality separate from the web layer.
+"""
