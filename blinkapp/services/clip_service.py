@@ -16,12 +16,18 @@ __all__ = [
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
+    from blinkapp.app_types import ResponseReturnValue
     from blinkapp.models.ids import ClipId
 
+import requests
+from flask import jsonify, send_file
+
 from blinkapp.models.ids import ClipId
+from blinkapp.models.responses import create_api_response
 from blinkapp.services.cache_service import ensure_clips_cache_initialized
 from blinkapp.utils.validators import format_clips_by_day
 from config import Config
@@ -115,29 +121,180 @@ def process_cloud_clips(
     return format_clips_by_day(clips_by_day)
 
 
-def process_local_clips() -> list[dict[str, Any]]:
-    """Process local clips from USB storage.
+def process_local_clips() -> list[dict[str, object]]:
+    """Process local storage clips into day-grouped format.
+
+    Retrieves clips from USB storage connected to Blink sync modules.
+    Local clips require the sync module to have local storage enabled
+    and the manifest to be ready. Each clip gets a composite ID that
+    includes the sync module name for proper identification.
 
     Returns:
-        List of processed local clips
+        List of day groups with clips sorted by date, or empty list if
+        no local storage is available or manifest isn't ready
     """
-    from blinkapp import process_local_clips as _process_local_clips
+    from blinkapp import blink, blink_connection
 
-    return _process_local_clips()
+    clips_by_day: dict[str, dict[str, object]] = {}
+
+    assert blink is not None
+    for sync_name, sync_module in blink.sync.items():
+        try:
+            # Refresh sync module to update local storage manifest
+            # This ensures we have the latest clip information
+            blink_connection.execute(sync_module.refresh())
+
+            # Get clips from local storage manifest if ready
+            if sync_module.local_storage and sync_module.local_storage_manifest_ready:
+                manifest = sync_module._local_storage["manifest"]
+                for item in manifest:
+                    try:
+                        created_at = item.created_at
+                        day_key = created_at.strftime("%Y-%m-%d")
+
+                        # Create day group if it doesn't exist
+                        if day_key not in clips_by_day:
+                            clips_by_day[day_key] = {
+                                "date": created_at.strftime("%B %d, %Y"),
+                                "clips": [],
+                            }
+
+                        # Create composite clip ID for local clips (sync_name:item_id)
+                        clip_id = ClipId.from_local(sync_name, item.id)
+                        logger.debug(
+                            f"Created local clip ID: {clip_id} from sync: "
+                            f"{sync_name}, item: {item.id}"
+                        )
+
+                        # Check for existing thumbnail only
+                        # (no auto-generation for local)
+                        thumbnail_url = None
+                        clips_cache_instance = ensure_clips_cache_initialized()
+                        cached_clip = clips_cache_instance.get(clip_id)
+                        if cached_clip is not None:
+                            cached_thumbnail = cached_clip.get("thumbnail")
+                            if cached_thumbnail and cached_thumbnail.exists():
+                                thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+
+                        # Build standardized clip object for UI
+                        clip_data = {
+                            "id": str(clip_id),
+                            "camera_name": item.name,
+                            "system_name": sync_name,
+                            "time": created_at.astimezone().strftime("%I:%M %p"),
+                            "event_type": "Motion",
+                            "thumbnail": thumbnail_url,
+                            "media_url": item.url(
+                                sync_module._local_storage["last_manifest_id"]
+                            ),
+                        }
+                        clips_list = clips_by_day[day_key]["clips"]
+                        if isinstance(clips_list, list):
+                            clips_list.append(clip_data)
+                    except Exception as e:
+                        logger.warning(f"Skipping invalid local clip metadata: {e}")
+                        continue
+        except Exception as e:
+            logger.warning(f"Could not get local storage manifest for {sync_name}: {e}")
+            continue
+
+    return format_clips_by_day(clips_by_day)
 
 
-def download_cloud_clip(clip_id: ClipId):
-    """Download a cloud clip.
+def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
+    """Download cloud storage clip."""
+    from blinkapp import (
+        CLIPS_CACHE_DIR,
+        _download_clip_common,
+        blink,
+        blink_connection,
+        ensure_executor_initialized,
+        http_session,
+    )
 
-    Args:
-        clip_id: The clip ID to download
+    assert blink is not None
+    # Check if already cached
+    clips_cache_instance = ensure_clips_cache_initialized()
+    cached_clip = clips_cache_instance.get(clip_id)
+    if cached_clip is not None:
+        try:
+            # Quick existence check - if it fails, we'll re-download
+            if cached_clip["filepath"].exists():
+                response = send_file(str(cached_clip["filepath"]), as_attachment=True)
+                return response, 200
+        except (OSError, AttributeError):
+            # File doesn't exist or path is invalid, continue to download
+            pass
 
-    Returns:
-        Flask response with clip file or error
-    """
-    from blinkapp import download_cloud_clip as _download_cloud_clip
+    # Get clip metadata
+    videos_metadata = blink_connection.execute(
+        blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+    )
+    clip_info = next(
+        (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
+    )
+    if clip_info is None:
+        api_response, status_code = create_api_response(
+            success=False, error=Config.ErrorMessages.CLIP_NOT_FOUND, status_code=404
+        )
+        return jsonify(api_response), status_code
 
-    return _download_cloud_clip(clip_id)
+    # Generate filename
+    created_at = datetime.fromisoformat(clip_info["created_at"].replace("Z", "+00:00"))
+    camera_name = clip_info.get("device_name", "unknown")
+    iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
+    filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
+    assert CLIPS_CACHE_DIR is not None
+    filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
+
+    # Download if not cached
+    if not filepath.exists():
+        media_url = clip_info.get("media")
+        if media_url is None:
+            api_response, status_code = create_api_response(
+                success=False,
+                error=Config.ErrorMessages.CLIP_NO_MEDIA_URL,
+                status_code=404,
+            )
+            return jsonify(api_response), status_code
+
+        # Download in executor to avoid blocking
+        def download_file() -> bool:
+            try:
+                response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
+                if response.status_code == Config.HTTP_STATUS_OK:
+                    filepath.write_bytes(response.content)
+                    return True
+                else:
+                    logger.error(
+                        f"HTTP {response.status_code} downloading clip {clip_id}"
+                    )
+                    return False
+            except (requests.RequestException, OSError) as e:
+                logger.error(f"Error downloading clip {clip_id}: {e}")
+                return False
+
+        # Execute download synchronously since we need the file immediately
+        future = ensure_executor_initialized().submit(download_file)
+        try:
+            success = future.result(timeout=Config.DOWNLOAD_TIMEOUT)
+            if not success:
+                api_response, status_code = create_api_response(
+                    success=False,
+                    error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
+                    status_code=500,
+                )
+                return jsonify(api_response), status_code
+        except Exception as e:
+            logger.error(f"Download timeout or error for clip {clip_id}: {e}")
+            api_response, status_code = create_api_response(
+                success=False,
+                error=Config.ErrorMessages.CLIP_DOWNLOAD_TIMEOUT,
+                status_code=500,
+            )
+            return jsonify(api_response), status_code
+
+    return _download_clip_common(clip_id, filepath, filename, middle_frame=False)
 
 
 def download_local_clip(clip_id: ClipId):
