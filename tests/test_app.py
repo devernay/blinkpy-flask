@@ -1569,7 +1569,7 @@ class TestFileOperations(BaseTestCase):
 
     def test_camera_id_class(self) -> None:
         """Test CameraId class functionality."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
 
         # Test CameraId creation and usage
         camera_id = CameraId(12345)
@@ -1588,7 +1588,7 @@ class TestFileOperations(BaseTestCase):
             patch("blinkapp.load_clips_cache"),
             patch("blinkapp.services.cache_service.load_thumbnail_cache"),
             patch("blinkapp.services.blink_service.blink_connection.start"),
-            patch("blinkapp.load_saved_blink"),
+            patch("blinkapp.services.auth_service.load_saved_blink"),
         ):
             startup()
             # Should attempt to create directories
@@ -1693,7 +1693,7 @@ class TestConfigurationEdgeCases(BaseTestCase):
 
     def test_create_device_data_function(self) -> None:
         """Test create_device_data utility function."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.services.utils_service import create_device_data
 
         # Mock camera object
@@ -1850,7 +1850,7 @@ class TestDataTypes(BaseTestCase):
 
     def test_clip_id_types(self) -> None:
         """Test ClipId type functionality."""
-        from blinkapp import ClipId
+        from blinkapp.models.ids import ClipId
 
         # Test ClipId creation methods
         cloud_id = ClipId.from_cloud(12345)
@@ -1861,7 +1861,7 @@ class TestDataTypes(BaseTestCase):
 
     def test_camera_id_functionality(self) -> None:
         """Test CameraId functionality."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
 
         # Test basic functionality
         camera_id = CameraId(54321)
@@ -1942,7 +1942,7 @@ class TestThumbnailCacheOperations(BaseTestCase):
         self, mock_logger, mock_executor, mock_cache
     ):
         """Test thumbnail update with race condition handling."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
@@ -2002,7 +2002,7 @@ class TestThumbnailCacheOperations(BaseTestCase):
         self, mock_exists, mock_unlink, mock_cache
     ) -> None:
         """Test thumbnail cache file cleanup operations."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
@@ -2736,7 +2736,8 @@ class TestCacheLoadingOperations(BaseTestCase):
 
     def test_cache_loading_with_missing_directory(self) -> None:
         """Test cache loading when directory doesn't exist."""
-        from blinkapp import load_clips_cache, load_thumbnail_cache
+        from blinkapp import load_clips_cache
+        from blinkapp.services.cache_service import load_thumbnail_cache
 
         with patch("pathlib.Path.iterdir", side_effect=FileNotFoundError()):
             with patch("blinkapp.logger") as mock_logger:
@@ -3681,7 +3682,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
         self, mock_connection, mock_executor, mock_cache
     ):
         """Test concurrent thumbnail update handling."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
@@ -4136,7 +4137,7 @@ class TestAdvancedFileOperations(BaseTestCase):
             with patch("blinkapp.logger") as mock_logger:
                 with patch("blinkapp.setup_logging"):
                     with patch("stream_manager.StreamManager"):
-                        with patch("blinkapp.models.cache.initialize_caches"):
+                        with patch("blinkapp.services.cache_service.initialize_caches"):
                             with patch(
                                 "blinkapp.services.cache_service.load_thumbnail_cache"
                             ):
@@ -4144,7 +4145,9 @@ class TestAdvancedFileOperations(BaseTestCase):
                                     with patch(
                                         "blinkapp.services.blink_service.blink_connection"
                                     ):
-                                        with patch("blinkapp.load_saved_blink"):
+                                        with patch(
+                                            "blinkapp.services.auth_service.load_saved_blink"
+                                        ):
                                             # Should handle directory creation failure and log error
                                             startup()
 
@@ -4463,7 +4466,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_complete_workflow(self) -> None:
         """Test complete thumbnail update workflow with file operations."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
@@ -4536,7 +4539,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_race_condition_skip(self) -> None:
         """Test thumbnail update skips when race condition detected."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.routes.camera import update_camera_thumbnail
 
         mock_camera = Mock()
@@ -4581,7 +4584,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_file_cleanup_error(self) -> None:
         """Test thumbnail update handles file cleanup errors."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
         from blinkapp.routes.camera import update_camera_thumbnail
 
         mock_camera = Mock()
@@ -5412,7 +5415,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_camera_id_basic_functionality(self) -> None:
         """Test CameraId basic functionality."""
-        from blinkapp import CameraId
+        from blinkapp.models.ids import CameraId
 
         # Test CameraId creation
         camera_id = CameraId(12345)
@@ -5425,7 +5428,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_clip_id_basic_functionality(self) -> None:
         """Test ClipId basic functionality."""
-        from blinkapp import ClipId
+        from blinkapp.models.ids import ClipId
 
         # Test cloud clip ID creation
         cloud_id = ClipId.from_cloud(123456)
@@ -5860,7 +5863,8 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
 
         # Test device data creation
         try:
-            from blinkapp import CameraId, create_device_data
+            from blinkapp.models.ids import CameraId
+            from blinkapp.services.utils_service import create_device_data
 
             # Create a mock camera
             mock_camera = Mock()

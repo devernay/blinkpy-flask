@@ -20,12 +20,11 @@ from cachetools import LRUCache
 from test_app import BaseTestCase, mock_execute_with_coroutine_cleanup
 
 from blinkapp import (
-    CameraId,
-    ClipId,
     Config,
     create_api_response,
     initialize_cache_paths,
 )
+from blinkapp.models.ids import CameraId, ClipId
 
 
 class TestLoggingSetup(BaseTestCase):
@@ -166,8 +165,9 @@ class TestThumbnailCacheUpdate(BaseTestCase):
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         try:
-            from blinkapp import initialize_cache_paths, initialize_caches
+            from blinkapp import initialize_cache_paths
             from blinkapp.routes.camera import update_camera_thumbnail
+            from blinkapp.services.cache_service import initialize_caches
 
             # Initialize cache paths and caches before thumbnail operations
             initialize_cache_paths()
@@ -243,7 +243,7 @@ class TestTimeFormatting(BaseTestCase):
 
     def test_time_formatting_error_handling(self) -> None:
         """Test error handling in time formatting."""
-        with patch("blinkapp.format_time_ago") as mock_format:
+        with patch("blinkapp.utils.validators.format_time_ago") as mock_format:
             mock_format.return_value = "Never"
 
             # Test invalid timestamp handling

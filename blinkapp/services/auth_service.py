@@ -143,7 +143,8 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         ...     print("2FA verified and credentials saved")
     """
     # Import here to avoid circular imports during module initialization
-    from blinkapp import CREDENTIALS_FILE, blink
+    from blinkapp import CREDENTIALS_FILE
+    from blinkapp.services.blink_service import blink
 
     with error_context("verify 2FA and save credentials", AuthenticationError):
         logger.debug(f"Starting 2FA verification with key: {tfa_key[:2]}***")
@@ -194,8 +195,8 @@ async def load_saved_blink() -> bool:
         ...     print("Need to login again")
     """
     # Import here to avoid circular imports during module initialization
-    import blinkapp
     from blinkapp import CREDENTIALS_FILE
+    from blinkapp.services.blink_service import blink
 
     assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
     cred_file = Path(cast(str, CREDENTIALS_FILE))
@@ -230,7 +231,7 @@ async def load_saved_blink() -> bool:
                 success = await blink.start()
                 if success is True:
                     logger.info("Blink system loaded from saved credentials")
-                    blinkapp.blink = blink  # Update global reference
+                    # blink is already updated in the blink_service module
                     return True
                 else:
                     logger.warning("Failed to load Blink system from saved credentials")

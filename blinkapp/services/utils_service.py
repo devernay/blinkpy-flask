@@ -111,7 +111,8 @@ def dump_blink_system_info() -> None:
     """Dump comprehensive Blink system information."""
     import json
 
-    from blinkapp import blink, logger
+    from blinkapp import logger
+    from blinkapp.services.blink_service import blink
 
     if not blink or not blink.available:
         logger.error("Blink system not available")

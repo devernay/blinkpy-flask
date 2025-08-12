@@ -128,7 +128,8 @@ class TestLocalClipDownloadOperations(BaseTestCase):
 
         # Test download
         try:
-            from blinkapp import ClipId, download_local_clip
+            from blinkapp import download_local_clip
+            from blinkapp.models.ids import ClipId
 
             with app.app_context():
                 result = download_local_clip(ClipId("clip123"), "sync1", 123)
@@ -148,7 +149,8 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         mock_blink.sync.get.return_value = None
 
         try:
-            from blinkapp import ClipId, download_local_clip
+            from blinkapp import download_local_clip
+            from blinkapp.models.ids import ClipId
 
             with app.app_context():
                 result = download_local_clip(ClipId("clip123"), "nonexistent_sync", 123)
@@ -171,7 +173,8 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         mock_blink.sync.get.return_value = mock_sync
 
         try:
-            from blinkapp import ClipId, download_local_clip
+            from blinkapp import download_local_clip
+            from blinkapp.models.ids import ClipId
 
             with app.app_context():
                 result = download_local_clip(ClipId("clip123"), "sync1", 123)
@@ -195,7 +198,8 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         mock_blink.sync.get.return_value = mock_sync
 
         try:
-            from blinkapp import ClipId, download_local_clip
+            from blinkapp import download_local_clip
+            from blinkapp.models.ids import ClipId
 
             with app.app_context():
                 result = download_local_clip(ClipId("nonexistent_clip"), "sync1", 123)
@@ -335,7 +339,8 @@ class TestCloudClipOperations(BaseTestCase):
         mock_send_file.return_value = "file_response"
 
         try:
-            from blinkapp import ClipId, download_cloud_clip
+            from blinkapp import download_cloud_clip
+            from blinkapp.models.ids import ClipId
 
             result = download_cloud_clip(ClipId("clip123"))
             # Should return cached file
@@ -354,7 +359,8 @@ class TestCloudClipOperations(BaseTestCase):
         mock_blink.videos = {}  # No videos available
 
         try:
-            from blinkapp import ClipId, download_cloud_clip
+            from blinkapp import download_cloud_clip
+            from blinkapp.models.ids import ClipId
 
             result = download_cloud_clip(ClipId("nonexistent_clip"))
             # Should return error response
@@ -384,7 +390,7 @@ class TestCloudClipOperations(BaseTestCase):
             from blinkapp import download_cloud_clip
 
             with patch("builtins.open", mock_open()):
-                from blinkapp import ClipId
+                from blinkapp.models.ids import ClipId
 
                 result = download_cloud_clip(ClipId("clip123"))
                 # Should download and cache

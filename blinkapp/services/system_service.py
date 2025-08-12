@@ -32,7 +32,7 @@ def get_systems() -> dict[str, Any]:
     Returns:
         Dictionary with list of systems
     """
-    from blinkapp import blink
+    from blinkapp.services.blink_service import blink
 
     assert blink is not None, "Blink must be initialized"
 
@@ -125,7 +125,9 @@ def arm_system(network_id: NetworkId, armed: bool) -> dict[str, Any]:
     Returns:
         Dictionary with operation result
     """
-    from blinkapp import blink_connection, error_context, require_sync_module
+    from blinkapp import require_sync_module
+    from blinkapp.services.blink_service import blink_connection
+    from blinkapp.utils.decorators import error_context
     from blinkapp.utils.errors import ValidationError
 
     logger.debug(f"{'Arming' if armed else 'Disarming'} system {network_id}")
@@ -149,7 +151,8 @@ def refresh_system() -> dict[str, Any]:
     Returns:
         Dictionary with refresh result
     """
-    from blinkapp import blink, blink_connection, create_api_response
+    from blinkapp.models.responses import create_api_response
+    from blinkapp.services.blink_service import blink, blink_connection
     from config import Config
 
     assert blink is not None, "Blink must be initialized"

@@ -40,7 +40,7 @@ def setup_clips_routes(app):
         Returns:
             JSON response with list of clips organized by date
         """
-        from blinkapp import (
+        from blinkapp.services.blink_service import (
             blink,
             blink_connection,
         )
@@ -113,9 +113,7 @@ def setup_clips_routes(app):
         Returns:
             Flask Response with clip file or error message
         """
-        from blinkapp import (
-            logger,
-        )
+        from blinkapp import logger
         from blinkapp.services.clip_service import (
             download_cloud_clip,
             download_local_clip,

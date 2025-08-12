@@ -28,6 +28,16 @@ from blinkapp.utils.validators import validate_string_input
 from config import Config
 from route_decorators import simple_success_response
 
+
+def is_authenticated() -> bool:
+    """Check if user is authenticated.
+
+    Returns:
+        True if user is authenticated, False otherwise
+    """
+    return "authenticated" in session
+
+
 logger = logging.getLogger(__name__)
 
 # Explicitly define what this module exports

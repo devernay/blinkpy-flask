@@ -46,28 +46,25 @@ def initialize_for_testing() -> None:
 
     # Initialize cache objects for testing
     try:
-        from blinkapp.models.cache import (
-            clips_cache,
+        from blinkapp.services.cache_service import (
             initialize_caches,
-            thumbnail_cache,
         )
 
         # Only initialize if not already initialized
-        if clips_cache is None or thumbnail_cache is None:
-            initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
+        initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
     except Exception:
         # If cache initialization fails, create mock caches
         from unittest.mock import MagicMock
 
-        import blinkapp
+        import blinkapp.services.cache_service as cache_service
 
         if (
-            not hasattr(blinkapp, "clips_cache")
-            or blinkapp.services.cache_service.clips_cache is None
+            not hasattr(cache_service, "clips_cache")
+            or cache_service.clips_cache is None
         ):
-            blinkapp.services.cache_service.clips_cache = MagicMock()
+            cache_service.clips_cache = MagicMock()
         if (
-            not hasattr(blinkapp, "thumbnail_cache")
-            or blinkapp.services.cache_service.thumbnail_cache is None
+            not hasattr(cache_service, "thumbnail_cache")
+            or cache_service.thumbnail_cache is None
         ):
-            blinkapp.services.cache_service.thumbnail_cache = MagicMock()
+            cache_service.thumbnail_cache = MagicMock()

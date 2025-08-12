@@ -145,7 +145,7 @@ def process_local_clips() -> list[dict[str, object]]:
         List of day groups with clips sorted by date, or empty list if
         no local storage is available or manifest isn't ready
     """
-    from blinkapp import blink, blink_connection
+    from blinkapp.services.blink_service import blink, blink_connection
 
     clips_by_day: dict[str, dict[str, object]] = {}
 
