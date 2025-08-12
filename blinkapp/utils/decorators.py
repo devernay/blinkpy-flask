@@ -109,9 +109,8 @@ def ensure_blink_available(  # noqa: UP047
             return jsonify(response), status_code  # type: ignore[return-value]
 
         # Import blink here to avoid circular imports
-        import blinkapp
+        from blinkapp.services.blink_service import blink
 
-        blink = blinkapp.blink
         assert blink is not None  # Help type checkers understand this
         assert blink.available  # Additional assertion for Pylance
 

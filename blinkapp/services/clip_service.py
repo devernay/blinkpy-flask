@@ -12,6 +12,7 @@ __all__ = [
     "download_cloud_clip",
     "download_local_clip",
     "process_cloud_clip_background",
+    "download_and_cache_cloud_thumbnail",
 ]
 
 import logging
@@ -86,18 +87,29 @@ def process_cloud_clips(
                 }
 
             clip_id = ClipId(str(video.get("id")))
-            thumbnail_url = video.get("thumbnail")
+            cloud_thumbnail_url = video.get(
+                "thumbnail"
+            )  # Store original cloud thumbnail URL
 
-            # Check if we have a cached thumbnail for cloud clips
-            # This avoids using Blink's CDN thumbnail if we have a local one
-            # which is faster and doesn't count against API limits
+            # Always use our thumbnail endpoint for cloud clips
+            # This will handle redirect to Blink CDN or serve cached thumbnails
+            thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+
+            # Store cloud thumbnail URL in cache for the endpoint to use
             clips_cache_instance = ensure_clips_cache_initialized()
             cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None:
-                cached_thumbnail = cached_clip.get("thumbnail")
-                if cached_thumbnail and cached_thumbnail.exists():
-                    # Use our local thumbnail endpoint instead of Blink's CDN
-                    thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+                # Update existing cache entry with cloud thumbnail URL
+                cached_clip["cloud_thumbnail_url"] = cloud_thumbnail_url
+                clips_cache_instance[clip_id] = cached_clip
+            else:
+                # Create new cache entry with cloud thumbnail URL
+                if cloud_thumbnail_url:
+                    clips_cache_instance[clip_id] = {
+                        "cloud_thumbnail_url": cloud_thumbnail_url,
+                        "media_url": video.get("media"),
+                        "created_at": created_at.isoformat(),
+                    }
 
             # Build standardized clip object for UI consumption
             clip_data = {
@@ -473,6 +485,54 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             logger.error(f"Error processing cloud clip {clip_id}: {e}")
 
     ensure_executor_initialized().submit(process)
+
+
+def download_and_cache_cloud_thumbnail(
+    clip_id: ClipId, thumbnail_url: str
+) -> Path | None:
+    """Download and cache cloud thumbnail image.
+
+    Args:
+        clip_id: The clip ID
+        thumbnail_url: URL of the thumbnail to download
+
+    Returns:
+        Path to cached thumbnail file, or None if download failed
+    """
+    from blinkapp import logger
+    from blinkapp.services.cache_service import ensure_clips_cache_initialized
+    from blinkapp.services.connection_service import ensure_http_session_initialized
+    from config import Config
+
+    try:
+        # Get cache directory
+        cache_dir = Path(Config.DEFAULT_CACHE_DIR)
+        thumbnail_filename = f"{clip_id}_thumb.jpg"
+        thumbnail_path = cache_dir / "thumbnails" / thumbnail_filename
+        thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Download thumbnail
+        session = ensure_http_session_initialized()
+        response = session.get(thumbnail_url, timeout=10)
+        response.raise_for_status()
+
+        # Save thumbnail
+        with open(thumbnail_path, "wb") as f:
+            f.write(response.content)
+
+        # Update cache with thumbnail path
+        clips_cache_instance = ensure_clips_cache_initialized()
+        cached_clip = clips_cache_instance.get(clip_id)
+        if cached_clip is not None:
+            cached_clip["thumbnail"] = thumbnail_path
+            clips_cache_instance[clip_id] = cached_clip
+
+        logger.info(f"Downloaded and cached cloud thumbnail for clip {clip_id}")
+        return thumbnail_path
+
+    except Exception as e:
+        logger.error(f"Failed to download cloud thumbnail for clip {clip_id}: {e}")
+        return None
 
 
 def process_local_clip_background(

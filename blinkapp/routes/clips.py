@@ -143,19 +143,40 @@ def setup_clips_routes(app):
     @file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
     def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:
         """Serve clip thumbnail."""
-        from blinkapp import send_file
+        from blinkapp import redirect, send_file
         from blinkapp.services.cache_service import ensure_clips_cache_initialized
 
         clips_cache_instance = ensure_clips_cache_initialized()
         cached_clip = clips_cache_instance.get(clip_id)
 
         if cached_clip is not None:
+            # Check for local cached thumbnail first
             thumbnail_path = cached_clip.get("thumbnail")
             if thumbnail_path is not None and thumbnail_path.exists():
                 return send_file(
                     str(thumbnail_path),
                     mimetype="image/jpeg",
                 )
+
+            # For cloud clips, try to download and cache thumbnail
+            if not clip_id.is_local():
+                cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
+                if cloud_thumbnail_url:
+                    # Try to download and cache the thumbnail
+                    from blinkapp.services.clip_service import (
+                        download_and_cache_cloud_thumbnail,
+                    )
+
+                    thumbnail_path = download_and_cache_cloud_thumbnail(
+                        clip_id, cloud_thumbnail_url
+                    )
+                    if thumbnail_path and thumbnail_path.exists():
+                        return send_file(
+                            str(thumbnail_path),
+                            mimetype="image/jpeg",
+                        )
+                    # If download failed, redirect to original URL
+                    return redirect(cloud_thumbnail_url)
 
         # If no cached thumbnail, return 404
         return jsonify({"error": "Thumbnail not found"}), 404
@@ -177,9 +198,17 @@ def setup_clips_routes(app):
 
         clips_cache_instance = ensure_clips_cache_initialized()
         cached_clip = clips_cache_instance.get(clip_id)
+
         if cached_clip is not None:
+            # Check for local cached thumbnail first
             thumbnail_path = cached_clip.get("thumbnail")
             if thumbnail_path is not None and thumbnail_path.exists():
-                return {"available": True, "url": f"/api/clip/{clip_id}/thumbnail"}
+                return {"available": True, "type": "local"}
+
+            # For cloud clips, check if we have cloud thumbnail URL
+            if not clip_id.is_local():
+                cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
+                if cloud_thumbnail_url:
+                    return {"available": True, "type": "cloud"}
 
         return {"available": False}
