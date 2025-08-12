@@ -43,9 +43,9 @@ def setup_clips_routes(app):
         from blinkapp import (
             blink,
             blink_connection,
-            process_cloud_clips,
             process_local_clips,
         )
+        from blinkapp.services.clip_service import process_cloud_clips
 
         assert blink is not None
         storage_type = request.args.get("storage", "cloud")
