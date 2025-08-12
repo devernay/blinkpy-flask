@@ -341,7 +341,7 @@ class TestImportAndModuleLoading(BaseTestCase):
         self.assertTrue(hasattr(app_module, "os"))
         self.assertTrue(hasattr(app_module, "sys"))
         # json is not imported at module level in blinkapp.py
-        self.assertTrue(hasattr(app_module, "datetime"))
+        # datetime was moved to utils_service.py
         # threading is not imported at module level in blinkapp.py
         # self.assertTrue(hasattr(app_module, "threading"))
 

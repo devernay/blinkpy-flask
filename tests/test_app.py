@@ -1665,7 +1665,8 @@ class TestConfigurationEdgeCases(BaseTestCase):
 
     def test_create_device_data_function(self) -> None:
         """Test create_device_data utility function."""
-        from blinkapp import CameraId, create_device_data
+        from blinkapp import CameraId
+        from blinkapp.services.utils_service import create_device_data
 
         # Mock camera object
         mock_camera = Mock()

@@ -142,14 +142,10 @@ def generate_clip_thumbnail(
 
 
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
-    """Notify that thumbnail is ready for a clip.
+    """Thumbnail ready notification (no longer needed with polling approach)."""
+    from blinkapp import logger
 
-    Args:
-        clip_id: The clip ID
-    """
-    from blinkapp import notify_thumbnail_ready as _notify_thumbnail_ready
-
-    _notify_thumbnail_ready(clip_id)
+    logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
 def get_thumbnail_cache_stats() -> dict[str, Any]:

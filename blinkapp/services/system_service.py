@@ -62,13 +62,13 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
         Dictionary with list of devices
     """
     from blinkapp import (
-        create_device_data,
         ensure_thumbnail_cache_initialized,
         logger,
         require_sync_module,
     )
     from blinkapp.models.ids import CameraId
     from blinkapp.routes.camera import update_camera_thumbnail
+    from blinkapp.services.utils_service import create_device_data
     from blinkapp.utils.errors import ValidationError
     from blinkapp.utils.validators import extract_thumbnail_timestamp
 
