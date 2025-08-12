@@ -114,10 +114,12 @@ def setup_clips_routes(app):
             Flask Response with clip file or error message
         """
         from blinkapp import (
-            download_local_clip,
             logger,
         )
-        from blinkapp.services.clip_service import download_cloud_clip
+        from blinkapp.services.clip_service import (
+            download_cloud_clip,
+            download_local_clip,
+        )
         from blinkapp.utils.validators import parse_clip_id
 
         clip_id, error_response = parse_clip_id(clip_id_str)

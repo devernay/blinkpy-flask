@@ -151,7 +151,6 @@ __all__ = [
     "initialize_cache_paths",
     "create_device_data",
     # Clip processing functions
-    "download_local_clip",
     "process_local_clip_background",
     "process_cloud_clip_background",
     "notify_thumbnail_ready",
@@ -789,85 +788,6 @@ def _download_clip_common(
 
 
 @ensure_blink_available
-@ensure_blink_available
-def download_local_clip(
-    clip_id: ClipId, sync_name: str, item_id: int
-) -> ResponseReturnValue:
-    """Download local storage clip using blinkpy methods."""
-    assert blink is not None
-    # Check if already cached
-    clips_cache_instance = ensure_clips_cache_initialized()
-    cached_clip = clips_cache_instance.get(clip_id)
-    if cached_clip is not None:
-        try:
-            # Quick existence check - if it fails, we'll re-download
-            if cached_clip["filepath"].exists():
-                response = send_file(str(cached_clip["filepath"]), as_attachment=True)
-                return response, 200
-        except (OSError, AttributeError):
-            # File doesn't exist or path is invalid, continue to download
-            pass
-
-    # Find sync module and clip item
-    sync_module = blink.sync.get(sync_name)
-    if sync_module is None:
-        api_response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.SYNC_MODULE_NOT_FOUND,
-            status_code=404,
-        )
-        return jsonify(api_response), status_code
-
-    if not sync_module.local_storage or not sync_module.local_storage_manifest_ready:
-        api_response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.LOCAL_STORAGE_NOT_AVAILABLE,
-            status_code=404,
-        )
-        return jsonify(api_response), status_code
-
-    manifest = sync_module._local_storage["manifest"]
-    item = next((i for i in manifest if i.id == item_id), None)
-    if item is None:
-        api_response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.LOCAL_CLIP_NOT_FOUND,
-            status_code=404,
-        )
-        return jsonify(api_response), status_code
-
-    # Generate filename
-    iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
-    filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
-    assert CLIPS_CACHE_DIR is not None
-    filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
-
-    # Download if not cached
-    if not filepath.exists():
-        try:
-            blink_connection.execute(item.prepare_download(blink))
-            success = blink_connection.execute(
-                item.download_video(blink, str(filepath))
-            )
-            if success is not True:
-                api_response, status_code = create_api_response(
-                    success=False,
-                    error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
-                    status_code=500,
-                )
-                return jsonify(api_response), status_code
-        except Exception as e:
-            logger.error(f"Error downloading local clip: {e}")
-            api_response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
-                status_code=500,
-            )
-            return jsonify(api_response), status_code
-
-    return _download_clip_common(clip_id, filepath, filename, middle_frame=True)
-
-
 def process_local_clip_background(
     clip_id: ClipId, sync_name: str, item_id: int
 ) -> None:
