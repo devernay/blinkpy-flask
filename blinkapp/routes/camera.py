@@ -39,8 +39,6 @@ logger = logging.getLogger(__name__)
 
 # Explicitly define what this module exports
 __all__ = [
-    "find_camera_by_id",
-    "require_camera",
     "update_camera_thumbnail",
     "setup_camera_routes",
 ]

@@ -49,7 +49,6 @@ from blinkapp.models.ids import ClipId, NetworkId
 # API response models
 from blinkapp.models.responses import create_api_response
 from blinkapp.routes.auth import (
-    load_saved_blink,
     setup_auth_routes,
 )
 
@@ -72,10 +71,6 @@ from blinkapp.utils.decorators import ensure_blink_available, error_context
 from blinkapp.utils.errors import (
     CacheError,
     ValidationError,
-)
-from blinkapp.utils.validators import (
-    format_time_ago,
-    parse_clip_id,
 )
 
 # Route decorators for API endpoints
@@ -130,9 +125,6 @@ __all__ = [
     "require_sync_module",
     "setup_logging",
     "initialize_cache_paths",
-    "format_time_ago",
-    "parse_clip_id",
-    # Clip processing functions
     # Cache management
     "clear_all_caches",
     "clear_cache",
@@ -719,6 +711,8 @@ def startup() -> None:
 
         try:
             # Attempt to restore previous Blink session from encrypted credentials
+            from blinkapp.services.auth_service import load_saved_blink
+
             success = blink_connection.execute(load_saved_blink())
             if success is not True:
                 logger.info(

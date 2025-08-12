@@ -21,8 +21,6 @@ from flask.typing import ResponseReturnValue
 from app_types import AuthJsonDict as JsonDict
 from blinkapp.services.auth_service import (
     initialize_blink,
-    is_authenticated,
-    load_saved_blink,
     verify_2fa_and_save,
 )
 from blinkapp.utils.errors import AuthenticationError
@@ -34,10 +32,6 @@ logger = logging.getLogger(__name__)
 
 # Explicitly define what this module exports
 __all__ = [
-    "is_authenticated",
-    "initialize_blink",
-    "verify_2fa_and_save",
-    "load_saved_blink",
     "setup_auth_routes",
 ]
 
