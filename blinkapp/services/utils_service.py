@@ -108,10 +108,70 @@ def create_device_data(
 
 
 def dump_blink_system_info() -> None:
-    """Dump Blink system information for debugging."""
-    from blinkapp import dump_blink_system_info as _dump_blink_system_info
+    """Dump comprehensive Blink system information."""
+    import json
 
-    _dump_blink_system_info()
+    from blinkapp import blink, logger
+
+    if not blink or not blink.available:
+        logger.error("Blink system not available")
+        return
+
+    logger.info("=== BLINK SYSTEM DUMP ===")
+
+    # Basic system info
+    logger.info(f"Account ID: {blink.account_id}")
+    logger.info(f"Client ID: {blink.client_id}")
+    logger.info(f"Available: {blink.available}")
+    logger.info(f"Auth data: {blink.auth.data}")
+    logger.info(f"Last refresh: {blink.last_refresh}")
+    logger.info(f"Refresh rate: {blink.refresh_rate}")
+    logger.info(f"Motion interval: {blink.motion_interval}")
+    logger.info(f"Key required: {blink.key_required}")
+    logger.info(f"Network IDs: {blink.network_ids}")
+    logger.info(f"Networks: {blink.networks}")
+    logger.info(f"Version: {blink.version}")
+    logger.info("Homescreen:")
+
+    logger.info(json.dumps(blink.homescreen, indent=2))
+
+    # Sync modules
+    logger.info(f"=== SYNC MODULES ({len(blink.sync)}) ===")
+    for sync_name, sync in blink.sync.items():
+        logger.info(f"--- Sync Module: {sync_name} ---")
+        logger.info(f"Attributes: {sync.attributes}")
+        logger.info(f"Network Info: {sync.network_info}")
+        logger.info(f"Summary: {sync.summary}")
+        logger.info(f"Status: {sync.status}")
+        logger.info(f"Online: {sync.online}")
+        logger.info(f"Armed: {sync.arm}")
+        logger.info(f"Cameras: {list(sync.cameras.keys())}")
+
+        # Local storage info
+        logger.info(f"Local storage enabled: {sync._local_storage['enabled']}")
+        logger.info(f"Local storage compatible: {sync._local_storage['compatible']}")
+        logger.info(f"Local storage status: {sync._local_storage['status']}")
+        logger.info(
+            f"Local storage manifest ready: {sync.local_storage_manifest_ready}"
+        )
+
+        if sync.local_storage and sync.local_storage_manifest_ready:
+            manifest = sync._local_storage.get("manifest", [])
+            logger.info(f"Local storage clips ({len(manifest)}):")
+            for item in manifest:
+                logger.info(
+                    f"  - ID: {item.id}, Camera: {item.name}, Created: {item.created_at}, Size: {item.size}"
+                )
+
+    # All cameras
+    logger.info(f"=== CAMERAS ({len(blink.cameras)}) ===")
+    for camera_name, camera in blink.cameras.items():
+        logger.info(f"--- Camera: {camera_name} ---")
+        logger.info(f"Attributes: {camera.attributes}")
+
+    logger.info("=== CLOUD VIDEOS (see separate dump) ===")
+
+    logger.info("=== END DUMP ===")
 
 
 def handle_dump_system() -> None:
