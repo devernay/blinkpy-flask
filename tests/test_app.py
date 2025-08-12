@@ -3263,7 +3263,9 @@ class TestAdvancedClipOperations(BaseTestCase):
             mock_blink.available = True
 
             with patch("pathlib.Path.exists", return_value=True):
-                with patch("blinkapp.process_cloud_clip_background") as mock_process:
+                with patch(
+                    "blinkapp.services.clip_service.process_cloud_clip_background"
+                ) as mock_process:
                     response = self.client.post("/api/clip/test_clip/process")
                     self.assertEqual(response.status_code, 200)
                     mock_process.assert_called_once()

@@ -152,7 +152,6 @@ __all__ = [
     "create_device_data",
     # Clip processing functions
     "process_local_clip_background",
-    "process_cloud_clip_background",
     "notify_thumbnail_ready",
     "generate_clip_thumbnail",
     # Cache management
@@ -853,80 +852,6 @@ def process_local_clip_background(
                     clips_cache_instance[clip_id] = updated_clip
         except Exception as e:
             logger.error(f"Error processing local clip {clip_id}: {e}")
-
-    ensure_executor_initialized().submit(process)
-
-
-def process_cloud_clip_background(clip_id: ClipId) -> None:
-    """Process cloud clip in background (download and generate thumbnail).
-
-    Downloads clip from Blink cloud storage and generates thumbnail for web interface.
-    Runs in background thread to avoid blocking API responses.
-
-    Args:
-        clip_id: Unique identifier for the cloud clip
-    """
-    # Ensure clips cache is initialized
-    clips_cache_instance = ensure_clips_cache_initialized()
-
-    def process() -> None:
-        assert blink is not None
-        try:
-            # Check if already cached
-            cached_clip = clips_cache_instance.get(clip_id)
-            if cached_clip is not None and cached_clip["filepath"].exists():
-                return
-
-            # Get clip metadata
-            videos_metadata = blink_connection.execute(
-                blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
-            )
-            clip_info = next(
-                (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
-            )
-            if not clip_info:
-                return
-
-            # Generate filename and download
-            created_at = datetime.fromisoformat(
-                clip_info["created_at"].replace("Z", "+00:00")
-            )
-            camera_name = clip_info.get("device_name", "unknown")
-            iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
-            filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
-            assert CLIPS_CACHE_DIR is not None
-            filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
-
-            if not filepath.exists():
-                media_url = clip_info.get("media")
-                if not media_url:
-                    return
-                try:
-                    response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
-                    if response.status_code == Config.HTTP_STATUS_OK:
-                        filepath.write_bytes(response.content)
-                    else:
-                        logger.error(
-                            f"HTTP {response.status_code} downloading clip for processing"
-                        )
-                        return
-                except (requests.RequestException, OSError) as e:
-                    logger.error(f"Error downloading clip for processing: {e}")
-                    return
-
-            # Cache the clip and generate thumbnail
-            clips_cache_instance[clip_id] = {"filepath": filepath, "thumbnail": None}
-            thumbnail_path = generate_clip_thumbnail(
-                filepath, filename, middle_frame=False
-            )
-            if thumbnail_path is not None:
-                cached_clip = clips_cache_instance.get(clip_id)
-                if cached_clip is not None:
-                    updated_clip = cached_clip.copy()
-                    updated_clip["thumbnail"] = thumbnail_path
-                    clips_cache_instance[clip_id] = updated_clip
-        except Exception as e:
-            logger.error(f"Error processing cloud clip {clip_id}: {e}")
 
     ensure_executor_initialized().submit(process)
 
