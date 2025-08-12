@@ -20,6 +20,20 @@ V = TypeVar("V")  # Value type
 
 logger = logging.getLogger(__name__)
 
+# Explicitly define what this module exports
+__all__ = [
+    "ThreadSafeCache",
+    "ThreadSafeLRUCache",
+    "ThumbnailCache",
+    "ClipsCache",
+    "initialize_caches",
+    "clear_all_caches",
+    "get_cache_stats",
+    # Global cache instances
+    "thumbnail_cache",
+    "clips_cache",
+]
+
 
 class ThreadSafeCache[K, V](Cache[K, V]):
     """Thread-safe cache wrapper using multiple inheritance.

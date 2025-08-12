@@ -1,5 +1,15 @@
 """Error classes for the Blink Camera Flask application."""
 
+# Explicitly define what this module exports
+__all__ = [
+    "BlinkError",
+    "ValidationError",
+    "AuthenticationError",
+    "CameraError",
+    "StreamError",
+    "CacheError",
+]
+
 
 class BlinkError(Exception):
     """Base exception for Blink-related errors."""

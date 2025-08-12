@@ -28,6 +28,15 @@ from route_decorators import simple_success_response
 
 logger = logging.getLogger(__name__)
 
+# Explicitly define what this module exports
+__all__ = [
+    "is_authenticated",
+    "initialize_blink",
+    "verify_2fa_and_save",
+    "load_saved_blink",
+    "setup_auth_routes",
+]
+
 
 def is_authenticated() -> bool:
     """Check if user is authenticated with Blink.

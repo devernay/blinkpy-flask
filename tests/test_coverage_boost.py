@@ -331,7 +331,6 @@ class TestImportAndModuleLoading(BaseTestCase):
         """Test Flask-related imports."""
         self.assertTrue(hasattr(blinkapp, "Flask"))
         self.assertTrue(hasattr(blinkapp, "jsonify"))
-        self.assertTrue(hasattr(blinkapp, "request"))
         self.assertTrue(hasattr(blinkapp, "session"))
         self.assertTrue(hasattr(blinkapp, "render_template"))
 

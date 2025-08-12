@@ -25,6 +25,19 @@ from app_types import (
 
 logger = logging.getLogger(__name__)
 
+# Explicitly define what this module exports
+__all__ = [
+    "CacheProtocol",
+    "api_route",
+    "api_route_with_validation",
+    "simple_success_response",
+    "cached_response",
+    "file_response_route",
+    "method_dispatch_route",
+    "cached_api_route",
+    "template_route_with_validation",
+]
+
 
 # Type variables for template functions
 TemplateF = TypeVar("TemplateF", bound=Callable[..., TemplateResult])

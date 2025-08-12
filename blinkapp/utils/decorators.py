@@ -16,6 +16,14 @@ from config import Config
 T = TypeVar("T")
 P = ParamSpec("P")
 
+# Explicitly define what this module exports
+__all__ = [
+    "error_context",
+    "safe_execute",
+    "ensure_blink_available",
+    "check_blink_availability",
+]
+
 
 @contextmanager
 def error_context(
@@ -75,16 +83,17 @@ def safe_execute(
         return default
 
 
-def requires_blink(  # noqa: UP047
+def ensure_blink_available(  # noqa: UP047
     func: Callable[P, T],
 ) -> Callable[P, T]:
     """Decorator that ensures blink is available before calling the function.
 
-    This decorator also serves as a type guard, telling type checkers that
-    after the check, blink is guaranteed to be non-None and available.
+    This decorator automatically checks if the Blink system is initialized and
+    available, returning an error response if not. It also serves as a type guard,
+    telling type checkers that after the check, blink is guaranteed to be non-None.
 
     Usage in decorated functions:
-        @requires_blink
+        @ensure_blink_available
         def my_function() -> ResponseReturnValue:
             assert blink is not None  # For Pylance type narrowing
             return jsonify(blink.sync)  # No type errors
@@ -92,7 +101,7 @@ def requires_blink(  # noqa: UP047
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        error_response = require_blink()
+        error_response = check_blink_availability()
         if error_response is not None:
             response, status_code = error_response
             # TODO: This returns a different type than T for error cases
@@ -111,11 +120,11 @@ def requires_blink(  # noqa: UP047
     return wrapper
 
 
-def require_blink() -> ApiResponse | None:
-    """Check if Blink is available, return error response if not.
+def check_blink_availability() -> ApiResponse | None:
+    """Check if Blink system is initialized and available.
 
     Returns:
-        None if Blink is available, error response tuple if not
+        None if Blink is available, error response tuple if not initialized or unavailable
     """
     # Import here to avoid circular imports
     import blinkapp

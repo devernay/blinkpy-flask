@@ -20,6 +20,16 @@ from config import Config
 # Module-level logger for utility function debugging
 logger = logging.getLogger(__name__)
 
+# Explicitly define what this module exports
+__all__ = [
+    "extract_thumbnail_timestamp",
+    "parse_arguments",
+    "validate_string_input",
+    "parse_clip_id",
+    "format_clips_by_day",
+    "format_time_ago",
+]
+
 
 def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
     """Extract timestamp from thumbnail URL.

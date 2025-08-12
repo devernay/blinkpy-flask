@@ -11,6 +11,11 @@ from blinkapp.models.responses import create_api_response
 from config import Config
 from route_decorators import method_dispatch_route
 
+# Explicitly define what this module exports
+__all__ = [
+    "setup_settings_routes",
+]
+
 
 def setup_settings_routes(app):
     """Set up settings management routes."""

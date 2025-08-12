@@ -4,6 +4,14 @@ import re
 
 from config import Config
 
+# Explicitly define what this module exports
+__all__ = [
+    "BaseId",
+    "CameraId",
+    "NetworkId",
+    "ClipId",
+]
+
 
 class BaseId:
     """Base class for validated ID types using composition.

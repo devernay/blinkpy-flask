@@ -2,10 +2,10 @@
 
 from flask import request
 
+from app_types import JsonDict
 from blinkapp.models.ids import NetworkId
-from blinkapp.utils.decorators import requires_blink
+from blinkapp.utils.decorators import ensure_blink_available
 from blinkapp.utils.errors import ValidationError
-from blinkapp.utils.validators import JsonDict
 from config import Config
 from route_decorators import (
     api_route,
@@ -13,12 +13,17 @@ from route_decorators import (
     simple_success_response,
 )
 
+# Explicitly define what this module exports
+__all__ = [
+    "setup_system_routes",
+]
+
 
 def setup_system_routes(app):
     """Set up system management routes."""
 
     @app.route("/api/system/list")
-    @requires_blink
+    @ensure_blink_available
     @api_route("get systems")
     def get_systems() -> JsonDict:
         """Get list of available Blink systems.
@@ -32,7 +37,7 @@ def setup_system_routes(app):
         """
         from blinkapp import blink, logger
 
-        assert blink is not None  # Guaranteed by @requires_blink decorator
+        assert blink is not None  # Guaranteed by @ensure_blink_available decorator
 
         logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
         systems = []
@@ -50,7 +55,7 @@ def setup_system_routes(app):
         return {"systems": systems}
 
     @app.route("/api/system/<network_id_str>/devices")
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "get devices", validate_params={"network_id_str": NetworkId}
     )
@@ -66,12 +71,12 @@ def setup_system_routes(app):
         from blinkapp import (
             create_device_data,
             ensure_thumbnail_cache_initialized,
-            extract_thumbnail_timestamp,
             logger,
             require_sync_module,
-            update_camera_thumbnail,
         )
         from blinkapp.models.ids import CameraId
+        from blinkapp.routes.camera import update_camera_thumbnail
+        from blinkapp.utils.validators import extract_thumbnail_timestamp
 
         devices = []
 
@@ -116,7 +121,7 @@ def setup_system_routes(app):
         return {"devices": devices}
 
     @app.route("/api/system/<network_id_str>/arm", methods=["POST"])
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "arm/disarm system",
         validate_params={"network_id_str": NetworkId},
@@ -150,7 +155,7 @@ def setup_system_routes(app):
             return {"armed": armed}
 
     @app.route("/api/system/refresh", methods=["POST"])
-    @requires_blink
+    @ensure_blink_available
     @simple_success_response("System refreshed successfully")
     def refresh_system() -> JsonDict:
         """Manually refresh the Blink system.

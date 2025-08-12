@@ -64,9 +64,6 @@ from blinkapp.routes.auth import (
 from blinkapp.routes.camera import (
     setup_camera_routes,
 )
-from blinkapp.routes.camera import (
-    update_camera_thumbnail as update_camera_thumbnail,
-)
 
 # Clip management routes
 from blinkapp.routes.clips import setup_clips_routes
@@ -78,16 +75,11 @@ from blinkapp.routes.settings import setup_settings_routes
 from blinkapp.routes.system import setup_system_routes
 
 # Route decorators and error handling
-from blinkapp.utils.decorators import error_context, requires_blink
+from blinkapp.utils.decorators import ensure_blink_available, error_context
 from blinkapp.utils.errors import (
     CacheError,
     ValidationError,
 )
-from blinkapp.utils.validators import (
-    extract_thumbnail_timestamp as extract_thumbnail_timestamp,
-)
-
-# Utility functions for data processing
 from blinkapp.utils.validators import (
     format_clips_by_day,
     format_time_ago,
@@ -97,9 +89,6 @@ from blinkapp.utils.validators import (
 from route_decorators import (
     api_route,
     simple_success_response,
-)
-from route_decorators import (
-    method_dispatch_route as method_dispatch_route,
 )
 
 # Live streaming management
@@ -123,9 +112,6 @@ from flask import (
     session,
     url_for,
 )
-from flask import (
-    request as request,
-)
 from flask.typing import ResponseReturnValue
 
 # Type definitions for better code clarity
@@ -145,6 +131,54 @@ from config import Config
 # Generic type variables for function signatures
 T = TypeVar("T")
 P = ParamSpec("P")
+
+# Explicitly define what this module exports
+__all__ = [
+    # Flask application instance
+    "app",
+    # Core initialization functions
+    "ensure_blink_initialized",
+    "ensure_blink_connection_initialized",
+    "ensure_executor_initialized",
+    "ensure_http_session_initialized",
+    "ensure_stream_manager_initialized",
+    "ensure_cache_paths_initialized",
+    "ensure_thumbnail_cache_initialized",
+    "ensure_clips_cache_initialized",
+    # Utility functions
+    "handle_api_error",
+    "require_sync_module",
+    "setup_logging",
+    "initialize_cache_paths",
+    "create_device_data",
+    # Clip processing functions
+    "process_cloud_clips",
+    "process_local_clips",
+    "download_cloud_clip",
+    "download_local_clip",
+    "process_local_clip_background",
+    "process_cloud_clip_background",
+    "notify_thumbnail_ready",
+    "generate_clip_thumbnail",
+    # Cache management
+    "clear_all_caches",
+    "clear_cache",
+    "load_thumbnail_cache",
+    "load_clips_cache",
+    # Route handlers
+    "index",
+    # Configuration and debugging
+    "get_config",
+    "placeholder",
+    "dump_cloud_videos",
+    "dump_blink_system_info",
+    # Application lifecycle
+    "startup",
+    "cleanup_resources",
+    "handle_dump_system",
+    "signal_handler",
+    "main",
+]
 
 # ============================================================================
 # Flask Application Setup
@@ -267,7 +301,7 @@ def require_sync_module(
         >>> # Use sync module for operations
         >>> sync.arm = True
     """
-    # Ensure blink is initialized - this should be guaranteed by @requires_blink
+    # Ensure blink is initialized - this should be guaranteed by @ensure_blink_available
     assert blink is not None
 
     # Search through all sync modules for matching network ID
@@ -922,7 +956,7 @@ def _download_clip_common(
     return response, 200
 
 
-@requires_blink
+@ensure_blink_available
 def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     """Download cloud storage clip."""
     assert blink is not None
@@ -1010,7 +1044,7 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     return _download_clip_common(clip_id, filepath, filename, middle_frame=False)
 
 
-@requires_blink
+@ensure_blink_available
 def download_local_clip(
     clip_id: ClipId, sync_name: str, item_id: int
 ) -> ResponseReturnValue:

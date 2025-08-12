@@ -24,11 +24,11 @@ sys.path.insert(0, os.path.dirname(__file__))
 from blinkapp import (
     Config,
     app,
-    extract_thumbnail_timestamp,
 )
 from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
 from blinkapp.models.responses import create_api_response
 from blinkapp.utils.validators import (
+    extract_thumbnail_timestamp,
     format_time_ago,
     validate_string_input,
 )
@@ -389,7 +389,7 @@ class TestFlaskApp(BaseTestCase):
     def handle_isolation_error(self, response, expected_status=200):
         """Handle test isolation issues where decorator checks fail."""
         if response.status_code == 500 and expected_status != 500:
-            # This is likely a test isolation issue with the @requires_blink decorator
+            # This is likely a test isolation issue with the @ensure_blink_available decorator
             self.skipTest("Test isolation issue - blink decorator check failed")
         return response
 
@@ -5260,7 +5260,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_extract_timestamp_basic_cases(self) -> None:
         """Test extract_thumbnail_timestamp with basic cases."""
-        from blinkapp import extract_thumbnail_timestamp
+        from blinkapp.utils.validators import extract_thumbnail_timestamp
 
         # Test valid timestamp extraction
         url_with_ts = "https://example.com/thumb.jpg?ts=1234567890"
@@ -5291,8 +5291,8 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(status, 500)
 
     @patch("blinkapp.blink", None)
-    def test_requires_blink_decorator_functionality(self) -> None:
-        """Test requires_blink decorator basic functionality."""
+    def test_ensure_blink_available_decorator_functionality(self) -> None:
+        """Test ensure_blink_available decorator basic functionality."""
         # Test endpoint that requires blink when blink is None
         response = self.client.get("/api/system/list")
 

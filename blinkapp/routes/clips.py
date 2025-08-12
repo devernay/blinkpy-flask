@@ -3,10 +3,10 @@
 from flask import jsonify, request
 from flask.typing import ResponseReturnValue
 
+from app_types import JsonDict
 from blinkapp.models.ids import ClipId
-from blinkapp.utils.decorators import error_context, requires_blink
+from blinkapp.utils.decorators import ensure_blink_available, error_context
 from blinkapp.utils.errors import ValidationError
-from blinkapp.utils.validators import JsonDict
 from config import Config
 from route_decorators import (
     api_route,
@@ -15,12 +15,17 @@ from route_decorators import (
     simple_success_response,
 )
 
+# Explicitly define what this module exports
+__all__ = [
+    "setup_clips_routes",
+]
+
 
 def setup_clips_routes(app):
     """Set up clip management routes."""
 
     @app.route("/api/clips")
-    @requires_blink
+    @ensure_blink_available
     @api_route("get clips")
     def get_clips() -> JsonDict:
         """Get clips from cloud or local storage.
@@ -60,7 +65,7 @@ def setup_clips_routes(app):
         return {"clips": clips}
 
     @app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
-    @requires_blink
+    @ensure_blink_available
     @simple_success_response("Clip processing initiated")
     def process_clip(clip_id_str: str) -> JsonDict:
         """Process clip on server (download and generate thumbnail) without sending to client.
@@ -95,7 +100,7 @@ def setup_clips_routes(app):
         return {}  # Decorator will handle the success response
 
     @app.route("/api/clip/<clip_id_str>/download")
-    @requires_blink
+    @ensure_blink_available
     @api_route("download clip")
     def download_clip(clip_id_str: str) -> ResponseReturnValue:
         """Download a specific clip.

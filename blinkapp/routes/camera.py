@@ -20,8 +20,8 @@ from app_types import ApiResponse, FlaskResponse, JsonDict
 from blinkapp.models.ids import CameraId
 from blinkapp.models.responses import create_api_response
 from blinkapp.utils.decorators import (
+    ensure_blink_available,
     error_context,
-    requires_blink,
 )
 from blinkapp.utils.errors import CameraError, ValidationError
 from blinkapp.utils.validators import (
@@ -32,6 +32,14 @@ from config import Config
 from route_decorators import api_route_with_validation
 
 logger = logging.getLogger(__name__)
+
+# Explicitly define what this module exports
+__all__ = [
+    "find_camera_by_id",
+    "require_camera",
+    "update_camera_thumbnail",
+    "setup_camera_routes",
+]
 
 
 def find_camera_by_id(camera_id: CameraId) -> BlinkCamera | None:
@@ -227,7 +235,7 @@ def setup_camera_routes(app: Flask) -> None:
     """
 
     @app.route("/api/camera/<camera_id_str>/refresh", methods=["POST"])
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "refresh camera thumbnail", validate_params={"camera_id_str": CameraId}
     )
@@ -295,7 +303,7 @@ def setup_camera_routes(app: Flask) -> None:
             return {"success": True, "message": "Camera thumbnail refresh initiated"}
 
     @app.route("/api/camera/<camera_id_str>/liveview")
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "start camera liveview", validate_params={"camera_id_str": CameraId}
     )
@@ -376,7 +384,7 @@ def setup_camera_routes(app: Flask) -> None:
             return {"success": False, "error": "Failed to initialize live stream"}
 
     @app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "stop camera liveview", validate_params={"camera_id_str": CameraId}
     )
@@ -462,7 +470,7 @@ def setup_camera_routes(app: Flask) -> None:
             return jsonify(response), status_code
 
     @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "get camera thumbnail timestamp", validate_params={"camera_id_str": CameraId}
     )
@@ -486,7 +494,7 @@ def setup_camera_routes(app: Flask) -> None:
         return {"timestamp": timestamp}
 
     @app.route("/api/camera/<camera_id_str>/thumbnail")
-    @requires_blink
+    @ensure_blink_available
     @api_route_with_validation(
         "get camera thumbnail", validate_params={"camera_id_str": CameraId}
     )

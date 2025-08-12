@@ -20,6 +20,13 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
+# Explicitly define what this module exports
+__all__ = [
+    "StreamConfig",
+    "HLSStream",
+    "StreamManager",
+]
+
 
 @dataclass
 class StreamConfig:

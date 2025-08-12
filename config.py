@@ -4,6 +4,11 @@ This module centralizes all configuration values to avoid circular imports
 between app.py and other modules that need configuration constants.
 """
 
+# Explicitly define what this module exports
+__all__ = [
+    "Config",
+]
+
 
 class Config:
     """Application configuration constants.

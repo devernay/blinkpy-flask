@@ -26,6 +26,12 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
+# Explicitly define what this module exports
+__all__ = [
+    "BlinkError",
+    "BlinkConnection",
+]
+
 
 # Import BlinkError from app to avoid duplication
 # Define BlinkError locally to avoid import issues
