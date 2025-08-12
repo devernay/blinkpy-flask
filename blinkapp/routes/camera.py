@@ -431,7 +431,10 @@ def setup_camera_routes(app: Flask) -> None:
             logger.info(
                 f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
             )
-            return jsonify({"timestamp": timestamp})
+            response, _ = create_api_response(
+                success=True, data={"timestamp": timestamp}
+            )
+            return jsonify(response)
 
         # Import locally to avoid circular imports
 

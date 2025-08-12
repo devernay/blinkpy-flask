@@ -256,6 +256,8 @@ def require_sync_module(
         >>> # Use sync module for operations
         >>> sync.arm = True
     """
+    from blinkapp.services.blink_service import blink
+
     # Ensure blink is initialized - this should be guaranteed by @ensure_blink_available
     assert blink is not None
 
@@ -853,12 +855,19 @@ def load_clips_cache() -> None:
 
 async def cleanup_blink_session() -> None:
     """Clean up Blink aiohttp session."""
-    global blink
-    if blink and hasattr(blink, "auth") and hasattr(blink.auth, "session"):
-        try:
-            await blink.auth.session.close()
-        except Exception as e:
-            logger.debug(f"Error closing Blink session: {e}")
+    from blinkapp.services.blink_service import blink_connection
+
+    if (
+        blink_connection
+        and hasattr(blink_connection, "blink")
+        and blink_connection.blink
+    ):
+        blink = blink_connection.blink
+        if hasattr(blink, "auth") and hasattr(blink.auth, "session"):
+            try:
+                await blink.auth.session.close()
+            except Exception as e:
+                logger.debug(f"Error closing Blink session: {e}")
 
 
 def cleanup_resources() -> None:

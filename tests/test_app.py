@@ -1422,7 +1422,7 @@ class TestThumbnailManagement(BaseTestCase):
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
 
-        response = self.client.get("/api/cameras/12345/thumbnail/timestamp")
+        response = self.client.get("/api/cameras/12345/thumbnail?timestamp=true")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1620,7 +1620,7 @@ class TestErrorScenarios(BaseTestCase):
         """Test endpoints with invalid JSON."""
         endpoints = [
             ("/api/systems/12345/arm", "POST"),
-            ("/api/settings", "POST"),
+            ("/api/settings", "PUT"),
         ]
 
         for endpoint, method in endpoints:
@@ -1628,8 +1628,12 @@ class TestErrorScenarios(BaseTestCase):
                 response = self.client.post(
                     endpoint, data="invalid json", content_type="application/json"
                 )
-                # Should return 400 for invalid JSON
-                self.assertIn(response.status_code, [400, 500])
+            elif method == "PUT":
+                response = self.client.put(
+                    endpoint, data="invalid json", content_type="application/json"
+                )
+            # Should return 400 for invalid JSON
+            self.assertIn(response.status_code, [400, 500])
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
@@ -1643,7 +1647,6 @@ class TestErrorScenarios(BaseTestCase):
 
         endpoints = [
             "/api/cameras/99999/thumbnail",
-            "/api/cameras/99999/thumbnail/timestamp",
             "/api/cameras/99999/liveview",
         ]
 
@@ -1755,7 +1758,7 @@ class TestAdvancedEndpoints(BaseTestCase):
             mock_cache.get.return_value = {"thumbnail": Path("/tmp/test_thumb.jpg")}
 
             with patch("pathlib.Path.exists", return_value=True):
-                response = self.client.get("/api/clips/test_clip/thumbnail/check")
+                response = self.client.get("/api/clips/test_clip/thumbnail?check=true")
                 self.assertEqual(response.status_code, 200)
 
                 data = json.loads(response.data)
@@ -1767,7 +1770,7 @@ class TestAdvancedEndpoints(BaseTestCase):
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
 
-            response = self.client.get("/api/clips/nonexistent/thumbnail/check")
+            response = self.client.get("/api/clips/nonexistent/thumbnail?check=true")
             self.assertEqual(response.status_code, 200)
             data = json.loads(response.data)
             self.assertTrue(data["success"])
@@ -2908,7 +2911,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
     def test_json_parsing_error_handling(self, mock_blink) -> None:
         """Test handling of JSON parsing errors."""
         # Test malformed JSON in request
-        response = self.client.post(
+        response = self.client.put(
             "/api/settings", data="{invalid json", content_type="application/json"
         )
 
@@ -3001,7 +3004,7 @@ class TestSecurityFeatures(BaseTestCase):
 
         for malicious_input in malicious_inputs:
             # Test in various endpoints that accept input
-            response = self.client.post(
+            response = self.client.put(
                 "/api/settings", json={"temperature_unit": malicious_input}
             )
 
@@ -3029,7 +3032,7 @@ class TestSecurityFeatures(BaseTestCase):
         # Test very long input
         long_input = "a" * 10000
 
-        response = self.client.post(
+        response = self.client.put(
             "/api/settings", json={"temperature_unit": long_input}
         )
 
@@ -3576,7 +3579,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         mock_sync.cameras = {"camera1": mock_camera}
         mock_blink.sync = {"sync1": mock_sync}
 
-        response = self.client.get("/api/cameras/12345/thumbnail/timestamp")
+        response = self.client.get("/api/cameras/12345/thumbnail?timestamp=true")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -5134,8 +5137,13 @@ class TestComplexErrorScenarios(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_cascading_failure_recovery(self, mock_connection, mock_blink) -> None:
         """Test recovery from cascading failures."""
-        # Mock cascading failures
-        mock_blink.cameras = {12345: Mock()}
+        # Mock cascading failures with proper structure
+        mock_camera = Mock()
+        mock_camera.camera_id = "12345"
+        mock_sync = Mock()
+        mock_sync.cameras = {"camera1": mock_camera}
+        mock_blink.sync = {"sync1": mock_sync}
+        mock_blink.available = True
 
         # First request fails with connection error
         mock_connection.execute = mock_execute_with_coroutine_cleanup(
@@ -5694,7 +5702,7 @@ class TestCriticalPathCoverage(BaseTestCase):
     def test_content_type_handling(self) -> None:
         """Test content type handling."""
         # Test JSON content type
-        response = self.client.post(
+        response = self.client.put(
             "/api/settings", json={"test": "data"}, content_type="application/json"
         )
 
@@ -5830,7 +5838,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         mock_path.exists.return_value = True
         mock_cache.get.return_value = {"thumbnail": mock_path}
 
-        response = self.client.get("/api/clips/12345/thumbnail/check")
+        response = self.client.get("/api/clips/12345/thumbnail?check=true")
         self.assertIn(response.status_code, [200, 404])
 
     @patch("blinkapp.services.cache_service.clips_cache")
@@ -5838,7 +5846,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         """Test clip thumbnail check not found."""
         mock_cache.get.return_value = None
 
-        response = self.client.get("/api/clips/99999/thumbnail/check")
+        response = self.client.get("/api/clips/99999/thumbnail?check=true")
         self.assertIn(response.status_code, [200, 404])
 
 

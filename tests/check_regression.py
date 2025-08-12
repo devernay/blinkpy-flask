@@ -41,7 +41,9 @@ def load_baseline():
         return [line.strip() for line in f if line.strip()]
 
 
-def compare_results(current, baseline):
+def compare_results(
+    current: list[str], baseline: list[str]
+) -> dict[str, list[str] | int]:
     """Compare current results with baseline and report differences."""
     current_set = set(current)
     baseline_set = set(baseline)

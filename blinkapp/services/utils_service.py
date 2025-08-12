@@ -59,7 +59,8 @@ def create_device_data(
     """
     from datetime import datetime
 
-    from blinkapp import format_time_ago, logger
+    from blinkapp import logger
+    from blinkapp.utils.validators import format_time_ago
 
     # Use the most recent timestamp between current and cached
     # This ensures we show the latest available thumbnail information

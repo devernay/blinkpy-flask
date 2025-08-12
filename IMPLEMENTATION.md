@@ -131,9 +131,9 @@ The full player interface should be shown when the clip is loaded, with a timeli
 
 On top of the video player it should show the camera name, the date and the time, in a font that has the same size as the font used in the clips list.
 
-The player should also have those additional buttons:
-- a trashcan to delete the clip. This should show a modal dialog saying "<b>Are you sure?</b><br />This will delete the clip and cannot be undone." with two buttons "Delete Clip" (default action) and "Nevermind".
-- a download button to download the clip.
+The clip player should also have those additional buttons on the top-left:
+- A trashcan button to delete the clip. This should show a modal dialog saying "<b>Are you sure?</b><br />This will delete the clip and cannot be undone." with two buttons "Delete Clip" (default action) and "Nevermind".
+- A download button to download the clip.
 
 The clips (either cloud-based or local) should be cached by the server in a FIFO cache, and the cache size should have a default size of 100 clips. Identify clearly the clips cache size in the code. For each clip, a thumbnail should be shown if it is available from the clip cache. The thumbnail for downloaded clips is the middle frame from the clip. Clip thumbnails (either cloud-based or local) should be cached in the same directory as the clips. When a thumbnail is not available for a given clip, the thumbnail should show a "play" button. As soon as a clip thumbnail is cached, the "Clips" view should display that thumbnail without having to reload the page.
 
@@ -258,7 +258,7 @@ class ApiClient {
 }
 
 // Usage in modules:
-const clips = await ApiClient.get('/api/clip/list?storage=cloud');
+const clips = await ApiClient.get('/api/clips?storage=cloud');
 ```
 
 ### 3. Performance Optimizations
@@ -793,3 +793,19 @@ def get_recent_clips(camera_id):
 Camera Properties: Would provide much richer device information to users, matching what's available in the official Blink app.
 
 Recent Clips: Would show motion-triggered clips immediately without waiting for cloud sync.
+
+Fix all ruff check and pytest (full suite) issues. Don't add exports to the main module. I prefer if the only exports for each modul is the ones it defines, and symbols are imported from where they are defined.
+
+
+Check all the api route names. Do they look consistent, logical, and RESTful? Is there room for improvements?
+
+ok, implement the recommended improvements. Also update api.json, the pytrhon code and tests, the javascript and the documentation
+
+did you update api.json? Is it complete? Are there more actions missing or outdated? Also update the documentation.
+
+run ruff check, pyright, and pytest (full test suites), and fix all issues. Do not stop until all issues are fixed.
+
+take a look at the content of the following files. Should it be moved to different places? What do you suggest? Don't do anything for now.
+- app_types.py
+- config.py
+- blink_connection.py

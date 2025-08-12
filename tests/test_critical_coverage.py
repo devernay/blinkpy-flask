@@ -171,7 +171,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
 
             # Initialize cache paths and caches before thumbnail operations
             initialize_cache_paths()
-            initialize_caches()
+            initialize_caches({})
             camera_id = CameraId("test123")
             update_camera_thumbnail(self.mock_camera, camera_id, 2000, 1000)
             # Should submit task to executor

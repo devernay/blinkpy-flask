@@ -5,6 +5,7 @@ from flask.typing import ResponseReturnValue
 
 from app_types import JsonDict
 from blinkapp.models.ids import ClipId
+from blinkapp.models.responses import create_api_response
 from blinkapp.utils.decorators import ensure_blink_available, error_context
 from blinkapp.utils.errors import ValidationError
 from config import Config
@@ -157,15 +158,22 @@ def setup_clips_routes(app):
                 # Check for local cached thumbnail first
                 thumbnail_path = cached_clip.get("thumbnail")
                 if thumbnail_path is not None and thumbnail_path.exists():
-                    return jsonify({"available": True, "type": "local"})
+                    response, _ = create_api_response(
+                        success=True, data={"available": True, "type": "local"}
+                    )
+                    return jsonify(response)
 
                 # For cloud clips, check if we have cloud thumbnail URL
                 if not clip_id.is_local():
                     cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
                     if cloud_thumbnail_url:
-                        return jsonify({"available": True, "type": "cloud"})
+                        response, _ = create_api_response(
+                            success=True, data={"available": True, "type": "cloud"}
+                        )
+                        return jsonify(response)
 
-            return jsonify({"available": False})
+            response, _ = create_api_response(success=True, data={"available": False})
+            return jsonify(response)
         cached_clip = clips_cache_instance.get(clip_id)
 
         if cached_clip is not None:
