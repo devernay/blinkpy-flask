@@ -143,7 +143,8 @@ def setup_clips_routes(app):
     @file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
     def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:
         """Serve clip thumbnail."""
-        from blinkapp import ensure_clips_cache_initialized, send_file
+        from blinkapp import send_file
+        from blinkapp.services.cache_service import ensure_clips_cache_initialized
 
         clips_cache_instance = ensure_clips_cache_initialized()
         cached_clip = clips_cache_instance.get(clip_id)
@@ -172,7 +173,7 @@ def setup_clips_routes(app):
         Returns:
             JSON response indicating if thumbnail is available
         """
-        from blinkapp import ensure_clips_cache_initialized
+        from blinkapp.services.cache_service import ensure_clips_cache_initialized
 
         clips_cache_instance = ensure_clips_cache_initialized()
         cached_clip = clips_cache_instance.get(clip_id)

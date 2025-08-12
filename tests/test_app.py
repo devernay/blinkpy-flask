@@ -1274,7 +1274,10 @@ class TestAPIEndpoints(BaseTestCase):
         from blinkapp import clear_all_caches
 
         with patch("blinkapp.ensure_thumbnail_cache_initialized", return_value=Mock()):
-            with patch("blinkapp.ensure_clips_cache_initialized", return_value=Mock()):
+            with patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+                return_value=Mock(),
+            ):
                 with patch("blinkapp.ensure_executor_initialized", return_value=Mock()):
                     with patch("blinkapp.CACHE_DIR", "/tmp/cache"):
                         with patch(
@@ -1625,7 +1628,8 @@ class TestErrorScenarios(BaseTestCase):
 
         with patch("blinkapp.ensure_thumbnail_cache_initialized", return_value={}):
             with patch(
-                "blinkapp.ensure_stream_manager_initialized", return_value=Mock()
+                "blinkapp.services.stream_service.ensure_stream_manager_initialized",
+                return_value=Mock(),
             ):
                 with patch("blinkapp.CACHE_DIR", "/tmp/cache"):
                     with patch("blinkapp.CREDENTIALS_FILE", "/tmp/cache/blink.json"):
@@ -2111,8 +2115,12 @@ class TestClipDownloadOperations(BaseTestCase):
         mock_blink.get_videos_metadata.return_value = []
         mock_connection.execute.return_value = []
 
-        with patch("blinkapp.ensure_clips_cache_initialized", return_value={}):
-            response = self.client.get("/api/clip/nonexistent/download")
+        with patch(
+            "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+            return_value={},
+        ):
+            with patch("blinkapp.clips_cache", {}):
+                response = self.client.get("/api/clip/nonexistent/download")
             self.assertEqual(response.status_code, 404)
 
             data = json.loads(response.data)
@@ -2336,7 +2344,9 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
     @patch("blinkapp.blink")
     def test_get_clip_thumbnail_success(self, mock_blink) -> None:
         """Test getting clip thumbnail."""
-        with patch("blinkapp.ensure_clips_cache_initialized") as mock_ensure_cache:
+        with patch(
+            "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+        ) as mock_ensure_cache:
             # Mock Path object for thumbnail using spec
             from pathlib import Path
 
@@ -2399,7 +2409,9 @@ class TestStreamingAndLiveView(BaseTestCase):
         mock_sync.cameras = {"Test Camera": mock_camera}
         mock_blink.sync = {"test_sync": mock_sync}
 
-        with patch("blinkapp.stream_manager") as mock_stream_manager:
+        with patch(
+            "blinkapp.services.stream_service.stream_manager"
+        ) as mock_stream_manager:
             mock_stream_manager.start_stream.return_value = (
                 "http://localhost:8080/stream.m3u8"
             )
@@ -2426,7 +2438,9 @@ class TestStreamingAndLiveView(BaseTestCase):
         mock_sync.cameras = {"Test Camera": mock_camera}
         mock_blink.sync = {"test_sync": mock_sync}
 
-        with patch("blinkapp.stream_manager") as mock_stream_manager:
+        with patch(
+            "blinkapp.services.stream_service.stream_manager"
+        ) as mock_stream_manager:
             mock_stream_manager.start_stream.side_effect = Exception("Stream failed")
 
             response = self.client.get("/api/camera/12345/liveview")
@@ -2444,7 +2458,7 @@ class TestBackgroundTaskExecution(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.executor")
-    @patch("blinkapp.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.ensure_thumbnail_cache_initialized")
     def test_background_task_submission(
         self, mock_thumb_ensure, mock_clips_ensure, mock_executor
@@ -2677,7 +2691,7 @@ class TestCacheLoadingOperations(BaseTestCase):
         with patch("pathlib.Path.glob", return_value=[mock_video_file]):
             with patch("pathlib.Path.exists", return_value=True):
                 with patch(
-                    "blinkapp.ensure_clips_cache_initialized"
+                    "blinkapp.services.cache_service.ensure_clips_cache_initialized"
                 ) as mock_ensure_cache:
                     mock_cache = {}  # Use dict to support __setitem__
                     mock_ensure_cache.return_value = mock_cache
@@ -2699,7 +2713,8 @@ class TestCacheLoadingOperations(BaseTestCase):
                     "blinkapp.ensure_thumbnail_cache_initialized", return_value={}
                 ):
                     with patch(
-                        "blinkapp.ensure_clips_cache_initialized", return_value={}
+                        "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+                        return_value={},
                     ):
                         # Should handle missing directories gracefully
                         load_thumbnail_cache()
@@ -2834,7 +2849,8 @@ class TestErrorHandlingAdvanced(BaseTestCase):
                     "blinkapp.ensure_thumbnail_cache_initialized", return_value=Mock()
                 ):
                     with patch(
-                        "blinkapp.ensure_clips_cache_initialized", return_value=Mock()
+                        "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+                        return_value=Mock(),
                     ):
                         with patch(
                             "blinkapp.ensure_executor_initialized", return_value=Mock()
@@ -3048,8 +3064,12 @@ class TestLocalClipDownloadOperations(BaseTestCase):
 
         mock_blink.sync = {}  # No sync modules
 
-        with patch("blinkapp.ensure_clips_cache_initialized", return_value={}):
-            response = self.client.get("/api/clip/nonexistent~123/download")
+        with patch(
+            "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+            return_value={},
+        ):
+            with patch("blinkapp.clips_cache", {}):
+                response = self.client.get("/api/clip/nonexistent~123/download")
             self.assertEqual(response.status_code, 404)
 
             data = json.loads(response.data)
@@ -3068,8 +3088,12 @@ class TestLocalClipDownloadOperations(BaseTestCase):
 
         mock_blink.sync = {"sync1": mock_sync}
 
-        with patch("blinkapp.ensure_clips_cache_initialized", return_value={}):
-            response = self.client.get("/api/clip/sync1~999/download")
+        with patch(
+            "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+            return_value={},
+        ):
+            with patch("blinkapp.clips_cache", {}):
+                response = self.client.get("/api/clip/sync1~999/download")
             self.assertEqual(response.status_code, 404)
 
 
@@ -3114,7 +3138,9 @@ class TestLiveStreamOperations(BaseTestCase):
             return_value=mock_stream
         )
 
-        with patch("blinkapp.stream_manager") as mock_stream_manager:
+        with patch(
+            "blinkapp.services.stream_service.stream_manager"
+        ) as mock_stream_manager:
             mock_stream_manager.start_stream.return_value = (
                 "http://localhost:8080/stream.m3u8"
             )
@@ -3168,7 +3194,9 @@ class TestLiveStreamOperations(BaseTestCase):
             return_value=mock_stream
         )
 
-        with patch("blinkapp.stream_manager") as mock_stream_manager:
+        with patch(
+            "blinkapp.services.stream_service.stream_manager"
+        ) as mock_stream_manager:
             # Mock stream manager success
             mock_stream_manager.start_stream.return_value = (
                 "http://localhost:8080/stream.m3u8"
@@ -3560,7 +3588,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
     def test_graceful_degradation_with_missing_dependencies(self) -> None:
         """Test graceful degradation when dependencies are missing."""
         # Test behavior when optional dependencies are not available
-        with patch("blinkapp.stream_manager", None):
+        with patch("blinkapp.services.stream_service.stream_manager", None):
             with patch("blinkapp.blink") as mock_blink:
                 mock_blink.cameras = {12345: Mock()}
 
@@ -3740,7 +3768,8 @@ class TestResourceManagement(BaseTestCase):
                     "blinkapp.ensure_thumbnail_cache_initialized", return_value=Mock()
                 ):
                     with patch(
-                        "blinkapp.ensure_clips_cache_initialized", return_value=Mock()
+                        "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+                        return_value=Mock(),
                     ):
                         with patch(
                             "blinkapp.ensure_executor_initialized", return_value=Mock()
@@ -3889,7 +3918,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=mock_files):
                 with patch(
-                    "blinkapp.ensure_clips_cache_initialized"
+                    "blinkapp.services.cache_service.ensure_clips_cache_initialized"
                 ) as mock_ensure_cache:
                     mock_cache = {}  # Use dict to support __setitem__
                     mock_ensure_cache.return_value = mock_cache
@@ -4052,7 +4081,7 @@ class TestAdvancedFileOperations(BaseTestCase):
         with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
             with patch("blinkapp.logger") as mock_logger:
                 with patch("blinkapp.setup_logging"):
-                    with patch("blinkapp.StreamManager"):
+                    with patch("stream_manager.StreamManager"):
                         with patch("blinkapp.models.cache.initialize_caches"):
                             with patch("blinkapp.load_thumbnail_cache"):
                                 with patch("blinkapp.load_clips_cache"):
@@ -4569,7 +4598,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
 
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")
-    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.services.stream_service.stream_manager")
     def test_livestream_complete_initialization(
         self, mock_stream_manager, mock_connection, mock_blink
     ):
@@ -4607,7 +4636,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
             "blinkapp.ensure_blink_connection_initialized", return_value=mock_connection
         ):
             with patch(
-                "blinkapp.ensure_stream_manager_initialized",
+                "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=mock_stream_manager,
             ):
                 with patch("blinkapp.routes.camera.logger") as mock_logger:
@@ -4622,7 +4651,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
 
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")
-    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.services.stream_service.stream_manager")
     def test_livestream_hls_transcoding_error(
         self, mock_stream_manager, mock_connection, mock_blink
     ):
@@ -4651,7 +4680,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
             "blinkapp.ensure_blink_connection_initialized", return_value=mock_connection
         ):
             with patch(
-                "blinkapp.ensure_stream_manager_initialized",
+                "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=mock_stream_manager,
             ):
                 response = self.client.get("/api/camera/12345/liveview")
@@ -4688,7 +4717,8 @@ class TestAdvancedStreamingOperations(BaseTestCase):
             "blinkapp.ensure_blink_connection_initialized", return_value=mock_connection
         ):
             with patch(
-                "blinkapp.ensure_stream_manager_initialized", return_value=Mock()
+                "blinkapp.services.stream_service.ensure_stream_manager_initialized",
+                return_value=Mock(),
             ):
                 response = self.client.get("/api/camera/12345/liveview")
 
@@ -4697,7 +4727,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
 
     @patch("blinkapp.blink")
     @patch("blinkapp.blink_connection")
-    @patch("blinkapp.stream_manager", None)
+    @patch("blinkapp.services.stream_service.stream_manager", None)
     def test_livestream_no_stream_manager(self, mock_connection, mock_blink) -> None:
         """Test livestream when stream manager is not available."""
         mock_camera = Mock()
@@ -4996,7 +5026,7 @@ class TestAdvancedCacheOperations(BaseTestCase):
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=mock_files):  # Only .mp4 files
                 with patch(
-                    "blinkapp.ensure_clips_cache_initialized"
+                    "blinkapp.services.cache_service.ensure_clips_cache_initialized"
                 ) as mock_ensure_cache:
                     mock_cache = {}
                     mock_ensure_cache.return_value = mock_cache
@@ -5429,7 +5459,10 @@ class TestCriticalPathCoverage(BaseTestCase):
 
         # Test that clear_all_caches function exists and returns dict
         with patch("blinkapp.ensure_thumbnail_cache_initialized", return_value=Mock()):
-            with patch("blinkapp.ensure_clips_cache_initialized", return_value=Mock()):
+            with patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+                return_value=Mock(),
+            ):
                 result = clear_all_caches()
                 self.assertIsInstance(result, dict)
 

@@ -235,7 +235,11 @@ class TestGlobalVariableAccess(BaseTestCase):
             with patch("blinkapp.clips_cache", mock_clips_cache):
                 # Test that ensure functions work correctly
                 thumbnail_cache_instance = blinkapp.ensure_thumbnail_cache_initialized()
-                clips_cache_instance = blinkapp.ensure_clips_cache_initialized()
+                from blinkapp.services.cache_service import (
+                    ensure_clips_cache_initialized,
+                )
+
+                clips_cache_instance = ensure_clips_cache_initialized()
 
                 self.assertIsNotNone(thumbnail_cache_instance)
                 self.assertIsNotNone(clips_cache_instance)
@@ -250,9 +254,18 @@ class TestGlobalVariableAccess(BaseTestCase):
             self.assertTrue(hasattr(blinkapp.blink_connection, "execute"))
 
     def test_stream_manager_access(self) -> None:
-        """Test stream_manager access."""
-        self.assertTrue(hasattr(blinkapp, "stream_manager"))
-        # stream_manager might be None initially
+        """Test stream_manager access through service."""
+        from blinkapp.services.stream_service import (
+            ensure_stream_manager_initialized,
+            initialize_stream_manager,
+        )
+
+        # Initialize stream manager
+        initialize_stream_manager()
+
+        # Test that we can access it through the service
+        stream_manager = ensure_stream_manager_initialized()
+        self.assertIsNotNone(stream_manager)
 
 
 class TestUtilityFunctions(BaseTestCase):

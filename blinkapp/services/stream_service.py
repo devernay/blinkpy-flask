@@ -7,6 +7,7 @@ live stream management, HLS transcoding, and stream cleanup.
 from __future__ import annotations
 
 __all__ = [
+    "initialize_stream_manager",
     "ensure_stream_manager_initialized",
     "start_camera_stream",
     "stop_camera_stream",
@@ -19,8 +20,27 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import CameraId
+    from stream_manager import StreamManager
 
 logger = logging.getLogger(__name__)
+
+# Global stream manager instance
+stream_manager: StreamManager | None = None
+
+
+def initialize_stream_manager() -> None:
+    """Initialize the global stream manager instance."""
+    global stream_manager
+    from blinkapp import Config
+    from stream_manager import StreamConfig, StreamManager
+
+    stream_config = StreamConfig(
+        segment_time=Config.HLS_SEGMENT_TIME,
+        list_size=Config.HLS_LIST_SIZE,
+        timeout=Config.FFMPEG_TIMEOUT,
+        idle_timeout=Config.STREAM_IDLE_TIMEOUT,
+    )
+    stream_manager = StreamManager(stream_config)
 
 
 def ensure_stream_manager_initialized():
@@ -28,12 +48,15 @@ def ensure_stream_manager_initialized():
 
     Returns:
         Initialized stream manager instance
-    """
-    from blinkapp import (
-        ensure_stream_manager_initialized as _ensure_stream_manager_initialized,
-    )
 
-    return _ensure_stream_manager_initialized()
+    Raises:
+        RuntimeError: If stream_manager hasn't been initialized
+    """
+    if stream_manager is None:
+        raise RuntimeError(
+            "Stream manager not initialized. Call initialize_blink() first."
+        )
+    return stream_manager
 
 
 def start_camera_stream(

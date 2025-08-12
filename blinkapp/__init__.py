@@ -43,9 +43,7 @@ if TYPE_CHECKING:
 # Authentication and session management
 # Caching system for thumbnails, clips, and metadata
 from blinkapp.models.cache import (
-    ClipsCache,
     ThumbnailCache,
-    clips_cache,
     thumbnail_cache,
 )
 
@@ -91,7 +89,7 @@ from route_decorators import (
 )
 
 # Live streaming management
-from stream_manager import StreamConfig, StreamManager
+
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -139,10 +137,8 @@ __all__ = [
     "ensure_blink_connection_initialized",
     "ensure_executor_initialized",
     "ensure_http_session_initialized",
-    "ensure_stream_manager_initialized",
     "ensure_cache_paths_initialized",
     "ensure_thumbnail_cache_initialized",
-    "ensure_clips_cache_initialized",
     # Utility functions
     "handle_api_error",
     "require_sync_module",
@@ -186,7 +182,6 @@ blink: "Blink | None" = None  # Main Blink API client
 blink_connection: "BlinkConnection | None" = None  # Async connection manager
 executor: "ThreadPoolExecutor | None" = None  # Background task executor
 http_session: "requests.Session | None" = None  # HTTP session for API calls
-stream_manager: "StreamManager | None" = None  # Live streaming manager
 
 # File system paths for application data storage
 CACHE_DIR: str | None = None  # Base cache directory
@@ -490,22 +485,6 @@ def ensure_http_session_initialized() -> "requests.Session":
     return http_session
 
 
-def ensure_stream_manager_initialized() -> "StreamManager":
-    """Ensure stream_manager global is initialized, raising an error if not.
-
-    Returns:
-        The initialized StreamManager instance
-
-    Raises:
-        RuntimeError: If stream_manager hasn't been initialized
-    """
-    if stream_manager is None:
-        raise RuntimeError(
-            "Stream manager not initialized. Call initialize_blink() first."
-        )
-    return stream_manager
-
-
 def ensure_cache_paths_initialized() -> None:
     """Ensure cache paths are initialized, raising an error if not.
 
@@ -545,24 +524,6 @@ def ensure_thumbnail_cache_initialized() -> "ThumbnailCache":
     return thumbnail_cache
 
 
-def ensure_clips_cache_initialized() -> "ClipsCache":
-    """Ensure clips_cache global is initialized, raising an error if not.
-
-    Returns:
-        The initialized ClipsCache instance
-
-    Raises:
-        RuntimeError: If clips_cache hasn't been initialized
-    """
-    # Import here to avoid circular imports
-
-    if clips_cache is None:
-        raise RuntimeError(
-            "Clips cache not initialized. Call initialize_caches() first."
-        )
-    return clips_cache
-
-
 # Camera thumbnail update functionality
 
 
@@ -590,6 +551,8 @@ def clear_all_caches() -> dict[str, object]:
     with error_context("clear cache", CacheError):
         # Clear memory caches first (fast operation) using OO cache methods
         thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
+        from blinkapp.services.cache_service import ensure_clips_cache_initialized
+
         clips_cache_instance = ensure_clips_cache_initialized()
 
         thumbnail_cache_instance.clear()
@@ -670,6 +633,8 @@ def _download_clip_common(
         Flask response with clip file or error message
     """
     # Ensure clips cache is initialized
+    from blinkapp.services.cache_service import ensure_clips_cache_initialized
+
     clips_cache_instance = ensure_clips_cache_initialized()
 
     # Cache the clip first (without thumbnail)
@@ -806,7 +771,7 @@ def startup() -> None:
         If no valid credentials found, user must login via web interface.
         All errors are logged but don't prevent application startup.
     """
-    global stream_manager, blink_connection, executor
+    global blink_connection, executor
 
     # Import here to avoid circular imports
     from concurrent.futures import ThreadPoolExecutor
@@ -842,13 +807,9 @@ def startup() -> None:
         setup_logging()
 
         # Initialize HLS streaming manager for live video transcoding
-        stream_config = StreamConfig(
-            segment_time=Config.HLS_SEGMENT_TIME,  # Duration of each HLS segment
-            list_size=Config.HLS_LIST_SIZE,  # Number of segments in playlist
-            timeout=Config.FFMPEG_TIMEOUT,  # FFmpeg process timeout
-            idle_timeout=Config.STREAM_IDLE_TIMEOUT,  # Auto-cleanup idle streams
-        )
-        stream_manager = StreamManager(stream_config)
+        from blinkapp.services.stream_service import initialize_stream_manager
+
+        initialize_stream_manager()
 
         # Initialize cache instances
         from cache import initialize_caches
@@ -1022,6 +983,8 @@ def load_clips_cache() -> None:
         return
 
     # Ensure clips cache is initialized
+    from blinkapp.services.cache_service import ensure_clips_cache_initialized
+
     clips_cache_instance = ensure_clips_cache_initialized()
 
     try:
@@ -1148,8 +1111,16 @@ def cleanup_resources() -> None:
             executor.shutdown(wait=False)
 
         # Shutdown stream manager if initialized
-        if stream_manager is not None:
+        try:
+            from blinkapp.services.stream_service import (
+                ensure_stream_manager_initialized,
+            )
+
+            stream_manager = ensure_stream_manager_initialized()
             stream_manager.shutdown()
+        except RuntimeError:
+            # Stream manager not initialized, nothing to shutdown
+            pass
 
         # Clean up active livestreams
         if blink_connection is not None and hasattr(

@@ -26,12 +26,17 @@ def ensure_clips_cache_initialized():
 
     Returns:
         Initialized clips cache instance
-    """
-    from blinkapp import (
-        ensure_clips_cache_initialized as _ensure_clips_cache_initialized,
-    )
 
-    return _ensure_clips_cache_initialized()
+    Raises:
+        RuntimeError: If clips_cache hasn't been initialized
+    """
+    from blinkapp import clips_cache
+
+    if clips_cache is None:
+        raise RuntimeError(
+            "Clips cache not initialized. Call initialize_caches() first."
+        )
+    return clips_cache
 
 
 def ensure_thumbnail_cache_initialized():

@@ -266,8 +266,8 @@ def setup_camera_routes(app: Flask) -> None:
         # Import locally to avoid circular imports
         from blinkapp import (
             ensure_blink_connection_initialized,
-            ensure_stream_manager_initialized,
         )
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         # Ensure required components are initialized
         blink_connection = ensure_blink_connection_initialized()
@@ -335,8 +335,8 @@ def setup_camera_routes(app: Flask) -> None:
         # Import locally to avoid circular imports
         from blinkapp import (
             ensure_blink_connection_initialized,
-            ensure_stream_manager_initialized,
         )
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         # Ensure required components are initialized
         blink_connection = ensure_blink_connection_initialized()
@@ -377,7 +377,7 @@ def setup_camera_routes(app: Flask) -> None:
             Flask Response with HLS file content or error
         """
         # Import locally to avoid circular imports
-        from blinkapp import ensure_stream_manager_initialized
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         # Ensure stream manager is initialized
         stream_manager = ensure_stream_manager_initialized()

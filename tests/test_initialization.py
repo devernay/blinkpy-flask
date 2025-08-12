@@ -24,7 +24,6 @@ def initialize_for_testing() -> None:
     import blinkapp
     from blink_connection import BlinkConnection
     from config import Config
-    from stream_manager import StreamConfig, StreamManager
 
     # Initialize executor for background tasks if not already initialized
     if blinkapp.executor is None:
@@ -39,14 +38,15 @@ def initialize_for_testing() -> None:
         )
 
     # Initialize stream manager if not already initialized
-    if blinkapp.stream_manager is None:
-        stream_config = StreamConfig(
-            segment_time=Config.HLS_SEGMENT_TIME,
-            list_size=Config.HLS_LIST_SIZE,
-            timeout=Config.FFMPEG_TIMEOUT,
-            idle_timeout=Config.STREAM_IDLE_TIMEOUT,
-        )
-        blinkapp.stream_manager = StreamManager(stream_config)
+    try:
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
+
+        ensure_stream_manager_initialized()
+    except RuntimeError:
+        # Stream manager not initialized, initialize it
+        from blinkapp.services.stream_service import initialize_stream_manager
+
+        initialize_stream_manager()
 
     # Initialize cache directories for testing if not already done
     if blinkapp.CACHE_DIR is None:

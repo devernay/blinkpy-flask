@@ -28,7 +28,7 @@ class TestLiveStreamOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.services.stream_service.stream_manager")
     @patch("blinkapp.blink_connection")
     @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_success(
@@ -59,7 +59,7 @@ class TestLiveStreamOperations(BaseTestCase):
             response.status_code, [200, 500]
         )  # May fail due to async complexity
 
-    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.services.stream_service.stream_manager")
     @patch("blinkapp.blink_connection")
     @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_no_stream_manager(
@@ -86,7 +86,7 @@ class TestLiveStreamOperations(BaseTestCase):
         # Should return error
         self.assertIn(response.status_code, [404, 500])
 
-    @patch("blinkapp.stream_manager")
+    @patch("blinkapp.services.stream_service.stream_manager")
     @patch("blinkapp.blink_connection")
     @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_stream_init_failure(
@@ -479,7 +479,8 @@ class TestCacheMaintenanceOperations(BaseTestCase):
             "blinkapp.ensure_thumbnail_cache_initialized", return_value=mock_thumb
         ):
             with patch(
-                "blinkapp.ensure_clips_cache_initialized", return_value=mock_clips_dl
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized",
+                return_value=mock_clips_dl,
             ):
                 with patch(
                     "blinkapp.ensure_executor_initialized", return_value=mock_executor
