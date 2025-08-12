@@ -7,7 +7,7 @@ from typing import cast
 from flask import jsonify, request
 from flask.typing import ResponseReturnValue
 
-from blinkapp.utils.validators import create_api_response
+from blinkapp.models.responses import create_api_response
 from config import Config
 from route_decorators import method_dispatch_route
 

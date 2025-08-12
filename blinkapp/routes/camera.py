@@ -18,13 +18,13 @@ from flask import Flask, Response, send_file
 
 from app_types import ApiResponse, FlaskResponse, JsonDict
 from blinkapp.models.ids import CameraId
+from blinkapp.models.responses import create_api_response
 from blinkapp.utils.decorators import (
     error_context,
     requires_blink,
 )
 from blinkapp.utils.errors import CameraError, ValidationError
 from blinkapp.utils.validators import (
-    create_api_response,
     extract_thumbnail_timestamp,
 )
 from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]

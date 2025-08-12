@@ -52,6 +52,9 @@ from blinkapp.models.cache import (
 
 # ID validation and type safety
 from blinkapp.models.ids import CameraId, ClipId, NetworkId
+
+# API response models
+from blinkapp.models.responses import create_api_response
 from blinkapp.routes.auth import (
     load_saved_blink,
     setup_auth_routes,
@@ -80,15 +83,14 @@ from blinkapp.utils.errors import (
     CacheError,
     ValidationError,
 )
+from blinkapp.utils.validators import (
+    extract_thumbnail_timestamp as extract_thumbnail_timestamp,
+)
 
 # Utility functions for data processing
 from blinkapp.utils.validators import (
-    create_api_response,
     format_clips_by_day,
     format_time_ago,
-)
-from blinkapp.utils.validators import (
-    extract_thumbnail_timestamp as extract_thumbnail_timestamp,
 )
 
 # Route decorators for API endpoints

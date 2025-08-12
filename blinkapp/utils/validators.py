@@ -12,8 +12,9 @@ import logging
 import re
 from datetime import UTC, datetime
 
-from app_types import ApiResponse, JsonDict
+from app_types import ApiResponse
 from blinkapp.models.ids import ClipId
+from blinkapp.models.responses import create_api_response
 from config import Config
 
 # Module-level logger for utility function debugging
@@ -343,33 +344,3 @@ def format_time_ago(timestamp_str: str | int | None) -> str:
 # ============================================================================
 # API Response Formatting
 # ============================================================================
-
-
-def create_api_response(
-    success: bool = True,
-    data: object = None,
-    error: str | None = None,
-    status_code: int = Config.HTTP_STATUS_OK,
-) -> tuple["JsonDict", int]:
-    """Create standardized API response format.
-
-    Provides consistent JSON response structure across all API endpoints
-    with success status, data payload, error messages, and timestamps.
-
-    Args:
-        success: Whether the operation was successful
-        data: Response data payload (for successful operations)
-        error: Error message string (for failed operations)
-        status_code: HTTP status code to return
-
-    Returns:
-        Tuple of (response_dict, status_code) for Flask route handlers
-    """
-    response: JsonDict = {
-        "success": success,
-        "timestamp": datetime.now().isoformat(),
-        "data": data if success else None,
-        "error": error if not success else None,
-    }
-
-    return response, status_code

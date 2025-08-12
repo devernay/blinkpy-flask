@@ -27,8 +27,8 @@ from blinkapp import (
     extract_thumbnail_timestamp,
 )
 from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
+from blinkapp.models.responses import create_api_response
 from blinkapp.utils.validators import (
-    create_api_response,
     format_time_ago,
     validate_string_input,
 )
@@ -5274,7 +5274,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_create_api_response_basic_cases(self) -> None:
         """Test create_api_response with basic cases."""
-        from blinkapp.utils.validators import create_api_response
+        from blinkapp.models.responses import create_api_response
 
         # Test success response
         response, status = create_api_response(success=True, data={"test": "data"})
@@ -5406,7 +5406,8 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_type_annotations_coverage(self) -> None:
         """Test functions with type annotations."""
-        from blinkapp.utils.validators import create_api_response, validate_string_input
+        from blinkapp.models.responses import create_api_response
+        from blinkapp.utils.validators import validate_string_input
 
         # Test that functions with type annotations work correctly
         response, status = create_api_response(True, {"test": "data"})
