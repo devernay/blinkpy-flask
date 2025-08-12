@@ -67,7 +67,7 @@ class TestLoggingSetup(BaseTestCase):
 class TestBlinkInitialization(BaseTestCase):
     """Test Blink system initialization - lines 800-820."""
 
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     @patch("aiohttp.ClientSession")
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
@@ -105,7 +105,7 @@ class TestBlinkInitialization(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     @patch("aiohttp.ClientSession")
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
@@ -151,7 +151,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
         self.mock_camera.thumbnail = "http://example.com/thumb.jpg"
 
     @patch("blinkapp.services.cache_service.thumbnail_cache")
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
     def test_update_camera_thumbnail_cache(

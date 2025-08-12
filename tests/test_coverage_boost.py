@@ -79,7 +79,7 @@ class TestCachePathValidation(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_cache_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CACHE_DIR is None."""
-        from blinkapp import ensure_cache_paths_initialized
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
@@ -90,7 +90,7 @@ class TestCachePathValidation(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_credentials_file_none(self) -> None:
         """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
-        from blinkapp import ensure_cache_paths_initialized
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
@@ -101,7 +101,7 @@ class TestCachePathValidation(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
-        from blinkapp import ensure_cache_paths_initialized
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
@@ -112,7 +112,7 @@ class TestCachePathValidation(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", None)
     def test_ensure_cache_paths_clips_dir_none(self) -> None:
         """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
-        from blinkapp import ensure_cache_paths_initialized
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
@@ -253,8 +253,10 @@ class TestGlobalVariableAccess(BaseTestCase):
         """Test blink_connection access."""
         self.assertTrue(hasattr(blinkapp, "blink_connection"))
         # blink_connection might be None initially
-        if blinkapp.blink_connection is not None:
-            self.assertTrue(hasattr(blinkapp.blink_connection, "execute"))
+        if blinkapp.services.blink_service.blink_connection is not None:
+            self.assertTrue(
+                hasattr(blinkapp.services.blink_service.blink_connection, "execute")
+            )
 
     def test_stream_manager_access(self) -> None:
         """Test stream_manager access through service."""

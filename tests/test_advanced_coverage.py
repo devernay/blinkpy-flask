@@ -29,7 +29,7 @@ class TestLiveStreamOperations(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.services.stream_service.stream_manager")
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_success(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
@@ -60,7 +60,7 @@ class TestLiveStreamOperations(BaseTestCase):
         )  # May fail due to async complexity
 
     @patch("blinkapp.services.stream_service.stream_manager")
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_no_stream_manager(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
@@ -87,7 +87,7 @@ class TestLiveStreamOperations(BaseTestCase):
         self.assertIn(response.status_code, [404, 500])
 
     @patch("blinkapp.services.stream_service.stream_manager")
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_stream_init_failure(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
@@ -138,7 +138,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             self.assertTrue(True)
 
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     def test_download_local_clip_sync_not_found(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -158,7 +158,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             self.assertTrue(True)
 
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     def test_download_local_clip_no_local_storage(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -181,7 +181,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             self.assertTrue(True)
 
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     def test_download_local_clip_item_not_found(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -322,7 +322,7 @@ class TestCloudClipOperations(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.send_file")
     def test_download_cloud_clip_cached(
         self, mock_send_file: Mock, mock_blink: Mock, mock_cache: Mock
@@ -344,7 +344,7 @@ class TestCloudClipOperations(BaseTestCase):
             self.assertTrue(True)
 
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     def test_download_cloud_clip_not_found(
         self, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -363,7 +363,7 @@ class TestCloudClipOperations(BaseTestCase):
             self.assertTrue(True)
 
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     @patch("requests.get")
     def test_download_cloud_clip_download_success(
         self, mock_requests: Mock, mock_blink: Mock, mock_cache: Mock
@@ -416,7 +416,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Should return 500 (system not initialized) or success
         self.assertIn(response.status_code, [200, 401, 500])
 
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     def test_arm_system_network_not_found(self, mock_blink: Mock) -> None:
         """Test arm system when network not found."""
         mock_blink.networks = {}  # No networks
@@ -433,7 +433,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Should return device information or system not initialized error
         self.assertIn(response.status_code, [200, 401, 500])
 
-    @patch("blinkapp.blink")
+    @patch("blinkapp.services.blink_service.blink")
     def test_get_devices_network_not_found(self, mock_blink: Mock) -> None:
         """Test get devices when network not found."""
         mock_blink.networks = {}
@@ -546,11 +546,11 @@ class TestCacheMaintenanceOperations(BaseTestCase):
             "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
             return_value=mock_cache,
         ):
-            with patch("blinkapp.blink") as mock_blink:
+            with patch("blinkapp.services.blink_service.blink") as mock_blink:
                 mock_blink.available = True
                 mock_blink.sync = {}  # No cameras to validate against
                 try:
-                    from blinkapp import load_thumbnail_cache
+                    from blinkapp.services.cache_service import load_thumbnail_cache
 
                     load_thumbnail_cache()
                     # Should process existing thumbnail files (but be tolerant of test isolation)
@@ -600,7 +600,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.blink_connection")
+    @patch("blinkapp.services.blink_service.blink_connection")
     def test_connection_error_recovery(self, mock_connection: Mock) -> None:
         """Test connection error recovery mechanisms."""
         # Setup mock to simulate connection error

@@ -128,8 +128,8 @@ def check_blink_availability() -> ApiResponse | None:
     """
     # Import here to avoid circular imports
     import blinkapp
+    from blinkapp.services.blink_service import blink
 
-    blink = blinkapp.blink
     create_api_response = blinkapp.create_api_response
 
     if blink is None:

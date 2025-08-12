@@ -53,7 +53,8 @@ def setup_auth_routes(app_instance: Flask) -> None:
             Login form template or redirect based on authentication result
         """
         # Import here to avoid circular imports
-        from blinkapp import CREDENTIALS_FILE, blink, blink_connection
+        from blinkapp import CREDENTIALS_FILE
+        from blinkapp.services.blink_service import blink, blink_connection
 
         if request.method == "POST":
             try:
@@ -109,7 +110,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
             2FA form template or redirect based on verification result
         """
         # Import here to avoid circular imports
-        from blinkapp import blink_connection
+        from blinkapp.services.blink_service import blink_connection
 
         if "temp_username" not in session:
             return redirect(url_for("login"))

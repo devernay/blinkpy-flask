@@ -208,9 +208,11 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
         _download_clip_common,
         blink,
         blink_connection,
-        http_session,
     )
-    from blinkapp.services.connection_service import ensure_executor_initialized
+    from blinkapp.services.connection_service import (
+        ensure_executor_initialized,
+        ensure_http_session_initialized,
+    )
 
     assert blink is not None
     # Check if already cached
@@ -261,7 +263,9 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
         # Download in executor to avoid blocking
         def download_file() -> bool:
             try:
-                response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
+                response = ensure_http_session_initialized().get(
+                    media_url, timeout=Config.HTTP_TIMEOUT
+                )
                 if response.status_code == Config.HTTP_STATUS_OK:
                     filepath.write_bytes(response.content)
                     return True
@@ -396,10 +400,12 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         CLIPS_CACHE_DIR,
         blink,
         blink_connection,
-        http_session,
         logger,
     )
-    from blinkapp.services.connection_service import ensure_executor_initialized
+    from blinkapp.services.connection_service import (
+        ensure_executor_initialized,
+        ensure_http_session_initialized,
+    )
     from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
     # Ensure clips cache is initialized
@@ -438,7 +444,9 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                 if not media_url:
                     return
                 try:
-                    response = http_session.get(media_url, timeout=Config.HTTP_TIMEOUT)
+                    response = ensure_http_session_initialized().get(
+                        media_url, timeout=Config.HTTP_TIMEOUT
+                    )
                     if response.status_code == Config.HTTP_STATUS_OK:
                         filepath.write_bytes(response.content)
                     else:

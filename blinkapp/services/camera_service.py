@@ -39,7 +39,7 @@ def find_camera_by_id(camera_id: CameraId):
         ...     print(f"Found camera: {camera.name}")
     """
     # Import locally to avoid circular imports during module initialization
-    from blinkapp import ensure_blink_initialized
+    from blinkapp.services.blink_service import ensure_blink_initialized
 
     # Check if Blink system is available and initialized
     try:

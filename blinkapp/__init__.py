@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 # Caching system for thumbnails, clips, and metadata
 
 # ID validation and type safety
-from blinkapp.models.ids import CameraId, ClipId, NetworkId
+from blinkapp.models.ids import ClipId, NetworkId
 
 # API response models
 from blinkapp.models.responses import create_api_response
@@ -90,10 +90,7 @@ from route_decorators import (
 if TYPE_CHECKING:
     pass
 
-    from blink_connection import BlinkConnection
-
 # Third-party imports
-import requests
 
 # Flask framework components
 from flask import (
@@ -114,7 +111,6 @@ from app_types import (
 )
 
 # Blink camera library - third-party integration
-from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
 from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
 
 # Application configuration
@@ -129,10 +125,6 @@ __all__ = [
     # Flask application instance
     "app",
     # Core initialization functions
-    "ensure_blink_initialized",
-    "ensure_blink_connection_initialized",
-    "ensure_http_session_initialized",
-    "ensure_cache_paths_initialized",
     # Utility functions
     "handle_api_error",
     "require_sync_module",
@@ -144,7 +136,6 @@ __all__ = [
     # Cache management
     "clear_all_caches",
     "clear_cache",
-    "load_thumbnail_cache",
     "load_clips_cache",
     # Route handlers
     "index",
@@ -170,11 +161,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 # ============================================================================
 # Global Application State
 # ============================================================================
-
-# Core Blink integration objects
-blink: "Blink | None" = None  # Main Blink API client
-blink_connection: "BlinkConnection | None" = None  # Async connection manager
-http_session: "requests.Session | None" = None  # HTTP session for API calls
 
 # File system paths for application data storage
 CACHE_DIR: str | None = None  # Base cache directory
@@ -411,78 +397,6 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 # ============================================================================
 
 
-def ensure_blink_initialized() -> "Blink":
-    """Ensure blink global is initialized, raising an error if not.
-
-    This function serves as a type guard for mypy to understand that
-    the blink variable is not None after this call.
-
-    Returns:
-        The initialized Blink instance
-
-    Raises:
-        RuntimeError: If blink hasn't been initialized
-    """
-    if blink is None:
-        raise RuntimeError(
-            "Blink client not initialized. Call initialize_blink() first."
-        )
-    return blink
-
-
-def ensure_blink_connection_initialized() -> "BlinkConnection":
-    """Ensure blink_connection global is initialized, raising an error if not.
-
-    Returns:
-        The initialized BlinkConnection instance
-
-    Raises:
-        RuntimeError: If blink_connection hasn't been initialized
-    """
-    if blink_connection is None:
-        raise RuntimeError(
-            "Blink connection not initialized. Call initialize_blink() first."
-        )
-    return blink_connection
-
-
-def ensure_http_session_initialized() -> "requests.Session":
-    """Ensure http_session global is initialized, raising an error if not.
-
-    Returns:
-        The initialized requests.Session instance
-
-    Raises:
-        RuntimeError: If http_session hasn't been initialized
-    """
-    if http_session is None:
-        raise RuntimeError(
-            "HTTP session not initialized. Call initialize_blink() first."
-        )
-    return http_session
-
-
-def ensure_cache_paths_initialized() -> None:
-    """Ensure cache paths are initialized, raising an error if not.
-
-    This function serves as a type guard for mypy to understand that
-    the cache path variables are not None after this call.
-
-    Raises:
-        RuntimeError: If cache paths haven't been initialized
-    """
-    if (
-        CACHE_DIR is None
-        or CREDENTIALS_FILE is None
-        or THUMBNAIL_CACHE_DIR is None
-        or CLIPS_CACHE_DIR is None
-        or SETTINGS_FILE is None
-    ):
-        raise RuntimeError(
-            "Cache paths not initialized. Call initialize_cache_paths() first."
-        )
-
-
 # Camera thumbnail update functionality
 
 
@@ -495,6 +409,8 @@ def index() -> ResponseReturnValue:
     """
     if "authenticated" not in session:
         # Check if Blink is available from saved credentials
+        from blinkapp.services.blink_service import blink
+
         if blink and blink.available:
             session["authenticated"] = True
             return render_template("index.html")
@@ -739,11 +655,7 @@ def startup() -> None:
         If no valid credentials found, user must login via web interface.
         All errors are logged but don't prevent application startup.
     """
-    global blink_connection
-
     # Import here to avoid circular imports
-
-    from blink_connection import BlinkConnection
 
     try:
         # Initialize connections (executor and HTTP session)
@@ -751,8 +663,10 @@ def startup() -> None:
 
         initialize_connections()
 
-        # Initialize async Blink connection manager for API operations
-        blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
+        # Initialize Blink objects (blink and blink_connection)
+        from blinkapp.services.blink_service import initialize_blink_objects
+
+        initialize_blink_objects()
 
         # Set up file system paths for cache storage
         initialize_cache_paths()
@@ -791,12 +705,16 @@ def startup() -> None:
         )
 
         # Restore cached thumbnails from previous sessions
+        from blinkapp.services.cache_service import load_thumbnail_cache
+
         load_thumbnail_cache()
 
         # Restore cached clips metadata from previous sessions
         load_clips_cache()
 
         # Start the async Blink connection thread
+        from blinkapp.services.blink_service import blink_connection
+
         blink_connection.start()
 
         try:
@@ -818,130 +736,6 @@ def startup() -> None:
         logger.warning(f"Could not initialize Blink system on startup: {e}")
 
 
-def load_thumbnail_cache() -> None:
-    """Load and validate thumbnail cache from disk.
-
-    Scans thumbnail cache directory for existing files and populates
-    the in-memory cache with validated entries. Performs cleanup of
-    invalid, duplicate, and orphaned thumbnail files.
-
-    Process:
-        1. Scans cache directory for .jpg files
-        2. Parses filenames (format: camera_id_timestamp.jpg)
-        3. Validates camera IDs against current Blink system
-        4. Keeps only newest thumbnail per camera
-        5. Removes invalid/old files in background
-
-    File Format:
-        - Valid: "camera123_1642459551.jpg"
-        - Invalid: "invalid_format.jpg" (removed)
-
-    Thread Safety:
-        - Uses thread-safe cache operations
-        - File removal happens in background thread
-        - Race conditions prevented with proper error handling
-
-    Error Handling:
-        - Invalid filenames: Logged and removed
-        - Missing cameras: Files removed if system available
-        - File system errors: Logged, operation continues
-    """
-    # Ensure thumbnail cache is initialized
-    from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
-
-    thumbnail_cache = ensure_thumbnail_cache_initialized()
-
-    assert THUMBNAIL_CACHE_DIR is not None
-    cache_dir = Path(cast(str, THUMBNAIL_CACHE_DIR))
-    if not cache_dir.exists():
-        logger.warning(f"Thumbnail cache directory does not exist: {cache_dir}")
-        return
-
-    try:
-        # Get valid camera IDs from current system
-        valid_camera_ids = set()
-        if blink and blink.available:
-            for sync_name, sync in blink.sync.items():
-                for cam_name, cam in sync.cameras.items():
-                    valid_camera_ids.add(cam.camera_id)
-
-        # Group thumbnails by camera ID
-        camera_thumbnails: dict[str, list[tuple[int, str, Path]]] = {}
-        files_to_remove = []
-
-        for file_path in cache_dir.glob("*.jpg"):
-            filename = file_path.name
-            # Parse filename format: camera_id_timestamp.jpg
-            parts = filename.replace(".jpg", "").split("_")
-            if len(parts) >= 2:
-                try:
-                    camera_id = "_".join(
-                        parts[:-1]
-                    )  # Handle camera IDs with underscores
-                    timestamp = int(parts[-1])
-
-                    # Check if camera ID is valid for current system
-                    if valid_camera_ids and camera_id not in valid_camera_ids:
-                        logger.debug(
-                            f"Removing thumbnail for invalid camera {camera_id}"
-                        )
-                        files_to_remove.append(file_path)
-                        continue
-
-                    # Group by camera ID
-                    if camera_id not in camera_thumbnails:
-                        camera_thumbnails[camera_id] = []
-                    camera_thumbnails[camera_id].append(
-                        (timestamp, filename, file_path)
-                    )
-
-                except (ValueError, IndexError) as e:
-                    logger.warning(
-                        f"Could not parse thumbnail filename {filename}: {e}"
-                    )
-                    files_to_remove.append(file_path)
-
-        # Keep only the newest thumbnail per camera
-        for camera_id, thumbnails in camera_thumbnails.items():
-            # Sort by timestamp (newest first)
-            thumbnails.sort(key=lambda x: x[0], reverse=True)
-
-            # Keep the newest, mark others for removal
-            if thumbnails:
-                newest_ts, newest_filename, newest_path = thumbnails[0]
-                thumbnail_cache[CameraId(camera_id)] = {
-                    "timestamp": newest_ts,
-                    "filename": newest_filename,
-                }
-                logger.debug(
-                    f"Loaded cached thumbnail for camera {camera_id} with timestamp {newest_ts}"
-                )
-
-                # Mark older thumbnails for removal
-                for old_ts, old_filename, old_path in thumbnails[1:]:
-                    logger.debug(
-                        f"Removing old thumbnail {old_filename} for camera {camera_id}"
-                    )
-                    files_to_remove.append(old_path)
-
-        # Remove invalid/old files in background
-        def remove_files(files_list: list[Path]) -> None:
-            for file_path in files_list:
-                try:
-                    file_path.unlink()
-                    logger.debug(f"Removed invalid thumbnail: {file_path.name}")
-                except (OSError, PermissionError) as e:
-                    logger.warning(f"Could not remove thumbnail file {file_path}: {e}")
-
-        if files_to_remove:
-            from blinkapp.services.connection_service import ensure_executor_initialized
-
-            ensure_executor_initialized().submit(remove_files, files_to_remove)
-
-    except Exception as e:
-        logger.error(f"Error scanning thumbnail cache: {e}")
-
-
 def load_clips_cache() -> None:
     """Load clips cache directory and populate memory cache.
 
@@ -949,6 +743,8 @@ def load_clips_cache() -> None:
     validates against Blink system, and removes invalid files.
     Thread-safe operation.
     """
+    from blinkapp.services.blink_service import blink, blink_connection
+
     assert CLIPS_CACHE_DIR is not None
     cache_dir = Path(cast(str, CLIPS_CACHE_DIR))
     if not cache_dir.exists():
@@ -1100,6 +896,8 @@ def cleanup_resources() -> None:
             pass
 
         # Clean up active livestreams
+        from blinkapp.services.blink_service import blink, blink_connection
+
         if blink_connection is not None and hasattr(
             blink_connection, "_active_streams"
         ):
@@ -1129,6 +927,8 @@ def cleanup_resources() -> None:
             blink_connection.shutdown()
 
         # Close HTTP session
+        from blinkapp.services.connection_service import http_session
+
         if http_session is not None:
             try:
                 http_session.close()

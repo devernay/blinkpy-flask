@@ -21,19 +21,13 @@ def initialize_for_testing() -> None:
     # Import here to avoid circular imports
 
     import blinkapp
-    from blink_connection import BlinkConnection
+    from blinkapp.services.blink_service import initialize_blink_objects
 
     # Initialize connections (executor and HTTP session) if not already initialized
     from blinkapp.services.connection_service import initialize_connections
-    from config import Config
 
     initialize_connections()
-
-    # Initialize Blink connection if not already initialized
-    if blinkapp.blink_connection is None:
-        blinkapp.blink_connection = BlinkConnection(
-            timeout=Config.BLINK_CONNECTION_TIMEOUT
-        )
+    initialize_blink_objects()
 
     # Initialize stream manager if not already initialized
     try:

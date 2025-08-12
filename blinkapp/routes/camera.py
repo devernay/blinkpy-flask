@@ -80,10 +80,12 @@ def update_camera_thumbnail(
     # Import locally to avoid circular imports during module initialization
     from blinkapp import (
         THUMBNAIL_CACHE_DIR,
-        ensure_blink_connection_initialized,
-        ensure_cache_paths_initialized,
     )
-    from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    from blinkapp.services.cache_service import (
+        ensure_cache_paths_initialized,
+        ensure_thumbnail_cache_initialized,
+    )
     from blinkapp.services.connection_service import ensure_executor_initialized
 
     # Ensure all required components are initialized
@@ -198,11 +200,15 @@ def setup_camera_routes(app: Flask) -> None:
         # Import locally to avoid circular imports
         from blinkapp import (
             THUMBNAIL_CACHE_DIR,
+        )
+        from blinkapp.services.blink_service import (
             ensure_blink_connection_initialized,
             ensure_blink_initialized,
-            ensure_cache_paths_initialized,
         )
-        from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+        from blinkapp.services.cache_service import (
+            ensure_cache_paths_initialized,
+            ensure_thumbnail_cache_initialized,
+        )
         from blinkapp.services.connection_service import ensure_executor_initialized
 
         # Ensure all required components are initialized
@@ -264,9 +270,7 @@ def setup_camera_routes(app: Flask) -> None:
             JSON response with stream URLs (TCP and HLS) or error message
         """
         # Import locally to avoid circular imports
-        from blinkapp import (
-            ensure_blink_connection_initialized,
-        )
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
         from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         # Ensure required components are initialized
@@ -333,9 +337,7 @@ def setup_camera_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         # Import locally to avoid circular imports
-        from blinkapp import (
-            ensure_blink_connection_initialized,
-        )
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
         from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         # Ensure required components are initialized
@@ -446,10 +448,12 @@ def setup_camera_routes(app: Flask) -> None:
 
         from blinkapp import (
             THUMBNAIL_CACHE_DIR,
-            ensure_blink_connection_initialized,
-            ensure_cache_paths_initialized,
         )
-        from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+        from blinkapp.services.cache_service import (
+            ensure_cache_paths_initialized,
+            ensure_thumbnail_cache_initialized,
+        )
 
         # Ensure required components are initialized
         ensure_cache_paths_initialized()
