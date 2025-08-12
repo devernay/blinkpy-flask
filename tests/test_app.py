@@ -413,7 +413,7 @@ class TestFlaskApp(BaseTestCase):
         self.temp_dir = app.config["CACHE_DIR"]
 
         # Initialize caches for testing
-        from blinkapp.models.cache import initialize_caches
+        from blinkapp.services.cache_service import initialize_caches
 
         initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
 
@@ -1189,7 +1189,7 @@ class TestAPIEndpoints(BaseTestCase):
         setup_test_globals()
 
         # Initialize caches for testing
-        from blinkapp.models.cache import initialize_caches
+        from blinkapp.services.cache_service import initialize_caches
 
         initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
 
@@ -1561,7 +1561,7 @@ class TestFileOperations(BaseTestCase):
         setup_test_globals()
 
         # Initialize caches for testing
-        from blinkapp.models.cache import initialize_caches
+        from blinkapp.services.cache_service import initialize_caches
 
         initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
 

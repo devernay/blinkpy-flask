@@ -12,7 +12,7 @@ __all__ = [
     "ensure_thumbnail_cache_initialized",
     "ensure_cache_paths_initialized",
     "load_thumbnail_cache",
-    "clear_all_caches",
+    "get_cache_stats",
 ]
 
 import logging
@@ -29,11 +29,18 @@ thumbnail_cache: ThumbnailCache | None = None
 
 
 def initialize_caches(config: dict[str, Any]) -> None:
-    """Initialize the global cache instances."""
-    global clips_cache, thumbnail_cache
-    from blinkapp.models.cache import initialize_caches as _initialize_caches
+    """Initialize global cache instances with configuration.
 
-    clips_cache, thumbnail_cache = _initialize_caches(config)
+    Args:
+        config: Configuration dictionary with cache settings
+    """
+    global thumbnail_cache, clips_cache
+    from blinkapp.models.cache import ClipsCache, ThumbnailCache
+
+    thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
+    clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
+
+    logger.info("Cache instances initialized successfully")
 
 
 def ensure_clips_cache_initialized():
@@ -89,6 +96,25 @@ def ensure_cache_paths_initialized() -> None:
         raise RuntimeError(
             "Cache paths not initialized. Call initialize_blink() first."
         )
+
+
+def get_cache_stats() -> dict[str, dict[str, int | float]]:
+    """Get statistics for all cache instances.
+
+    Returns:
+        Dictionary with statistics for each cache type
+    """
+    stats = {}
+
+    thumbnail_cache = ensure_thumbnail_cache_initialized()
+    if thumbnail_cache:
+        stats["thumbnail_cache"] = thumbnail_cache.get_stats()
+
+    clips_cache = ensure_clips_cache_initialized()
+    if clips_cache:
+        stats["clips_cache"] = clips_cache.get_stats()
+
+    return stats
 
 
 def load_thumbnail_cache() -> None:
@@ -218,25 +244,3 @@ def load_thumbnail_cache() -> None:
 
     except Exception as e:
         logger.error(f"Error scanning thumbnail cache: {e}")
-
-
-def clear_all_caches() -> dict[str, Any]:
-    """Clear all application caches.
-
-    Returns:
-        Dictionary with operation result
-    """
-    try:
-        # Clear clips cache
-        clips_cache = ensure_clips_cache_initialized()
-        clips_cache.clear()
-
-        # Clear thumbnail cache
-        thumbnail_cache = ensure_thumbnail_cache_initialized()
-        thumbnail_cache.clear()
-
-        logger.info("All caches cleared successfully")
-        return {"success": True, "message": "All caches cleared"}
-    except Exception as e:
-        logger.error(f"Failed to clear caches: {e}")
-        return {"success": False, "error": str(e)}

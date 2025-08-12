@@ -26,12 +26,6 @@ __all__ = [
     "ThreadSafeLRUCache",
     "ThumbnailCache",
     "ClipsCache",
-    "initialize_caches",
-    "clear_all_caches",
-    "get_cache_stats",
-    # Global cache instances
-    "thumbnail_cache",
-    "clips_cache",
 ]
 
 
@@ -310,49 +304,3 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         if old_clips:
             logger.info(f"Cleaned up {len(old_clips)} old clips from cache")
         return len(old_clips)
-
-
-# Global cache instances (initialized by app.py)
-thumbnail_cache: ThumbnailCache | None = None
-clips_cache: ClipsCache | None = None
-
-
-def initialize_caches(config: dict[str, Any]) -> None:
-    """Initialize global cache instances with configuration.
-
-    Args:
-        config: Configuration dictionary with cache settings
-    """
-    global thumbnail_cache, clips_cache
-
-    thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
-    clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
-
-    logger.info("Cache instances initialized successfully")
-
-
-def clear_all_caches() -> None:
-    """Clear all cache instances."""
-    if thumbnail_cache:
-        thumbnail_cache.clear()
-    if clips_cache:
-        clips_cache.clear()
-
-    logger.info("All caches cleared")
-
-
-def get_cache_stats() -> dict[str, dict[str, int | float]]:
-    """Get statistics for all cache instances.
-
-    Returns:
-        Dictionary with statistics for each cache type
-    """
-    stats = {}
-
-    if thumbnail_cache:
-        stats["thumbnail_cache"] = thumbnail_cache.get_stats()
-
-    if clips_cache:
-        stats["clips_cache"] = clips_cache.get_stats()
-
-    return stats
