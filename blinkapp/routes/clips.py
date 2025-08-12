@@ -24,7 +24,7 @@ __all__ = [
 def setup_clips_routes(app):
     """Set up clip management routes."""
 
-    @app.route("/api/clip/list")
+    @app.route("/api/clips")
     @ensure_blink_available
     @api_route("get clips")
     def get_clips() -> JsonDict:
@@ -66,7 +66,7 @@ def setup_clips_routes(app):
 
         return {"clips": clips}
 
-    @app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
+    @app.route("/api/clips/<clip_id_str>/process", methods=["PUT"])
     @ensure_blink_available
     @simple_success_response("Clip processing initiated")
     def process_clip(clip_id_str: str) -> JsonDict:
@@ -101,7 +101,7 @@ def setup_clips_routes(app):
 
         return {}  # Decorator will handle the success response
 
-    @app.route("/api/clip/<clip_id_str>/download")
+    @app.route("/api/clips/<clip_id_str>/download")
     @ensure_blink_available
     @api_route("download clip")
     def download_clip(clip_id_str: str) -> ResponseReturnValue:
@@ -137,14 +137,35 @@ def setup_clips_routes(app):
             logger.debug(f"Cloud clip - ID: {clip_id}")
             return download_cloud_clip(clip_id)
 
-    @app.route("/api/clip/<clip_id_str>/thumbnail")
+    @app.route("/api/clips/<clip_id_str>/thumbnail")
     @file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
     def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:
-        """Serve clip thumbnail."""
+        """Serve clip thumbnail or check availability.
+
+        Query Parameters:
+            check: If 'true', return availability status instead of image
+        """
         from blinkapp import redirect, send_file
         from blinkapp.services.cache_service import ensure_clips_cache_initialized
 
         clips_cache_instance = ensure_clips_cache_initialized()
+        cached_clip = clips_cache_instance.get(clip_id)
+
+        # Check if availability check is requested
+        if request.args.get("check") == "true":
+            if cached_clip is not None:
+                # Check for local cached thumbnail first
+                thumbnail_path = cached_clip.get("thumbnail")
+                if thumbnail_path is not None and thumbnail_path.exists():
+                    return jsonify({"available": True, "type": "local"})
+
+                # For cloud clips, check if we have cloud thumbnail URL
+                if not clip_id.is_local():
+                    cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
+                    if cloud_thumbnail_url:
+                        return jsonify({"available": True, "type": "cloud"})
+
+            return jsonify({"available": False})
         cached_clip = clips_cache_instance.get(clip_id)
 
         if cached_clip is not None:
@@ -179,39 +200,7 @@ def setup_clips_routes(app):
         # If no cached thumbnail, return 404
         return jsonify({"error": "Thumbnail not found"}), 404
 
-    @app.route("/api/clip/<clip_id_str>/thumbnail/check")
-    @api_route_with_validation(
-        "check clip thumbnail", validate_params={"clip_id_str": ClipId}
-    )
-    def check_clip_thumbnail(clip_id: ClipId) -> JsonDict:
-        """Check if thumbnail is available for clip.
-
-        Args:
-            clip_id: The clip ID to check
-
-        Returns:
-            JSON response indicating if thumbnail is available
-        """
-        from blinkapp.services.cache_service import ensure_clips_cache_initialized
-
-        clips_cache_instance = ensure_clips_cache_initialized()
-        cached_clip = clips_cache_instance.get(clip_id)
-
-        if cached_clip is not None:
-            # Check for local cached thumbnail first
-            thumbnail_path = cached_clip.get("thumbnail")
-            if thumbnail_path is not None and thumbnail_path.exists():
-                return {"available": True, "type": "local"}
-
-            # For cloud clips, check if we have cloud thumbnail URL
-            if not clip_id.is_local():
-                cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
-                if cloud_thumbnail_url:
-                    return {"available": True, "type": "cloud"}
-
-        return {"available": False}
-
-    @app.route("/api/clip/<clip_id_str>/delete", methods=["DELETE"])
+    @app.route("/api/clips/<clip_id_str>", methods=["DELETE"])
     @api_route_with_validation("delete clip", validate_params={"clip_id_str": ClipId})
     def delete_clip(clip_id: ClipId) -> JsonDict:
         """Delete a clip.

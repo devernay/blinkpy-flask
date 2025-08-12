@@ -52,7 +52,7 @@ class TestLiveStreamOperations(BaseTestCase):
         )
 
         # Test the endpoint
-        response = self.client.get("/api/camera/12345/liveview")
+        response = self.client.get("/api/cameras/12345/liveview")
 
         # Should return success
         self.assertIn(
@@ -71,7 +71,7 @@ class TestLiveStreamOperations(BaseTestCase):
         mock_find_camera.return_value = mock_camera
 
         # Test the endpoint
-        response = self.client.get("/api/camera/12345/liveview")
+        response = self.client.get("/api/cameras/12345/liveview")
 
         # Should handle missing stream manager
         self.assertIn(response.status_code, [200, 500])
@@ -81,7 +81,7 @@ class TestLiveStreamOperations(BaseTestCase):
         """Test liveview when camera is not found."""
         mock_find_camera.return_value = None
 
-        response = self.client.get("/api/camera/99999/liveview")
+        response = self.client.get("/api/cameras/99999/liveview")
 
         # Should return error
         self.assertIn(response.status_code, [404, 500])
@@ -99,7 +99,7 @@ class TestLiveStreamOperations(BaseTestCase):
         mock_find_camera.return_value = mock_camera
         mock_blink_conn.execute.return_value = None
 
-        response = self.client.get("/api/camera/12345/liveview")
+        response = self.client.get("/api/cameras/12345/liveview")
 
         # Should handle stream initialization failure
         self.assertIn(response.status_code, [200, 500])
@@ -410,7 +410,7 @@ class TestSystemDeviceOperations(BaseTestCase):
     def test_arm_system_success(self) -> None:
         """Test successful system arm/disarm."""
         # Test arm endpoint without mocks first to see if route works
-        response = self.client.post("/api/system/12345/arm", json={"armed": True})
+        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
 
         # Should get 500 (system not initialized) or other valid response, not 404
         self.assertNotEqual(
@@ -427,14 +427,16 @@ class TestSystemDeviceOperations(BaseTestCase):
         """Test arm system when network not found."""
         mock_blink.networks = {}  # No networks
 
-        response = self.client.post("/api/system/nonexistent/arm", json={"armed": True})
+        response = self.client.post(
+            "/api/systems/nonexistent/arm", json={"armed": True}
+        )
 
         # Should return validation error for invalid network ID format
         self.assertIn(response.status_code, [400, 404, 500])
 
     def test_get_devices_with_cameras(self) -> None:
         """Test get devices with camera information."""
-        response = self.client.get("/api/system/12345/devices")
+        response = self.client.get("/api/systems/12345/devices")
 
         # Should return device information or system not initialized error
         self.assertIn(response.status_code, [200, 401, 500])
@@ -444,7 +446,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         """Test get devices when network not found."""
         mock_blink.networks = {}
 
-        response = self.client.get("/api/system/nonexistent/devices")
+        response = self.client.get("/api/systems/nonexistent/devices")
 
         # Should return validation error for invalid network ID format
         self.assertIn(response.status_code, [400, 404, 500])
@@ -613,7 +615,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
         mock_connection.execute.side_effect = Exception("Connection failed")
 
         # Test endpoint that uses connection
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
 
         # Should handle connection error gracefully
         self.assertIn(response.status_code, [200, 500])
@@ -635,7 +637,9 @@ class TestErrorHandlingAdvanced(BaseTestCase):
         """Test handling of invalid input data."""
         # Test with invalid JSON
         response = self.client.post(
-            "/api/system/test/arm", data="invalid json", content_type="application/json"
+            "/api/systems/test/arm",
+            data="invalid json",
+            content_type="application/json",
         )
 
         # Should handle invalid JSON gracefully
@@ -644,7 +648,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
     def test_missing_parameters_handling(self) -> None:
         """Test handling of missing required parameters."""
         # Test endpoint without required parameters
-        response = self.client.post("/api/system/test/arm")
+        response = self.client.post("/api/systems/test/arm")
 
         # Should handle missing parameters
         self.assertIn(response.status_code, [400, 500])
@@ -738,7 +742,7 @@ class TestSecurityValidation(BaseTestCase):
 
         for path in traversal_paths:
             # Test file access endpoints
-            response = self.client.get(f"/api/clip/{path}/download")
+            response = self.client.get(f"/api/clips/{path}/download")
 
             # Should reject path traversal attempts
             self.assertIn(response.status_code, [400, 404, 500])
@@ -747,10 +751,10 @@ class TestSecurityValidation(BaseTestCase):
         """Test protection against authentication bypass."""
         # Test accessing protected endpoints without authentication
         protected_endpoints = [
-            "/api/system/list",
-            "/api/system/12345/arm",
-            "/api/camera/123/thumbnail",
-            "/api/clip/list",
+            "/api/systems",
+            "/api/systems/12345/arm",
+            "/api/cameras/123/thumbnail",
+            "/api/clips",
         ]
 
         for endpoint in protected_endpoints:

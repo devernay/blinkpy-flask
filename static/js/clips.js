@@ -24,7 +24,7 @@ async function loadClips() {
     `;
 
     try {
-        const response = await fetch(`/api/clip/list?storage=${storageType}`);
+        const response = await fetch(`/api/clips?storage=${storageType}`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -168,7 +168,7 @@ async function playClip(clip) {
 
     try {
         // Download and play clip
-        const response = await fetch(`/api/clip/${clip.id}/download`);
+        const response = await fetch(`/api/clips/${clip.id}/download`);
         if (response.ok) {
             const blob = await response.blob();
             const videoUrl = URL.createObjectURL(blob);
@@ -231,7 +231,7 @@ function closeVideoModal(button) {
  * Download clip
  */
 function downloadClip(clipId) {
-    const downloadUrl = `/api/clip/${clipId}/download`;
+    const downloadUrl = `/api/clips/${clipId}/download`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = '';
@@ -275,7 +275,7 @@ function showDeleteConfirmation(clipId) {
  */
 async function deleteClip(clipId) {
     try {
-        const response = await fetch(`/api/clip/${clipId}/delete`, {
+        const response = await fetch(`/api/clips/${clipId}`, {
             method: 'DELETE'
         });
 
@@ -336,7 +336,7 @@ function startClipThumbnailPolling(clipId) {
         attempts++;
 
         try {
-            const response = await fetch(`/api/clip/${clipId}/thumbnail/check`);
+            const response = await fetch(`/api/clips/${clipId}/thumbnail?check=true`);
             const data = await response.json();
 
             if (data.success && data.data.available) {
@@ -482,7 +482,7 @@ async function processDownloadQueue() {
 
         try {
             // Trigger server-side processing (download + thumbnail generation)
-            const response = await fetch(`/api/clip/${clip.id}/process`, {
+            const response = await fetch(`/api/clips/${clip.id}/process`, {
                 method: 'POST'
             });
 
@@ -532,7 +532,7 @@ async function waitForThumbnail(clipId) {
     return new Promise((resolve) => {
         const checkThumbnail = async () => {
             try {
-                const response = await fetch(`/api/clip/${clipId}/thumbnail/check`);
+                const response = await fetch(`/api/clips/${clipId}/thumbnail?check=true`);
                 const data = await response.json();
 
                 if (data.success && data.data.available) {
@@ -540,7 +540,7 @@ async function waitForThumbnail(clipId) {
                     const placeholder = document.querySelector(`[data-clip-id="${clipId}"]`);
                     if (placeholder && placeholder.classList.contains('clip-placeholder')) {
                         const img = document.createElement('img');
-                        img.src = `/api/clip/${clipId}/thumbnail`;
+                        img.src = `/api/clips/${clipId}/thumbnail`;
                         const thumbnailSize = getCurrentThumbnailSize();
                         img.className = `clip-thumbnail size-${thumbnailSize}`;
                         img.alt = 'Clip thumbnail';

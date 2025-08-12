@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import cast
 
-from flask import Flask, Response, send_file
+from flask import Flask, Response, jsonify, request, send_file
 
 from app_types import FlaskResponse, JsonDict
 from blinkapp.models.ids import CameraId
@@ -181,7 +181,7 @@ def setup_camera_routes(app: Flask) -> None:
         app: Flask application instance
     """
 
-    @app.route("/api/camera/<camera_id_str>/refresh", methods=["POST"])
+    @app.route("/api/cameras/<camera_id_str>/refresh", methods=["PUT"])
     @ensure_blink_available
     @api_route_with_validation(
         "refresh camera thumbnail", validate_params={"camera_id_str": CameraId}
@@ -253,7 +253,7 @@ def setup_camera_routes(app: Flask) -> None:
 
             return {"success": True, "message": "Camera thumbnail refresh initiated"}
 
-    @app.route("/api/camera/<camera_id_str>/liveview")
+    @app.route("/api/cameras/<camera_id_str>/liveview")
     @ensure_blink_available
     @api_route_with_validation(
         "start camera liveview", validate_params={"camera_id_str": CameraId}
@@ -320,7 +320,7 @@ def setup_camera_routes(app: Flask) -> None:
         else:
             return {"success": False, "error": "Failed to initialize live stream"}
 
-    @app.route("/api/camera/<camera_id_str>/liveview/stop", methods=["POST"])
+    @app.route("/api/cameras/<camera_id_str>/liveview", methods=["DELETE"])
     @ensure_blink_available
     @api_route_with_validation(
         "stop camera liveview", validate_params={"camera_id_str": CameraId}
@@ -362,7 +362,7 @@ def setup_camera_routes(app: Flask) -> None:
             logger.error(f"Error stopping live stream for camera {camera_id}: {e}")
             return {"success": False, "error": "Failed to stop live stream"}
 
-    @app.route("/api/camera/<camera_id_str>/hls/<path:filename>")
+    @app.route("/api/cameras/<camera_id_str>/hls/<path:filename>")
     @api_route_with_validation(
         "serve HLS file", validate_params={"camera_id_str": CameraId}
     )
@@ -404,44 +404,35 @@ def setup_camera_routes(app: Flask) -> None:
             )
             return jsonify(response), status_code
 
-    @app.route("/api/camera/<camera_id_str>/thumbnail/timestamp")
-    @ensure_blink_available
-    @api_route_with_validation(
-        "get camera thumbnail timestamp", validate_params={"camera_id_str": CameraId}
-    )
-    def get_camera_thumbnail_timestamp(camera_id: CameraId) -> JsonDict:
-        """Get camera thumbnail timestamp for polling.
-
-        Args:
-            camera_id: Validated CameraId object
-
-        Returns:
-            JSON response with timestamp or error message
-        """
-        camera = find_camera_by_id(camera_id)
-        if camera is None:
-            raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
-
-        timestamp = extract_thumbnail_timestamp(camera.thumbnail)
-        logger.info(
-            f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
-        )
-        return {"timestamp": timestamp}
-
-    @app.route("/api/camera/<camera_id_str>/thumbnail")
+    @app.route("/api/cameras/<camera_id_str>/thumbnail")
     @ensure_blink_available
     @api_route_with_validation(
         "get camera thumbnail", validate_params={"camera_id_str": CameraId}
     )
     def get_camera_thumbnail(camera_id: CameraId) -> FlaskResponse:
-        """Proxy camera thumbnail with authentication.
+        """Proxy camera thumbnail with authentication or get timestamp.
 
         Args:
             camera_id: Validated CameraId object
 
+        Query Parameters:
+            timestamp: If 'true', return timestamp instead of image
+
         Returns:
-            Flask Response with image data or error message
+            Flask Response with image data, timestamp JSON, or error message
         """
+        # Check if timestamp is requested
+        if request.args.get("timestamp") == "true":
+            camera = find_camera_by_id(camera_id)
+            if camera is None:
+                raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
+
+            timestamp = extract_thumbnail_timestamp(camera.thumbnail)
+            logger.info(
+                f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
+            )
+            return jsonify({"timestamp": timestamp})
+
         # Import locally to avoid circular imports
 
         from blinkapp import (

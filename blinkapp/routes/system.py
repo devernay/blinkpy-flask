@@ -26,7 +26,7 @@ __all__ = [
 def setup_system_routes(app):
     """Set up system management routes."""
 
-    @app.route("/api/system/list")
+    @app.route("/api/systems")
     @ensure_blink_available
     @api_route("get systems")
     def get_systems_route() -> JsonDict:
@@ -41,7 +41,7 @@ def setup_system_routes(app):
         """
         return get_systems()
 
-    @app.route("/api/system/<network_id_str>/devices")
+    @app.route("/api/systems/<network_id_str>/devices")
     @ensure_blink_available
     @api_route_with_validation(
         "get devices", validate_params={"network_id_str": NetworkId}
@@ -57,7 +57,7 @@ def setup_system_routes(app):
         """
         return get_devices(network_id)
 
-    @app.route("/api/system/<network_id_str>/arm", methods=["POST"])
+    @app.route("/api/systems/<network_id_str>/arm", methods=["POST"])
     @ensure_blink_available
     @api_route_with_validation(
         "arm/disarm system",
@@ -78,7 +78,7 @@ def setup_system_routes(app):
         armed = data["armed"]
         return arm_system(network_id, armed)
 
-    @app.route("/api/system/refresh", methods=["POST"])
+    @app.route("/api/systems/refresh", methods=["PUT"])
     @ensure_blink_available
     @simple_success_response("System refreshed successfully")
     def refresh_system_route() -> JsonDict:

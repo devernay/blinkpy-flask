@@ -467,7 +467,7 @@ def clear_all_caches() -> dict[str, object]:
             }
 
 
-@app.route("/api/clear-cache", methods=["POST"])
+@app.route("/api/cache", methods=["DELETE"])
 @simple_success_response("Cache clearing initiated")
 def clear_cache() -> JsonDict:
     """Clear all caches except credentials.

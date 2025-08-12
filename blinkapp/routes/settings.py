@@ -20,13 +20,13 @@ __all__ = [
 def setup_settings_routes(app):
     """Set up settings management routes."""
 
-    @app.route("/api/settings", methods=["GET", "POST"])
+    @app.route("/api/settings", methods=["GET", "PUT"])
     @method_dispatch_route("settings")
     def settings() -> ResponseReturnValue:
         """Get or save application settings.
 
         GET: Returns current user settings (temperature units, clip retention, etc.)
-        POST: Updates settings with provided JSON data
+        PUT: Updates settings with provided JSON data
 
         Settings are persisted to cache/settings.json and survive logout/restart.
         """
@@ -55,7 +55,7 @@ def setup_settings_routes(app):
             )
             return jsonify(response), status_code
 
-        else:  # POST - Save new settings
+        else:  # PUT - Save new settings
             # Validate incoming JSON data
             data = request.get_json()
             if not isinstance(data, dict):

@@ -71,7 +71,7 @@ function setupEventListeners() {
         if (window.LiveStream && window.LiveStream.getCurrentStream()) {
             // Use sendBeacon for reliable cleanup during page unload
             const currentStream = window.LiveStream.getCurrentStream();
-            navigator.sendBeacon(`/api/camera/${currentStream.cameraId}/liveview/stop`);
+            navigator.sendBeacon(`/api/cameras/${currentStream.cameraId}/liveview`);
         }
     });
 
@@ -176,7 +176,7 @@ function updateHeaderVisibility(viewName) {
  */
 async function loadSystems() {
     try {
-        const response = await fetch('/api/system/list');
+        const response = await fetch('/api/systems');
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -232,7 +232,7 @@ async function loadDevices() {
     updateArmButton();
 
     try {
-        const response = await fetch(`/api/system/${networkId}/devices`);
+        const response = await fetch(`/api/systems/${networkId}/devices`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -269,7 +269,7 @@ async function setArmState(armed) {
     if (!currentSystem || currentSystem.armed === armed) return;
 
     try {
-        const response = await fetch(`/api/system/${currentSystem.network_id}/arm`, {
+        const response = await fetch(`/api/systems/${currentSystem.network_id}/arm`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -299,7 +299,7 @@ async function toggleArm() {
     const newArmedState = !currentSystem.armed;
 
     try {
-        const response = await fetch(`/api/system/${currentSystem.network_id}/arm`, {
+        const response = await fetch(`/api/systems/${currentSystem.network_id}/arm`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -375,14 +375,14 @@ async function saveSetting(key, value) {
  */
 async function clearCache() {
     try {
-        const response = await fetch('/api/clear-cache', {
+        const response = await fetch('/api/cache', {
             method: 'POST'
         });
 
         if (response.ok) {
             // Invalidate images and videos by adding timestamp to force reload
             const timestamp = Date.now();
-            document.querySelectorAll('img[src*="/api/camera/"], img[src*="/api/clip/"], video[src*="/api/clip/"]').forEach(media => {
+            document.querySelectorAll('img[src*="/api/cameras/"], img[src*="/api/clips/"], video[src*="/api/clips/"]').forEach(media => {
                 const url = new URL(media.src, window.location.origin);
                 url.searchParams.set('_t', timestamp);
                 media.src = url.toString();

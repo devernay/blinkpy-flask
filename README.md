@@ -91,16 +91,18 @@ All API endpoints return standardized JSON responses:
 ## API Endpoints
 
 ### System Management
-- `GET /api/system/list` - List available Blink systems
-- `GET /api/system/<network_id>/devices` - Get devices for system
-- `POST /api/system/<network_id>/arm` - Arm/disarm system
-- `POST /api/system/refresh` - Refresh system data
+- `GET /api/systems` - List available Blink systems
+- `GET /api/systems/<network_id>/devices` - Get devices for system
+- `POST /api/systems/<network_id>/arm` - Arm/disarm system
+- `PUT /api/systems/refresh` - Refresh system data
 
 ### Camera Operations
-- `GET /api/camera/<camera_id>/thumbnail` - Get camera thumbnail
-- `GET /api/camera/<camera_id>/thumbnail/timestamp` - Get thumbnail timestamp
-- `POST /api/camera/<camera_id>/refresh` - Refresh camera thumbnail
-- `GET /api/camera/<camera_id>/liveview` - Start live stream
+- `GET /api/cameras/<camera_id>/thumbnail` - Get camera thumbnail
+- `GET /api/cameras/<camera_id>/thumbnail?timestamp=true` - Get thumbnail timestamp
+- `PUT /api/cameras/<camera_id>/refresh` - Refresh camera thumbnail
+- `GET /api/cameras/<camera_id>/liveview` - Start live stream
+- `DELETE /api/cameras/<camera_id>/liveview` - Stop live stream
+- `GET /api/cameras/<camera_id>/hls/<filename>` - Get HLS stream segments
 
 Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. The `requirements.txt` file will install this version of blinkpy.
 
@@ -113,16 +115,18 @@ git checkout pr-1078
 ```
 
 ### Clip Management
-- `GET /api/clip/list?storage=cloud|local` - List clips by storage type
-- `GET /api/clip/<clip_id>/download` - Download clip file
-- `POST /api/clip/<clip_id>/process` - Process clip (generate thumbnail)
-- `GET /api/clip/<clip_id>/thumbnail` - Get clip thumbnail
-- `GET /api/clip/<clip_id>/thumbnail/check` - Check thumbnail availability
+- `GET /api/clips?storage=cloud|local` - List clips by storage type
+- `GET /api/clips/<clip_id>/download` - Download clip file
+- `PUT /api/clips/<clip_id>/process` - Process clip (generate thumbnail)
+- `GET /api/clips/<clip_id>/thumbnail` - Get clip thumbnail
+- `GET /api/clips/<clip_id>/thumbnail?check=true` - Check thumbnail availability
+- `DELETE /api/clips/<clip_id>` - Delete clip
 
 ### Settings & Utility
+- `GET /api/config` - Get application configuration
 - `GET /api/settings` - Get user settings
-- `POST /api/settings` - Save user settings
-- `POST /api/clear-cache` - Clear all caches
+- `PUT /api/settings` - Save user settings
+- `DELETE /api/cache` - Clear all caches
 - `POST /logout` - Logout and clear credentials
 
 ## Configuration

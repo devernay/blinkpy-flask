@@ -34,7 +34,7 @@ async function createCameraCard(camera) {
     let thumbnailUrl = camera.thumbnail;
     if (thumbnailUrl) {
         try {
-            const response = await fetch(`/api/camera/${camera.id}/thumbnail/timestamp`);
+            const response = await fetch(`/api/cameras/${camera.id}/thumbnail?timestamp=true`);
             const data = await response.json();
             if (response.ok && data.success) {
                 thumbnailUrl = `${camera.thumbnail}?ts=${data.data.timestamp}`;
@@ -121,7 +121,7 @@ async function refreshThumbnail() {
     showThumbnailBanner(currentCameraId, 'Refreshing thumbnail...', 'refreshing');
 
     try {
-        const response = await fetch(`/api/camera/${currentCameraId}/refresh`, {
+        const response = await fetch(`/api/cameras/${currentCameraId}/refresh`, {
             method: 'POST'
         });
 
@@ -259,7 +259,7 @@ function pollForThumbnailUpdate(cameraId) {
         pollCount++;
 
         try {
-            const response = await fetch(`/api/camera/${cameraId}/thumbnail/timestamp`);
+            const response = await fetch(`/api/cameras/${cameraId}/thumbnail?timestamp=true`);
             const data = await response.json();
 
             if (response.ok && data.success) {

@@ -138,7 +138,7 @@
         }
       }
     },
-    "/api/system/list": {
+    "/api/systems": {
       "get": {
         "summary": "Get list of available Blink systems",
         "operationId": "getSystemList",
@@ -171,8 +171,8 @@
         }
       }
     },
-    "/api/system/refresh": {
-      "post": {
+    "/api/systems/refresh": {
+      "put": {
         "summary": "Manually refresh the Blink system data",
         "operationId": "refreshSystem",
         "responses": {
@@ -187,7 +187,7 @@
         }
       }
     },
-    "/api/system/{network_id}/devices": {
+    "/api/systems/{network_id}/devices": {
       "get": {
         "summary": "Get devices for a specific Blink system",
         "operationId": "getDevices",
@@ -229,7 +229,7 @@
         }
       }
     },
-    "/api/system/{network_id}/arm": {
+    "/api/systems/{network_id}/arm": {
       "post": {
         "summary": "Arm or disarm a Blink system",
         "operationId": "armSystem",
@@ -267,9 +267,9 @@
         }
       }
     },
-    "/api/camera/{camera_id}/thumbnail": {
+    "/api/cameras/{camera_id}/thumbnail": {
       "get": {
-        "summary": "Get camera thumbnail image",
+        "summary": "Get camera thumbnail image or timestamp",
         "operationId": "getCameraThumbnail",
         "parameters": [
           {
@@ -277,39 +277,25 @@
             "in": "path",
             "required": true,
             "schema": {"type": "string"}
+          },
+          {
+            "name": "timestamp",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "string", "enum": ["true"]},
+            "description": "If 'true', return timestamp instead of image"
           }
         ],
         "responses": {
           "200": {
-            "description": "Camera thumbnail image",
+            "description": "Camera thumbnail image or timestamp",
             "content": {
               "image/jpeg": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/camera/{camera_id}/thumbnail/timestamp": {
-      "get": {
-        "summary": "Get camera thumbnail timestamp for polling",
-        "operationId": "getThumbnailTimestamp",
-        "parameters": [
-          {
-            "name": "camera_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail timestamp",
-            "content": {
+              },
               "application/json": {
                 "schema": {"$ref": "#/components/schemas/ApiResponse"}
               }
@@ -318,8 +304,9 @@
         }
       }
     },
-    "/api/camera/{camera_id}/refresh": {
-      "post": {
+
+    "/api/cameras/{camera_id}/refresh": {
+      "put": {
         "summary": "Refresh camera thumbnail",
         "operationId": "refreshCamera",
         "parameters": [
@@ -342,7 +329,7 @@
         }
       }
     },
-    "/api/camera/{camera_id}/liveview": {
+    "/api/cameras/{camera_id}/liveview": {
       "get": {
         "summary": "Start live stream for camera",
         "operationId": "getLiveView",
@@ -364,9 +351,31 @@
             }
           }
         }
+      },
+      "delete": {
+        "summary": "Stop live stream for camera",
+        "operationId": "stopLiveView",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live stream stopped",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          }
+        }
       }
     },
-    "/api/clip/list": {
+    "/api/clips": {
       "get": {
         "summary": "Get clips from cloud or local storage",
         "operationId": "getClips",
@@ -411,7 +420,7 @@
         }
       }
     },
-    "/api/clip/{clip_id}/download": {
+    "/api/clips/{clip_id}/download": {
       "get": {
         "summary": "Download a specific clip",
         "operationId": "downloadClip",
@@ -439,8 +448,8 @@
         }
       }
     },
-    "/api/clip/{clip_id}/process": {
-      "post": {
+    "/api/clips/{clip_id}/process": {
+      "put": {
         "summary": "Process clip on server (download and generate thumbnail)",
         "operationId": "processClip",
         "parameters": [
@@ -463,9 +472,9 @@
         }
       }
     },
-    "/api/clip/{clip_id}/thumbnail": {
+    "/api/clips/{clip_id}/thumbnail": {
       "get": {
-        "summary": "Get clip thumbnail image",
+        "summary": "Get clip thumbnail image or check availability",
         "operationId": "getClipThumbnail",
         "parameters": [
           {
@@ -473,39 +482,25 @@
             "in": "path",
             "required": true,
             "schema": {"type": "string"}
+          },
+          {
+            "name": "check",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "string", "enum": ["true"]},
+            "description": "If 'true', check availability instead of returning image"
           }
         ],
         "responses": {
           "200": {
-            "description": "Clip thumbnail image",
+            "description": "Clip thumbnail image or availability status",
             "content": {
               "image/jpeg": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/clip/{clip_id}/thumbnail/check": {
-      "get": {
-        "summary": "Check if thumbnail is available for clip",
-        "operationId": "checkClipThumbnail",
-        "parameters": [
-          {
-            "name": "clip_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail availability status",
-            "content": {
+              },
               "application/json": {
                 "schema": {"$ref": "#/components/schemas/ApiResponse"}
               }
@@ -514,7 +509,8 @@
         }
       }
     },
-    "/api/clip/{clip_id}/delete": {
+
+    "/api/clips/{clip_id}": {
       "delete": {
         "summary": "Delete a clip and its cached files",
         "operationId": "deleteClip",
@@ -539,7 +535,7 @@
         }
       }
     },
-    "/api/camera/{camera_id}/hls/{filename}": {
+    "/api/cameras/{camera_id}/hls/{filename}": {
       "get": {
         "summary": "Serve HLS playlist and segment files",
         "operationId": "getHLSFile",
@@ -576,6 +572,22 @@
         }
       }
     },
+    "/api/config": {
+      "get": {
+        "summary": "Get application configuration",
+        "operationId": "getConfig",
+        "responses": {
+          "200": {
+            "description": "Application configuration",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings": {
       "get": {
         "summary": "Get user settings",
@@ -591,7 +603,7 @@
           }
         }
       },
-      "post": {
+      "put": {
         "summary": "Save user settings",
         "operationId": "saveSettings",
         "requestBody": {
@@ -628,8 +640,8 @@
         }
       }
     },
-    "/api/clear-cache": {
-      "post": {
+    "/api/cache": {
+      "delete": {
         "summary": "Clear all caches",
         "operationId": "clearCache",
         "responses": {

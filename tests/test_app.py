@@ -468,7 +468,7 @@ class TestFlaskApp(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink", None)
     def test_api_systems_no_blink(self) -> None:
         """Test systems API when Blink not available."""
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
@@ -487,7 +487,7 @@ class TestFlaskApp(BaseTestCase):
         mock_blink.available = True
         mock_blink.sync = {"Test System": mock_sync}
 
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
 
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
@@ -502,7 +502,7 @@ class TestFlaskApp(BaseTestCase):
         mock_blink.available = True
         mock_blink.sync = {}  # Empty sync dict
 
-        response = self.client.get("/api/system/invalid_id/devices")
+        response = self.client.get("/api/systems/invalid_id/devices")
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
@@ -529,7 +529,7 @@ class TestAdditionalEndpoints(BaseTestCase):
         mock_blink.available = True
         mock_blink.sync = {}  # No sync modules
 
-        response = self.client.get("/api/system/99999/devices")
+        response = self.client.get("/api/systems/99999/devices")
         self.assertEqual(response.status_code, 404)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
@@ -544,7 +544,7 @@ class TestAdditionalEndpoints(BaseTestCase):
             "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
             return_value={},
         ):
-            response = self.client.get("/api/camera/nonexistent/thumbnail")
+            response = self.client.get("/api/cameras/nonexistent/thumbnail")
 
             self.assertEqual(response.status_code, 404)
             data = json.loads(response.data)
@@ -552,7 +552,7 @@ class TestAdditionalEndpoints(BaseTestCase):
 
     def test_api_clips_invalid_storage(self) -> None:
         """Test clips API with invalid storage type."""
-        response = self.client.get("/api/clip/list?storage=invalid")
+        response = self.client.get("/api/clips?storage=invalid")
         # Returns 500 due to validation error, not 400
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
@@ -563,14 +563,14 @@ class TestAdditionalEndpoints(BaseTestCase):
         """Test successful cache clearing."""
         mock_blink.available = True
 
-        response = self.client.post("/api/clear-cache")
+        response = self.client.delete("/api/cache")
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
     def test_api_settings_post_invalid_content_type(self) -> None:
         """Test settings update with invalid content type."""
-        response = self.client.post("/api/settings", data="invalid")
+        response = self.client.put("/api/settings", data="invalid")
         # Should return 500 due to content type error, not 400
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
@@ -989,7 +989,7 @@ class TestAuthenticationHelpers(BaseTestCase):
                 app_instance.config["TESTING"] = True
                 client = app_instance.test_client()
 
-                response = client.post("/api/clear-cache")
+                response = client.delete("/api/cache")
                 # Handle test isolation issue
                 if response.status_code == 500:
                     self.skipTest("Test isolation issue - blink decorator check failed")
@@ -1205,7 +1205,7 @@ class TestAPIEndpoints(BaseTestCase):
         mock_blink.available = True
         mock_blink.sync = {"Test Network": mock_sync}
 
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1217,7 +1217,7 @@ class TestAPIEndpoints(BaseTestCase):
         """Test get_devices with invalid network ID."""
         mock_blink.networks = {}
 
-        response = self.client.get("/api/system/99999/devices")
+        response = self.client.get("/api/systems/99999/devices")
         self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_service.blink")
@@ -1225,7 +1225,7 @@ class TestAPIEndpoints(BaseTestCase):
         """Test arm_system with invalid network ID."""
         mock_blink.networks = {}
 
-        response = self.client.post("/api/system/99999/arm", json={"armed": True})
+        response = self.client.post("/api/systems/99999/arm", json={"armed": True})
         self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_service.blink")
@@ -1234,7 +1234,7 @@ class TestAPIEndpoints(BaseTestCase):
         mock_network = Mock()
         mock_blink.networks = {"12345": mock_network}
 
-        response = self.client.post("/api/system/12345/arm", json={})
+        response = self.client.post("/api/systems/12345/arm", json={})
         self.assertEqual(response.status_code, 400)
 
     @patch("blinkapp.services.blink_service.blink")
@@ -1247,7 +1247,7 @@ class TestAPIEndpoints(BaseTestCase):
             "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
             return_value={},
         ):
-            response = self.client.get("/api/camera/99999/thumbnail")
+            response = self.client.get("/api/cameras/99999/thumbnail")
             self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json")
@@ -1264,7 +1264,7 @@ class TestAPIEndpoints(BaseTestCase):
 
     def test_save_settings_missing_data(self) -> None:
         """Test save_settings with missing data."""
-        response = self.client.post("/api/settings", json={})
+        response = self.client.put("/api/settings", json={})
         # This should return 400 for missing required fields
         self.assertIn(response.status_code, [400, 500])  # Accept either for now
 
@@ -1273,7 +1273,7 @@ class TestAPIEndpoints(BaseTestCase):
         with patch("blinkapp.clear_all_caches") as mock_clear:
             mock_clear.return_value = {"cleared": True}
 
-            response = self.client.post("/api/clear-cache")
+            response = self.client.delete("/api/cache")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -1357,7 +1357,7 @@ class TestClipManagement(BaseTestCase):
         """Test get_clips without storage parameter defaults to cloud."""
         # Mock the connection to return empty list
         mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=[])
-        response = self.client.get("/api/clip/list")
+        response = self.client.get("/api/clips")
         # Should default to cloud storage and return 200
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
@@ -1367,7 +1367,7 @@ class TestClipManagement(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_clips_invalid_storage(self, mock_blink) -> None:
         """Test get_clips with invalid storage parameter."""
-        response = self.client.get("/api/clip/list?storage=invalid")
+        response = self.client.get("/api/clips?storage=invalid")
         # Should return 400 for invalid storage type
         self.assertEqual(response.status_code, 400)
 
@@ -1390,7 +1390,7 @@ class TestStreamingEndpoints(BaseTestCase):
         """Test get_liveview with invalid camera ID."""
         mock_blink.cameras = {}
 
-        response = self.client.get("/api/camera/99999/liveview")
+        response = self.client.get("/api/cameras/99999/liveview")
         self.assertEqual(response.status_code, 404)
 
 
@@ -1422,7 +1422,7 @@ class TestThumbnailManagement(BaseTestCase):
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
 
-        response = self.client.get("/api/camera/12345/thumbnail/timestamp")
+        response = self.client.get("/api/cameras/12345/thumbnail/timestamp")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1452,7 +1452,7 @@ class TestThumbnailManagement(BaseTestCase):
             "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
             return_value={},
         ):
-            response = self.client.post("/api/camera/12345/refresh")
+            response = self.client.put("/api/cameras/12345/refresh")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -1490,7 +1490,7 @@ class TestClipProcessing(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/clip/list?storage=local")
+        response = self.client.get("/api/clips?storage=local")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1505,7 +1505,7 @@ class TestClipProcessing(BaseTestCase):
 
         mock_connection.execute.side_effect = BlinkError("Clip not found")
 
-        response = self.client.get("/api/clip/nonexistent/download")
+        response = self.client.get("/api/clips/nonexistent/download")
         self.assertEqual(response.status_code, 500)  # BlinkError causes 500, not 404
 
 
@@ -1540,7 +1540,7 @@ class TestAsyncOperations(BaseTestCase):
         mock_blink.refresh.return_value = mock_refresh_task
         mock_connection.execute.return_value = True  # Success
 
-        response = self.client.post("/api/system/refresh")
+        response = self.client.put("/api/systems/refresh")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1619,7 +1619,7 @@ class TestErrorScenarios(BaseTestCase):
     def test_invalid_json_requests(self) -> None:
         """Test endpoints with invalid JSON."""
         endpoints = [
-            ("/api/system/12345/arm", "POST"),
+            ("/api/systems/12345/arm", "POST"),
             ("/api/settings", "POST"),
         ]
 
@@ -1642,9 +1642,9 @@ class TestErrorScenarios(BaseTestCase):
         mock_connection.return_value = Mock()
 
         endpoints = [
-            "/api/camera/99999/thumbnail",
-            "/api/camera/99999/thumbnail/timestamp",
-            "/api/camera/99999/liveview",
+            "/api/cameras/99999/thumbnail",
+            "/api/cameras/99999/thumbnail/timestamp",
+            "/api/cameras/99999/liveview",
         ]
 
         with patch(
@@ -1734,7 +1734,7 @@ class TestStreamingOperations(BaseTestCase):
         mock_camera.name = "Test Camera"
         mock_blink.cameras = {12345: mock_camera}
 
-        response = self.client.get("/api/camera/12345/liveview")
+        response = self.client.get("/api/cameras/12345/liveview")
         # Should either succeed or fail gracefully
         self.assertIn(response.status_code, [200, 500, 404])
 
@@ -1755,7 +1755,7 @@ class TestAdvancedEndpoints(BaseTestCase):
             mock_cache.get.return_value = {"thumbnail": Path("/tmp/test_thumb.jpg")}
 
             with patch("pathlib.Path.exists", return_value=True):
-                response = self.client.get("/api/clip/test_clip/thumbnail/check")
+                response = self.client.get("/api/clips/test_clip/thumbnail/check")
                 self.assertEqual(response.status_code, 200)
 
                 data = json.loads(response.data)
@@ -1767,7 +1767,7 @@ class TestAdvancedEndpoints(BaseTestCase):
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
 
-            response = self.client.get("/api/clip/nonexistent/thumbnail/check")
+            response = self.client.get("/api/clips/nonexistent/thumbnail/check")
             self.assertEqual(response.status_code, 200)
             data = json.loads(response.data)
             self.assertTrue(data["success"])
@@ -1789,7 +1789,7 @@ class TestAdvancedEndpoints(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_clips_invalid_storage_type(self, mock_blink) -> None:
         """Test get_clips with invalid storage type."""
-        response = self.client.get("/api/clip/list?storage=invalid")
+        response = self.client.get("/api/clips?storage=invalid")
         self.assertEqual(response.status_code, 400)
 
         data = json.loads(response.data)
@@ -1807,7 +1807,7 @@ class TestAdvancedEndpoints(BaseTestCase):
         ) as mock_connection:
             mock_connection.execute.return_value = []
 
-            response = self.client.get("/api/clip/list")
+            response = self.client.get("/api/clips")
             # Should default to cloud storage and return 200
             self.assertEqual(response.status_code, 200)
 
@@ -2085,7 +2085,7 @@ class TestThumbnailCacheOperations(BaseTestCase):
             ) as mock_connection:
                 mock_connection.execute.return_value = b"fake_image_data"
 
-                response = self.client.get("/api/camera/12345/thumbnail")
+                response = self.client.get("/api/cameras/12345/thumbnail")
 
                 # Should handle cache miss gracefully
                 self.assertIn(response.status_code, [200, 500])
@@ -2129,7 +2129,7 @@ class TestClipDownloadOperations(BaseTestCase):
                 mock_get.return_value = mock_response
 
                 with patch("pathlib.Path.write_bytes") as mock_write:
-                    response = self.client.get("/api/clip/123456/download")
+                    response = self.client.get("/api/clips/123456/download")
 
                     # Should attempt to download and cache
                     self.assertIn(response.status_code, [200, 500])
@@ -2151,7 +2151,7 @@ class TestClipDownloadOperations(BaseTestCase):
             return_value={},
         ):
             with patch("blinkapp.services.cache_service.clips_cache", {}):
-                response = self.client.get("/api/clip/nonexistent/download")
+                response = self.client.get("/api/clips/nonexistent/download")
             self.assertEqual(response.status_code, 404)
 
             data = json.loads(response.data)
@@ -2180,7 +2180,7 @@ class TestClipDownloadOperations(BaseTestCase):
             with patch("flask.send_file") as mock_send:
                 mock_send.return_value = Mock()
 
-                response = self.client.get("/api/clip/123456/download")
+                response = self.client.get("/api/clips/123456/download")
 
                 # Should serve cached file
                 self.assertIn(response.status_code, [200, 500])
@@ -2198,7 +2198,7 @@ class TestClipDownloadOperations(BaseTestCase):
             with patch("subprocess.run") as mock_subprocess:
                 mock_subprocess.return_value = Mock(returncode=0)
 
-                response = self.client.post("/api/clip/test_clip/process")
+                response = self.client.put("/api/clips/test_clip/process")
 
                 # Should attempt thumbnail generation
                 self.assertIn(response.status_code, [200, 500])
@@ -2239,7 +2239,7 @@ class TestLocalClipOperations(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/clip/list?storage=local")
+        response = self.client.get("/api/clips?storage=local")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -2259,7 +2259,7 @@ class TestLocalClipOperations(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/clip/list?storage=local")
+        response = self.client.get("/api/clips?storage=local")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -2278,7 +2278,7 @@ class TestLocalClipOperations(BaseTestCase):
         mock_blink.sync = {"test_sync": mock_sync}
         mock_connection.execute.side_effect = Exception("Sync error")
 
-        response = self.client.get("/api/clip/list?storage=local")
+        response = self.client.get("/api/clips?storage=local")
 
         # Should handle sync errors gracefully
         self.assertIn(response.status_code, [200, 500])
@@ -2335,7 +2335,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         with patch("blinkapp.services.cache_service.thumbnail_cache") as mock_cache:
             mock_cache.get.return_value = {"timestamp": 500}  # Cached timestamp
 
-            response = self.client.get("/api/system/12345/devices")
+            response = self.client.get("/api/systems/12345/devices")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -2359,14 +2359,14 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         mock_connection.execute.return_value = None
 
         # Test arming
-        response = self.client.post("/api/system/12345/arm", json={"armed": True})
+        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
         # Test disarming
-        response = self.client.post("/api/system/12345/arm", json={"armed": False})
+        response = self.client.post("/api/systems/12345/arm", json={"armed": False})
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -2398,7 +2398,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
                 mock_response = Response("fake image data", mimetype="image/jpeg")
                 mock_send.return_value = mock_response
 
-                response = self.client.get("/api/clip/test_clip/thumbnail")
+                response = self.client.get("/api/clips/test_clip/thumbnail")
 
                 # Should serve thumbnail file
                 self.assertEqual(response.status_code, 200)
@@ -2412,7 +2412,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
 
-            response = self.client.get("/api/clip/nonexistent/thumbnail")
+            response = self.client.get("/api/clips/nonexistent/thumbnail")
             self.assertEqual(response.status_code, 404)
 
 
@@ -2447,7 +2447,7 @@ class TestStreamingAndLiveView(BaseTestCase):
                 "http://localhost:8080/stream.m3u8"
             )
 
-            response = self.client.get("/api/camera/12345/liveview")
+            response = self.client.get("/api/cameras/12345/liveview")
 
             # Should attempt to start stream
             self.assertIn(response.status_code, [200, 500])
@@ -2474,7 +2474,7 @@ class TestStreamingAndLiveView(BaseTestCase):
         ) as mock_stream_manager:
             mock_stream_manager.start_stream.side_effect = Exception("Stream failed")
 
-            response = self.client.get("/api/camera/12345/liveview")
+            response = self.client.get("/api/cameras/12345/liveview")
 
             # Should handle stream errors
             self.assertIn(response.status_code, [500, 404])
@@ -2523,7 +2523,7 @@ class TestBackgroundTaskExecution(BaseTestCase):
         with patch("blinkapp.services.blink_service.blink") as mock_blink:
             mock_blink.cameras = {12345: Mock()}
 
-            response = self.client.get("/api/camera/12345/thumbnail")
+            response = self.client.get("/api/cameras/12345/thumbnail")
 
             # Should handle connection errors
             self.assertIn(response.status_code, [500, 404])
@@ -2548,7 +2548,7 @@ class TestSettingsAdvanced(BaseTestCase):
         }
 
         with patch("pathlib.Path.write_text"):
-            response = self.client.post("/api/settings", json=valid_settings)
+            response = self.client.put("/api/settings", json=valid_settings)
 
             # Should validate and save settings
             self.assertIn(response.status_code, [200, 500])
@@ -2872,7 +2872,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
         ) as mock_connection:
             mock_connection.execute.side_effect = BlinkError("Timeout")
 
-            response = self.client.get("/api/camera/12345/thumbnail")
+            response = self.client.get("/api/cameras/12345/thumbnail")
 
             # Should handle timeout gracefully
             self.assertIn(response.status_code, [500, 404])
@@ -2953,7 +2953,7 @@ class TestPerformanceOptimizations(BaseTestCase):
             mock_sync.cameras = {"camera1": mock_camera}
             mock_blink.sync = {"sync1": mock_sync}
 
-            response = self.client.get("/api/camera/12345/thumbnail")
+            response = self.client.get("/api/cameras/12345/thumbnail")
 
             # Should use cached version (newer timestamp)
             self.assertIn(response.status_code, [200, 500])
@@ -3019,7 +3019,7 @@ class TestSecurityFeatures(BaseTestCase):
 
         for malicious_path in malicious_paths:
             # Test endpoints that might handle file paths
-            response = self.client.get(f"/api/clip/{malicious_path}/download")
+            response = self.client.get(f"/api/clips/{malicious_path}/download")
 
             # Should prevent path traversal
             self.assertIn(response.status_code, [400, 404, 500])
@@ -3064,7 +3064,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             with patch("flask.send_file") as mock_send:
                 mock_send.return_value = Mock()
 
-                response = self.client.get("/api/clip/sync1~clip123/download")
+                response = self.client.get("/api/clips/sync1~clip123/download")
 
                 # Should serve cached file
                 self.assertIn(response.status_code, [200, 500])
@@ -3091,7 +3091,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
                 mock_response.raise_for_status.return_value = None
                 mock_get.return_value = mock_response
 
-                response = self.client.get("/api/clip/sync1~clip123/download")
+                response = self.client.get("/api/clips/sync1~clip123/download")
 
                 # Should attempt to download
                 self.assertIn(response.status_code, [200, 404, 500])
@@ -3109,7 +3109,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             return_value={},
         ):
             with patch("blinkapp.services.cache_service.clips_cache", {}):
-                response = self.client.get("/api/clip/nonexistent~123/download")
+                response = self.client.get("/api/clips/nonexistent~123/download")
             self.assertEqual(response.status_code, 404)
 
             data = json.loads(response.data)
@@ -3133,7 +3133,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             return_value={},
         ):
             with patch("blinkapp.services.cache_service.clips_cache", {}):
-                response = self.client.get("/api/clip/sync1~999/download")
+                response = self.client.get("/api/clips/sync1~999/download")
             self.assertEqual(response.status_code, 404)
 
 
@@ -3185,7 +3185,7 @@ class TestLiveStreamOperations(BaseTestCase):
                 "http://localhost:8080/stream.m3u8"
             )
 
-            response = self.client.get("/api/camera/12345/liveview")
+            response = self.client.get("/api/cameras/12345/liveview")
 
             # Should initialize stream successfully
             self.assertIn(response.status_code, [200, 500])
@@ -3205,7 +3205,7 @@ class TestLiveStreamOperations(BaseTestCase):
         # Mock stream initialization failure
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/camera/12345/liveview")
+        response = self.client.get("/api/cameras/12345/liveview")
 
         # Should handle stream init failure
         self.assertIn(response.status_code, [500, 404])
@@ -3242,7 +3242,7 @@ class TestLiveStreamOperations(BaseTestCase):
                 "http://localhost:8080/stream.m3u8"
             )
 
-            response = self.client.get("/api/camera/12345/liveview")
+            response = self.client.get("/api/cameras/12345/liveview")
 
             # Should integrate with stream manager
             self.assertIn(response.status_code, [200, 500])
@@ -3282,7 +3282,7 @@ class TestAdvancedClipOperations(BaseTestCase):
         mock_blink.get_videos_metadata.return_value = mock_clips
         mock_connection.execute.return_value = mock_clips
 
-        response = self.client.get("/api/clip/list?storage=cloud")
+        response = self.client.get("/api/clips?storage=cloud")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -3298,7 +3298,7 @@ class TestAdvancedClipOperations(BaseTestCase):
         mock_blink.get_videos_metadata.return_value = []
         mock_connection.execute.return_value = []
 
-        response = self.client.get("/api/clip/list?storage=cloud")
+        response = self.client.get("/api/clips?storage=cloud")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -3315,7 +3315,7 @@ class TestAdvancedClipOperations(BaseTestCase):
             side_effect=BlinkError("API Error")
         )
 
-        response = self.client.get("/api/clip/list?storage=cloud")
+        response = self.client.get("/api/clips?storage=cloud")
 
         # Should handle API errors gracefully
         self.assertIn(response.status_code, [500, 400])
@@ -3335,7 +3335,7 @@ class TestAdvancedClipOperations(BaseTestCase):
                 with patch(
                     "blinkapp.services.clip_service.process_cloud_clip_background"
                 ) as mock_process:
-                    response = self.client.post("/api/clip/test_clip/process")
+                    response = self.client.put("/api/clips/test_clip/process")
                     self.assertEqual(response.status_code, 200)
                     mock_process.assert_called_once()
 
@@ -3355,7 +3355,7 @@ class TestAdvancedClipOperations(BaseTestCase):
                 "blinkapp.services.thumbnail_service.generate_clip_thumbnail",
                 return_value=None,
             ):
-                response = self.client.post("/api/clip/test_clip/process")
+                response = self.client.put("/api/clips/test_clip/process")
 
                 # Should handle thumbnail generation failure
                 self.assertIn(response.status_code, [200, 500])
@@ -3414,7 +3414,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         with patch("blinkapp.services.cache_service.thumbnail_cache") as mock_cache:
             mock_cache.get.return_value = {"timestamp": 500}
 
-            response = self.client.get("/api/system/12345/devices")
+            response = self.client.get("/api/systems/12345/devices")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -3441,7 +3441,7 @@ class TestSystemDeviceOperations(BaseTestCase):
             "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
             return_value={},
         ):
-            response = self.client.get("/api/system/12345/devices")
+            response = self.client.get("/api/systems/12345/devices")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -3470,7 +3470,7 @@ class TestSystemDeviceOperations(BaseTestCase):
 
         mock_connection.execute.side_effect = slow_execute
 
-        response = self.client.post("/api/system/12345/arm", json={"armed": True})
+        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
 
         # Should handle delays gracefully
         self.assertIn(response.status_code, [200, 500])
@@ -3535,7 +3535,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
                 # Mock background task submission for cache update
                 mock_executor.submit.return_value = Mock()
 
-                response = self.client.get("/api/camera/12345/thumbnail")
+                response = self.client.get("/api/cameras/12345/thumbnail")
 
                 # Should return the image data directly
                 self.assertEqual(response.status_code, 200)
@@ -3558,7 +3558,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         ) as mock_connection:
             mock_connection.execute.side_effect = Exception("Camera error")
 
-            response = self.client.post("/api/camera/12345/refresh")
+            response = self.client.put("/api/cameras/12345/refresh")
 
             # Should handle camera errors gracefully
             self.assertIn(response.status_code, [500, 400])
@@ -3576,7 +3576,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         mock_sync.cameras = {"camera1": mock_camera}
         mock_blink.sync = {"sync1": mock_sync}
 
-        response = self.client.get("/api/camera/12345/thumbnail/timestamp")
+        response = self.client.get("/api/cameras/12345/thumbnail/timestamp")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -3622,7 +3622,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
         ]
 
         # First request should fail
-        response1 = self.client.get("/api/camera/12345/thumbnail")
+        response1 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertIn(response1.status_code, [500, 404])
 
         # Reset side effect for second request
@@ -3631,7 +3631,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         # Second request should succeed
-        response2 = self.client.get("/api/camera/12345/thumbnail")
+        response2 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertIn(response2.status_code, [200, 500])
 
     def test_graceful_degradation_with_missing_dependencies(self) -> None:
@@ -3641,7 +3641,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
             with patch("blinkapp.services.blink_service.blink") as mock_blink:
                 mock_blink.cameras = {12345: Mock()}
 
-                response = self.client.get("/api/camera/12345/liveview")
+                response = self.client.get("/api/cameras/12345/liveview")
 
                 # Should handle missing stream manager gracefully
                 self.assertIn(response.status_code, [500, 404])
@@ -3655,7 +3655,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
             mock_cache.__len__.return_value = 1000  # At capacity
             mock_cache.get.return_value = None
 
-            response = self.client.get("/api/clip/list?storage=cloud")
+            response = self.client.get("/api/clips?storage=cloud")
 
             # Should handle memory pressure gracefully
             self.assertIn(response.status_code, [200, 500])
@@ -4044,7 +4044,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         with patch("blinkapp.services.connection_service.executor") as mock_executor:
             mock_executor.submit.return_value = Mock()
 
-            response = self.client.post("/api/system/refresh")
+            response = self.client.put("/api/systems/refresh")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -4065,7 +4065,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
 
         mock_blink.sync = sync_modules
 
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -4084,7 +4084,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         # Mock partial failure - connection succeeds but arm fails
         mock_connection.execute.side_effect = Exception("Arm failed")
 
-        response = self.client.post("/api/system/12345/arm", json={"armed": True})
+        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
 
         # Should handle partial failures
         self.assertIn(response.status_code, [200, 500])
@@ -4124,7 +4124,7 @@ class TestAdvancedFileOperations(BaseTestCase):
         valid_settings = {"temperature_unit": "celsius"}
 
         with patch("builtins.open", side_effect=PermissionError("Access denied")):
-            response = self.client.post("/api/settings", json=valid_settings)
+            response = self.client.put("/api/settings", json=valid_settings)
 
             # Should handle permission errors gracefully
             self.assertIn(response.status_code, [500, 400])
@@ -4194,7 +4194,7 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
             with patch("flask.send_file") as mock_send:
                 mock_send.return_value = Mock()
 
-                response = self.client.get("/api/camera/12345/thumbnail")
+                response = self.client.get("/api/cameras/12345/thumbnail")
 
                 # Should use cached version without update
                 self.assertIn(response.status_code, [200, 500])
@@ -4297,7 +4297,7 @@ class TestSecurityAdvanced(BaseTestCase):
 
         for malicious_path in malicious_paths:
             with self.subTest(path=malicious_path):
-                response = self.client.get(f"/api/clip/{malicious_path}/download")
+                response = self.client.get(f"/api/clips/{malicious_path}/download")
 
                 # Should prevent path traversal
                 self.assertIn(response.status_code, [400, 404, 500])
@@ -4323,7 +4323,7 @@ class TestSecurityAdvanced(BaseTestCase):
             "large_data": "x" * 100000,  # 100KB of data
         }
 
-        response = self.client.post("/api/settings", json=large_payload)
+        response = self.client.put("/api/settings", json=large_payload)
 
         # Should handle or reject large payloads appropriately
         self.assertIn(response.status_code, [400, 413, 500])  # 413 = Payload Too Large
@@ -4371,7 +4371,7 @@ class TestIntegrationScenarios(BaseTestCase):
 
         # Test complete workflow
         # 1. Get systems
-        response1 = self.client.get("/api/system/list")
+        response1 = self.client.get("/api/systems")
         self.assertEqual(response1.status_code, 200)
 
         # 2. Get devices (simplified to avoid camera serialization)
@@ -4381,7 +4381,7 @@ class TestIntegrationScenarios(BaseTestCase):
             mock_cache = {}
             mock_ensure_cache.return_value = mock_cache
 
-            response2 = self.client.get("/api/system/12345/devices")
+            response2 = self.client.get("/api/systems/12345/devices")
             self.assertEqual(response2.status_code, 200)
 
         # 3. Get camera thumbnail (test camera lookup separately)
@@ -4393,7 +4393,7 @@ class TestIntegrationScenarios(BaseTestCase):
         ) as mock_ensure_cache:
             mock_cache = {}
             mock_ensure_cache.return_value = mock_cache
-            response3 = self.client.get("/api/camera/12345/thumbnail")
+            response3 = self.client.get("/api/cameras/12345/thumbnail")
             self.assertIn(response3.status_code, [200, 500])
 
     @patch("blinkapp.services.blink_service.blink")
@@ -4414,7 +4414,7 @@ class TestIntegrationScenarios(BaseTestCase):
 
         # Test complete workflow
         # 1. Get clips list
-        response1 = self.client.get("/api/clip/list?storage=cloud")
+        response1 = self.client.get("/api/clips?storage=cloud")
         self.assertEqual(response1.status_code, 200)
 
         # 2. Download specific clip
@@ -4426,7 +4426,7 @@ class TestIntegrationScenarios(BaseTestCase):
                 mock_get.return_value = mock_response
 
                 with patch("pathlib.Path.write_bytes"):
-                    response2 = self.client.get("/api/clip/123456/download")
+                    response2 = self.client.get("/api/clips/123456/download")
                     self.assertIn(response2.status_code, [200, 500])
 
     def test_error_recovery_workflow(self) -> None:
@@ -4434,7 +4434,7 @@ class TestIntegrationScenarios(BaseTestCase):
         # Test that system recovers from errors gracefully
 
         # 1. Make request that might fail
-        self.client.get("/api/system/list")
+        self.client.get("/api/systems")
         # Don't assert specific status - might fail due to no blink connection
 
         # 2. Make settings request that should work
@@ -4712,7 +4712,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 return_value=mock_stream_manager,
             ):
                 with patch("blinkapp.routes.camera.logger") as mock_logger:
-                    response = self.client.get("/api/camera/12345/liveview")
+                    response = self.client.get("/api/cameras/12345/liveview")
 
                     # Should complete full initialization
                     self.assertIn(response.status_code, [200, 500])
@@ -4756,7 +4756,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=mock_stream_manager,
             ):
-                response = self.client.get("/api/camera/12345/liveview")
+                response = self.client.get("/api/cameras/12345/liveview")
 
                 # Should handle HLS transcoding error
                 self.assertEqual(response.status_code, 200)
@@ -4794,7 +4794,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=Mock(),
             ):
-                response = self.client.get("/api/camera/12345/liveview")
+                response = self.client.get("/api/cameras/12345/liveview")
 
                 # Should handle async initialization failure
                 self.assertIn(response.status_code, [500, 400])
@@ -4811,7 +4811,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         mock_stream.url = "tcp://localhost:8080"
         mock_connection.execute.return_value = mock_stream
 
-        response = self.client.get("/api/camera/12345/liveview")
+        response = self.client.get("/api/cameras/12345/liveview")
 
         # Should handle missing stream manager
         self.assertIn(response.status_code, [500, 400])
@@ -5142,7 +5142,7 @@ class TestComplexErrorScenarios(BaseTestCase):
             side_effect=Exception("Connection failed")
         )
 
-        response1 = self.client.get("/api/camera/12345/thumbnail")
+        response1 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertIn(response1.status_code, [500, 404])
 
         # Second request fails with different error
@@ -5150,7 +5150,7 @@ class TestComplexErrorScenarios(BaseTestCase):
             side_effect=Exception("Timeout")
         )
 
-        response2 = self.client.get("/api/camera/12345/thumbnail")
+        response2 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertIn(response2.status_code, [500, 404])
 
         # Third request succeeds (recovery)
@@ -5158,7 +5158,7 @@ class TestComplexErrorScenarios(BaseTestCase):
             return_value=b"image_data"
         )
 
-        response3 = self.client.get("/api/camera/12345/thumbnail")
+        response3 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertIn(response3.status_code, [200, 500])
 
     @patch("blinkapp.routes.camera._init_camera_stream")
@@ -5181,7 +5181,7 @@ class TestComplexErrorScenarios(BaseTestCase):
             mock_cache.get.return_value = None
 
             # Should handle resource exhaustion gracefully
-            response = self.client.get("/api/clip/list?storage=cloud")
+            response = self.client.get("/api/clips?storage=cloud")
             self.assertIn(response.status_code, [200, 500])
 
     @patch("blinkapp.services.blink_service.blink")
@@ -5203,7 +5203,7 @@ class TestComplexErrorScenarios(BaseTestCase):
         mock_blink.sync = {"sync1": mock_sync1, "sync2": mock_sync2}
 
         # Should handle partial failures gracefully
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -5245,7 +5245,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
 
         # Test basic multi-step workflow
         # 1. List systems
-        response1 = self.client.get("/api/system/list")
+        response1 = self.client.get("/api/systems")
         self.assertEqual(response1.status_code, 200)
 
         # 2. Get all devices (simplified)
@@ -5255,7 +5255,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
             mock_cache = {}
             mock_ensure_cache.return_value = mock_cache
 
-            response2 = self.client.get("/api/system/12345/devices")
+            response2 = self.client.get("/api/systems/12345/devices")
             self.assertEqual(response2.status_code, 200)
 
         # 3. Test that workflow completes without errors
@@ -5280,18 +5280,18 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
 
         # Test state consistency workflow
         # 1. Check initial state
-        response1 = self.client.get("/api/system/list")
+        response1 = self.client.get("/api/systems")
         self.assertEqual(response1.status_code, 200)
         data1 = json.loads(response1.data)
         initial_armed_state = data1["data"]["systems"][0]["armed"]
 
         # 2. Change state
-        response2 = self.client.post("/api/system/12345/arm", json={"armed": True})
+        response2 = self.client.post("/api/systems/12345/arm", json={"armed": True})
         self.assertEqual(response2.status_code, 200)
 
         # 3. Verify state change
         mock_sync.arm = True  # Update mock state
-        response3 = self.client.get("/api/system/list")
+        response3 = self.client.get("/api/systems")
         self.assertEqual(response3.status_code, 200)
         data3 = json.loads(response3.data)
         final_armed_state = data3["data"]["systems"][0]["armed"]
@@ -5320,9 +5320,9 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
                 if operation_id % 3 == 0:
                     response = self.client.get("/api/settings")
                 elif operation_id % 3 == 1:
-                    response = self.client.get("/api/system/list")
+                    response = self.client.get("/api/systems")
                 else:
-                    response = self.client.post("/api/clear-cache")
+                    response = self.client.delete("/api/cache")
 
                 results.append((operation_id, response.status_code))
             except Exception as e:
@@ -5495,7 +5495,7 @@ class TestCriticalPathCoverage(BaseTestCase):
     def test_ensure_blink_available_decorator_functionality(self) -> None:
         """Test ensure_blink_available decorator basic functionality."""
         # Test endpoint that requires blink when blink is None
-        response = self.client.get("/api/system/list")
+        response = self.client.get("/api/systems")
 
         # Should return 401 or 500 depending on implementation
         self.assertIn(response.status_code, [401, 500])
@@ -5520,7 +5520,7 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertIn(response.status_code, [200, 500])
 
         # Test POST method on settings
-        response = self.client.post("/api/settings", json={})
+        response = self.client.put("/api/settings", json={})
         self.assertIn(response.status_code, [200, 400, 500])
 
     def test_json_response_format(self) -> None:
@@ -5704,7 +5704,7 @@ class TestCriticalPathCoverage(BaseTestCase):
     def test_url_parameter_handling(self) -> None:
         """Test URL parameter handling."""
         # Test URL with parameters
-        response = self.client.get("/api/clip/list?storage=cloud")
+        response = self.client.get("/api/clips?storage=cloud")
 
         # Should handle URL parameters
         self.assertIn(response.status_code, [200, 400, 500])
@@ -5816,7 +5816,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         mock_connection.execute.return_value = []
         mock_cache.get.return_value = []
 
-        response = self.client.get("/api/clip/list")
+        response = self.client.get("/api/clips")
         # Should return success with default storage type (cloud)
         self.assertEqual(response.status_code, 200)
 
@@ -5830,7 +5830,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         mock_path.exists.return_value = True
         mock_cache.get.return_value = {"thumbnail": mock_path}
 
-        response = self.client.get("/api/clip/12345/thumbnail/check")
+        response = self.client.get("/api/clips/12345/thumbnail/check")
         self.assertIn(response.status_code, [200, 404])
 
     @patch("blinkapp.services.cache_service.clips_cache")
@@ -5838,7 +5838,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         """Test clip thumbnail check not found."""
         mock_cache.get.return_value = None
 
-        response = self.client.get("/api/clip/99999/thumbnail/check")
+        response = self.client.get("/api/clips/99999/thumbnail/check")
         self.assertIn(response.status_code, [200, 404])
 
 
