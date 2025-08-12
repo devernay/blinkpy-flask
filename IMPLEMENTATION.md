@@ -165,110 +165,10 @@ The settings should be saved in a settings.json file in the cache. settings.json
 
 # Code quality improvements
 
-Fix the following without any regression on the behavior or functionalities. Make sure that changes are applied consistently everywhere in the code. After any set of changes, read the whole code again and read IMPLEMENTATION.md, and make sure that everything is implemented as described.
-
-Verify that the following issues have been fixed already:
-- Missing type safety in many places
-- Use pathlib rather than a custom FilePath type
-- Use classes for CameraId, ClipId and NetworkId, and move validation using VALID_*_ID_PATTERN to a class member function. Use these validation functions everywhere validation is needed.
-- Rather than using camera_id as the untyped camera ID and camera_id_typed as the typed camera ID, use camera_id_str for the untyped version, and camera_id for the typed version. Same for network_id and clip_id.
-- CameraId, ClipId and NetworkId have a lot of code and methods in common. Could they inherit from the same parent class, since only the pattern and the type name differ?
-- Error handling:
-   - Inconsistent patterns across functions
-   - Silent failures in many places
-   - Poor exception context preservation
-   - No centralized error handling
-- Memory leaks in stream management
-- Mixed sync/async patterns causing complexity. Remember that all blinkpy API calls must run in the blink thread.
-- Thread management scattered throughout
-- Blocking operations in main thread
-- Caching:
-  - Inefficient caching strategies (no TTL, no LRU eviction)
-  - Cache eviction strategies could be more sophisticated
-  - Some duplicate logic in caching
-- No connection pooling for HTTP requests
-- Some places in the code seem to use "if e:" instead of "if e is None:" to test if e is None, which is bad practice, because values such as 0 or the empty string also evaluate to False.
-- Duplicate logic throughout
-- Poor naming conventions
-- Some naming could be more consistent
-- Race conditions in cache access
-- Blocking I/O operations
-- Code Organization: Some functions are quite long (e.g., get_devices(), get_clips()) - could benefit from extraction into smaller helper functions
-- Configuration: Some hardcoded values could be moved to Config class
-- Documentation: While comprehensive, some complex functions could use more detailed docstrings
-- Testing and test coverage: No unit tests present
-
 Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately.
 
 Read the whole code again, including the Python code, the Javascript code and the HTML templates. How would you rate the code quality? Is there room for improvement?  Is there code that can be de-duplicated or factorized? Add a section to IMPLEMENTATION.md with the proposed code quality improvements.
 
-## Code Quality Assessment and Improvement Recommendations
-
-### Overall Code Quality Rating: B+ (Good with Room for Improvement)
-
-The codebase demonstrates solid engineering practices with comprehensive functionality, but several areas could benefit from refactoring and optimization.
-
-#### Strengths
-- **Comprehensive type hints**: Extensive use of Python typing with custom ID classes
-- **Thread safety**: Proper implementation using cachetools decorators and threading.RLock()
-- **Error handling**: Centralized error classes and context managers
-- **Documentation**: Good docstring coverage and inline comments
-- **Testing**: 50% code coverage with 248 passing tests
-- **Configuration**: Centralized config management
-- **Security**: Input validation and XSS prevention
-
-#### Areas for Improvement
-
-### 1. Code Duplication and Refactoring Opportunities
-
-#### Python Code (blinkapp.py - 3,796 lines)
-**Major Issues:**
-- **Monolithic file**: Single 3,796-line file violates single responsibility principle
-
-**Recommended Refactoring:**
-```python
-# Split blinkapp.py into modules:
-blinkapp/
-├── __init__.py
-├── routes/
-│   ├── __init__.py
-│   ├── auth.py          # Authentication routes (already extracted but not in this directory)
-│   ├── camera.py        # Camera operations (already extracted but not in this directory)
-│   ├── clips.py         # Clip management
-│   ├── system.py        # System management
-│   └── settings.py      # Settings management
-├── models/
-│   ├── __init__.py
-│   ├── cache.py         # Cache implementations (already extracted but not in this directory)
-│   ├── ids.py           # ID validation classes (already extracted but not in this directory)
-│   └── responses.py     # API response models
-├── services/
-│   ├── __init__.py
-│   ├── blink_service.py # Blink API wrapper
-│   ├── cache_service.py # Cache management
-│   └── stream_service.py # Stream management
-└── utils/
-    ├── __init__.py
-    ├── decorators.py    # Route decorators (already extracted but not in this directory)
-    ├── validators.py    # Input validation
-    └── errors.py        # Error handling (already extracted but not in this directory)
-```
-
-Do it **step** by **step**, **one** file at a time. For each file from the list above:
-- create the file if it does not exist yet
-- move it to the right directory
-- move the corresponding code and functions to this file
-- fix all imports in the code to refer to the new location
-- run `ruff check` and `pyright` and fix any issues with the code
-- check that all 388 tests from the full test suite still pass
-The first step is to create the `blinkapp` directory and move `blinkapp.py` to `blinkapp/__init__.py`.
-Do not change the API itself: the parameters passed to each function or class should be the same. This should just be about moving code around, not modifying it.
-Do not over-engineer the solution. This is just about reorganizing the existing code, not modifying it.
-
-### **Next Steps**
-Now continue with the remaining refactoring steps:
-1. Create API response models in models/responses.py
-2. Extract service layer functionality to the services/ modules
 Do it **step** by **step**, **one** file at a time. For each file from the list above:
 - create the file if it does not exist yet
 - move it to the right directory
@@ -278,6 +178,20 @@ Do it **step** by **step**, **one** file at a time. For each file from the list 
 - check that all 388 tests from the full test suite still pass
 Do not change the API itself: the parameters passed to each function or class should be the same as the original implementation. This should just be about moving code around, not modifying it.
 Do not over-engineer the solution. This is just about reorganizing the existing code, not modifying it.
+
+Check for functions that have the same name in the different python files, and verify if this is duplicate code. Give me the results, where for each duplicate function you say where it is defined, if both implementations are identical, and which implementation should be kept because it implements the full functionality.
+
+If yes, resolve the issue by keeping just one instance of each function.
+
+Check for any duplicate or redundant tests, and factorize them. Organize unit tests to mimic the main code organization.
+
+Check for any inconsistencies or duplicate code in the main app code.
+
+Check if the app API is still consistent with the API described in `api.json`. Update `api.json` if needed, and also fix the javascript code that uses this API.
+
+Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx moved to yyy", "xxx was moved to yyy", "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
+
+Make sure each python file/module explicitly defines what it exports, and only exports symbols that it implements.
 
 #### JavaScript Code (1,496 total lines across 4 files)
 **Issues:**
@@ -400,21 +314,7 @@ This refactoring would improve maintainability, reduce bugs, and make the codeba
 
 ---
 
-This code is using Python 3.12. Fix all typing issues in the main application code *and* in tests: first, run ruff check and fix errors. Then run pyright and fix errors. Avoid using "# type: ignore" as much as possible, as it defeats type checking, and document clearly why there's no other solution using code comments. Make sure to use best practices to fix these issues, and do not apply any quick-and-dirty fix. If some errors cannot be fixed, even with some efforts, or require dirty fixes: mark these in the code with a TODO comment, report in a file "LINTING_REPORT.md", and give hints to fix the issues. Do not try to fix anything in the blinkpy library, which is third-party code.
 
-Fix all failing tests (for the full test suite) one by one, except those already marked as "Test Doubts and Unfixable Tests" in `tests/test_doubts.md`, which may or may not be fixable (re-analyze those failures if they still happen). Figure out, for each failing test, if it fails because the test is wrong or because the main code is wrong. In case of doubt, do not try to fix the test, and report in file `tests/test_doubts.md` the reasons why you have doubts about that test, then move on to the next test: we will take a look at those tests later. Check what are the most common failure causes in failing tests, and start by working on those to fix these tests. Make sure that the main code doesn't have lines that are specifically written for tests. Test code should be externalized to tests as much as possible.
-
-Check for functions that have the same name in the various python files, and verify if this is duplicate code. If yes, resolve the issue by keeping just one instance of each function.
-
-Check for any duplicate or redundant tests, and factorize them. Organize unit tests to mimic the main code organization.
-
-Check for any inconsistencies or duplicate code in the main app code.
-
-Check if the app API is still consistent with the API described in `api.json`. Update `api.json` if needed, and also fix the javascript code that uses this API.
-
-Clean up main code and test code, remove unnecessary workarounds. There may sometimes be duplicate parameters, such as `camera_id_str` and `camera_id`, where the first can easily be computed from the second. Remove such redundancy.
-
-Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx moved to yyy", "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
 
 
 Next, we will write a full developer documentation detailing, not necessarily in that order:
