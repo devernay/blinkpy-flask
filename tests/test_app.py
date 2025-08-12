@@ -26,8 +26,8 @@ from blinkapp import (
     app,
     extract_thumbnail_timestamp,
 )
-from ids import BaseId, CameraId, ClipId, NetworkId
-from utils import (
+from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
+from blinkapp.utils.validators import (
     create_api_response,
     format_time_ago,
     validate_string_input,
@@ -377,7 +377,7 @@ class TestFlaskApp(BaseTestCase):
         self.temp_dir = app.config["CACHE_DIR"]
 
         # Initialize caches for testing
-        from cache import initialize_caches
+        from blinkapp.models.cache import initialize_caches
 
         initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
 
@@ -638,8 +638,8 @@ class TestErrorHandlingExtended(BaseTestCase):
 
     def test_error_context_manager_with_different_operations(self) -> None:
         """Test error context manager with different operation names."""
-        from decorators import error_context
-        from errors import BlinkError
+        from blinkapp.utils.decorators import error_context
+        from blinkapp.utils.errors import BlinkError
 
         # Test successful operation
         with error_context("test operation"):
@@ -653,7 +653,7 @@ class TestErrorHandlingExtended(BaseTestCase):
 
     def test_safe_execute_with_different_exceptions(self) -> None:
         """Test safe_execute with different exception types."""
-        from decorators import safe_execute
+        from blinkapp.utils.decorators import safe_execute
 
         # Test with ValueError - safe_execute returns operation name on failure
         def failing_func():
@@ -833,7 +833,7 @@ class TestAuthenticationFlows(BaseTestCase):
     @patch("blinkapp.blink_connection")
     def test_2fa_authentication_error(self, mock_connection) -> None:
         """Test 2FA with authentication error."""
-        from errors import AuthenticationError
+        from blinkapp.utils.errors import AuthenticationError
 
         with self.client.session_transaction() as sess:
             sess["temp_username"] = "test@example.com"
@@ -906,7 +906,7 @@ class TestAuthenticationHelpers(BaseTestCase):
 
     def test_authentication_error_class(self) -> None:
         """Test AuthenticationError exception class."""
-        from errors import AuthenticationError
+        from blinkapp.utils.errors import AuthenticationError
 
         error = AuthenticationError("Test auth error")
         self.assertEqual(str(error), "Test auth error")
@@ -914,7 +914,7 @@ class TestAuthenticationHelpers(BaseTestCase):
 
     def test_cache_error_class(self) -> None:
         """Test CacheError exception class."""
-        from errors import CacheError
+        from blinkapp.utils.errors import CacheError
 
         error = CacheError("Test cache error")
         self.assertEqual(str(error), "Test cache error")
@@ -991,7 +991,7 @@ class TestCacheOperations(BaseTestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
 
-        from cache import ThumbnailCache
+        from blinkapp.models.cache import ThumbnailCache
 
         self.cache = ThumbnailCache(maxsize=10)
 
@@ -1032,8 +1032,8 @@ class TestErrorHandling(BaseTestCase):
 
     def test_error_context_manager(self) -> None:
         """Test error context manager."""
-        from decorators import error_context
-        from errors import BlinkError
+        from blinkapp.utils.decorators import error_context
+        from blinkapp.utils.errors import BlinkError
 
         with self.assertRaises(BlinkError):
             with error_context("test operation"):
@@ -1041,7 +1041,7 @@ class TestErrorHandling(BaseTestCase):
 
     def test_safe_execute_success(self) -> None:
         """Test safe_execute with successful function."""
-        from decorators import safe_execute
+        from blinkapp.utils.decorators import safe_execute
 
         def success_func():
             return "success"
@@ -1051,7 +1051,7 @@ class TestErrorHandling(BaseTestCase):
 
     def test_safe_execute_failure(self) -> None:
         """Test safe_execute with failing function."""
-        from decorators import safe_execute
+        from blinkapp.utils.decorators import safe_execute
 
         def fail_func():
             raise ValueError("Test error")
@@ -1133,7 +1133,7 @@ class TestAPIEndpoints(BaseTestCase):
         setup_test_globals()
 
         # Initialize caches for testing
-        from cache import initialize_caches
+        from blinkapp.models.cache import initialize_caches
 
         initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
 
@@ -1448,7 +1448,7 @@ class TestAsyncOperations(BaseTestCase):
 
     def test_async_functions_exist(self) -> None:
         """Test that async functions exist and are callable."""
-        from auth import initialize_blink, verify_2fa_and_save
+        from blinkapp.routes.auth import initialize_blink, verify_2fa_and_save
 
         # Test functions exist and are callable
         self.assertTrue(callable(initialize_blink))
@@ -1488,7 +1488,7 @@ class TestFileOperations(BaseTestCase):
         setup_test_globals()
 
         # Initialize caches for testing
-        from cache import initialize_caches
+        from blinkapp.models.cache import initialize_caches
 
         initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
 
@@ -1796,7 +1796,7 @@ class TestErrorContextManager(BaseTestCase):
 
     def test_error_context_success(self) -> None:
         """Test error_context with successful operation."""
-        from decorators import error_context
+        from blinkapp.utils.decorators import error_context
 
         with error_context("test operation"):
             # Should not raise any exception
@@ -1806,8 +1806,8 @@ class TestErrorContextManager(BaseTestCase):
 
     def test_error_context_with_exception(self) -> None:
         """Test error_context with exception."""
-        from decorators import error_context
-        from errors import BlinkError
+        from blinkapp.utils.decorators import error_context
+        from blinkapp.utils.errors import BlinkError
 
         with self.assertRaises(BlinkError):
             with error_context("test operation"):
@@ -1857,13 +1857,13 @@ class TestThumbnailCacheOperations(BaseTestCase):
 
     @patch("blinkapp.thumbnail_cache")
     @patch("blinkapp.executor")
-    @patch("camera.logger")
+    @patch("blinkapp.routes.camera.logger")
     def test_update_camera_thumbnail_race_condition(
         self, mock_logger, mock_executor, mock_cache
     ):
         """Test thumbnail update with race condition handling."""
         from blinkapp import CameraId
-        from camera import update_camera_thumbnail
+        from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -1922,7 +1922,7 @@ class TestThumbnailCacheOperations(BaseTestCase):
     ) -> None:
         """Test thumbnail cache file cleanup operations."""
         from blinkapp import CameraId
-        from camera import update_camera_thumbnail
+        from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -2420,7 +2420,7 @@ class TestBackgroundTaskExecution(BaseTestCase):
     @patch("blinkapp.blink_connection")
     def test_blink_connection_error_handling(self, mock_connection) -> None:
         """Test blink connection error handling."""
-        from errors import BlinkError
+        from blinkapp.utils.errors import BlinkError
 
         # Mock connection error
         mock_connection.execute.side_effect = BlinkError("Connection failed")
@@ -2666,7 +2666,7 @@ class TestCommandLineInterface(BaseTestCase):
 
     def test_parse_arguments_default(self) -> None:
         """Test argument parsing with defaults."""
-        from utils import parse_arguments
+        from blinkapp.utils.validators import parse_arguments
 
         # Test with minimal arguments
         args = parse_arguments(["--host", "127.0.0.1"])
@@ -2677,7 +2677,7 @@ class TestCommandLineInterface(BaseTestCase):
 
     def test_parse_arguments_all_options(self) -> None:
         """Test argument parsing with all options."""
-        from utils import parse_arguments
+        from blinkapp.utils.validators import parse_arguments
 
         args = parse_arguments(
             [
@@ -2701,7 +2701,7 @@ class TestCommandLineInterface(BaseTestCase):
 
     def test_parse_arguments_help(self) -> None:
         """Test help argument."""
-        from utils import parse_arguments
+        from blinkapp.utils.validators import parse_arguments
 
         with self.assertRaises(SystemExit):
             parse_arguments(["--help"])
@@ -2761,7 +2761,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
     @patch("blinkapp.blink")
     def test_network_timeout_handling(self, mock_blink) -> None:
         """Test handling of network timeouts."""
-        from errors import BlinkError
+        from blinkapp.utils.errors import BlinkError
 
         # Mock timeout error
         mock_blink.cameras = {12345: Mock()}
@@ -2854,7 +2854,7 @@ class TestPerformanceOptimizations(BaseTestCase):
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
-        from cache import ThumbnailCache
+        from blinkapp.models.cache import ThumbnailCache
 
         # Test FIFO cache behavior
         cache = ThumbnailCache(maxsize=2)
@@ -3187,7 +3187,7 @@ class TestAdvancedClipOperations(BaseTestCase):
     @patch("blinkapp.blink_connection")
     def test_get_cloud_clips_api_error(self, mock_connection, mock_blink) -> None:
         """Test getting cloud clips when API returns error."""
-        from errors import BlinkError
+        from blinkapp.utils.errors import BlinkError
 
         mock_connection.execute.side_effect = BlinkError("API Error")
 
@@ -3545,7 +3545,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
     ):
         """Test concurrent thumbnail update handling."""
         from blinkapp import CameraId
-        from camera import update_camera_thumbnail
+        from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -3644,7 +3644,7 @@ class TestResourceManagement(BaseTestCase):
 
     def test_cache_size_enforcement(self) -> None:
         """Test that cache size limits are enforced."""
-        from cache import ThumbnailCache
+        from blinkapp.models.cache import ThumbnailCache
 
         # Test FIFO cache respects size limits
         cache = ThumbnailCache(maxsize=3)
@@ -3840,7 +3840,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
 
     def test_cache_maintenance_with_size_limits(self) -> None:
         """Test cache maintenance respects size limits."""
-        from cache import ThumbnailCache
+        from blinkapp.models.cache import ThumbnailCache
 
         # Test cache eviction policy
         cache = ThumbnailCache(maxsize=3)
@@ -3992,7 +3992,7 @@ class TestAdvancedFileOperations(BaseTestCase):
             with patch("blinkapp.logger") as mock_logger:
                 with patch("blinkapp.setup_logging"):
                     with patch("blinkapp.StreamManager"):
-                        with patch("cache.initialize_caches"):
+                        with patch("blinkapp.models.cache.initialize_caches"):
                             with patch("blinkapp.load_thumbnail_cache"):
                                 with patch("blinkapp.load_clips_cache"):
                                     with patch("blinkapp.blink_connection"):
@@ -4114,7 +4114,7 @@ class TestSecurityAdvanced(BaseTestCase):
 
     def test_input_sanitization_comprehensive(self) -> None:
         """Test comprehensive input sanitization."""
-        from utils import validate_string_input
+        from blinkapp.utils.validators import validate_string_input
 
         # Test various malicious inputs
         malicious_inputs = [
@@ -4312,7 +4312,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     def test_thumbnail_update_complete_workflow(self) -> None:
         """Test complete thumbnail update workflow with file operations."""
         from blinkapp import CameraId
-        from camera import update_camera_thumbnail
+        from blinkapp.routes.camera import update_camera_thumbnail
 
         # Mock camera
         mock_camera = Mock()
@@ -4383,7 +4383,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     def test_thumbnail_update_race_condition_skip(self) -> None:
         """Test thumbnail update skips when race condition detected."""
         from blinkapp import CameraId
-        from camera import update_camera_thumbnail
+        from blinkapp.routes.camera import update_camera_thumbnail
 
         mock_camera = Mock()
         mock_camera.name = "Test Camera"
@@ -4413,7 +4413,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                     mock_ensure_cache.return_value = mock_cache
 
                     with patch(
-                        "camera.logger"
+                        "blinkapp.routes.camera.logger"
                     ) as mock_logger:  # Patch camera.logger not blinkapp.logger
                         update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
 
@@ -4426,7 +4426,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     def test_thumbnail_update_file_cleanup_error(self) -> None:
         """Test thumbnail update handles file cleanup errors."""
         from blinkapp import CameraId
-        from camera import update_camera_thumbnail
+        from blinkapp.routes.camera import update_camera_thumbnail
 
         mock_camera = Mock()
         mock_camera.name = "Test Camera"
@@ -4480,7 +4480,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                                     ]
 
                                     with patch(
-                                        "camera.logger"
+                                        "blinkapp.routes.camera.logger"
                                     ) as mock_logger:  # Patch camera.logger
                                         update_camera_thumbnail(
                                             mock_camera, cache_key, 2000, 1000
@@ -4546,7 +4546,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 "blinkapp.ensure_stream_manager_initialized",
                 return_value=mock_stream_manager,
             ):
-                with patch("camera.logger") as mock_logger:
+                with patch("blinkapp.routes.camera.logger") as mock_logger:
                     response = self.client.get("/api/camera/12345/liveview")
 
                     # Should complete full initialization
@@ -5195,7 +5195,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_fifo_cache_basic_operations(self) -> None:
         """Test cache basic operations."""
-        from cache import ThumbnailCache
+        from blinkapp.models.cache import ThumbnailCache
 
         # Test basic cache operations
         cache = ThumbnailCache(maxsize=2)
@@ -5239,7 +5239,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_error_context_manager_basic(self) -> None:
         """Test error_context manager basic functionality."""
-        from decorators import error_context
+        from blinkapp.utils.decorators import error_context
 
         # Test successful operation
         with error_context("test operation"):
@@ -5249,7 +5249,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_validate_string_input_basic_cases(self) -> None:
         """Test validate_string_input with basic valid cases."""
-        from utils import validate_string_input
+        from blinkapp.utils.validators import validate_string_input
 
         # Test valid inputs
         result1 = validate_string_input("valid input", 100, "test")
@@ -5274,7 +5274,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_create_api_response_basic_cases(self) -> None:
         """Test create_api_response with basic cases."""
-        from utils import create_api_response
+        from blinkapp.utils.validators import create_api_response
 
         # Test success response
         response, status = create_api_response(success=True, data={"test": "data"})
@@ -5359,7 +5359,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_async_function_existence(self) -> None:
         """Test that async functions exist."""
-        from auth import initialize_blink, verify_2fa_and_save
+        from blinkapp.routes.auth import initialize_blink, verify_2fa_and_save
 
         # Test that async functions exist and are callable
         self.assertTrue(callable(initialize_blink))
@@ -5380,8 +5380,8 @@ class TestCriticalPathCoverage(BaseTestCase):
         try:
             from blinkapp import Config
             from blinkapp import app as flask_app
-            from cache import ThumbnailCache
-            from ids import CameraId, ClipId
+            from blinkapp.models.cache import ThumbnailCache
+            from blinkapp.models.ids import CameraId, ClipId
 
             # Test that imports worked by checking they're callable/accessible
             self.assertTrue(callable(CameraId))
@@ -5397,7 +5397,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_exception_classes(self) -> None:
         """Test custom exception classes."""
-        from errors import BlinkError
+        from blinkapp.utils.errors import BlinkError
 
         # Test that BlinkError can be instantiated
         error = BlinkError("Test error")
@@ -5406,7 +5406,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_type_annotations_coverage(self) -> None:
         """Test functions with type annotations."""
-        from utils import create_api_response, validate_string_input
+        from blinkapp.utils.validators import create_api_response, validate_string_input
 
         # Test that functions with type annotations work correctly
         response, status = create_api_response(True, {"test": "data"})
@@ -5537,7 +5537,7 @@ class TestTemplateRoutesFixed(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("auth.is_authenticated")
+    @patch("blinkapp.routes.auth.is_authenticated")
     @patch("blinkapp.render_template")
     def test_index_template_rendering(self, mock_render, mock_auth) -> None:
         """Test index template rendering."""
@@ -5576,7 +5576,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("auth.is_authenticated")
+    @patch("blinkapp.routes.auth.is_authenticated")
     def test_index_route(self, mock_auth) -> None:
         """Test index route functionality."""
         mock_auth.return_value = False
@@ -5584,7 +5584,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         # Should redirect to auth or return content
         self.assertIn(response.status_code, [200, 302])
 
-    @patch("auth.is_authenticated")
+    @patch("blinkapp.routes.auth.is_authenticated")
     def test_auth_route(self, mock_auth) -> None:
         """Test auth route functionality."""
         mock_auth.return_value = False
@@ -5715,7 +5715,7 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
 
     def test_cache_hit_optimization(self) -> None:
         """Test cache hit optimization."""
-        from cache import ThumbnailCache
+        from blinkapp.models.cache import ThumbnailCache
 
         cache = ThumbnailCache(maxsize=10)
 

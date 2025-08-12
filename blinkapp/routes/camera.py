@@ -17,19 +17,19 @@ from typing import cast
 from flask import Flask, Response, send_file
 
 from app_types import ApiResponse, FlaskResponse, JsonDict
-from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
-from config import Config
-from decorators import (
+from blinkapp.models.ids import CameraId
+from blinkapp.utils.decorators import (
     error_context,
     requires_blink,
 )
-from errors import CameraError, ValidationError
-from ids import CameraId
-from route_decorators import api_route_with_validation
-from utils import (
+from blinkapp.utils.errors import CameraError, ValidationError
+from blinkapp.utils.validators import (
     create_api_response,
     extract_thumbnail_timestamp,
 )
+from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from config import Config
+from route_decorators import api_route_with_validation
 
 logger = logging.getLogger(__name__)
 

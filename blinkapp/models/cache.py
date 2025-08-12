@@ -12,7 +12,7 @@ from typing import Any, TypeVar
 
 from cachetools import Cache, LRUCache
 
-from ids import CameraId, ClipId
+from blinkapp.models.ids import CameraId, ClipId
 
 # Generic type variables for key and value types
 K = TypeVar("K")  # Key type

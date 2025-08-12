@@ -20,11 +20,11 @@ from flask import Flask, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 
 from app_types import AuthJsonDict as JsonDict
+from blinkapp.utils.decorators import error_context
+from blinkapp.utils.errors import AuthenticationError
+from blinkapp.utils.validators import validate_string_input
 from config import Config
-from decorators import error_context
-from errors import AuthenticationError
 from route_decorators import simple_success_response
-from utils import validate_string_input
 
 logger = logging.getLogger(__name__)
 

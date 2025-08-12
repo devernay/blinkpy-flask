@@ -30,7 +30,7 @@ class TestLiveStreamOperations(BaseTestCase):
 
     @patch("blinkapp.stream_manager")
     @patch("blinkapp.blink_connection")
-    @patch("camera.find_camera_by_id")
+    @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_success(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
     ):
@@ -61,7 +61,7 @@ class TestLiveStreamOperations(BaseTestCase):
 
     @patch("blinkapp.stream_manager")
     @patch("blinkapp.blink_connection")
-    @patch("camera.find_camera_by_id")
+    @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_no_stream_manager(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
     ):
@@ -76,7 +76,7 @@ class TestLiveStreamOperations(BaseTestCase):
         # Should handle missing stream manager
         self.assertIn(response.status_code, [200, 500])
 
-    @patch("camera.find_camera_by_id")
+    @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_camera_not_found(self, mock_find_camera: Mock) -> None:
         """Test liveview when camera is not found."""
         mock_find_camera.return_value = None
@@ -88,7 +88,7 @@ class TestLiveStreamOperations(BaseTestCase):
 
     @patch("blinkapp.stream_manager")
     @patch("blinkapp.blink_connection")
-    @patch("camera.find_camera_by_id")
+    @patch("blinkapp.routes.camera.find_camera_by_id")
     def test_get_camera_liveview_stream_init_failure(
         self, mock_find_camera: Mock, mock_blink_conn: Mock, mock_stream_mgr: Mock
     ):

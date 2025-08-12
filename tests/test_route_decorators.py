@@ -118,7 +118,7 @@ class TestRouteDecorators(BaseTestCase):
     def test_api_route_with_validation_success(self) -> None:
         """Test @api_route decorator with validation success."""
         self._setup_mock_blinkapp()
-        from ids import CameraId
+        from blinkapp.models.ids import CameraId
         from route_decorators import api_route_with_validation
 
         @api_route_with_validation(
@@ -141,7 +141,7 @@ class TestRouteDecorators(BaseTestCase):
     def test_api_route_with_validation_invalid_param(self) -> None:
         """Test @api_route decorator with validation invalid param."""
         self._setup_mock_blinkapp()
-        from ids import CameraId
+        from blinkapp.models.ids import CameraId
         from route_decorators import api_route_with_validation
 
         @api_route_with_validation(

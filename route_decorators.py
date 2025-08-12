@@ -484,7 +484,7 @@ def template_route_with_validation(
         def wrapper(*args: Any, **kwargs: Any) -> TemplateResult:
             from flask import render_template, request
 
-            from utils import validate_string_input
+            from blinkapp.utils.validators import validate_string_input
 
             operation = _get_operation_name(func, operation_name)
 

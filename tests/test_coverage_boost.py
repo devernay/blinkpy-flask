@@ -19,7 +19,7 @@ from test_app import BaseTestCase
 
 import blinkapp
 from blinkapp import CameraId, ClipId, Config
-from ids import BaseId
+from blinkapp.models.ids import BaseId
 
 
 class TestBaseIdNotImplementedMethods(BaseTestCase):

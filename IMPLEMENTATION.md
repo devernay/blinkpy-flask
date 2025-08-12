@@ -254,14 +254,16 @@ blinkapp/
     └── errors.py        # Error handling (already extracted but not in this directory)
 ```
 
-Do it **step** by **step**, **one** file at a time.
-
-At each step, check that:
-- the main code and tests pass `ruff check`, `mypy`, and has no error with `pyright` (warnings are ok).
-- the tests that passed with the monomithic version are still passing (compare with results from `tests/test_results_baseline.md`)
-
- Do not change the API itself: the parameters passed to each function or class should be the same. This should just be about moving code around, not modifying it.
-
+Do it **step** by **step**, **one** file at a time. For each file from the list above:
+- create the file if it does not exist yet
+- move it to the right directory
+- move the corresponding code and functions to this file
+- fix all imports in the code to refer to the new location
+- run `ruff check` and `pyright` and fix any issues with the code
+- check that all 388 tests from the full test suite still pass
+The first step is to create the `blinkapp` directory and move `blinkapp.py` to `blinkapp/__init__.py`.
+Do not change the API itself: the parameters passed to each function or class should be the same. This should just be about moving code around, not modifying it.
+Do not over-engineer the solution. This is just about reorganizing the existing code, not modifying it.
 
 #### JavaScript Code (1,496 total lines across 4 files)
 **Issues:**

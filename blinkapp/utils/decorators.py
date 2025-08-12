@@ -9,8 +9,8 @@ from typing import ParamSpec, TypeVar
 from flask import jsonify
 
 from app_types import ApiResponse
+from blinkapp.utils.errors import BlinkError
 from config import Config
-from errors import BlinkError
 
 # Type definitions
 T = TypeVar("T")

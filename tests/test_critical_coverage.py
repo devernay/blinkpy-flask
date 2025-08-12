@@ -157,7 +157,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
 
         try:
             from blinkapp import initialize_cache_paths, initialize_caches
-            from camera import update_camera_thumbnail
+            from blinkapp.routes.camera import update_camera_thumbnail
 
             # Initialize cache paths and caches before thumbnail operations
             initialize_cache_paths()

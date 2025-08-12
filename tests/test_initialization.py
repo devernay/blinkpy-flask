@@ -54,7 +54,11 @@ def initialize_for_testing() -> None:
 
     # Initialize cache objects for testing
     try:
-        from cache import clips_cache, initialize_caches, thumbnail_cache
+        from blinkapp.models.cache import (
+            clips_cache,
+            initialize_caches,
+            thumbnail_cache,
+        )
 
         # Only initialize if not already initialized
         if clips_cache is None or thumbnail_cache is None:

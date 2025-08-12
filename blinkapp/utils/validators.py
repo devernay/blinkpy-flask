@@ -13,8 +13,8 @@ import re
 from datetime import UTC, datetime
 
 from app_types import ApiResponse, JsonDict
+from blinkapp.models.ids import ClipId
 from config import Config
-from ids import ClipId
 
 # Module-level logger for utility function debugging
 logger = logging.getLogger(__name__)

@@ -42,34 +42,42 @@ if TYPE_CHECKING:
     from cache import ThumbnailCache
 
 # Authentication and session management
-from auth import (
-    load_saved_blink,
-    setup_auth_routes,
-)
-
 # Caching system for thumbnails, clips, and metadata
-from cache import (
+from blinkapp.models.cache import (
     ClipsCache,
     ThumbnailCache,
     clips_cache,
     thumbnail_cache,
 )
 
+# ID validation and type safety
+from blinkapp.models.ids import CameraId, ClipId, NetworkId
+from blinkapp.routes.auth import (
+    load_saved_blink,
+    setup_auth_routes,
+)
+
 # Camera operations and route handlers
-from camera import (
+from blinkapp.routes.camera import (
     setup_camera_routes,
     update_camera_thumbnail,
 )
 
 # Route decorators and error handling
-from decorators import error_context, requires_blink
-from errors import (
+from blinkapp.utils.decorators import error_context, requires_blink
+from blinkapp.utils.errors import (
     CacheError,
     ValidationError,
 )
 
-# ID validation and type safety
-from ids import CameraId, ClipId, NetworkId
+# Utility functions for data processing
+from blinkapp.utils.validators import (
+    create_api_response,
+    extract_thumbnail_timestamp,
+    format_clips_by_day,
+    format_time_ago,
+    parse_clip_id,
+)
 
 # Route decorators for API endpoints
 from route_decorators import (
@@ -82,15 +90,6 @@ from route_decorators import (
 
 # Live streaming management
 from stream_manager import StreamConfig, StreamManager
-
-# Utility functions for data processing
-from utils import (
-    create_api_response,
-    extract_thumbnail_timestamp,
-    format_clips_by_day,
-    format_time_ago,
-    parse_clip_id,
-)
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -136,7 +135,7 @@ P = ParamSpec("P")
 # ============================================================================
 
 # Create Flask app instance with secure configuration
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 
 # ============================================================================
