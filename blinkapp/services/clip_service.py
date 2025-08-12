@@ -397,10 +397,10 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         blink,
         blink_connection,
         ensure_executor_initialized,
-        generate_clip_thumbnail,
         http_session,
         logger,
     )
+    from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
     # Ensure clips cache is initialized
     clips_cache_instance = ensure_clips_cache_initialized()
@@ -485,9 +485,9 @@ def process_local_clip_background(
         blink,
         blink_connection,
         ensure_executor_initialized,
-        generate_clip_thumbnail,
         logger,
     )
+    from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
     # Ensure clips cache is initialized
     clips_cache_instance = ensure_clips_cache_initialized()

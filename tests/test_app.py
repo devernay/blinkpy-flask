@@ -2541,7 +2541,7 @@ class TestVideoProcessingOperations(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_clip_thumbnail_existing_file(self) -> None:
         """Test thumbnail generation when file already exists."""
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=True):
             result = generate_clip_thumbnail(
@@ -2554,7 +2554,7 @@ class TestVideoProcessingOperations(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_clip_thumbnail_ffmpeg_success(self) -> None:
         """Test successful thumbnail generation with ffmpeg."""
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -2574,7 +2574,7 @@ class TestVideoProcessingOperations(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_clip_thumbnail_ffmpeg_error(self) -> None:
         """Test thumbnail generation with ffmpeg error."""
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -2592,7 +2592,7 @@ class TestVideoProcessingOperations(BaseTestCase):
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_clip_thumbnail_first_frame(self) -> None:
         """Test thumbnail generation for first frame."""
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -3282,7 +3282,10 @@ class TestAdvancedClipOperations(BaseTestCase):
         }
 
         with patch("pathlib.Path.exists", return_value=False):
-            with patch("blinkapp.generate_clip_thumbnail", return_value=None):
+            with patch(
+                "blinkapp.services.thumbnail_service.generate_clip_thumbnail",
+                return_value=None,
+            ):
                 response = self.client.post("/api/clip/test_clip/process")
 
                 # Should handle thumbnail generation failure
@@ -4722,7 +4725,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         """Test thumbnail generation for middle frame with ffmpeg."""
         from pathlib import Path
 
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -4751,7 +4754,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         """Test thumbnail generation for first frame."""
         from pathlib import Path
 
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -4774,7 +4777,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         import subprocess
         from pathlib import Path
 
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch(
@@ -4796,7 +4799,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         import subprocess
         from pathlib import Path
 
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch(
@@ -4815,7 +4818,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         """Test thumbnail generation with invalid duration from ffprobe."""
         from pathlib import Path
 
-        from blinkapp import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
