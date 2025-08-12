@@ -151,7 +151,6 @@ __all__ = [
     "initialize_cache_paths",
     "create_device_data",
     # Clip processing functions
-    "process_local_clip_background",
     "notify_thumbnail_ready",
     "generate_clip_thumbnail",
     # Cache management
@@ -787,75 +786,6 @@ def _download_clip_common(
 
 
 @ensure_blink_available
-def process_local_clip_background(
-    clip_id: ClipId, sync_name: str, item_id: int
-) -> None:
-    """Process local clip in background (download and generate thumbnail).
-
-    Downloads clip from USB storage and generates thumbnail for web interface.
-    Runs in background thread to avoid blocking API responses.
-
-    Args:
-        clip_id: Unique identifier for the clip
-        sync_name: Name of the sync module containing the clip
-        item_id: Local storage item ID
-    """
-    # Ensure clips cache is initialized
-    clips_cache_instance = ensure_clips_cache_initialized()
-
-    def process() -> None:
-        try:
-            # Check if already cached
-            cached_clip = clips_cache_instance.get(clip_id)
-            if cached_clip is not None and cached_clip["filepath"].exists():
-                return
-
-            assert blink is not None
-            # Find sync module and clip item
-            sync_module = blink.sync.get(sync_name)
-            if (
-                sync_module is None
-                or not sync_module.local_storage
-                or not sync_module.local_storage_manifest_ready
-            ):
-                return
-
-            manifest = sync_module._local_storage["manifest"]
-            item = next((i for i in manifest if i.id == item_id), None)
-            if not item:
-                return
-
-            # Generate filename and download
-            iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
-            filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
-            assert CLIPS_CACHE_DIR is not None
-            filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
-
-            if not filepath.exists():
-                blink_connection.execute(item.prepare_download(blink))
-                success = blink_connection.execute(
-                    item.download_video(blink, str(filepath))
-                )
-                if success is not True:
-                    return
-
-            # Cache the clip and generate thumbnail
-            clips_cache_instance[clip_id] = {"filepath": filepath, "thumbnail": None}
-            thumbnail_path = generate_clip_thumbnail(
-                filepath, filename, middle_frame=True
-            )
-            if thumbnail_path is not None:
-                cached_clip = clips_cache_instance.get(clip_id)
-                if cached_clip is not None:
-                    updated_clip = cached_clip.copy()
-                    updated_clip["thumbnail"] = thumbnail_path
-                    clips_cache_instance[clip_id] = updated_clip
-        except Exception as e:
-            logger.error(f"Error processing local clip {clip_id}: {e}")
-
-    ensure_executor_initialized().submit(process)
-
-
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
     """Thumbnail ready notification (no longer needed with polling approach)."""
     logger.debug(f"Thumbnail ready for clip: {clip_id}")

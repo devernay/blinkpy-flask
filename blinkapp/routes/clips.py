@@ -81,10 +81,10 @@ def setup_clips_routes(app):
         Returns:
             JSON response indicating processing has started
         """
-        from blinkapp import (
+        from blinkapp.services.clip_service import (
+            process_cloud_clip_background,
             process_local_clip_background,
         )
-        from blinkapp.services.clip_service import process_cloud_clip_background
         from blinkapp.utils.validators import parse_clip_id
 
         clip_id, error_response = parse_clip_id(clip_id_str)
