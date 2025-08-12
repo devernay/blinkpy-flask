@@ -60,8 +60,16 @@ from blinkapp.routes.auth import (
 # Camera operations and route handlers
 from blinkapp.routes.camera import (
     setup_camera_routes,
-    update_camera_thumbnail,
 )
+from blinkapp.routes.camera import (
+    update_camera_thumbnail as update_camera_thumbnail,
+)
+
+# Clip management routes
+from blinkapp.routes.clips import setup_clips_routes
+
+# System management routes
+from blinkapp.routes.system import setup_system_routes
 
 # Route decorators and error handling
 from blinkapp.utils.decorators import error_context, requires_blink
@@ -73,17 +81,16 @@ from blinkapp.utils.errors import (
 # Utility functions for data processing
 from blinkapp.utils.validators import (
     create_api_response,
-    extract_thumbnail_timestamp,
     format_clips_by_day,
     format_time_ago,
-    parse_clip_id,
+)
+from blinkapp.utils.validators import (
+    extract_thumbnail_timestamp as extract_thumbnail_timestamp,
 )
 
 # Route decorators for API endpoints
 from route_decorators import (
     api_route,
-    api_route_with_validation,
-    file_response_route,
     method_dispatch_route,
     simple_success_response,
 )
@@ -856,245 +863,9 @@ def clear_cache() -> JsonDict:
 # ============================================================================
 
 
-@app.route("/api/system/list")
-@requires_blink
-@api_route("get systems")
-def get_systems() -> JsonDict:
-    """Get list of available Blink systems.
-
-    Retrieves all configured Blink sync modules and their associated
-    network information. Each system represents a separate Blink hub
-    with its own set of cameras.
-
-    Returns:
-        JSON response with list of systems or error message
-    """
-    assert blink is not None  # Guaranteed by @requires_blink decorator
-
-    logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
-    systems = []
-    for name, sync in blink.sync.items():
-        logger.debug(f"Processing sync: {name}, network_id: {sync.network_id}")
-        systems.append(
-            {
-                "name": name,
-                "network_id": sync.network_id,
-                "armed": sync.arm,
-                "online": sync.online,
-            }
-        )
-
-    return {"systems": systems}
-
-
-@app.route("/api/system/<network_id_str>/devices")
-@requires_blink
-@api_route_with_validation("get devices", validate_params={"network_id_str": NetworkId})
-def get_devices(network_id: NetworkId) -> JsonDict:
-    """Get devices for a specific Blink system.
-
-    Args:
-        network_id: Validated NetworkId object
-
-    Returns:
-        JSON response with list of devices or error message
-    """
-    devices = []
-
-    # Find the sync module for this network
-    sync_module, error_response = require_sync_module(network_id)
-    if error_response is not None:
-        error_dict, status_code = error_response
-        error_message = error_dict.get("error", "Unknown error")
-        raise ValidationError(str(error_message), status_code)
-
-    assert sync_module is not None
-    # Add sync module
-    devices.append(
-        {
-            "type": "sync_module",
-            "name": "Sync Module",
-            "online": sync_module.online,
-            "id": sync_module.sync_id,
-        }
-    )
-
-    # Add cameras - refresh thumbnails in Blink thread
-    thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
-    for camera_name, camera in sync_module.cameras.items():
-        logger.debug(
-            f"Processing camera: {camera.name}, current thumbnail: {camera.thumbnail}"
-        )
-
-        cache_key = CameraId(camera.camera_id)
-        current_ts = extract_thumbnail_timestamp(camera.thumbnail)
-        cached_entry = thumbnail_cache_instance.get(cache_key)
-        cached_ts = cached_entry.get("timestamp", 0) if cached_entry else 0
-
-        # Update thumbnail if needed
-        update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
-
-        # Create device data
-        device_data = create_device_data(camera, cache_key, current_ts, cached_ts)
-        logger.debug(f"Camera device data for {camera.name}: {device_data}")
-        devices.append(device_data)
-
-    return {"devices": devices}
-
-
-@app.route("/api/system/<network_id_str>/arm", methods=["POST"])
-@requires_blink
-@api_route_with_validation(
-    "arm/disarm system",
-    validate_params={"network_id_str": NetworkId},
-    validate_json=True,
-    required_fields=["armed"],
-)
-def arm_system(network_id: NetworkId) -> JsonDict:
-    """Arm or disarm a Blink system.
-
-    Args:
-        network_id: Validated NetworkId object
-
-    Returns:
-        JSON response with success status or error message
-    """
-    data = request.get_json()
-    armed = data["armed"]
-
-    # Find the sync module
-    sync_module, error_response = require_sync_module(network_id)
-    if error_response is not None:
-        error_dict, status_code = error_response
-        error_message = error_dict.get("error", "Unknown error")
-        raise ValidationError(str(error_message), status_code)
-
-    with error_context("arm/disarm system"):
-        if sync_module is not None:
-            blink_connection.execute(sync_module.async_arm(armed))
-        return {"armed": armed}
-
-
 # ============================================================================
 # API Routes - Clip Management
 # ============================================================================
-
-
-@app.route("/api/clips")
-@requires_blink
-@api_route("get clips")
-def get_clips() -> JsonDict:
-    """Get clips from cloud or local storage.
-
-    Retrieves video clips from either Blink's cloud storage or local
-    USB storage connected to sync modules. Results are cached and
-    organized by date for efficient browsing.
-
-    Query Parameters:
-        storage: 'cloud' or 'local' (default: 'cloud')
-
-    Returns:
-        JSON response with list of clips organized by date
-    """
-    assert blink is not None
-    storage_type = request.args.get("storage", "cloud")
-    if storage_type not in ["cloud", "local"]:
-        raise ValidationError(Config.ErrorMessages.INVALID_STORAGE_TYPE, 400)
-
-    with error_context(f"get {storage_type} clips"):
-        if storage_type == "cloud":
-            # Get cloud clips via blink operation
-            videos_metadata = blink_connection.execute(
-                blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
-            )
-            clips = process_cloud_clips(videos_metadata)
-        else:
-            clips = process_local_clips()
-
-    return {"clips": clips}
-
-
-@app.route("/api/system/refresh", methods=["POST"])
-@requires_blink
-@simple_success_response("System refreshed successfully")
-def refresh_system() -> JsonDict:
-    """Manually refresh the Blink system.
-
-    Returns:
-        JSON response with success status or error message
-    """
-    assert blink is not None
-    success = blink_connection.execute(blink.refresh(force=True))
-
-    if success is not True:
-        response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.SYSTEM_REFRESH_FAILED,
-            status_code=500,
-        )
-        return response  # Return just the dict, not the tuple
-
-    return {}  # Decorator will handle the success response
-
-
-@app.route("/api/clip/<clip_id_str>/process", methods=["POST"])
-@requires_blink
-@simple_success_response("Clip processing initiated")
-def process_clip(clip_id_str: str) -> JsonDict:
-    """Process clip on server (download and generate thumbnail) without sending to client.
-
-    Initiates background processing of clip for thumbnail generation.
-    Used by "Update All" functionality to process clips sequentially.
-
-    Args:
-        clip_id_str: String representation of clip ID (cloud ID or local sync~item format)
-
-    Returns:
-        JSON response indicating processing has started
-    """
-    clip_id, error_response = parse_clip_id(clip_id_str)
-    if error_response is not None:
-        response, status_code = error_response
-        return response  # Return just the dict, not the tuple
-
-    assert clip_id is not None
-    if clip_id.is_local():
-        sync_name, item_id = clip_id.get_local_parts()
-        process_local_clip_background(clip_id, sync_name, item_id)
-    else:
-        process_cloud_clip_background(clip_id)
-
-    return {}  # Decorator will handle the success response
-
-
-@app.route("/api/clip/<clip_id_str>/download")
-@requires_blink
-@api_route("download clip")
-def download_clip(clip_id_str: str) -> ResponseReturnValue:
-    """Download a specific clip.
-
-    Args:
-        clip_id_str: String representation of clip ID
-
-    Returns:
-        Flask Response with clip file or error message
-    """
-    clip_id, error_response = parse_clip_id(clip_id_str)
-    if error_response is not None:
-        # Re-raise as exception to be handled by decorator
-        raise ValueError(error_response[0]["error"])
-
-    assert clip_id is not None
-    logger.debug(
-        f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})"
-    )
-    if clip_id.is_local():
-        sync_name, item_id = clip_id.get_local_parts()
-        logger.debug(f"Local clip - sync_name: {sync_name}, item_id: {item_id}")
-        return download_local_clip(clip_id, sync_name, item_id)
-    else:
-        logger.debug(f"Cloud clip - ID: {clip_id}")
-        return download_cloud_clip(clip_id)
 
 
 def _download_clip_common(
@@ -1450,22 +1221,6 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             logger.error(f"Error processing cloud clip {clip_id}: {e}")
 
     ensure_executor_initialized().submit(process)
-
-
-@app.route("/api/clip/<clip_id_str>/thumbnail")
-@file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
-def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:
-    """Serve clip thumbnail."""
-
-    clips_cache_instance = ensure_clips_cache_initialized()
-    cached_clip = clips_cache_instance.get(clip_id)
-    if cached_clip is not None:
-        thumbnail_path = cached_clip.get("thumbnail")
-        if thumbnail_path is not None and thumbnail_path.exists():
-            response = send_file(str(thumbnail_path), mimetype="image/jpeg")
-            return response, 200
-
-    raise ValidationError(Config.ErrorMessages.THUMBNAIL_NOT_FOUND, 404)
 
 
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
@@ -2138,30 +1893,6 @@ def settings() -> ResponseReturnValue:
         return jsonify(response), status_code
 
 
-@app.route("/api/clip/<clip_id_str>/thumbnail/check")
-@api_route_with_validation(
-    "check clip thumbnail", validate_params={"clip_id_str": ClipId}
-)
-def check_clip_thumbnail(clip_id: ClipId) -> JsonDict:
-    """Check if thumbnail is available for clip.
-
-    Args:
-        clip_id: Validated ClipId object
-
-    Returns:
-        JSON response with thumbnail availability status
-    """
-
-    clips_cache_instance = ensure_clips_cache_initialized()
-    cached_clip = clips_cache_instance.get(clip_id)
-    if cached_clip is not None:
-        thumbnail_path = cached_clip.get("thumbnail")
-        if thumbnail_path is not None and thumbnail_path.exists():
-            return {"available": True, "url": f"/api/clip/{clip_id}/thumbnail"}
-
-    return {"available": False}
-
-
 # Stream management functionality
 
 
@@ -2389,6 +2120,12 @@ setup_auth_routes(app)
 
 # Set up camera routes
 setup_camera_routes(app)
+
+# Set up clip routes
+setup_clips_routes(app)
+
+# Set up system routes
+setup_system_routes(app)
 
 
 if __name__ == "__main__":
