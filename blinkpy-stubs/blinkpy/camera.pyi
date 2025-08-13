@@ -14,6 +14,12 @@ class BlinkCamera:
 
     # Core attributes from __init__
     sync: BlinkSyncModule  # BlinkSyncModule
+    network_id: str
+    camera_id: str
+    name: str
+    response: dict[str, Any]
+    motion_detected: bool
+    arm: bool
     name: str | None
     camera_id: str | None
     network_id: str | None
@@ -106,6 +112,12 @@ class BlinkCamera:
     def motion_detected(self) -> bool: ...
     @property
     def name(self) -> str: ...
+    @property
+    def serial(self) -> str: ...
+    @property
+    def enabled(self) -> bool: ...
+    @property
+    def privacy_mode(self) -> bool: ...
     @property
     def battery_voltage(self) -> float | None: ...
     @property

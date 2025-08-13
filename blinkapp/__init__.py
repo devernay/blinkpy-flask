@@ -39,6 +39,11 @@ if TYPE_CHECKING:
 # Caching system for thumbnails, clips, and metadata
 
 # ID validation and type safety
+# Type definitions for better code clarity
+from app_types import (
+    ApiResponse,
+    JsonDict,
+)
 from blinkapp.models.ids import ClipId, NetworkId
 
 # API response models
@@ -68,6 +73,12 @@ from blinkapp.utils.errors import (
     ValidationError,
 )
 
+# Blink camera library - third-party integration
+from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
+
+# Application configuration
+from config import Config
+
 # Route decorators for API endpoints
 from route_decorators import (
     api_route,
@@ -85,6 +96,7 @@ if TYPE_CHECKING:
 # Flask framework components
 from flask import (
     Flask,
+    Response,
     jsonify,
     redirect,
     render_template,
@@ -98,19 +110,10 @@ try:
 except ImportError:
     from typing import Any
 
-    ResponseReturnValue = Any
+    ResponseReturnValue = Any  # type: ignore
 
-# Type definitions for better code clarity
-from app_types import (
-    ApiResponse,
-    JsonDict,
-)
-
-# Blink camera library - third-party integration
-from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
-
-# Application configuration
-from config import Config
+# Type alias for Flask responses
+FlaskResponse = str | tuple[str, int] | Response
 
 # Generic type variables for function signatures
 T = TypeVar("T")
@@ -264,7 +267,8 @@ def require_sync_module(
     blink_typed: Blink = blink  # Type hint for pyright
 
     # Search through all sync modules for matching network ID
-    for name, sync in blink_typed.sync.items():
+    for name in blink_typed.sync:
+        sync = cast(BlinkSyncModule, blink_typed.sync[name])
         if str(sync.network_id) == str(network_id):
             return sync, None
 
@@ -397,7 +401,7 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 
 
 @app.route("/")
-def index() -> ResponseReturnValue:
+def index() -> FlaskResponse:
     """Main page - redirect to login if not authenticated.
 
     Returns:
@@ -498,7 +502,7 @@ def clear_cache() -> JsonDict:
 
 def _download_clip_common(
     clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False
-) -> ResponseReturnValue:
+) -> FlaskResponse:
     """Common clip download logic after file is downloaded.
 
     Args:
@@ -544,8 +548,9 @@ def _download_clip_common(
     from blinkapp.services.connection_service import ensure_executor_initialized
 
     ensure_executor_initialized().submit(generate_thumbnail_bg)
-    response = send_file(str(filepath), as_attachment=True, download_name=filename)
-    return response, 200
+    response: FlaskResponse = send_file(
+        str(filepath), as_attachment=True, download_name=filename
+    )
     return response, 200
 
 

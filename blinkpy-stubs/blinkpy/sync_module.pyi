@@ -14,8 +14,8 @@ class BlinkSyncModule:
 
     # Core attributes from __init__
     blink: Blink  # Blink instance
-    name: str
     network_id: str
+    name: str
     response: dict[str, Any]
     cameras: CaseInsensitiveDict[str, BlinkCamera]
     local_storage: dict[str, Any]
@@ -103,6 +103,14 @@ class BlinkSyncModule:
     def network_id(self) -> str: ...
     @property
     def name(self) -> str: ...
+    @property
+    def status(self) -> str: ...
+    @property
+    def serial(self) -> str: ...
+    @property
+    def host(self) -> str: ...
+    @property
+    def last_record(self) -> dict[str, Any]: ...
 
 class BlinkOwl(BlinkSyncModule):
     """Blink Owl (Mini) sync module class."""
