@@ -77,6 +77,11 @@ def setup_auth_routes(app_instance: Flask) -> None:
                 return render_template("auth.html", is_2fa=False, error=str(e))
 
             # Initialize Blink thread if needed
+            if blink_connection is None:
+                return render_template(
+                    "auth.html", is_2fa=False, error="Blink connection not initialized"
+                )
+
             blink_connection.start()
 
             try:
@@ -88,6 +93,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
                     return redirect(url_for("two_factor"))
                 elif success:
                     assert CREDENTIALS_FILE is not None
+                    assert blink_connection is not None
                     blink_connection.execute(blink.save(CREDENTIALS_FILE))
                     session["authenticated"] = True
                     return redirect(url_for("index"))
@@ -138,6 +144,12 @@ def setup_auth_routes(app_instance: Flask) -> None:
 
             try:
                 logger.debug("Running 2FA verification in Blink thread")
+                if blink_connection is None:
+                    return render_template(
+                        "auth.html",
+                        is_2fa=True,
+                        error="Blink connection not initialized",
+                    )
                 success = blink_connection.execute(
                     verify_2fa_and_save(username, password, key)
                 )
@@ -185,7 +197,6 @@ def setup_auth_routes(app_instance: Flask) -> None:
             JSON response with success status
         """
         # Import here to avoid circular imports
-        import blinkapp
 
         # Import here to avoid circular dependency
         from blinkapp import CREDENTIALS_FILE, clear_all_caches
@@ -197,7 +208,13 @@ def setup_auth_routes(app_instance: Flask) -> None:
 
         # Clear session and credentials
         session.clear()
-        blinkapp.blink = None
+
+        # Clear global blink instance
+        from blinkapp.services.blink_service import blink_connection
+
+        if blink_connection:
+            blink_connection.shutdown()
+
         assert CREDENTIALS_FILE is not None
         cred_file = Path(CREDENTIALS_FILE)
         if cred_file.exists():

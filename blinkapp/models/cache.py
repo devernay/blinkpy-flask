@@ -165,7 +165,7 @@ class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
         """
         super().__init__(maxsize=maxsize)
 
-    def get_thumbnail_timestamp(self, camera_id: str) -> float | None:
+    def get_thumbnail_timestamp(self, camera_id: CameraId) -> float | None:
         """Get timestamp for cached thumbnail.
 
         Args:
@@ -181,7 +181,9 @@ class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
                 return float(timestamp_obj)
         return None
 
-    def is_thumbnail_fresh(self, camera_id: str, max_age_seconds: int = 300) -> bool:
+    def is_thumbnail_fresh(
+        self, camera_id: CameraId, max_age_seconds: int = 300
+    ) -> bool:
         """Check if cached thumbnail is still fresh.
 
         Args:
@@ -198,7 +200,7 @@ class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
 
     def update_thumbnail(
         self,
-        camera_id: str,
+        camera_id: CameraId,
         thumbnail_data: bytes,
         metadata: dict[str, Any] | None = None,
     ) -> None:
@@ -232,7 +234,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         """
         super().__init__(maxsize=maxsize)
 
-    def add_clip(self, clip_id: str, clip_data: dict[str, Any]) -> None:
+    def add_clip(self, clip_id: ClipId, clip_data: dict[str, Any]) -> None:
         """Add clip with automatic metadata enhancement.
 
         Stores clip data with additional tracking metadata for cache management
@@ -250,7 +252,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         }
         self[clip_id] = enhanced_data
 
-    def get_clip(self, clip_id: str) -> dict[str, Any] | None:
+    def get_clip(self, clip_id: ClipId) -> dict[str, Any] | None:
         """Get clip and update access statistics.
 
         Args:

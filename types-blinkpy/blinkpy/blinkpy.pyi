@@ -14,8 +14,7 @@ class Blink:
     """Main Blink class for interacting with Blink camera systems."""
 
     auth: Auth
-    @property
-    def sync(self) -> CaseInsensitiveDict[str, BlinkSyncModule]: ...
+    sync: CaseInsensitiveDict[str, BlinkSyncModule]
     cameras: CaseInsensitiveDict[str, BlinkCamera]
     video_list: CaseInsensitiveDict[str, Any]
     available: bool

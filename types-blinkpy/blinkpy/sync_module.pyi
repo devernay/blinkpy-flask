@@ -19,11 +19,7 @@ class BlinkSyncModule:
     response: dict[str, Any]
     cameras: CaseInsensitiveDict[str, BlinkCamera]
     local_storage: dict[str, Any]
-    name: str
-    network_id: int
     sync_id: int | None
-    cameras: CaseInsensitiveDict[str, BlinkCamera]
-    local_storage: dict[str, Any]
     local_storage_manifest_ready: bool
     _local_storage: dict[str, Any]
     attributes: dict[str, Any]
