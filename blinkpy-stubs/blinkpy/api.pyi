@@ -1,7 +1,10 @@
 # Stubs for blinkpy.api module
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import ClientResponse
+
+if TYPE_CHECKING:
+    from .blinkpy import Blink
 
 # Constants
 MIN_THROTTLE_TIME: int
@@ -17,51 +20,89 @@ async def request_login(
 ) -> dict[str, Any]: ...
 async def request_verify(
     auth: Any,
-    blink: Any,
+    blink: Blink,
     verify_key: str,
 ) -> dict[str, Any]: ...
+async def request_logout(blink: Blink) -> dict[str, Any]: ...
 
 # Network and system functions
-async def request_networks(blink: Any) -> dict[str, Any]: ...
-async def request_homescreen(blink: Any) -> dict[str, Any]: ...
-async def request_syncmodule(blink: Any, network_id: str) -> dict[str, Any]: ...
-async def request_network_status(blink: Any, network_id: str) -> dict[str, Any]: ...
+async def request_networks(blink: Blink) -> dict[str, Any]: ...
+async def request_network_update(blink: Blink, network: str) -> dict[str, Any]: ...
+async def request_user(blink: Blink) -> dict[str, Any]: ...
+async def request_homescreen(blink: Blink, **kwargs: Any) -> dict[str, Any]: ...
+async def request_syncmodule(blink: Blink, network_id: str) -> dict[str, Any]: ...
+async def request_network_status(blink: Blink, network_id: str) -> dict[str, Any]: ...
+async def request_system_arm(
+    blink: Blink, network: str, **kwargs: Any
+) -> dict[str, Any]: ...
+async def request_system_disarm(
+    blink: Blink, network: str, **kwargs: Any
+) -> dict[str, Any]: ...
+async def request_notification_flags(blink: Blink, **kwargs: Any) -> dict[str, Any]: ...
+async def request_set_notification_flag(
+    blink: Blink, data_dict: dict[str, Any]
+) -> dict[str, Any]: ...
+async def request_command_status(
+    blink: Blink, network: str, command_id: str
+) -> dict[str, Any]: ...
+async def request_command_done(
+    blink: Blink, network: str, command_id: str
+) -> dict[str, Any]: ...
 
 # Camera functions
-async def request_cameras(blink: Any, network_id: str) -> dict[str, Any]: ...
-async def request_camera_status(
-    blink: Any, network_id: str, camera_id: str
+async def request_new_image(
+    blink: Blink, network_id: str, camera_id: str, **kwargs: Any
+) -> bool: ...
+async def request_new_video(
+    blink: Blink, network_id: str, camera_id: str, **kwargs: Any
+) -> bool: ...
+async def request_cameras(blink: Blink, network_id: str) -> dict[str, Any]: ...
+async def request_camera_info(
+    blink: Blink, network_id: str, camera_id: str
+) -> dict[str, Any]: ...
+async def request_camera_usage(blink: Blink) -> dict[str, Any]: ...
+async def request_camera_liveview(
+    blink: Blink, network_id: str, camera_id: str
 ) -> dict[str, Any]: ...
 async def request_camera_sensors(
-    blink: Any, network_id: str, camera_id: str
+    blink: Blink, network_id: str, camera_id: str
 ) -> dict[str, Any]: ...
-async def request_new_image(blink: Any, network_id: str, camera_id: str) -> bool: ...
 async def request_motion_detection_enable(
-    blink: Any, network_id: str, camera_id: str
+    blink: Blink, network_id: str, camera_id: str, **kwargs: Any
 ) -> bool: ...
 async def request_motion_detection_disable(
-    blink: Any, network_id: str, camera_id: str
+    blink: Blink, network_id: str, camera_id: str, **kwargs: Any
 ) -> bool: ...
+async def request_get_config(
+    blink: Blink, network_id: str, camera_id: str, product_type: str = "owl"
+) -> dict[str, Any]: ...
+async def request_update_config(
+    blink: Blink,
+    network_id: str,
+    camera_id: str,
+    product_type: str = "owl",
+    data: str | None = None,
+) -> ClientResponse | None: ...
 
 # Video and media functions
 async def request_videos(
-    blink: Any,
+    blink: Blink,
     time: int | None = None,
     page: int = 1,
 ) -> dict[str, Any]: ...
-async def request_video_count(blink: Any) -> dict[str, Any]: ...
+async def request_video_count(blink: Blink) -> dict[str, Any]: ...
 
 # Live view functions
 async def request_get_liveview(
-    blink: Any, network_id: str, camera_id: str
+    blink: Blink, network_id: str, camera_id: str
 ) -> dict[str, Any]: ...
 
 # Local storage functions
 async def request_local_storage_manifest(
-    blink: Any, network_id: str, sync_id: str
+    blink: Blink, network_id: str, sync_id: str
 ) -> dict[str, Any]: ...
 async def request_local_storage_clip(
-    blink: Any,
+    blink: Blink,
     network_id: str,
     sync_id: str,
     manifest_id: str,
@@ -69,14 +110,14 @@ async def request_local_storage_clip(
 
 # HTTP utility functions
 async def http_get(
-    blink: Any,
+    blink: Blink,
     url: str,
     stream: bool = False,
     json: bool = True,
     timeout: int = 10,
 ) -> ClientResponse | dict[str, Any]: ...
 async def http_post(
-    blink: Any,
+    blink: Blink,
     url: str,
     data: dict[str, Any] | None = None,
     json_data: bool = True,
