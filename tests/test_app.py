@@ -1281,7 +1281,7 @@ class TestAPIEndpoints(BaseTestCase):
 
     """Test cache management functions."""
 
-    def test_clear_all_caches_function(self):
+    def test_clear_all_caches_function(self) -> None:
         """Test clear_all_caches function exists and works."""
         from blinkapp import clear_all_caches
 
@@ -1624,6 +1624,7 @@ class TestErrorScenarios(BaseTestCase):
         ]
 
         for endpoint, method in endpoints:
+            response = None
             if method == "POST":
                 response = self.client.post(
                     endpoint, data="invalid json", content_type="application/json"
@@ -1633,7 +1634,8 @@ class TestErrorScenarios(BaseTestCase):
                     endpoint, data="invalid json", content_type="application/json"
                 )
             # Should return 400 for invalid JSON
-            self.assertIn(response.status_code, [400, 500])
+            if response is not None:
+                self.assertIn(response.status_code, [400, 500])
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")

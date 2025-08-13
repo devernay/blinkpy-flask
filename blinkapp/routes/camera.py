@@ -12,12 +12,15 @@ Extracted from app.py to improve code organization and maintainability.
 import asyncio
 import logging
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from flask import Flask, Response, jsonify, request, send_file
 
 from app_types import FlaskResponse, JsonDict
 from blinkapp.models.ids import CameraId
+
+if TYPE_CHECKING:
+    from blinkpy.camera import BlinkCamera
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.camera_service import (
     find_camera_by_id,
@@ -48,7 +51,7 @@ __all__ = [
 
 
 def update_camera_thumbnail(
-    camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int
+    camera: "BlinkCamera", cache_key: CameraId, current_ts: int, cached_ts: int
 ) -> None:
     """Update camera thumbnail in background if needed.
 
@@ -164,7 +167,7 @@ def update_camera_thumbnail(
     executor.submit(update_thumbnail)
 
 
-async def _init_camera_stream(camera) -> object:
+async def _init_camera_stream(camera: "BlinkCamera") -> object:
     """Initialize camera livestream."""
     stream = await camera.init_livestream()
     if stream is not None and hasattr(stream, "start") and hasattr(stream, "feed"):

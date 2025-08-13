@@ -10,11 +10,11 @@ class Auth:
     region_id: str | None
     client_id: str | None
     account_id: str | None
-    data: dict[str, Any]  # Add missing data attribute
+    data: dict[str, Any]
 
     def __init__(
         self,
-        login_data: dict[str, str] | None = None,  # First positional argument
+        login_data: dict[str, str] | None = None,
         session: Any | None = None,
         host: str | None = None,
         token: str | None = None,
@@ -40,3 +40,5 @@ class Auth:
     ) -> dict[str, Any]: ...
     @property
     def check_key_required(self) -> bool: ...
+    @property
+    def key_required(self) -> bool: ...

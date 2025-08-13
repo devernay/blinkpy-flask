@@ -16,11 +16,14 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import CameraId
+    from blinkpy.camera import BlinkCamera
 
 logger = logging.getLogger(__name__)
 
 
-def find_camera_by_id(camera_id: CameraId):
+def find_camera_by_id(
+    camera_id: CameraId,
+) -> tuple[BlinkCamera, None] | tuple[None, tuple[dict[str, object], int]]:
     """Find camera by ID across all sync modules.
 
     Searches through all available Blink sync modules and their cameras
@@ -58,7 +61,9 @@ def find_camera_by_id(camera_id: CameraId):
     return None
 
 
-def require_camera(camera_id: CameraId):
+def require_camera(
+    camera_id: CameraId,
+) -> tuple[BlinkCamera, None] | tuple[None, tuple[dict[str, object], int]]:
     """Find camera by ID, return error response if not found.
 
     This is a convenience function for API endpoints that need to find

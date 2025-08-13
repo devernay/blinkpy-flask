@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import cast
 
-from flask import jsonify, request
+from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
 
 from blinkapp.models.responses import create_api_response
@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-def setup_settings_routes(app):
+def setup_settings_routes(app: Flask) -> None:
     """Set up settings management routes."""
 
     @app.route("/api/settings", methods=["GET", "PUT"])

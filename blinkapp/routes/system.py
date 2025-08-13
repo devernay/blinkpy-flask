@@ -1,6 +1,6 @@
 """System management routes for the Blink Flask application."""
 
-from flask import request
+from flask import Flask, request
 
 from app_types import JsonDict
 from blinkapp.models.ids import NetworkId
@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-def setup_system_routes(app):
+def setup_system_routes(app: Flask) -> None:
     """Set up system management routes."""
 
     @app.route("/api/systems")

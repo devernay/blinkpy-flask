@@ -1,6 +1,6 @@
 """Clip management routes for the Blink Flask application."""
 
-from flask import jsonify, request
+from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
 
 from app_types import JsonDict
@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-def setup_clips_routes(app):
+def setup_clips_routes(app: Flask) -> None:
     """Set up clip management routes."""
 
     @app.route("/api/clips")

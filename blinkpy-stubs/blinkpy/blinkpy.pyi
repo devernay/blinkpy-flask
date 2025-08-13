@@ -24,6 +24,7 @@ class Blink:
     network_ids: list[int]
     version: str
     homescreen: dict[str, Any]
+    networks: dict[str, Any]
 
     def __init__(
         self,
@@ -40,7 +41,7 @@ class Blink:
         since: int | None = None,
         camera: str = "all",
         stop: int = 10,
-    ) -> dict[str, Any]: ...
+    ) -> list[dict[str, Any]]: ...
     def setup_camera_list(self) -> None: ...
     def setup_sync_module(
         self, name: str, network_id: int, cameras: dict[str, Any]
@@ -53,7 +54,5 @@ class Blink:
     def do_http_get(self, address: str) -> dict[str, Any]: ...
 
     # Properties that might be accessed
-    @property
-    def networks(self) -> dict[str, Any]: ...
     @property
     def login_ids(self) -> dict[str, Any]: ...

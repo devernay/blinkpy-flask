@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 class TestValidatorsExpansion(unittest.TestCase):
     """Test validators.py - expand coverage on working functions."""
 
-    def test_extract_thumbnail_timestamp_with_ts(self):
+    def test_extract_thumbnail_timestamp_with_ts(self) -> None:
         """Test timestamp extraction with ts parameter."""
         from blinkapp.utils.validators import extract_thumbnail_timestamp
 
@@ -22,7 +22,7 @@ class TestValidatorsExpansion(unittest.TestCase):
         result = extract_thumbnail_timestamp(url)
         self.assertEqual(result, 1640995200)
 
-    def test_format_time_ago_none_input(self):
+    def test_format_time_ago_none_input(self) -> None:
         """Test format_time_ago with None input."""
         from blinkapp.utils.validators import format_time_ago
 
@@ -33,7 +33,7 @@ class TestValidatorsExpansion(unittest.TestCase):
 class TestModelsIds(unittest.TestCase):
     """Test models/ids.py - expand coverage."""
 
-    def test_clip_id_local_parts_error(self):
+    def test_clip_id_local_parts_error(self) -> None:
         """Test ClipId get_local_parts with cloud clip."""
         from blinkapp.models.ids import ClipId
 
@@ -45,12 +45,12 @@ class TestModelsIds(unittest.TestCase):
 class TestUtilsDecorators(unittest.TestCase):
     """Test utils/decorators.py - expand coverage."""
 
-    def test_error_context_success(self):
+    def test_error_context_success(self) -> None:
         """Test error_context decorator with successful operation."""
         from blinkapp.utils.decorators import error_context
 
         @error_context("test operation")
-        def test_func():
+        def test_func() -> None:
             return "success"
 
         result = test_func()
@@ -60,21 +60,21 @@ class TestUtilsDecorators(unittest.TestCase):
 class TestErrorClasses(unittest.TestCase):
     """Test utils/errors.py - expand coverage."""
 
-    def test_authentication_error(self):
+    def test_authentication_error(self) -> None:
         """Test AuthenticationError creation."""
         from blinkapp.utils.errors import AuthenticationError
 
         error = AuthenticationError("Auth failed")
         self.assertEqual(str(error), "Auth failed")
 
-    def test_cache_error(self):
+    def test_cache_error(self) -> None:
         """Test CacheError creation."""
         from blinkapp.utils.errors import CacheError
 
         error = CacheError("Cache failed")
         self.assertEqual(str(error), "Cache failed")
 
-    def test_validation_error(self):
+    def test_validation_error(self) -> None:
         """Test ValidationError creation."""
         from blinkapp.utils.errors import ValidationError
 

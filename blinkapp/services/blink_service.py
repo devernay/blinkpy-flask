@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from blink_connection import BlinkConnection
@@ -36,7 +36,7 @@ def initialize_blink_objects() -> None:
     blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
 
 
-def ensure_blink_initialized():
+def ensure_blink_initialized() -> Any:
     """Ensure blink is initialized.
 
     Returns:
@@ -50,7 +50,7 @@ def ensure_blink_initialized():
     return blink
 
 
-def ensure_blink_connection_initialized():
+def ensure_blink_connection_initialized() -> Any:
     """Ensure blink_connection is initialized.
 
     Returns:
