@@ -9,7 +9,6 @@ from typing import ParamSpec, TypeVar
 from flask import jsonify
 
 from app_types import ApiResponse
-from blinkapp.utils.errors import BlinkError
 from config import Config
 
 # Type definitions
@@ -27,7 +26,7 @@ __all__ = [
 
 @contextmanager
 def error_context(
-    operation: str, reraise_as: type[Exception] = BlinkError
+    operation: str, reraise_as: type[Exception] | None = None
 ) -> Generator[None, None, None]:
     """Context manager for consistent error handling.
 
@@ -41,6 +40,12 @@ def error_context(
     Raises:
         BlinkError: If the operation fails (or the specified reraise_as type)
     """
+    # Import here to avoid circular dependency
+    from blinkapp.utils.errors import BlinkError
+
+    if reraise_as is None:
+        reraise_as = BlinkError
+
     try:
         yield
     except Exception as e:

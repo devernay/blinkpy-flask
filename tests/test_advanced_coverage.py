@@ -119,7 +119,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.cache_service.clips_cache")
-    @patch("blinkapp.send_file")
+    @patch("flask.send_file")
     @patch("pathlib.Path.exists")
     def test_download_local_clip_cached_success(
         self,

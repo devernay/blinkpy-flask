@@ -15,7 +15,7 @@ __all__ = [
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
@@ -37,7 +37,7 @@ def is_authenticated() -> bool:
 
     blink = blinkapp.blink
 
-    return blink is not None and hasattr(blink, "auth") and blink.auth.startup_complete  # type: ignore[attr-defined]
+    return blink is not None and blink.auth.token is not None
 
 
 async def initialize_blink(
@@ -80,8 +80,8 @@ async def initialize_blink(
     with error_context("initialize Blink system", AuthenticationError):
         from aiohttp import ClientSession
 
-        from blinkpy.auth import Auth  # type: ignore[import-untyped]
-        from blinkpy.blinkpy import Blink  # type: ignore[import-untyped,attr-defined]
+        from blinkpy.auth import Auth
+        from blinkpy.blinkpy import Blink
 
         # Create new HTTP session for Blink API communication
         session_obj = ClientSession()
@@ -206,24 +206,24 @@ async def load_saved_blink() -> bool:
         try:
             from aiohttp import ClientSession
 
-            from blinkpy.auth import Auth  # type: ignore[import-untyped]
+            from blinkpy.auth import Auth
             from blinkpy.blinkpy import (
-                Blink,  # type: ignore[import-untyped,attr-defined]
+                Blink,
             )
-            from blinkpy.helpers.util import json_load  # type: ignore[import-untyped]
+            from blinkpy.helpers.util import json_load
 
             assert CREDENTIALS_FILE is not None
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
             # Type ignore for mypy issue with blinkpy's json_load function
-            auth_data: dict[str, object] | None = await json_load(  # type: ignore[misc]
-                cast(str, CREDENTIALS_FILE)
+            auth_data: dict[str, Any] | None = cast(
+                dict[str, Any] | None, await json_load(cast(str, CREDENTIALS_FILE))
             )
 
             # Create new HTTP session and attempt authentication with saved data
             session_obj = ClientSession()
             try:
-                auth = Auth(auth_data, session=session_obj)  # type: ignore[arg-type]
+                auth = Auth(auth_data, session=session_obj)
                 blink = Blink(session=session_obj)
                 blink.auth = auth
 

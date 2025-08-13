@@ -13,6 +13,7 @@ __all__ = [
     "download_local_clip",
     "process_cloud_clip_background",
     "download_and_cache_cloud_thumbnail",
+    "download_clip_common",
 ]
 
 import logging
@@ -217,7 +218,6 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     """Download cloud storage clip."""
     from blinkapp import (
         CLIPS_CACHE_DIR,
-        _download_clip_common,
     )
     from blinkapp.services.blink_service import blink, blink_connection
     from blinkapp.services.connection_service import (
@@ -309,7 +309,7 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
             )
             return jsonify(api_response), status_code
 
-    return _download_clip_common(clip_id, filepath, filename, middle_frame=False)
+    return download_clip_common(clip_id, filepath, filename, middle_frame=False)
 
 
 def download_local_clip(
@@ -318,7 +318,6 @@ def download_local_clip(
     """Download local storage clip using blinkpy methods."""
     from blinkapp import (
         CLIPS_CACHE_DIR,
-        _download_clip_common,
         logger,
     )
     from blinkapp.services.blink_service import blink, blink_connection
@@ -394,7 +393,7 @@ def download_local_clip(
             )
             return jsonify(api_response), status_code
 
-    return _download_clip_common(clip_id, filepath, filename, middle_frame=True)
+    return download_clip_common(clip_id, filepath, filename, middle_frame=True)
 
 
 def process_cloud_clip_background(clip_id: ClipId) -> None:
@@ -607,3 +606,57 @@ def process_local_clip_background(
             logger.error(f"Error processing local clip {clip_id}: {e}")
 
     ensure_executor_initialized().submit(process)
+
+
+def download_clip_common(
+    clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False
+) -> tuple[ResponseReturnValue, int]:
+    """Common clip download logic after file is downloaded.
+
+    Args:
+        clip_id: Unique identifier for the clip
+        filepath: Path to the downloaded clip file
+        filename: Original filename for the clip
+        middle_frame: Whether to extract middle frame as thumbnail
+
+    Returns:
+        Flask response with clip file or error message
+    """
+    from flask import send_file
+
+    # Ensure clips cache is initialized
+    clips_cache_instance = ensure_clips_cache_initialized()
+
+    # Cache the clip first (without thumbnail)
+    clips_cache_instance[clip_id] = {
+        "filepath": filepath,
+        "thumbnail": None,
+    }
+
+    # Generate thumbnail in background
+    def generate_thumbnail_bg() -> None:
+        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+
+        thumbnail_path = generate_clip_thumbnail(
+            filepath, filename, middle_frame=middle_frame
+        )
+        if thumbnail_path is not None:
+            # Update cache with thumbnail atomically
+            cached_clip = clips_cache_instance.get(clip_id)
+            if cached_clip is not None:
+                # Create new dict to avoid race conditions
+                updated_clip = cached_clip.copy()
+                updated_clip["thumbnail"] = thumbnail_path
+                clips_cache_instance[clip_id] = updated_clip
+            # Notify clients that thumbnail is ready
+            from blinkapp.services.thumbnail_service import notify_thumbnail_ready
+
+            notify_thumbnail_ready(clip_id)
+
+    from blinkapp.services.connection_service import ensure_executor_initialized
+
+    ensure_executor_initialized().submit(generate_thumbnail_bg)
+    response = send_file(
+        str(filepath), as_attachment=True, attachment_filename=filename
+    )
+    return response, 200

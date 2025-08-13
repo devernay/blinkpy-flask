@@ -19,7 +19,10 @@ import asyncio
 import concurrent.futures
 import logging
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from blinkpy.blinkpy import Blink
 
 # Import Config for timeout constants
 from config import Config
@@ -61,7 +64,7 @@ class BlinkConnection:
         )
         self.thread: threading.Thread | None = None
         self.loop: asyncio.AbstractEventLoop | None = None
-        self.blink: Any | None = None
+        self.blink: Blink | None = None
         self._started: bool = False
         self._active_streams: dict[str, Any] = {}
 
@@ -123,14 +126,13 @@ class BlinkConnection:
         connection as not started.
         """
         # Close Blink session
-        if self.blink:
+        if self.blink is not None:
             try:
-                if hasattr(self.blink, "close") and callable(self.blink.close):
-                    if self.loop and self.loop.is_running():
-                        future = asyncio.run_coroutine_threadsafe(
-                            self.blink.close(), self.loop
-                        )
-                        future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
+                if self.loop and self.loop.is_running():
+                    future = asyncio.run_coroutine_threadsafe(
+                        self.blink.close(), self.loop
+                    )
+                    future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
             except (TimeoutError, RuntimeError, OSError) as e:
                 logger.debug(f"Session cleanup: {e}")
 

@@ -27,6 +27,7 @@ import os
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    Any,
     ParamSpec,
     TypeVar,
     cast,
@@ -74,7 +75,7 @@ from blinkapp.utils.errors import (
 )
 
 # Blink camera library - third-party integration
-from blinkpy.sync_module import BlinkSyncModule  # type: ignore[import-untyped]
+from blinkpy.sync_module import BlinkSyncModule
 
 # Application configuration
 from config import Config
@@ -99,7 +100,6 @@ from flask import (
     jsonify,  # type: ignore[attr-defined]
     redirect,
     render_template,
-    send_file,
     session,
     url_for,
 )
@@ -112,7 +112,9 @@ except ImportError:
     ResponseReturnValue = Any  # type: ignore
 
 # Type alias for Flask responses
-FlaskResponse = ResponseReturnValue
+from flask import Response
+
+FlaskResponse = Response
 
 # Generic type variables for function signatures
 T = TypeVar("T")
@@ -381,11 +383,11 @@ def initialize_cache_paths() -> None:
     cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
 
     # Set all cache-related paths using the base cache directory
-    CACHE_DIR = str(cache_dir)  # type: ignore[misc]
-    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)  # type: ignore[misc]
-    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)  # type: ignore[misc]
-    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)  # type: ignore[misc]
-    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)  # type: ignore[misc]
+    CACHE_DIR = str(cache_dir)  # type: ignore[reportConstantRedefinition]
+    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)  # type: ignore[reportConstantRedefinition]
+    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)  # type: ignore[reportConstantRedefinition]
+    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)  # type: ignore[reportConstantRedefinition]
+    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)  # type: ignore[reportConstantRedefinition]
 
 
 # Cache configuration constants
@@ -400,7 +402,7 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 
 
 @app.route("/")
-def index() -> FlaskResponse:
+def index() -> Any:
     """Main page - redirect to login if not authenticated.
 
     Returns:
@@ -499,60 +501,6 @@ def clear_cache() -> JsonDict:
 # ============================================================================
 
 
-def _download_clip_common(  # type: ignore[misc]
-    clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False
-) -> FlaskResponse:
-    """Common clip download logic after file is downloaded.
-
-    Args:
-        clip_id: Unique identifier for the clip
-        filepath: Path to the downloaded clip file
-        filename: Original filename for the clip
-        middle_frame: Whether to extract middle frame as thumbnail
-
-    Returns:
-        Flask response with clip file or error message
-    """
-    # Ensure clips cache is initialized
-    from blinkapp.services.cache_service import ensure_clips_cache_initialized
-
-    clips_cache_instance = ensure_clips_cache_initialized()
-
-    # Cache the clip first (without thumbnail)
-    clips_cache_instance[clip_id] = {
-        "filepath": filepath,
-        "thumbnail": None,
-    }
-
-    # Generate thumbnail in background
-    def generate_thumbnail_bg() -> None:
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
-
-        thumbnail_path = generate_clip_thumbnail(
-            filepath, filename, middle_frame=middle_frame
-        )
-        if thumbnail_path is not None:
-            # Update cache with thumbnail atomically
-            cached_clip = clips_cache_instance.get(clip_id)
-            if cached_clip is not None:
-                # Create new dict to avoid race conditions
-                updated_clip = cached_clip.copy()
-                updated_clip["thumbnail"] = thumbnail_path
-                clips_cache_instance[clip_id] = updated_clip
-            # Notify clients that thumbnail is ready
-            from blinkapp.services.thumbnail_service import notify_thumbnail_ready
-
-            notify_thumbnail_ready(clip_id)
-
-    from blinkapp.services.connection_service import ensure_executor_initialized
-
-    ensure_executor_initialized().submit(generate_thumbnail_bg)
-    response: FlaskResponse = send_file(  # type: ignore[misc]
-        str(filepath), as_attachment=True, attachment_filename=filename
-    )
-    return response, 200
-
-
 @ensure_blink_available
 # ============================================================================
 # API Routes - Configuration and Settings
@@ -571,7 +519,7 @@ def get_config() -> JsonDict:
     Returns:
         JSON response with configuration values for the client
     """
-    config_data = {
+    config_data: dict[str, Any] = {
         "hls_stream_check_interval": Config.HLS_STREAM_CHECK_INTERVAL,
         "hls_stream_check_delay": Config.HLS_STREAM_CHECK_DELAY,
         "hls_stream_max_attempts": Config.HLS_STREAM_MAX_ATTEMPTS,
@@ -604,7 +552,7 @@ def get_config() -> JsonDict:
 
 @app.route("/placeholder")
 @api_route("placeholder")
-def placeholder() -> JsonDict:
+def placeholder() -> tuple[FlaskResponse, int]:
     """Show placeholder message.
 
     Returns:
@@ -615,7 +563,7 @@ def placeholder() -> JsonDict:
         error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
         status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
     )
-    return jsonify(response), status_code
+    return cast(tuple[FlaskResponse, int], (jsonify(response), status_code))
 
 
 def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
@@ -715,6 +663,7 @@ def startup() -> None:
         # Start the async Blink connection thread
         from blinkapp.services.blink_service import blink_connection
 
+        assert blink_connection is not None
         blink_connection.start()
 
         try:
@@ -748,7 +697,7 @@ def load_clips_cache() -> None:
     from blinkapp.services.blink_service import blink, blink_connection
 
     assert CLIPS_CACHE_DIR is not None
-    cache_dir = Path(cast(str, CLIPS_CACHE_DIR))
+    cache_dir = Path(CLIPS_CACHE_DIR)
     if not cache_dir.exists():
         logger.warning(f"Clips cache directory does not exist: {cache_dir}")
         return
@@ -759,7 +708,7 @@ def load_clips_cache() -> None:
     clips_cache_instance = ensure_clips_cache_initialized()
 
     try:
-        files_to_remove = []
+        files_to_remove: list[Path] = []
 
         for video_file in cache_dir.glob("*.mp4"):
             try:
@@ -792,17 +741,19 @@ def load_clips_cache() -> None:
                             sync_name, item_id = clip_id.get_local_parts()
                             if sync_name in blink.sync:
                                 sync_module = blink.sync[sync_name]
+                                assert isinstance(sync_module, BlinkSyncModule)
                                 if (
                                     sync_module.local_storage
                                     and sync_module.local_storage_manifest_ready
                                 ):
                                     manifest = sync_module._local_storage["manifest"]
                                     for item in manifest:
-                                        if item.id == item_id:
+                                        if hasattr(item, "id") and item.id == item_id:
                                             clip_valid = True
                                             break
                         else:
                             # Validate cloud clip (simplified check)
+                            assert blink_connection is not None
                             videos_metadata = blink_connection.execute(
                                 blink.get_videos_metadata(
                                     stop=Config.MAX_VIDEOS_METADATA
@@ -863,17 +814,12 @@ async def cleanup_blink_session() -> None:
     """Clean up Blink aiohttp session."""
     from blinkapp.services.blink_service import blink_connection
 
-    if (
-        blink_connection
-        and hasattr(blink_connection, "blink")
-        and blink_connection.blink
-    ):
+    if blink_connection and blink_connection.blink:
         blink = blink_connection.blink
-        if hasattr(blink, "auth") and hasattr(blink.auth, "session"):
-            try:
-                await blink.auth.session.close()
-            except Exception as e:
-                logger.debug(f"Error closing Blink session: {e}")
+        try:
+            await blink.auth.session.close()
+        except Exception as e:
+            logger.debug(f"Error closing Blink session: {e}")
 
 
 def cleanup_resources() -> None:
@@ -907,14 +853,11 @@ def cleanup_resources() -> None:
         # Clean up active livestreams
         from blinkapp.services.blink_service import blink, blink_connection
 
-        if blink_connection is not None and hasattr(
-            blink_connection, "_active_streams"
-        ):
+        if blink_connection is not None:
             for stream_id, stream in blink_connection._active_streams.items():
                 try:
-                    if hasattr(stream, "stop"):
-                        stream.stop()
-                        logger.info(f"Stopped active livestream {stream_id}")
+                    stream.stop()
+                    logger.info(f"Stopped active livestream {stream_id}")
                 except (AttributeError, RuntimeError, OSError) as e:
                     logger.warning(f"Error stopping livestream {stream_id}: {e}")
             blink_connection._active_streams.clear()

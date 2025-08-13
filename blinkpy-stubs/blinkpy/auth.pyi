@@ -31,7 +31,7 @@ class Auth:
 
     def __init__(
         self,
-        login_data: dict[str, str] | None = None,
+        login_data: dict[str, Any] | None = None,
         no_prompt: bool = False,
         session: ClientSession | None = None,
         agent: str = "27.0ANDROID_28373244",

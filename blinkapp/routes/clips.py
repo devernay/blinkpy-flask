@@ -146,7 +146,8 @@ def setup_clips_routes(app: Flask) -> None:
         Query Parameters:
             check: If 'true', return availability status instead of image
         """
-        from blinkapp import redirect, send_file
+        from flask import redirect, send_file
+
         from blinkapp.services.cache_service import ensure_clips_cache_initialized
 
         clips_cache_instance = ensure_clips_cache_initialized()

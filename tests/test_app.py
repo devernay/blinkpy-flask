@@ -2185,7 +2185,11 @@ class TestClipDownloadOperations(BaseTestCase):
 
         with patch("pathlib.Path.exists", return_value=True):  # File cached
             with patch("flask.send_file") as mock_send:
-                mock_send.return_value = Mock()
+                from flask import Response
+
+                mock_send.return_value = Response(
+                    "fake file data", mimetype="video/mp4"
+                )
 
                 response = self.client.get("/api/clips/123456/download")
 
@@ -2398,7 +2402,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
             mock_cache.get.return_value = {"thumbnail": mock_thumbnail_path}
             mock_ensure_cache.return_value = mock_cache
 
-            with patch("blinkapp.send_file") as mock_send:
+            with patch("flask.send_file") as mock_send:
                 # Mock send_file to return a proper response object
                 from flask import Response
 

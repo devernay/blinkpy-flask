@@ -21,6 +21,7 @@ from blinkapp.models.ids import CameraId
 
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
+    from blinkpy.livestream import BlinkLiveStream
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.camera_service import (
     find_camera_by_id,
@@ -34,7 +35,7 @@ from blinkapp.utils.errors import CameraError, ValidationError
 from blinkapp.utils.validators import (
     extract_thumbnail_timestamp,
 )
-from blinkpy.camera import BlinkCamera  # type: ignore[import-untyped]
+from blinkpy.camera import BlinkCamera
 from config import Config
 from route_decorators import api_route_with_validation
 
@@ -167,10 +168,10 @@ def update_camera_thumbnail(
     executor.submit(update_thumbnail)
 
 
-async def _init_camera_stream(camera: "BlinkCamera") -> object:
+async def _init_camera_stream(camera: "BlinkCamera") -> "BlinkLiveStream | None":
     """Initialize camera livestream."""
     stream = await camera.init_livestream()
-    if stream is not None and hasattr(stream, "start") and hasattr(stream, "feed"):
+    if stream is not None:
         await stream.start()
         # Start feeding the stream in the background
         asyncio.create_task(stream.feed())
@@ -350,12 +351,12 @@ def setup_camera_routes(app: Flask) -> None:
             stream_manager.stop_stream(str(camera_id))
 
             # Stop and cleanup the TCP stream
-            if hasattr(blink_connection, "_active_streams"):
+            if blink_connection is not None:
                 stream = blink_connection._active_streams.pop(str(camera_id), None)
-                if stream is not None and hasattr(stream, "stop"):
-                    # Execute async stop in the blink connection thread
+                if stream is not None:
+                    # Execute stop in the blink connection thread
                     async def stop_stream() -> None:
-                        await stream.stop()
+                        stream.stop()
 
                     blink_connection.execute(stop_stream())
 
