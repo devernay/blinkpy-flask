@@ -1,33 +1,54 @@
 # Stubs for blinkpy.sync_module module
 from typing import Any
 
+from requests.structures import CaseInsensitiveDict
+
 from .camera import BlinkCamera
 
 class BlinkSyncModule:
     """Sync module class for Blink systems."""
 
-    blink: Any
+    # Core attributes from __init__
+    blink: Any  # Blink instance
     name: str
     network_id: int
-    sync_id: int
-    cameras: dict[str, BlinkCamera]
+    sync_id: int | None
+    cameras: CaseInsensitiveDict[str, BlinkCamera]
     local_storage: dict[str, Any]
     local_storage_manifest_ready: bool
     _local_storage: dict[str, Any]
     attributes: dict[str, Any]
     network_info: dict[str, Any]
     summary: dict[str, Any]
+    region_id: str | None
+    serial: str | None
+    status: str
+    host: str | None
+    events: list[dict[str, Any]]
+    motion_interval: int
+    motion: dict[str, Any]
+    last_records: dict[str, list[dict[str, Any]]]
+    _version: str | None
 
     def __init__(
-        self, blink: Any, name: str, network_id: int, response: dict[str, Any]
+        self,
+        blink: Any,
+        network_name: str,
+        network_id: int,
+        camera_list: dict[str, Any],
     ) -> None: ...
+
+    # Async methods
+    async def start(self) -> None: ...
     async def async_arm(self, value: bool) -> bool: ...
     async def get_events(self, page: int = 1) -> dict[str, Any]: ...
     async def get_owl_info(self) -> dict[str, Any]: ...
-    async def refresh(self) -> bool: ...
+    async def refresh(self, force_cache: bool = False) -> bool: ...
     async def update_local_storage_manifest(self) -> bool: ...
     async def prepare_download(self, item_id: int) -> bool: ...
     async def download_video(self, item_id: int, filename: str) -> bool: ...
+
+    # Sync methods
     def get_videos_metadata(
         self,
         since: int | None = None,
@@ -40,16 +61,18 @@ class BlinkSyncModule:
     @property
     def online(self) -> bool: ...
     @property
-    def status(self) -> str: ...
-    @property
-    def serial(self) -> str: ...
-    @property
-    def host(self) -> str: ...
-    @property
-    def last_record(self) -> dict[str, Any] | None: ...
-    @property
     def wifi_strength(self) -> int: ...
     @property
     def temperature(self) -> float | None: ...
     @property
     def battery(self) -> str | None: ...
+
+class BlinkOwl(BlinkSyncModule):
+    """Blink Owl (Mini) sync module class."""
+
+    pass
+
+class BlinkLotus(BlinkSyncModule):
+    """Blink Lotus sync module class."""
+
+    pass

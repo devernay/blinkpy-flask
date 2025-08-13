@@ -92,7 +92,13 @@ from flask import (
     session,
     url_for,
 )
-from flask.typing import ResponseReturnValue
+
+try:
+    from flask.typing import ResponseReturnValue
+except ImportError:
+    from typing import Any
+
+    ResponseReturnValue = Any
 
 # Type definitions for better code clarity
 from app_types import (
@@ -251,12 +257,14 @@ def require_sync_module(
         >>> sync.arm = True
     """
     from blinkapp.services.blink_service import blink
+    from blinkpy import Blink
 
     # Ensure blink is initialized - this should be guaranteed by @ensure_blink_available
     assert blink is not None
+    blink_typed: Blink = blink  # Type hint for pyright
 
     # Search through all sync modules for matching network ID
-    for name, sync in blink.sync.items():
+    for name, sync in blink_typed.sync.items():
         if str(sync.network_id) == str(network_id):
             return sync, None
 
