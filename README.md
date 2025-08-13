@@ -272,42 +272,41 @@ The project uses a baseline-driven regression testing system to detect test fail
 
 #### Checking for Regressions
 ```bash
-# Check for regressions against baseline
+# Check current test results against baseline
 cd tests
-python check_regression.py
+python check_test_baseline.py
 ```
 
 This will:
 - ✅ **Pass**: No regressions detected
-- ⚠️ **Warn**: New tests added/removed (update baseline needed)
+- ⚠️ **Warn**: New tests added (update baseline needed)
 - ❌ **Fail**: Regressions detected (tests that were passing now fail)
 
 #### Updating Test Baseline
 When you add new tests or expect test changes:
 
 ```bash
-# Update baseline with current test results
+# Update baseline with current passing tests
 cd tests
-python update_baseline.py
+python update_test_baseline.py
 ```
 
-**Note**: The update script will only succeed if all tests are currently passing.
+**Note**: The baseline contains only passing test names, sorted alphabetically.
 
 #### Regression Check Output
 ```bash
-🔍 Running regression check...
+🔍 Checking test results against baseline...
 
-📊 Test Summary:
-   Current: 393 tests
-   Baseline: 393 tests
+📊 Current: 411 passing tests
+📊 Baseline: 411 tests
 
-✅ NO REGRESSIONS DETECTED
+✅ NO CHANGES: All tests match baseline
 ```
 
 #### Integration with CI/CD
 Add to your CI pipeline:
 ```bash
-cd tests && python check_regression.py
+cd tests && python check_test_baseline.py
 ```
 
 The script exits with:
