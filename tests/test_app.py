@@ -2125,11 +2125,13 @@ class TestClipDownloadOperations(BaseTestCase):
         mock_connection.execute.return_value = [mock_clip]
 
         with patch("pathlib.Path.exists", return_value=False):  # Not cached
-            with patch("requests.get") as mock_get:
+            with patch(
+                "blinkapp.services.connection_service.ensure_http_session_initialized"
+            ) as mock_session:
                 mock_response = Mock()
+                mock_response.status_code = 200
                 mock_response.content = b"fake_video_data"
-                mock_response.raise_for_status.return_value = None
-                mock_get.return_value = mock_response
+                mock_session.return_value.get.return_value = mock_response
 
                 with patch("pathlib.Path.write_bytes") as mock_write:
                     response = self.client.get("/api/clips/123456/download")
