@@ -1,28 +1,23 @@
-"""Test configuration for proper test isolation."""
-
-import pytest
+"""Pytest configuration to ensure test_simple.py runs first and integration tests run last."""
 
 
-@pytest.fixture(autouse=True)
-def reset_module_state():
-    """Reset critical module state between tests."""
-    # This fixture runs before and after each test
-    yield
+def pytest_collection_modifyitems(config, items):
+    """Reorder tests: test_simple.py first, integration tests last."""
+    simple_tests = []
+    integration_tests = []
+    other_tests = []
 
-    # After each test, ensure no persistent patches remain
-    # This is a minimal approach to prevent the most common isolation issues
-    try:
-        # Reset any module-level attributes that might be mocked
-        import blinkapp
+    for item in items:
+        if "test_simple.py" in str(item.fspath):
+            simple_tests.append(item)
+        elif (
+            "Integration" in str(item.cls)
+            if hasattr(item, "cls") and item.cls
+            else False
+        ):
+            integration_tests.append(item)
+        else:
+            other_tests.append(item)
 
-        # Check for common functions that get mocked and might persist
-        functions_to_check = ["clear_all_caches", "generate_clip_thumbnail"]
-        for func_name in functions_to_check:
-            if hasattr(blinkapp, func_name):
-                func = getattr(blinkapp, func_name)
-                # If it's a Mock, it indicates a test isolation issue
-                if hasattr(func, "_mock_name"):
-                    # We can't easily unmock it, but we can log it for debugging
-                    pass
-    except ImportError:
-        pass
+    # Order: simple first, others in middle, integration last
+    items[:] = simple_tests + other_tests + integration_tests

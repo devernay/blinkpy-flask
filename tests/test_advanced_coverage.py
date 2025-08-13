@@ -11,8 +11,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, mock_open, patch
 
-import pytest
-
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -22,7 +20,6 @@ from test_app import BaseTestCase
 from blinkapp import app
 
 
-@pytest.mark.skip(reason="Live stream tests hang due to async complexity")
 class TestLiveStreamOperations(BaseTestCase):
     """Test live streaming operations - lines 2078-2147."""
 
@@ -31,7 +28,6 @@ class TestLiveStreamOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @pytest.mark.skip(reason="Test hangs due to async complexity")
     @patch("blinkapp.routes.camera._init_camera_stream")
     @patch("blinkapp.services.stream_service.stream_manager")
     @patch("blinkapp.services.blink_service.blink_connection")
@@ -113,7 +109,6 @@ class TestLiveStreamOperations(BaseTestCase):
         self.assertIn(response.status_code, [200, 500])
 
 
-@pytest.mark.skip(reason="Local clip tests hang due to import issues")
 class TestLocalClipDownloadOperations(BaseTestCase):
     """Test local clip download operations - lines 1836-1906."""
 
@@ -122,14 +117,20 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.send_file")
     @patch("pathlib.Path.exists")
     def test_download_local_clip_cached_success(
-        self, mock_exists: Mock, mock_send_file: Mock, mock_cache: Mock
+        self,
+        mock_exists: Mock,
+        mock_send_file: Mock,
+        mock_cache: Mock,
+        mock_blink: Mock,
     ):
         """Test successful download of cached local clip."""
         # Setup mocks
+        mock_blink.return_value = Mock()  # Ensure blink is not None
         mock_filepath = Mock()
         mock_filepath.exists.return_value = True
         mock_cache.get.return_value = {"filepath": mock_filepath}
@@ -140,10 +141,12 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             from blinkapp.models.ids import ClipId
             from blinkapp.services.clip_service import download_local_clip
 
-            with app.app_context():
-                result = download_local_clip(ClipId("clip123"), "sync1", 123)
-                # Should return file response
-                self.assertIsNotNone(result)
+            # Use test client to create proper request context
+            with app.test_client() as client:
+                with client.application.test_request_context():
+                    result = download_local_clip(ClipId("clip123"), "sync1", 123)
+                    # Should return file response
+                    self.assertIsNotNone(result)
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
@@ -351,10 +354,12 @@ class TestCloudClipOperations(BaseTestCase):
             from blinkapp.models.ids import ClipId
             from blinkapp.services.clip_service import download_cloud_clip
 
-            with app.app_context():
-                result = download_cloud_clip(ClipId("clip123"))
-            # Should return cached file
-            self.assertIsNotNone(result)
+            # Use test client to create proper request context
+            with app.test_client() as client:
+                with client.application.test_request_context():
+                    result = download_cloud_clip(ClipId("clip123"))
+                    # Should return cached file
+                    self.assertIsNotNone(result)
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
