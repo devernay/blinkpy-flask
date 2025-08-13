@@ -45,7 +45,7 @@ def with_app_initialized[F](func: F) -> F:
         should mock dependencies instead.
     """
 
-    @functools.wraps(func)  # type: ignore[arg-type]
+    @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         # Import here to avoid circular imports during module loading
         from tests.test_initialization import initialize_for_testing

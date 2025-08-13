@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import ParamSpec, TypeVar
 
-from flask import jsonify
+from flask import Response, jsonify
 
 from app_types import ApiResponse
 from config import Config
@@ -90,7 +90,7 @@ def safe_execute(
 
 def ensure_blink_available(  # noqa: UP047
     func: Callable[P, T],
-) -> Callable[P, T]:
+) -> Callable[P, T | tuple[Response, int]]:
     """Decorator that ensures blink is available before calling the function.
 
     This decorator automatically checks if the Blink system is initialized and
@@ -111,7 +111,7 @@ def ensure_blink_available(  # noqa: UP047
             response, status_code = error_response
             # TODO: This returns a different type than T for error cases
             # Consider using Union type or separate error decorator
-            return jsonify(response), status_code  # type: ignore[return-value]
+            return jsonify(response), status_code
 
         # Import blink here to avoid circular imports
         from blinkapp.services.blink_service import blink

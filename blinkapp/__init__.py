@@ -97,7 +97,7 @@ if TYPE_CHECKING:
 # Flask framework components
 from flask import (
     Flask,
-    jsonify,  # type: ignore[attr-defined]
+    jsonify,
     redirect,
     render_template,
     session,
@@ -105,11 +105,11 @@ from flask import (
 )
 
 try:
-    from flask.typing import ResponseReturnValue  # type: ignore[import-untyped]
+    from flask.typing import ResponseReturnValue
 except ImportError:
     from typing import Any
 
-    ResponseReturnValue = Any  # type: ignore
+    ResponseReturnValue = Any
 
 # Type alias for Flask responses
 from flask import Response
@@ -159,11 +159,12 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 # ============================================================================
 
 # File system paths for application data storage
-CACHE_DIR: str | None = None  # Base cache directory
-CREDENTIALS_FILE: str | None = None  # Encrypted credentials storage
-THUMBNAIL_CACHE_DIR: str | None = None  # Camera thumbnail cache
-CLIPS_CACHE_DIR: str | None = None  # Downloaded clips storage
-SETTINGS_FILE: str | None = None  # User settings persistence
+# Cache configuration - initialized in setup_cache_directories()
+CACHE_DIR: str = ""  # Base cache directory
+CREDENTIALS_FILE: str = ""  # Encrypted credentials storage
+THUMBNAIL_CACHE_DIR: str = ""  # Camera thumbnail cache
+CLIPS_CACHE_DIR: str = ""  # Downloaded clips storage
+SETTINGS_FILE: str = ""  # User settings persistence
 
 # ============================================================================
 # Error Handling and API Response Utilities
@@ -383,11 +384,17 @@ def initialize_cache_paths() -> None:
     cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
 
     # Set all cache-related paths using the base cache directory
-    CACHE_DIR = str(cache_dir)  # type: ignore[reportConstantRedefinition]
-    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)  # type: ignore[reportConstantRedefinition]
-    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)  # type: ignore[reportConstantRedefinition]
-    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)  # type: ignore[reportConstantRedefinition]
-    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)  # type: ignore[reportConstantRedefinition]
+    global \
+        CACHE_DIR, \
+        CREDENTIALS_FILE, \
+        THUMBNAIL_CACHE_DIR, \
+        CLIPS_CACHE_DIR, \
+        SETTINGS_FILE
+    CACHE_DIR = str(cache_dir)
+    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
+    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
+    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)
+    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
 
 
 # Cache configuration constants

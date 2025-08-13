@@ -249,7 +249,7 @@ class TestTimeFormatting(BaseTestCase):
             # Test invalid timestamp handling
             try:
                 # This will raise TypeError when passing string to fromtimestamp
-                datetime.fromtimestamp("invalid")  # type: ignore
+                datetime.fromtimestamp("invalid")  # type: ignore[arg-type]  # Intentional invalid type for testing
             except (ValueError, TypeError):
                 # Should fall back to format_time_ago
                 result = mock_format("fallback_value")

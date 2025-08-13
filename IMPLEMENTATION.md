@@ -1,6 +1,6 @@
 Write an http server running the flask Python framework, which allows full access to a Blink camera system, through the blinkpy python package (available on github as https://github.com/fronzbot/blinkpy, which is cloned in the `blinkpy` subdirectory). The blinkpy package is meant to be run in a signe thread, so make sure that every call to the blinkpy If some of the functionality described below is not accessible through the blinkpy package, please use placeholders. When pressed, a placeholder should pop up a text which says that the feature is not yet available, with a "close" button to dismiss the popup.
 
-The script to run the server is `app.py`, and `app.py -h` should show help and command-line parameters.
+The script to run the server is `python -m blinkapp`, and `python -m blinkapp -h` should show help and command-line parameters.
 
 The first time the server is accessed, or if saved credentials are not available, it should ask for Blink credentials (username and password), and login using the procedure described in the blinkpy documentation (`blinkpy/README.md`, section "Starting blink without a prompt"). It should then present a page to ask for the 2FA token sent by email or SMS, and after the 2FA key is sent, it should save the credentials to `<cache>/blink.json` using the procedure described in the section "Saving credentials" of `blinkpy/README.md`.
 
@@ -198,6 +198,8 @@ Remove useless comments from the main code and tests that refer to previous vers
 Make sure each python file/module explicitly defines what it exports, and only exports symbols that it implements.
 
 Now read carefully the contents of the blinkpy package (in the blinkpy directory).  Are there functionalities from blinkpy that we don't use in the flask app? are there things that appear in the blinkpy tests that are currently not handled by the flask app? For example, is there a way to fetch a thumbnail for a cloud clip without downloading the clip? Same question for a local clip.
+
+fix the pyright error. Fix as many pyright warnings, even if it means manually updating the blinkpy stubs (found in the blinkpy-stubs directory) with more detailed type hints. Make sure all functions in the python code and tests have type hints.
 
 Next, we will write a full developer documentation detailing, not necessarily in that order:
 - The general organization of the code, describing the function of each file.

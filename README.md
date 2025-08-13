@@ -54,9 +54,19 @@ sudo apt install ffmpeg
 pip install -r requirements.txt
 ```
 
-3. **Run the application:**
+3. **Install type stubs (optional, for better type checking):**
 ```bash
+pip install -e types-blinkpy/
+```
+
+4. **Run the application:**
+```bash
+# Set PYTHONPATH to use the included blinkpy module
+export PYTHONPATH="/path/to/blinkpy-flask/blinkpy:$PYTHONPATH"
 python app.py
+
+# Or use the helper script
+./run_with_blinkpy.sh python app.py
 ```
 
 **Command line options:**
@@ -193,6 +203,31 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 - Configure FFmpeg parameters for TCP to HLS transcoding
 - Monitor disk usage for clip cache
 - Set appropriate timeout values
+
+## Type Stubs
+
+This project includes comprehensive type stubs for the blinkpy library in the `types-blinkpy/` directory. These provide full type safety and IDE support.
+
+### Installing Type Stubs
+
+```bash
+# Install locally for this project
+pip install -e types-blinkpy/
+
+# Or build and install as a package
+cd types-blinkpy/
+pip install .
+```
+
+### Using in Other Projects
+
+The `types-blinkpy` package can be installed alongside any blinkpy installation:
+
+```bash
+pip install blinkpy types-blinkpy
+```
+
+This provides type checking for blinkpy in any Python project without conflicts.
 
 ## Troubleshooting
 
