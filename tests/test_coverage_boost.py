@@ -357,7 +357,8 @@ class TestImportAndModuleLoading(BaseTestCase):
         import blinkapp as app_module
 
         self.assertTrue(hasattr(app_module, "os"))
-        self.assertTrue(hasattr(app_module, "sys"))
+        # sys was removed as unused import during cleanup
+        # self.assertTrue(hasattr(app_module, "sys"))
         # json is not imported at module level in blinkapp.py
         # datetime was moved to utils_service.py
         # threading is not imported at module level in blinkapp.py

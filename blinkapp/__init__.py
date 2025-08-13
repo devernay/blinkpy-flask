@@ -96,8 +96,7 @@ if TYPE_CHECKING:
 # Flask framework components
 from flask import (
     Flask,
-    Response,
-    jsonify,
+    jsonify,  # type: ignore[attr-defined]
     redirect,
     render_template,
     send_file,
@@ -106,14 +105,14 @@ from flask import (
 )
 
 try:
-    from flask.typing import ResponseReturnValue
+    from flask.typing import ResponseReturnValue  # type: ignore[import-untyped]
 except ImportError:
     from typing import Any
 
     ResponseReturnValue = Any  # type: ignore
 
 # Type alias for Flask responses
-FlaskResponse = str | tuple[str, int] | Response
+FlaskResponse = ResponseReturnValue
 
 # Generic type variables for function signatures
 T = TypeVar("T")
@@ -382,11 +381,11 @@ def initialize_cache_paths() -> None:
     cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
 
     # Set all cache-related paths using the base cache directory
-    CACHE_DIR = str(cache_dir)
-    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
-    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
-    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)
-    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
+    CACHE_DIR = str(cache_dir)  # type: ignore[misc]
+    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)  # type: ignore[misc]
+    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)  # type: ignore[misc]
+    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)  # type: ignore[misc]
+    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)  # type: ignore[misc]
 
 
 # Cache configuration constants
@@ -500,7 +499,7 @@ def clear_cache() -> JsonDict:
 # ============================================================================
 
 
-def _download_clip_common(
+def _download_clip_common(  # type: ignore[misc]
     clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False
 ) -> FlaskResponse:
     """Common clip download logic after file is downloaded.
@@ -548,8 +547,8 @@ def _download_clip_common(
     from blinkapp.services.connection_service import ensure_executor_initialized
 
     ensure_executor_initialized().submit(generate_thumbnail_bg)
-    response: FlaskResponse = send_file(
-        str(filepath), as_attachment=True, download_name=filename
+    response: FlaskResponse = send_file(  # type: ignore[misc]
+        str(filepath), as_attachment=True, attachment_filename=filename
     )
     return response, 200
 
@@ -682,8 +681,8 @@ def startup() -> None:
         assert THUMBNAIL_CACHE_DIR is not None
         assert CLIPS_CACHE_DIR is not None
         try:
-            Path(cast(str, THUMBNAIL_CACHE_DIR)).mkdir(exist_ok=True)
-            Path(cast(str, CLIPS_CACHE_DIR)).mkdir(exist_ok=True)
+            Path(THUMBNAIL_CACHE_DIR).mkdir(exist_ok=True)
+            Path(CLIPS_CACHE_DIR).mkdir(exist_ok=True)
         except OSError as e:
             logger.error(f"Failed to create cache subdirectories: {e}")
 
