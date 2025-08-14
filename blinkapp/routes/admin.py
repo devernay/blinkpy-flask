@@ -13,6 +13,9 @@ from blinkapp.config import Config
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import api_route, simple_success_response
 
+# Explicitly define what this module exports
+__all__ = ["register_admin_routes"]
+
 
 def register_admin_routes(app: Flask) -> None:
     """Register administrative routes with the Flask app."""

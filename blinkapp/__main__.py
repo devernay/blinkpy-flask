@@ -8,6 +8,9 @@ import signal
 import sys
 from typing import Any
 
+# This module is an entry point and doesn't export anything
+__all__: list[str] = []
+
 from blinkapp import app, cleanup_resources, startup
 from blinkapp.models.responses import Config
 

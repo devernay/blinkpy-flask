@@ -49,9 +49,6 @@ __all__ = [
 ]
 
 
-# find_camera_by_id and require_camera moved to blinkapp.services.camera_service
-
-
 def update_camera_thumbnail(
     camera: "BlinkCamera", cache_key: CameraId, current_ts: int, cached_ts: int
 ) -> None:
@@ -184,6 +181,40 @@ def setup_camera_routes(app: Flask) -> None:
     Args:
         app: Flask application instance
     """
+
+    @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])
+    @ensure_blink_available
+    @api_route_with_validation(
+        "trigger camera recording", validate_params={"camera_id_str": CameraId}
+    )
+    def trigger_camera_recording(camera_id: CameraId) -> JsonDict:
+        """Trigger camera to record a new clip.
+
+        Args:
+            camera_id: Validated CameraId object
+
+        Returns:
+            JSON response with success status or error message
+        """
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
+        blink_connection = ensure_blink_connection_initialized()
+
+        camera, error_response = require_camera(camera_id)
+        if error_response is not None:
+            error_dict, status_code = error_response
+            error_message = error_dict.get("error", "Unknown error")
+            raise ValidationError(str(error_message), status_code)
+
+        assert camera is not None
+        with error_context("trigger camera recording", CameraError):
+            # Trigger recording
+            result = blink_connection.execute(camera.record())
+
+            if result:
+                return {"success": True, "message": "Camera recording initiated"}
+            else:
+                raise CameraError("Failed to initiate camera recording", 500)
 
     @app.route("/api/cameras/<camera_id_str>/refresh", methods=["PUT"])
     @ensure_blink_available
@@ -458,8 +489,6 @@ def setup_camera_routes(app: Flask) -> None:
 
         # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
         assert THUMBNAIL_CACHE_DIR is not None
-
-        # camera_id is now validated and converted by the decorator
 
         camera = find_camera_by_id(camera_id)
         if camera is None or camera.thumbnail is None:

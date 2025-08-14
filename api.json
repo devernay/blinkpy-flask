@@ -305,6 +305,30 @@
       }
     },
 
+    "/api/cameras/{camera_id}/record": {
+      "post": {
+        "summary": "Trigger camera to record a new clip",
+        "operationId": "triggerCameraRecording",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording initiated",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/cameras/{camera_id}/refresh": {
       "put": {
         "summary": "Refresh camera thumbnail",

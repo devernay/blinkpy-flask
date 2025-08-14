@@ -744,7 +744,7 @@
 
         async function startLiveStream(cameraId) {
             try {
-                const response = await fetch(`/api/camera/${cameraId}/liveview`);
+                const response = await fetch(`/api/cameras/${cameraId}/liveview`);
                 const data = await response.json();
 
                 if (response.ok && data.hls_url) {
