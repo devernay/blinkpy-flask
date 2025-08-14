@@ -18,13 +18,31 @@ from unittest.mock import MagicMock, Mock
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+
 # Test constants
-TEST_CAMERA_ID = 12345
-TEST_NETWORK_ID = 12345
-TEST_USERNAME = "test@example.com"
-TEST_PASSWORD = "password123"
-TEST_2FA_CODE = "123456"
-TEST_CACHE_DIR = "/tmp/test_cache"
+class TestData:
+    """Centralized test data constants."""
+
+    CAMERA_ID = 12345
+    NETWORK_ID = 12345
+    USERNAME = "test@example.com"
+    PASSWORD = "password123"
+    TWO_FA_CODE = "123456"
+    CACHE_DIR = "/tmp/test_cache"
+
+    # API Response constants
+    SUCCESS_STATUS = 200
+    NOT_FOUND_STATUS = 404
+    ERROR_STATUS = 500
+
+
+# Backward compatibility
+TEST_CAMERA_ID = TestData.CAMERA_ID
+TEST_NETWORK_ID = TestData.NETWORK_ID
+TEST_USERNAME = TestData.USERNAME
+TEST_PASSWORD = TestData.PASSWORD
+TEST_2FA_CODE = TestData.TWO_FA_CODE
+TEST_CACHE_DIR = TestData.CACHE_DIR
 
 
 def initialize_for_testing() -> None:
@@ -182,6 +200,23 @@ class FlaskTestCase(BaseTestCase):
             self.assertIn(error_contains, data.get("error", ""))
         return data
 
+    def assert_response_contains(self, response, expected_status=200, *content_checks):
+        """Assert response status and content contains specified strings."""
+        self.assertEqual(response.status_code, expected_status)
+        for content in content_checks:
+            if isinstance(content, str):
+                self.assertIn(content.encode(), response.data)
+            else:
+                self.assertIn(content, response.data)
+        return response
+
+    def assert_redirect(self, response, expected_location_contains=None):
+        """Assert response is a redirect with optional location check."""
+        self.assertEqual(response.status_code, 302)
+        if expected_location_contains:
+            self.assertIn(expected_location_contains, response.location or "")
+        return response
+
     def create_mock_camera(self, camera_id=TEST_CAMERA_ID, name="Test Camera"):
         """Create a mock camera with common attributes."""
         from unittest.mock import Mock
@@ -204,6 +239,54 @@ class FlaskTestCase(BaseTestCase):
         mock_sync.online = online
         mock_sync.cameras = cameras or {}
         return mock_sync
+
+    def mock_blink_system(self, available=True, systems=None):
+        """Context manager for mocking blink system with common setup."""
+        from contextlib import contextmanager
+        from unittest.mock import patch
+
+        @contextmanager
+        def _mock():
+            with (
+                patch("blinkapp.services.blink_service.blink") as mock_blink,
+                patch("blinkapp.services.blink_service.blink_connection") as mock_conn,
+            ):
+                mock_blink.available = available
+                mock_blink.sync = systems or {}
+                mock_conn.execute = mock_execute_with_coroutine_cleanup()
+                yield mock_blink, mock_conn
+
+        return _mock()
+
+    def check_endpoint(self, method, path, expected_status=200, **kwargs):
+        """Generic endpoint tester to reduce boilerplate."""
+        client_method = getattr(self.client, method.lower())
+        response = client_method(path, **kwargs)
+
+        if expected_status == 200:
+            return self.assert_api_success(response)
+        elif expected_status in [404, 500]:
+            return self.assert_api_error(response, expected_status)
+        else:
+            self.assertEqual(response.status_code, expected_status)
+            return response
+
+    def with_blink_mocks(self, available=True, sync_data=None):
+        """Decorator to automatically patch blink service with common setup."""
+        from unittest.mock import patch
+
+        def decorator(test_method):
+            @patch("blinkapp.services.blink_service.blink_connection")
+            @patch("blinkapp.services.blink_service.blink")
+            def wrapper(self, mock_blink, mock_connection):
+                mock_blink.available = available
+                mock_blink.sync = sync_data or {}
+                mock_connection.execute = mock_execute_with_coroutine_cleanup()
+                return test_method(self, mock_blink, mock_connection)
+
+            return wrapper
+
+        return decorator
 
 
 def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
