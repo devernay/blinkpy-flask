@@ -8,18 +8,15 @@ the application for testing without modifying production code.
 import functools
 import os
 import sys
+import unittest
 from collections.abc import Callable
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from test_app import BaseTestCase
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
-def with_app_initialized[F](func: F) -> F:
+def with_app_initialized[F: Callable[..., Any]](func: F) -> F:
     """Decorator to ensure app globals are initialized for testing.
 
     This decorator should be applied to test methods that need
@@ -89,7 +86,7 @@ def setup_test_globals():
     initialize_for_testing()
 
 
-class BaseTestCase(BaseTestCase):
+class BaseTestCase(unittest.TestCase):
     """Base test case that automatically initializes app globals.
 
     Test classes can inherit from this instead of BaseTestCase

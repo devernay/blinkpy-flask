@@ -15,7 +15,9 @@ import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import AbstractContextManager
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from blinkapp import (
@@ -29,6 +31,11 @@ from blinkapp.utils.validators import (
     format_time_ago,
     validate_string_input,
 )
+
+
+def get_session_transaction(client):
+    """Helper to get properly typed session transaction context manager."""
+    return cast(AbstractContextManager[dict[str, str]], client.session_transaction())
 
 
 # Global patch to prevent coroutine creation during tests
@@ -85,11 +92,6 @@ class BaseTestCase(unittest.TestCase):
 
             if hasattr(connection_service, "executor"):
                 connection_service.executor = None
-
-            # Clear mock registry to prevent mock persistence
-            from unittest.mock import _mock_registry
-
-            _mock_registry.clear()
         except Exception:
             # Ignore teardown errors to prevent masking test failures
             pass
@@ -817,7 +819,13 @@ class TestAuthenticationFlows(BaseTestCase):
 
     def test_2fa_get_with_session(self) -> None:
         """Test GET request to 2FA page with proper session."""
-        with self.client.session_transaction() as sess:
+        from contextlib import AbstractContextManager
+        from typing import cast
+
+        session_mgr = cast(
+            AbstractContextManager[dict[str, str]], self.client.session_transaction()
+        )
+        with session_mgr as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -828,7 +836,13 @@ class TestAuthenticationFlows(BaseTestCase):
 
     def test_2fa_validation_empty_key(self) -> None:
         """Test 2FA with empty verification key."""
-        with self.client.session_transaction() as sess:
+        from contextlib import AbstractContextManager
+        from typing import cast
+
+        session_mgr = cast(
+            AbstractContextManager[dict[str, str]], self.client.session_transaction()
+        )
+        with session_mgr as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -838,7 +852,7 @@ class TestAuthenticationFlows(BaseTestCase):
 
     def test_2fa_validation_key_too_long(self) -> None:
         """Test 2FA with overly long verification key."""
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -850,7 +864,7 @@ class TestAuthenticationFlows(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_2fa_success(self, mock_connection) -> None:
         """Test successful 2FA verification."""
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -866,7 +880,7 @@ class TestAuthenticationFlows(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_2fa_failure_invalid_code(self, mock_connection) -> None:
         """Test 2FA failure with invalid code."""
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -885,7 +899,7 @@ class TestAuthenticationFlows(BaseTestCase):
         """Test 2FA with authentication error."""
         from blinkapp.utils.errors import AuthenticationError
 
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -901,7 +915,7 @@ class TestAuthenticationFlows(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_2fa_unexpected_error(self, mock_connection) -> None:
         """Test 2FA with unexpected error."""
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
 
@@ -942,11 +956,11 @@ class TestAuthenticationFlows(BaseTestCase):
     def test_session_management(self) -> None:
         """Test session management during authentication flow."""
         # Test that session is properly managed
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             sess["test_key"] = "test_value"
 
         # Verify session persists
-        with self.client.session_transaction() as sess:
+        with get_session_transaction(self.client) as sess:
             self.assertEqual(sess.get("test_key"), "test_value")
 
 

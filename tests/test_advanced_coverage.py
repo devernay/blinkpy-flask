@@ -375,11 +375,11 @@ class TestCloudClipOperations(BaseTestCase):
 
         try:
             # Create Flask app context for jsonify
-            from blinkapp import create_app
+            from blinkapp import app as create_app
             from blinkapp.models.ids import ClipId
             from blinkapp.services.clip_service import download_cloud_clip
 
-            app = create_app()
+            app = create_app
             with app.app_context():
                 result = download_cloud_clip(ClipId("nonexistent_clip"))
             # Should return error response
@@ -410,10 +410,10 @@ class TestCloudClipOperations(BaseTestCase):
 
             with patch("builtins.open", mock_open()):
                 # Create Flask app context for jsonify
-                from blinkapp import create_app
+                from blinkapp import app as create_app
                 from blinkapp.models.ids import ClipId
 
-                app = create_app()
+                app = create_app
                 with app.app_context():
                     result = download_cloud_clip(ClipId("clip123"))
                 # Should download and cache
