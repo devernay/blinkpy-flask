@@ -19,7 +19,11 @@ from typing import cast
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from blinkpy.camera import BlinkCamera
-from test_base import BaseTestCase, FlaskTestCase, mock_execute_with_coroutine_cleanup
+from test_base import (
+    BaseTestCase,
+    FlaskTestCase,
+    mock_execute_with_coroutine_cleanup,
+)
 
 from blinkapp import (
     BlinkSyncModule,
@@ -408,20 +412,15 @@ class TestFlaskApp(FlaskTestCase):
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_api_systems_success(self, mock_connection, mock_blink) -> None:
         """Test successful systems API call."""
-        # Mock Blink system
-        mock_sync = Mock()
-        mock_sync.network_id = 12345
-        mock_sync.arm = False
-        mock_sync.online = True
-
+        # Use helper to create mock objects
+        mock_sync = self.create_mock_sync(network_id=12345, armed=False, online=True)
         mock_blink.available = True
         mock_blink.sync = {"Test System": mock_sync}
 
         response = self.client.get("/api/systems")
 
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
-        self.assertTrue(data["success"])
+        # Use helper for assertion
+        data = self.assert_api_success(response)
         self.assertEqual(len(data["data"]["systems"]), 1)
         self.assertEqual(data["data"]["systems"][0]["name"], "Test System")
 
@@ -1341,19 +1340,8 @@ class TestStreamingEndpoints(BaseTestCase):
         self.assertEqual(response.status_code, 404)
 
 
-class TestThumbnailManagement(BaseTestCase):
+class TestThumbnailManagement(FlaskTestCase):
     """Test thumbnail management and caching functionality."""
-
-    def setUp(self) -> None:
-        """Set up test client."""
-        from test_base import setup_test_globals
-
-        app.config["TESTING"] = True
-        self.client = app.test_client()
-
-        # Initialize globals for testing
-        setup_test_globals()
-        self.client = app.test_client()
 
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_timestamp_success(self, mock_blink) -> None:
@@ -1382,17 +1370,12 @@ class TestThumbnailManagement(BaseTestCase):
         self, mock_connection, mock_blink
     ) -> None:
         """Test refresh_camera_thumbnail endpoint."""
-        # Mock camera
-        mock_camera = Mock()
-        mock_camera.snap_picture = Mock()
-        mock_camera.camera_id = 12345
+        # Use helpers to create mock objects
+        mock_camera = self.create_mock_camera(camera_id=12345)
+        mock_sync = self.create_mock_sync(cameras={"camera1": mock_camera})
 
-        # Mock sync structure
-        mock_sync = Mock()
-        mock_sync.cameras = {"camera1": mock_camera}
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
-
         mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=None)
 
         with (

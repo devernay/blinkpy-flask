@@ -18,6 +18,14 @@ from unittest.mock import MagicMock, Mock
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+# Test constants
+TEST_CAMERA_ID = 12345
+TEST_NETWORK_ID = 12345
+TEST_USERNAME = "test@example.com"
+TEST_PASSWORD = "password123"
+TEST_2FA_CODE = "123456"
+TEST_CACHE_DIR = "/tmp/test_cache"
+
 
 def initialize_for_testing() -> None:
     """Initialize global variables for testing."""
@@ -123,6 +131,79 @@ class FlaskTestCase(BaseTestCase):
         import blinkapp
 
         blinkapp.initialize_cache_paths()
+
+    def setup_mock_blink(self, available=True, sync_data=None, cameras=None):
+        """Helper to set up mock Blink objects with common configuration."""
+        from unittest.mock import Mock
+
+        mock_blink = Mock()
+        mock_blink.available = available
+
+        if sync_data:
+            mock_blink.sync = sync_data
+        else:
+            mock_blink.sync = {}
+
+        if cameras:
+            for sync_name, camera_list in cameras.items():
+                mock_sync = Mock()
+                mock_sync.cameras = {
+                    f"camera{i}": cam for i, cam in enumerate(camera_list)
+                }
+                mock_blink.sync[sync_name] = mock_sync
+
+        return mock_blink
+
+    def setup_mock_connection(self, return_value=None, side_effect=None):
+        """Helper to set up mock connection with coroutine cleanup."""
+        from unittest.mock import Mock
+
+        return Mock(
+            execute=mock_execute_with_coroutine_cleanup(return_value, side_effect)
+        )
+
+    def assert_api_success(self, response, expected_status=200):
+        """Assert API response is successful with expected format."""
+        import json
+
+        self.assertEqual(response.status_code, expected_status)
+        data = json.loads(response.data)
+        self.assertTrue(data["success"])
+        return data
+
+    def assert_api_error(self, response, expected_status=500, error_contains=None):
+        """Assert API response is an error with expected format."""
+        import json
+
+        self.assertEqual(response.status_code, expected_status)
+        data = json.loads(response.data)
+        self.assertFalse(data["success"])
+        if error_contains:
+            self.assertIn(error_contains, data.get("error", ""))
+        return data
+
+    def create_mock_camera(self, camera_id=TEST_CAMERA_ID, name="Test Camera"):
+        """Create a mock camera with common attributes."""
+        from unittest.mock import Mock
+
+        mock_camera = Mock()
+        mock_camera.camera_id = camera_id
+        mock_camera.name = name
+        mock_camera.snap_picture = Mock()
+        return mock_camera
+
+    def create_mock_sync(
+        self, network_id=TEST_NETWORK_ID, armed=False, online=True, cameras=None
+    ):
+        """Create a mock sync module with common attributes."""
+        from unittest.mock import Mock
+
+        mock_sync = Mock()
+        mock_sync.network_id = network_id
+        mock_sync.arm = armed
+        mock_sync.online = online
+        mock_sync.cameras = cameras or {}
+        return mock_sync
 
 
 def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
