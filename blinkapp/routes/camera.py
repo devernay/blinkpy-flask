@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from blinkpy.livestream import BlinkLiveStream
 from blinkpy.camera import BlinkCamera
 
+from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.camera_service import (
     find_camera_by_id,
@@ -38,7 +39,6 @@ from blinkapp.utils.errors import CameraError, ValidationError
 from blinkapp.utils.validators import (
     extract_thumbnail_timestamp,
 )
-from config import Config
 
 logger = logging.getLogger(__name__)
 

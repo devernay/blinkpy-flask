@@ -27,9 +27,6 @@ import os
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    Any,
-    ParamSpec,
-    TypeVar,
     cast,
 )
 
@@ -44,15 +41,20 @@ if TYPE_CHECKING:
 # Blink camera library - third-party integration
 from blinkpy.sync_module import BlinkSyncModule
 
+# Application configuration
+from blinkapp.config import Config
 from blinkapp.models.ids import ClipId, NetworkId
 
 # API response models
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import (
     ApiResponse,
-    JsonDict,
 )
+
+# Admin routes
+from blinkapp.routes.admin import register_admin_routes
 from blinkapp.routes.auth import (
+    register_auth_routes,
     setup_auth_routes,
 )
 
@@ -65,7 +67,7 @@ from blinkapp.routes.camera import (
 from blinkapp.routes.clips import setup_clips_routes
 
 # Settings management routes
-from blinkapp.routes.settings import setup_settings_routes
+from blinkapp.routes.settings import register_settings_routes, setup_settings_routes
 
 # System management routes
 from blinkapp.routes.system import setup_system_routes
@@ -73,18 +75,13 @@ from blinkapp.routes.system import setup_system_routes
 # Route decorators and error handling
 # Route decorators for API endpoints
 from blinkapp.utils.decorators import (
-    api_route,
     ensure_blink_available,
     error_context,
-    simple_success_response,
 )
 from blinkapp.utils.errors import (
     CacheError,
     ValidationError,
 )
-
-# Application configuration
-from config import Config
 
 # Live streaming management
 
@@ -98,19 +95,7 @@ if TYPE_CHECKING:
 # Type alias for Flask responses
 from flask import (
     Flask,
-    Response,
-    jsonify,
-    redirect,
-    render_template,
-    session,
-    url_for,
 )
-
-FlaskResponse = Response
-
-# Generic type variables for function signatures
-T = TypeVar("T")
-P = ParamSpec("P")
 
 # Explicitly define what this module exports
 __all__ = [
@@ -124,13 +109,8 @@ __all__ = [
     "initialize_cache_paths",
     # Cache management
     "clear_all_caches",
-    "clear_cache",
     "load_clips_cache",
-    # Route handlers
-    "index",
     # Configuration and debugging
-    "get_config",
-    "placeholder",
     "dump_cloud_videos",
     # Application lifecycle
     "startup",
@@ -401,27 +381,6 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 # Camera thumbnail update functionality
 
 
-@app.route("/")
-def index() -> Any:
-    """Main page - redirect to login if not authenticated.
-
-    Returns:
-        Redirect to login page or rendered index template
-    """
-    if "authenticated" not in session:
-        # Check if Blink is available from saved credentials
-        from blinkapp.services.blink_service import blink
-
-        if blink and blink.available:
-            session["authenticated"] = True
-            return render_template("index.html")
-        else:
-            return redirect(url_for("login"))
-    # Clear initializing flag if set
-    session.pop("initializing", None)
-    return render_template("index.html")
-
-
 def clear_all_caches() -> dict[str, object]:
     """Clear all caches except credentials (background operation)."""
     with error_context("clear cache", CacheError):
@@ -476,21 +435,6 @@ def clear_all_caches() -> dict[str, object]:
             }
 
 
-@app.route("/api/cache", methods=["DELETE"])
-@simple_success_response("Cache clearing initiated")
-def clear_cache() -> JsonDict:
-    """Clear all caches except credentials.
-
-    Returns:
-        JSON response with success status
-    """
-    # Submit cache clearing task to background executor
-    from blinkapp.services.connection_service import ensure_executor_initialized
-
-    ensure_executor_initialized().submit(clear_all_caches)
-    return {}  # Decorator will handle the actual response
-
-
 # ============================================================================
 # API Routes - System Management
 # ============================================================================
@@ -505,65 +449,6 @@ def clear_cache() -> JsonDict:
 # ============================================================================
 # API Routes - Configuration and Settings
 # ============================================================================
-
-
-@app.route("/api/config")
-@api_route("get config")
-def get_config() -> JsonDict:
-    """Get client-side configuration constants.
-
-    Provides configuration values needed by the web interface for
-    timing intervals, polling frequencies, and display durations.
-    This centralizes all client-side configuration in the Config class.
-
-    Returns:
-        JSON response with configuration values for the client
-    """
-    config_data: dict[str, Any] = {
-        "hls_stream_check_interval": Config.HLS_STREAM_CHECK_INTERVAL,
-        "hls_stream_check_delay": Config.HLS_STREAM_CHECK_DELAY,
-        "hls_stream_max_attempts": Config.HLS_STREAM_MAX_ATTEMPTS,
-        "thumbnail_update_poll_interval": Config.THUMBNAIL_UPDATE_POLL_INTERVAL,
-        "thumbnail_success_display_time": Config.THUMBNAIL_SUCCESS_DISPLAY_TIME,
-        "thumbnail_processing_display_time": Config.THUMBNAIL_PROCESSING_DISPLAY_TIME,
-        "clip_thumbnail_check_interval": Config.CLIP_THUMBNAIL_CHECK_INTERVAL,
-        "clip_thumbnail_poll_max_attempts": Config.CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS,
-        "thumbnail_error_display_time": Config.THUMBNAIL_ERROR_DISPLAY_TIME,
-        "milliseconds_to_seconds": Config.MILLISECONDS_TO_SECONDS,
-        # User-friendly error messages for frontend
-        "error_messages": {
-            "live_stream_failed": "Unable to start live video. Please check your camera connection and try again.",
-            "live_stream_connection_failed": "Unable to start live video. Please check your internet connection and try again.",
-            "live_view_failed": "Unable to start live view. Please check that your camera is online and try again.",
-            "connection_error": "Unable to connect. Please check your internet connection and try again.",
-            "arm_state_failed": "Unable to change system status. Please check your connection and try again.",
-            "clip_download_failed": "Unable to download video. Please try again later.",
-            "clip_play_failed": "Unable to play video. Please check your connection and try again.",
-            "cache_clear_success": "Cache cleared successfully! Your storage space has been freed up.",
-            "cache_clear_failed": "Unable to clear cache. Please check your connection and try again.",
-            "logout_failed": "Unable to log out. Please try again.",
-            "clips_updated": "All your local video clips are already up to date!",
-            "feature_coming_soon": "This feature is coming soon! We're working hard to bring it to you.",
-        },
-    }
-
-    return config_data
-
-
-@app.route("/placeholder")
-@api_route("placeholder")
-def placeholder() -> tuple[Response, int]:
-    """Show placeholder message.
-
-    Returns:
-        JSON response with placeholder message
-    """
-    response, status_code = create_api_response(
-        success=False,
-        error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
-        status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
-    )
-    return jsonify(response), status_code
 
 
 def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
@@ -909,6 +794,15 @@ setup_system_routes(app)
 
 # Set up settings routes
 setup_settings_routes(app)
+
+# Set up admin routes
+register_admin_routes(app)
+
+# Register additional auth routes (index)
+register_auth_routes(app)
+
+# Register additional settings routes (config)
+register_settings_routes(app)
 
 # Import main function for module execution
 if __name__ == "__main__":

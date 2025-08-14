@@ -2,7 +2,7 @@
 
 import re
 
-from config import Config
+from blinkapp.config import Config
 
 # Explicitly define what this module exports
 __all__ = [

@@ -151,9 +151,9 @@ def refresh_system() -> dict[str, Any]:
     Returns:
         Dictionary with refresh result
     """
+    from blinkapp.config import Config
     from blinkapp.models.responses import create_api_response
     from blinkapp.services.blink_service import blink, blink_connection
-    from config import Config
 
     assert blink is not None, "Blink must be initialized"
 

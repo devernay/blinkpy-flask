@@ -12,10 +12,10 @@ import logging
 import re
 from datetime import UTC, datetime
 
+from blinkapp.config import Config
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import ApiResponse
-from config import Config
 
 # Module-level logger for utility function debugging
 logger = logging.getLogger(__name__)

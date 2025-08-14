@@ -18,6 +18,7 @@ from pathlib import Path
 from flask import Flask, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 
+from blinkapp.config import Config
 from blinkapp.models.types import AuthJsonDict as JsonDict
 from blinkapp.services.auth_service import (
     initialize_blink,
@@ -26,7 +27,6 @@ from blinkapp.services.auth_service import (
 from blinkapp.utils.decorators import simple_success_response
 from blinkapp.utils.errors import AuthenticationError
 from blinkapp.utils.validators import validate_string_input
-from config import Config
 
 
 def is_authenticated() -> bool:
@@ -221,3 +221,27 @@ def setup_auth_routes(app_instance: Flask) -> None:
             cred_file.unlink()
 
         return {}  # Decorator will handle the success response
+
+
+def register_auth_routes(app: Flask) -> None:
+    """Register authentication routes with the Flask app."""
+
+    @app.route("/")
+    def index() -> ResponseReturnValue:
+        """Main page - redirect to login if not authenticated.
+
+        Returns:
+            Redirect to login page or rendered index template
+        """
+        if "authenticated" not in session:
+            # Check if Blink is available from saved credentials
+            from blinkapp.services.blink_service import blink
+
+            if blink and blink.available:
+                session["authenticated"] = True
+                return render_template("index.html")
+            else:
+                return redirect(url_for("login"))
+        # Clear initializing flag if set
+        session.pop("initializing", None)
+        return render_template("index.html")

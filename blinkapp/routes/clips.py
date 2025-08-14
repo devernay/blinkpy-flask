@@ -3,6 +3,7 @@
 from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
 
+from blinkapp.config import Config
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
@@ -15,7 +16,6 @@ from blinkapp.utils.decorators import (
     simple_success_response,
 )
 from blinkapp.utils.errors import ValidationError
-from config import Config
 
 # Explicitly define what this module exports
 __all__ = [

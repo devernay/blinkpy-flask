@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Any, cast
 if TYPE_CHECKING:
     from blinkapp.models.ids import ClipId
 
-from config import Config
+from blinkapp.config import Config
 
 logger = logging.getLogger(__name__)
 

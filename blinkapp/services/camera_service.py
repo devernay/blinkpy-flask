@@ -85,8 +85,8 @@ def require_camera(
         ...     return error  # Return error response to client
         >>> # Use camera for operations
     """
+    from blinkapp.config import Config
     from blinkapp.models.responses import create_api_response
-    from config import Config
 
     camera = find_camera_by_id(camera_id)
     if camera is None:

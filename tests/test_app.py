@@ -1509,7 +1509,7 @@ class TestClipProcessing(BaseTestCase):
     def test_download_clip_not_found(self, mock_blink, mock_connection) -> None:
         """Test downloading non-existent clip."""
         # Mock connection to raise BlinkError for non-existent clip
-        from blink_connection import BlinkError
+        from blinkapp.services.connection_service import BlinkError
 
         mock_connection.execute.side_effect = BlinkError("Clip not found")
 
@@ -2858,13 +2858,10 @@ class TestApplicationInitialization(BaseTestCase):
 
     def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
-        import blinkapp
+        # Test that key global variables exist in their respective services
+        from blinkapp.services import blink_service, cache_service, connection_service
 
-        # Test that key global variables exist
-        self.assertTrue(hasattr(blinkapp, "blink"))
-        # Cache globals are now in cache service
-        from blinkapp.services import cache_service, connection_service
-
+        self.assertTrue(hasattr(blink_service, "blink"))
         self.assertTrue(hasattr(cache_service, "thumbnail_cache"))
         self.assertTrue(hasattr(cache_service, "clips_cache"))
         self.assertTrue(hasattr(connection_service, "executor"))
@@ -4160,7 +4157,7 @@ class TestAdvancedFileOperations(BaseTestCase):
         with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
             with patch("blinkapp.logger") as mock_logger:
                 with patch("blinkapp.setup_logging"):
-                    with patch("stream_manager.StreamManager"):
+                    with patch("blinkapp.services.stream_service.StreamManager"):
                         with patch("blinkapp.services.cache_service.initialize_caches"):
                             with patch(
                                 "blinkapp.services.cache_service.load_thumbnail_cache"
@@ -4443,11 +4440,13 @@ class TestIntegrationScenarios(BaseTestCase):
 
         # 2. Download specific clip
         with patch("pathlib.Path.exists", return_value=False):
-            with patch("requests.get") as mock_get:
+            with patch(
+                "blinkapp.services.connection_service.ensure_http_session_initialized"
+            ) as mock_session:
                 mock_response = Mock()
                 mock_response.content = b"video_data"
-                mock_response.raise_for_status.return_value = None
-                mock_get.return_value = mock_response
+                mock_response.status_code = 200
+                mock_session.return_value.get.return_value = mock_response
 
                 with patch("pathlib.Path.write_bytes"):
                     response2 = self.client.get("/api/clips/123456/download")

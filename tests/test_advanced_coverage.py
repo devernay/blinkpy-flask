@@ -374,10 +374,14 @@ class TestCloudClipOperations(BaseTestCase):
         mock_blink.videos = {}  # No videos available
 
         try:
+            # Create Flask app context for jsonify
+            from blinkapp import create_app
             from blinkapp.models.ids import ClipId
             from blinkapp.services.clip_service import download_cloud_clip
 
-            result = download_cloud_clip(ClipId("nonexistent_clip"))
+            app = create_app()
+            with app.app_context():
+                result = download_cloud_clip(ClipId("nonexistent_clip"))
             # Should return error response
             self.assertIsNotNone(result)
         except (ImportError, AttributeError):
@@ -385,9 +389,9 @@ class TestCloudClipOperations(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.services.blink_service.blink")
-    @patch("requests.get")
+    @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_download_success(
-        self, mock_requests: Mock, mock_blink: Mock, mock_cache: Mock
+        self, mock_session: Mock, mock_blink: Mock, mock_cache: Mock
     ):
         """Test successful cloud clip download."""
         # Setup mocks
@@ -399,15 +403,19 @@ class TestCloudClipOperations(BaseTestCase):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.content = b"video_data"
-        mock_requests.return_value = mock_response
+        mock_session.return_value.get.return_value = mock_response
 
         try:
             from blinkapp.services.clip_service import download_cloud_clip
 
             with patch("builtins.open", mock_open()):
+                # Create Flask app context for jsonify
+                from blinkapp import create_app
                 from blinkapp.models.ids import ClipId
 
-                result = download_cloud_clip(ClipId("clip123"))
+                app = create_app()
+                with app.app_context():
+                    result = download_cloud_clip(ClipId("clip123"))
                 # Should download and cache
                 self.assertIsNotNone(result)
         except (ImportError, AttributeError):

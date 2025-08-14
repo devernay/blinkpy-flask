@@ -150,7 +150,7 @@ class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
             thumbnail_data: Raw thumbnail image data
             metadata: Optional metadata to store with thumbnail
         """
-        cache_entry = {
+        cache_entry: dict[str, Any] = {
             "data": thumbnail_data,
             "timestamp": time.time(),
             "metadata": metadata or {},
@@ -183,7 +183,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
             clip_id: Unique clip identifier
             clip_data: Clip information and metadata from Blink API
         """
-        enhanced_data = {
+        enhanced_data: dict[str, Any] = {
             "clip_data": clip_data,
             "cached_at": time.time(),  # When clip was added to cache
             "access_count": 0,  # Track access frequency
@@ -212,7 +212,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
             self[clip_id] = clip_entry
 
             # Return the actual clip data
-            clip_data = clip_entry.get("clip_data")
+            clip_data: Any = clip_entry.get("clip_data")
             if isinstance(clip_data, dict):
                 return clip_data
         return None

@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
+from blinkapp.config import Config
 from blinkapp.models.types import JsonDict
-from config import Config
 
 # Explicitly define what this module exports
 __all__ = [

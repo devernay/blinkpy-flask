@@ -28,11 +28,11 @@ if TYPE_CHECKING:
 import requests
 from flask import jsonify, send_file
 
+from blinkapp.config import Config
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.cache_service import ensure_clips_cache_initialized
 from blinkapp.utils.validators import format_clips_by_day
-from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -506,9 +506,9 @@ def download_and_cache_cloud_thumbnail(
         Path to cached thumbnail file, or None if download failed
     """
     from blinkapp import logger
+    from blinkapp.config import Config
     from blinkapp.services.cache_service import ensure_clips_cache_initialized
     from blinkapp.services.connection_service import ensure_http_session_initialized
-    from config import Config
 
     try:
         # Get cache directory

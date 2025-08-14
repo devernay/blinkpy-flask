@@ -30,8 +30,8 @@ blink_connection: BlinkConnection | None = None
 def initialize_blink_objects() -> None:
     """Initialize the global Blink objects."""
     global blink_connection
+    from blinkapp.config import Config
     from blinkapp.services.connection_service import BlinkConnection
-    from config import Config
 
     # Initialize async Blink connection manager for API operations
     blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
