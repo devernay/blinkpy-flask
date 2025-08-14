@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
 from cachetools import LRUCache
-from test_app import BaseTestCase, mock_execute_with_coroutine_cleanup
+from test_base import BaseTestCase, mock_execute_with_coroutine_cleanup
 
 from blinkapp import (
     Config,

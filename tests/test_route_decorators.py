@@ -12,8 +12,7 @@ from typing import cast
 from unittest.mock import MagicMock, Mock, patch
 
 from flask import Flask, Response
-
-from .test_app import BaseTestCase
+from test_base import BaseTestCase
 
 
 class TestRouteDecorators(BaseTestCase):

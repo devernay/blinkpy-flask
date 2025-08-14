@@ -28,8 +28,8 @@ class Blink:
     last_refresh: float | None
     refresh_rate: int
     networks: list[dict[str, Any]]
-    cameras: CaseInsensitiveDict[str, BlinkCamera]
-    video_list: CaseInsensitiveDict[str, Any]
+    cameras: CaseInsensitiveDict[BlinkCamera]
+    video_list: CaseInsensitiveDict[Any]
     motion_interval: int
     version: str
     available: bool
@@ -93,4 +93,4 @@ class Blink:
     def setup_urls(self) -> None: ...
     def setup_network_ids(self) -> dict[str, str]: ...
     def check_if_ok_to_update(self) -> bool: ...
-    def merge_cameras(self) -> CaseInsensitiveDict[str, BlinkCamera]: ...
+    def merge_cameras(self) -> CaseInsensitiveDict[BlinkCamera]: ...

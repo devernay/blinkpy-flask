@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
-from test_app import BaseTestCase
+from test_base import BaseTestCase
 
 import blinkapp
 from blinkapp import Config

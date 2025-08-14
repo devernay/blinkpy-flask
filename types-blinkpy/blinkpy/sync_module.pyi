@@ -14,25 +14,17 @@ class BlinkSyncModule:
 
     # Core attributes from __init__
     blink: Blink  # Blink instance
-    network_id: str
-    name: str
     response: dict[str, Any]
-    cameras: CaseInsensitiveDict[str, BlinkCamera]
-    local_storage: dict[str, Any]
-    sync_id: int | None
-    local_storage_manifest_ready: bool
+    cameras: CaseInsensitiveDict[BlinkCamera]
     _local_storage: dict[str, Any]
-    attributes: dict[str, Any]
-    network_info: dict[str, Any]
-    summary: dict[str, Any]
+    sync_id: int | None
     region_id: str | None
-    serial: str | None
-    status: str
-    host: str | None
     events: list[dict[str, Any]]
     motion_interval: int
     motion: dict[str, Any]
     last_records: dict[str, list[dict[str, Any]]]
+    network_info: dict[str, Any] | None
+    summary: dict[str, Any] | None
     _version: str | None
 
     def __init__(
