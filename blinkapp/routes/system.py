@@ -2,18 +2,18 @@
 
 from flask import Flask, request
 
-from app_types import JsonDict
 from blinkapp.models.ids import NetworkId
+from blinkapp.models.types import JsonDict
 from blinkapp.services.system_service import (
     arm_system,
     get_devices,
     get_systems,
     refresh_system,
 )
-from blinkapp.utils.decorators import ensure_blink_available
-from route_decorators import (
+from blinkapp.utils.decorators import (
     api_route,
     api_route_with_validation,
+    ensure_blink_available,
     simple_success_response,
 )
 

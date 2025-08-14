@@ -16,8 +16,9 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from blinkapp.models.ids import CameraId
     from blinkpy.camera import BlinkCamera
+
+    from blinkapp.models.ids import CameraId
 
 logger = logging.getLogger(__name__)
 
@@ -186,14 +187,14 @@ def handle_dump_system() -> None:
     from blinkapp import (
         CREDENTIALS_FILE,
         Config,
-        blink,
-        blink_connection,
         cleanup_blink_session,
         dump_cloud_videos,
         initialize_cache_paths,
-        load_saved_blink,
         logger,
     )
+    from blinkapp.services.auth_service import load_saved_blink
+    from blinkapp.services.blink_service import blink
+    from blinkapp.services.connection_service import blink_connection
 
     initialize_cache_paths()
 

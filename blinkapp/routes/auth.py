@@ -18,15 +18,15 @@ from pathlib import Path
 from flask import Flask, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 
-from app_types import AuthJsonDict as JsonDict
+from blinkapp.models.types import AuthJsonDict as JsonDict
 from blinkapp.services.auth_service import (
     initialize_blink,
     verify_2fa_and_save,
 )
+from blinkapp.utils.decorators import simple_success_response
 from blinkapp.utils.errors import AuthenticationError
 from blinkapp.utils.validators import validate_string_input
 from config import Config
-from route_decorators import simple_success_response
 
 
 def is_authenticated() -> bool:

@@ -16,7 +16,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from blink_connection import BlinkConnection
+    from blinkapp.services.connection_service import BlinkConnection
 
 from blinkpy.blinkpy import Blink
 
@@ -30,7 +30,7 @@ blink_connection: BlinkConnection | None = None
 def initialize_blink_objects() -> None:
     """Initialize the global Blink objects."""
     global blink_connection
-    from blink_connection import BlinkConnection
+    from blinkapp.services.connection_service import BlinkConnection
     from config import Config
 
     # Initialize async Blink connection manager for API operations

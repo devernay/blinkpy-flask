@@ -44,14 +44,14 @@ if TYPE_CHECKING:
 # Blink camera library - third-party integration
 from blinkpy.sync_module import BlinkSyncModule
 
-from app_types import (
-    ApiResponse,
-    JsonDict,
-)
 from blinkapp.models.ids import ClipId, NetworkId
 
 # API response models
 from blinkapp.models.responses import create_api_response
+from blinkapp.models.types import (
+    ApiResponse,
+    JsonDict,
+)
 from blinkapp.routes.auth import (
     setup_auth_routes,
 )
@@ -71,7 +71,13 @@ from blinkapp.routes.settings import setup_settings_routes
 from blinkapp.routes.system import setup_system_routes
 
 # Route decorators and error handling
-from blinkapp.utils.decorators import ensure_blink_available, error_context
+# Route decorators for API endpoints
+from blinkapp.utils.decorators import (
+    api_route,
+    ensure_blink_available,
+    error_context,
+    simple_success_response,
+)
 from blinkapp.utils.errors import (
     CacheError,
     ValidationError,
@@ -79,12 +85,6 @@ from blinkapp.utils.errors import (
 
 # Application configuration
 from config import Config
-
-# Route decorators for API endpoints
-from route_decorators import (
-    api_route,
-    simple_success_response,
-)
 
 # Live streaming management
 

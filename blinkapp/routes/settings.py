@@ -8,8 +8,8 @@ from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
 
 from blinkapp.models.responses import create_api_response
+from blinkapp.utils.decorators import method_dispatch_route
 from config import Config
-from route_decorators import method_dispatch_route
 
 # Explicitly define what this module exports
 __all__ = [

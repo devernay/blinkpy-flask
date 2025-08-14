@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from app_types import JsonDict
+from blinkapp.models.types import JsonDict
 from config import Config
 
 # Explicitly define what this module exports

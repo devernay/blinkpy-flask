@@ -3,18 +3,19 @@
 from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
 
-from app_types import JsonDict
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
-from blinkapp.utils.decorators import ensure_blink_available, error_context
-from blinkapp.utils.errors import ValidationError
-from config import Config
-from route_decorators import (
+from blinkapp.models.types import JsonDict
+from blinkapp.utils.decorators import (
     api_route,
     api_route_with_validation,
+    ensure_blink_available,
+    error_context,
     file_response_route,
     simple_success_response,
 )
+from blinkapp.utils.errors import ValidationError
+from config import Config
 
 # Explicitly define what this module exports
 __all__ = [
@@ -58,9 +59,12 @@ def setup_clips_routes(app: Flask) -> None:
         with error_context(f"get {storage_type} clips"):
             if storage_type == "cloud":
                 # Get cloud clips via blink operation
-                videos_metadata = blink_connection.execute(
-                    blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
-                )
+                if blink_connection:
+                    videos_metadata = blink_connection.execute(
+                        blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
+                    )
+                else:
+                    videos_metadata = []
                 clips = process_cloud_clips(videos_metadata)
             else:
                 clips = process_local_clips()

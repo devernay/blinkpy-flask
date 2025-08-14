@@ -6,6 +6,17 @@ live stream management, HLS transcoding, and stream cleanup.
 
 from __future__ import annotations
 
+import logging
+import subprocess
+import tempfile
+import threading
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from blinkapp.config import Config
+
 __all__ = [
     "initialize_stream_manager",
     "ensure_stream_manager_initialized",
@@ -13,14 +24,14 @@ __all__ = [
     "stop_camera_stream",
     "is_stream_active",
     "get_hls_file",
+    "StreamConfig",
+    "HLSStream",
+    "StreamManager",
 ]
-
-import logging
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import CameraId
-    from stream_manager import StreamManager
+    from blinkapp.services.stream_service import StreamManager
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +43,7 @@ def initialize_stream_manager() -> None:
     """Initialize the global stream manager instance."""
     global stream_manager
     from blinkapp import Config
-    from stream_manager import StreamConfig, StreamManager
+    from blinkapp.services.stream_service import StreamConfig, StreamManager
 
     stream_config = StreamConfig(
         segment_time=Config.HLS_SEGMENT_TIME,
@@ -147,3 +158,315 @@ def get_hls_file(camera_id: CameraId, filename: str) -> tuple[bytes | None, str 
     except Exception as e:
         logger.error(f"Failed to get HLS file {filename} for camera {camera_id}: {e}")
         return None, None
+
+
+# ============================================================================
+# Stream Manager (merged from stream_manager.py)
+# ============================================================================
+
+"""TCP to HLS stream management module.
+
+Provides object-oriented management of TCP streams from Blink cameras with FFmpeg transcoding
+to HLS format. Handles multiple concurrent streams with automatic cleanup
+and resource management.
+
+This module specifically handles MPEG-TS streams from Blink's init_livestream() TCP proxy.
+"""
+
+
+# Add to exports
+__all__.extend(
+    [
+        "StreamConfig",
+        "HLSStream",
+        "StreamManager",
+    ]
+)
+
+
+@dataclass
+class StreamConfig:
+    """Configuration for HLS stream transcoding from Blink TCP streams."""
+
+    segment_time: int | None = None  # HLS segment duration in seconds
+    list_size: int | None = None  # Number of segments in playlist
+    timeout: int | None = None  # Process timeout
+    idle_timeout: int | None = None  # Stream idle timeout
+
+    def __post_init__(self) -> None:
+        """Set default values from Config if not provided."""
+        if self.segment_time is None:
+            self.segment_time = Config.HLS_SEGMENT_TIME
+        if self.list_size is None:
+            self.list_size = Config.HLS_LIST_SIZE
+        if self.timeout is None:
+            self.timeout = Config.FFMPEG_TIMEOUT
+        if self.idle_timeout is None:
+            self.idle_timeout = Config.STREAM_IDLE_TIMEOUT
+
+
+class HLSStream:
+    """Manages a single HLS stream from TCP source."""
+
+    def __init__(self, camera_id: str, tcp_url: str, config: StreamConfig):
+        """Initialize HLS stream.
+
+        Args:
+            camera_id: Unique identifier for the camera
+            tcp_url: TCP stream URL from Blink camera
+            config: Stream configuration
+        """
+        self.camera_id = camera_id
+        self.tcp_url = tcp_url
+        self.config = config
+        self.process: subprocess.Popen[bytes] | None = None
+        self.temp_dir: tempfile.TemporaryDirectory[str] | None = None
+        self.last_access = time.time()
+        self.lock = threading.Lock()
+        self._active = False
+
+    def start(self) -> tuple[str | None, str | None]:
+        """Start HLS stream transcoding.
+
+        Returns:
+            Tuple of (hls_url, error_message)
+        """
+        with self.lock:
+            if self._active:
+                return self.get_hls_url(), None
+
+            try:
+                # Create temporary directory for HLS files
+                self.temp_dir = tempfile.TemporaryDirectory(
+                    prefix=f"hls_{self.camera_id}_"
+                )
+                output_path = Path(self.temp_dir.name) / "stream.m3u8"
+
+                # FFmpeg command for TCP to HLS transcoding
+                cmd = [
+                    "ffmpeg",
+                    "-i",
+                    self.tcp_url,
+                    "-c",
+                    "copy",
+                    "-f",
+                    "hls",
+                    "-hls_time",
+                    str(self.config.segment_time),
+                    "-hls_list_size",
+                    str(self.config.list_size),
+                    "-hls_flags",
+                    "delete_segments",
+                    str(output_path),
+                ]
+
+                # Start FFmpeg process
+                self.process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    stdin=subprocess.DEVNULL,
+                )
+
+                # Wait a moment for stream to start
+                time.sleep(2)
+
+                if self.process.poll() is not None:
+                    # Process already terminated
+                    stdout, stderr = self.process.communicate()
+                    error_msg = (
+                        stderr.decode() if stderr else "FFmpeg process terminated"
+                    )
+                    return None, f"Stream failed to start: {error_msg}"
+
+                self._active = True
+                self.last_access = time.time()
+                return self.get_hls_url(), None
+
+            except Exception as e:
+                self.cleanup()
+                return None, f"Failed to start stream: {str(e)}"
+
+    def stop(self) -> None:
+        """Stop HLS stream and cleanup resources."""
+        with self.lock:
+            self._active = False
+            self.cleanup()
+
+    def cleanup(self) -> None:
+        """Clean up stream resources."""
+        if self.process:
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=5)
+            except (subprocess.TimeoutExpired, OSError):
+                try:
+                    self.process.kill()
+                    self.process.wait(timeout=2)
+                except (subprocess.TimeoutExpired, OSError):
+                    pass
+            self.process = None
+
+        if self.temp_dir:
+            try:
+                self.temp_dir.cleanup()
+            except OSError:
+                pass
+            self.temp_dir = None
+
+    def is_active(self) -> bool:
+        """Check if stream is active."""
+        with self.lock:
+            if not self._active or not self.process:
+                return False
+
+            # Check if process is still running
+            if self.process.poll() is not None:
+                self._active = False
+                return False
+
+            # Check idle timeout
+            if time.time() - self.last_access > self.config.idle_timeout:
+                self.stop()
+                return False
+
+            return True
+
+    def get_hls_url(self) -> str | None:
+        """Get HLS stream URL."""
+        if not self.temp_dir:
+            return None
+        return f"/api/cameras/{self.camera_id}/hls/stream.m3u8"
+
+    def get_file(self, filename: str) -> tuple[bytes | None, str | None]:
+        """Get HLS file content.
+
+        Args:
+            filename: HLS filename to retrieve
+
+        Returns:
+            Tuple of (file_content, content_type)
+        """
+        with self.lock:
+            if not self.temp_dir or not self._active:
+                return None, None
+
+            try:
+                file_path = Path(self.temp_dir.name) / filename
+                if not file_path.exists():
+                    return None, None
+
+                self.last_access = time.time()
+
+                with open(file_path, "rb") as f:
+                    content = f.read()
+
+                # Determine content type
+                if filename.endswith(".m3u8"):
+                    content_type = "application/vnd.apple.mpegurl"
+                elif filename.endswith(".ts"):
+                    content_type = "video/mp2t"
+                else:
+                    content_type = "application/octet-stream"
+
+                return content, content_type
+
+            except OSError:
+                return None, None
+
+
+class StreamManager:
+    """Manages multiple HLS streams from Blink cameras."""
+
+    def __init__(self, config: StreamConfig | None = None):
+        """Initialize stream manager.
+
+        Args:
+            config: Default stream configuration
+        """
+        self.config = config or StreamConfig()
+        self.streams: dict[str, HLSStream] = {}
+        self.lock = threading.Lock()
+
+    def start_stream(
+        self, camera_id: str, tcp_url: str
+    ) -> tuple[str | None, str | None]:
+        """Start HLS stream for camera.
+
+        Args:
+            camera_id: Camera identifier
+            tcp_url: TCP stream URL
+
+        Returns:
+            Tuple of (hls_url, error_message)
+        """
+        with self.lock:
+            # Stop existing stream if any
+            if camera_id in self.streams:
+                self.streams[camera_id].stop()
+
+            # Create new stream
+            stream = HLSStream(camera_id, tcp_url, self.config)
+            hls_url, error = stream.start()
+
+            if hls_url:
+                self.streams[camera_id] = stream
+                return hls_url, None
+            else:
+                return None, error
+
+    def stop_stream(self, camera_id: str) -> None:
+        """Stop stream for camera."""
+        with self.lock:
+            if camera_id in self.streams:
+                self.streams[camera_id].stop()
+                del self.streams[camera_id]
+
+    def is_stream_active(self, camera_id: str) -> bool:
+        """Check if stream is active for camera."""
+        with self.lock:
+            if camera_id not in self.streams:
+                return False
+
+            stream = self.streams[camera_id]
+            if not stream.is_active():
+                del self.streams[camera_id]
+                return False
+
+            return True
+
+    def get_hls_file(
+        self, camera_id: str, filename: str
+    ) -> tuple[bytes | None, str | None]:
+        """Get HLS file for camera stream.
+
+        Args:
+            camera_id: Camera identifier
+            filename: HLS filename
+
+        Returns:
+            Tuple of (file_content, content_type)
+        """
+        with self.lock:
+            if camera_id not in self.streams:
+                return None, None
+
+            return self.streams[camera_id].get_file(filename)
+
+    def cleanup_inactive_streams(self) -> None:
+        """Clean up inactive streams."""
+        with self.lock:
+            inactive_cameras = []
+            for camera_id, stream in self.streams.items():
+                if not stream.is_active():
+                    inactive_cameras.append(camera_id)
+
+            for camera_id in inactive_cameras:
+                del self.streams[camera_id]
+
+    def shutdown(self) -> None:
+        """Shutdown all streams."""
+        with self.lock:
+            for stream in self.streams.values():
+                stream.stop()
+            self.streams.clear()

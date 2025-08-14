@@ -140,7 +140,7 @@ def arm_system(network_id: NetworkId, armed: bool) -> dict[str, Any]:
         raise ValidationError(str(error_message), status_code)
 
     with error_context("arm/disarm system"):
-        if sync_module is not None:
+        if sync_module is not None and blink_connection:
             blink_connection.execute(sync_module.async_arm(armed))
         return {"armed": armed}
 
@@ -159,7 +159,10 @@ def refresh_system() -> dict[str, Any]:
 
     logger.debug("Refreshing all Blink systems")
 
-    success = blink_connection.execute(blink.refresh(force=True))
+    if blink_connection:
+        success = blink_connection.execute(blink.refresh(force=True))
+    else:
+        success = False
 
     if success is not True:
         response, status_code = create_api_response(

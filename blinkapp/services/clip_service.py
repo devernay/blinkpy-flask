@@ -435,9 +435,12 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                 return
 
             # Get clip metadata
-            videos_metadata = blink_connection.execute(
-                blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
-            )
+            if blink_connection:
+                videos_metadata = blink_connection.execute(
+                    blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+                )
+            else:
+                videos_metadata = []
             clip_info = next(
                 (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
             )
@@ -591,10 +594,13 @@ def process_local_clip_background(
             filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
 
             if not filepath.exists():
-                blink_connection.execute(item.prepare_download(blink))
-                success = blink_connection.execute(
-                    item.download_video(blink, str(filepath))
-                )
+                if blink_connection:
+                    blink_connection.execute(item.prepare_download(blink))
+                    success = blink_connection.execute(
+                        item.download_video(blink, str(filepath))
+                    )
+                else:
+                    success = False
                 if success is not True:
                     return
 

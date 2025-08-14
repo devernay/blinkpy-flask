@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, cast
 
 from flask import Flask, Response, jsonify, request, send_file
 
-from app_types import FlaskResponse, JsonDict
 from blinkapp.models.ids import CameraId
+from blinkapp.models.types import FlaskResponse, JsonDict
 
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
@@ -30,6 +30,7 @@ from blinkapp.services.camera_service import (
     require_camera,
 )
 from blinkapp.utils.decorators import (
+    api_route_with_validation,
     ensure_blink_available,
     error_context,
 )
@@ -38,7 +39,6 @@ from blinkapp.utils.validators import (
     extract_thumbnail_timestamp,
 )
 from config import Config
-from route_decorators import api_route_with_validation
 
 logger = logging.getLogger(__name__)
 
@@ -469,8 +469,7 @@ def setup_camera_routes(app: Flask) -> None:
             raise ValidationError(Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND, 404)
 
         # Check cache first
-        cache_key = str(camera_id)
-        cached_info = thumbnail_cache.get(cache_key)
+        cached_info = thumbnail_cache.get(camera_id)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
         cached_ts = 0  # Default value
 
