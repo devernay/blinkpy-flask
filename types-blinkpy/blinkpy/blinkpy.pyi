@@ -1,6 +1,6 @@
 # Stubs for blinkpy.blinkpy module
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from aiohttp import ClientResponse
 from requests.structures import CaseInsensitiveDict
@@ -9,6 +9,10 @@ from .auth import Auth
 from .camera import BlinkCamera
 from .sync_module import BlinkSyncModule
 
+_T = TypeVar("_T")
+
+# Custom type alias for properly typed CaseInsensitiveDict
+class SyncDict(dict[str, BlinkSyncModule]): ...
 class BlinkSetupError(Exception): ...
 
 class Blink:
@@ -20,7 +24,7 @@ class Blink:
     client_id: str | None
     network_ids: list[str]
     urls: dict[str, str] | None
-    sync: CaseInsensitiveDict[str, BlinkSyncModule]
+    sync: SyncDict
     last_refresh: float | None
     refresh_rate: int
     networks: list[dict[str, Any]]

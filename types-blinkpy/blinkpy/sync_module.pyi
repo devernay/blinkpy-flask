@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import ClientResponse
 from requests.structures import CaseInsensitiveDict
 
+from .camera import BlinkCamera
+
 if TYPE_CHECKING:
     from .blinkpy import Blink
-    from .camera import BlinkCamera
-else:
-    from .camera import BlinkCamera
 
 class BlinkSyncModule:
     """Sync module class for Blink systems."""
@@ -95,7 +94,7 @@ class BlinkSyncModule:
     @property
     def battery(self) -> str | None: ...
     @property
-    def local_storage(self) -> dict[str, Any]: ...
+    def local_storage(self) -> bool: ...
     @property
     def local_storage_manifest_ready(self) -> bool: ...
     @property
