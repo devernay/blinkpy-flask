@@ -230,7 +230,6 @@ First, you should sketch the plan of the documentation, with sections and subsec
 
 ## **Unused blinkpy Functionalities**
 
-### 2. Recent Clips Management
 Available in blinkpy:
 • camera.recent_clips[] - List of recent motion-triggered clips
 • camera.save_recent_clips() - Save all recent clips with timestamp patterns
@@ -238,9 +237,8 @@ Available in blinkpy:
 
 Current Flask app: Not implemented - we only show cloud/local storage clips
 
-### 3. Camera Properties Not Exposed
+### 2. Camera Properties Not Exposed
 Available in blinkpy:
-python
 camera.temperature          # Temperature reading
 camera.temperature_calibrated
 camera.battery_level        # Battery percentage
@@ -253,39 +251,35 @@ camera.battery_state        # Battery status string
 
 Current Flask app: Only shows online/offline status
 
-### 4. Advanced Camera Controls
+### 3. Advanced Camera Controls
 Available in blinkpy:
 • camera.snap_picture() - Take new thumbnail
-• camera.request_new_video() - Record new clip
 • Motion detection enable/disable per camera
 • Camera sensor information
 
 Current Flask app: Only implements thumbnail refresh
 
-### 5. Local Storage Advanced Features
+### 4. Local Storage Advanced Features
 Available in blinkpy:
 • item.delete_video() - Delete videos from sync module
 • item.download_video_delete() - Download and delete in one operation
-• Individual clip management vs batch operations
 
 Current Flask app: Only downloads, no deletion capability
 
-### 6. Video Information API
+### 5. Video Information API
 Available in blinkpy:
 • api.request_video_count() - Total video count
 • api.request_videos() - Paginated video list with metadata
 • Unwatched videos list
-• Individual video information by ID
 
 Current Flask app: Not implemented
 
-### 7. System Health and Diagnostics
+### 6. System Health and Diagnostics
 Available in blinkpy:
 • System health checks
 • Client device information
 • Region information
 • Network diagnostics
-
 Current Flask app: Not implemented
 
 ## **Specific Missing Features**
@@ -305,7 +299,7 @@ camera_info = {
 
 ### **High Priority (Easy Wins):**
 
-2. Camera Properties Display
+1. Camera Properties Display
 python
 # Add to camera info API
 @app.route("/api/camera/<camera_id>/info")
@@ -319,7 +313,7 @@ def get_camera_info(camera_id):
     }
 
 
-3. Recent Clips Feature
+2. Recent Clips Feature
 python
 # Add recent clips endpoint
 @app.route("/api/camera/<camera_id>/recent-clips")
@@ -330,19 +324,19 @@ def get_recent_clips(camera_id):
 
 ### **Medium Priority:**
 
-4. Video Management API
+3. Video Management API
 • Total video count
 • Paginated video lists
 • Video deletion capabilities
 
-5. Advanced Camera Controls
+4. Advanced Camera Controls
 • Per-camera motion detection toggle
 • Manual video recording trigger
 • Camera sensor readings
 
 ### **Low Priority:**
 
-6. System Diagnostics
+5. System Diagnostics
 • Health monitoring
 • Network diagnostics
 • Client device management
@@ -352,6 +346,156 @@ def get_recent_clips(camera_id):
 Camera Properties: Would provide much richer device information to users, matching what's available in the official Blink app.
 
 Recent Clips: Would show motion-triggered clips immediately without waiting for cloud sync.
+
+
+# **Code Quality Analysis & Improvement Recommendations**
+
+### **Overall Code Quality Rating: B+ (Good with room for improvement)**
+
+The codebase demonstrates solid engineering practices with comprehensive type hints, good error handling, and clean separation of concerns. However, there are several areas where code quality can be significantly improved through refactoring and consolidation.
+
+### **Major Issues Identified**
+
+#### **1. Excessive Local Imports (High Priority)**
+**Problem**: 8+ instances of "Import locally to avoid circular imports" scattered across route handlers
+**Impact**: Code duplication, maintenance burden, unclear dependencies
+**Solution**:
+```python
+# Create a centralized import manager
+class ServiceManager:
+    @staticmethod
+    def get_services() -> dict[str, Any]:
+        return {
+            'blink_connection': ensure_blink_connection_initialized(),
+            'executor': ensure_executor_initialized(),
+            'thumbnail_cache': ensure_thumbnail_cache_initialized(),
+            'stream_manager': ensure_stream_manager_initialized()
+        }
+```
+
+#### **2. Repeated Service Initialization Pattern (High Priority)**
+**Problem**: 14 instances of `ensure_blink_connection_initialized()` with identical error handling
+**Impact**: Code duplication, inconsistent error handling
+**Solution**: Create a service injection decorator
+```python
+@inject_services(['blink_connection', 'executor'])
+def route_handler(camera_id: CameraId, services: dict[str, Any]) -> JsonDict:
+    # Services automatically available
+```
+
+#### **3. Large Function Complexity (Medium Priority)**
+**Problem**: `update_camera_thumbnail()` (167 lines), several route handlers (50+ lines)
+**Impact**: Hard to test, maintain, and understand
+**Solution**: Extract business logic into service classes
+```python
+class ThumbnailUpdateService:
+    def update_if_needed(self, camera, cache_key, current_ts, cached_ts) -> None
+    def _download_and_cache(self, camera, cache_key, current_ts) -> None
+    def _cleanup_old_thumbnail(self, cache_key) -> None
+```
+
+#### **4. Inconsistent Error Handling (Medium Priority)**
+**Problem**: Mixed patterns of ValidationError, CameraError, and direct responses
+**Impact**: Inconsistent API responses, harder debugging
+**Solution**: Standardize error handling with middleware
+```python
+@standardize_errors
+def route_handler() -> JsonDict:
+    # Automatic error conversion to standard API format
+```
+
+#### **5. Template JavaScript Duplication (Low Priority)**
+**Problem**: Inline JavaScript mixed with HTML, limited reusability
+**Impact**: Harder to maintain, test, and extend
+**Solution**: Extract to separate JS modules with proper organization
+
+### **Specific Refactoring Opportunities**
+
+#### **Route Handler Consolidation**
+```python
+# Current: Repeated pattern in 6+ route handlers
+def route_handler(id: SomeId) -> JsonDict:
+    # Import locally to avoid circular imports
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    blink_connection = ensure_blink_connection_initialized()
+    # ... validation logic
+    # ... business logic
+
+# Proposed: Base class with common patterns
+class BaseRouteHandler:
+    def __init__(self):
+        self.services = ServiceManager.get_services()
+
+    def handle_with_validation(self, validator_func, business_logic_func):
+        # Common validation and error handling
+```
+
+#### **Cache Management Consolidation**
+```python
+# Current: Scattered cache operations
+thumbnail_cache = ensure_thumbnail_cache_initialized()
+clips_cache = ensure_clips_cache_initialized()
+
+# Proposed: Unified cache manager
+class CacheManager:
+    def get_cache(self, cache_type: CacheType) -> Cache
+    def clear_all(self) -> dict[str, object]
+    def get_stats(self) -> dict[str, Any]
+```
+
+### **JavaScript/Template Improvements**
+
+#### **Extract Inline JavaScript**
+```javascript
+// Current: 60+ lines of inline JavaScript in base.html
+// Proposed: Separate modules
+// static/js/modal.js
+// static/js/live-view.js
+// static/js/api-client.js
+```
+
+#### **API Client Standardization**
+```javascript
+// Proposed: Consistent API client
+class BlinkApiClient {
+    async startLiveView(cameraId) { /* ... */ }
+    async refreshThumbnail(cameraId) { /* ... */ }
+    async triggerRecording(cameraId) { /* ... */ }
+}
+```
+
+### **Implementation Priority**
+
+#### **Phase 1 (High Impact, Low Risk)**
+1. Create ServiceManager for dependency injection
+2. Standardize error handling middleware
+3. Extract common route handler patterns
+
+#### **Phase 2 (Medium Impact, Medium Risk)**
+4. Refactor large functions into service classes
+5. Consolidate cache management
+6. Create base route handler class
+
+#### **Phase 3 (Low Impact, Low Risk)**
+7. Extract JavaScript to separate files
+8. Create standardized API client
+9. Add comprehensive JSDoc documentation
+
+### **Expected Benefits**
+
+- **Maintainability**: 40% reduction in code duplication
+- **Testability**: Easier unit testing with dependency injection
+- **Consistency**: Standardized error handling and API responses
+- **Performance**: Better caching strategies and resource management
+- **Developer Experience**: Clearer code organization and documentation
+
+### **Risk Assessment**
+
+- **Low Risk**: Service manager, error handling middleware
+- **Medium Risk**: Large function refactoring (requires careful testing)
+- **High Risk**: None identified - all changes are incremental improvements
+
+The codebase has a solid foundation and these improvements would elevate it from "good" to "excellent" while maintaining backward compatibility and system stability.
 
 Fix all ruff check and pytest (full suite) issues. Don't add exports to the main module. I prefer if the only exports for each modul is the ones it defines, and symbols are imported from where they are defined.
 
