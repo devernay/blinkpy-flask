@@ -41,6 +41,9 @@ if TYPE_CHECKING:
 
 # ID validation and type safety
 # Type definitions for better code clarity
+# Blink camera library - third-party integration
+from blinkpy.sync_module import BlinkSyncModule
+
 from app_types import (
     ApiResponse,
     JsonDict,
@@ -74,9 +77,6 @@ from blinkapp.utils.errors import (
     ValidationError,
 )
 
-# Blink camera library - third-party integration
-from blinkpy.sync_module import BlinkSyncModule
-
 # Application configuration
 from config import Config
 
@@ -95,24 +95,16 @@ if TYPE_CHECKING:
 # Third-party imports
 
 # Flask framework components
+# Type alias for Flask responses
 from flask import (
     Flask,
+    Response,
     jsonify,
     redirect,
     render_template,
     session,
     url_for,
 )
-
-try:
-    from flask.typing import ResponseReturnValue
-except ImportError:
-    from typing import Any
-
-    ResponseReturnValue = Any
-
-# Type alias for Flask responses
-from flask import Response
 
 FlaskResponse = Response
 
@@ -261,8 +253,9 @@ def require_sync_module(
         >>> # Use sync module for operations
         >>> sync.arm = True
     """
+    from blinkpy.blinkpy import Blink
+
     from blinkapp.services.blink_service import blink
-    from blinkpy import Blink
 
     # Ensure blink is initialized - this should be guaranteed by @ensure_blink_available
     assert blink is not None

@@ -15,15 +15,16 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from blinkapp.models.ids import CameraId
     from blinkpy.camera import BlinkCamera
+
+    from blinkapp.models.ids import CameraId
 
 logger = logging.getLogger(__name__)
 
 
 def find_camera_by_id(
     camera_id: CameraId,
-) -> tuple[BlinkCamera, None] | tuple[None, tuple[dict[str, object], int]]:
+) -> BlinkCamera | None:
     """Find camera by ID across all sync modules.
 
     Searches through all available Blink sync modules and their cameras

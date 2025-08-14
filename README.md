@@ -118,8 +118,8 @@ Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1
 
 If you need to checkout the code for this PR from the blinkpy repo:
 ```
-git clone https://github.com/fronzbot/blinkpy
-cd blinkpy
+git clone https://github.com/fronzbot/blinkpy blinkpy-source
+cd blinkpy-source
 git fetch origin pull/1078/head:pr-1078
 git checkout pr-1078
 ```

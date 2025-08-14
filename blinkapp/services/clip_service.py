@@ -155,7 +155,8 @@ def process_local_clips() -> list[dict[str, object]]:
         try:
             # Refresh sync module to update local storage manifest
             # This ensures we have the latest clip information
-            blink_connection.execute(sync_module.refresh())
+            if blink_connection:
+                blink_connection.execute(sync_module.refresh())
 
             # Get clips from local storage manifest if ready
             if sync_module.local_storage and sync_module.local_storage_manifest_ready:
@@ -240,9 +241,12 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
             pass
 
     # Get clip metadata
-    videos_metadata = blink_connection.execute(
-        blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
-    )
+    if blink_connection:
+        videos_metadata = blink_connection.execute(
+            blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+        )
+    else:
+        videos_metadata = []
     clip_info = next(
         (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
     )
@@ -373,10 +377,13 @@ def download_local_clip(
     # Download if not cached
     if not filepath.exists():
         try:
-            blink_connection.execute(item.prepare_download(blink))
-            success = blink_connection.execute(
-                item.download_video(blink, str(filepath))
-            )
+            if blink_connection:
+                blink_connection.execute(item.prepare_download(blink))
+                success = blink_connection.execute(
+                    item.download_video(blink, str(filepath))
+                )
+            else:
+                success = False
             if success is not True:
                 api_response, status_code = create_api_response(
                     success=False,

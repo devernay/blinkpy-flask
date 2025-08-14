@@ -22,6 +22,8 @@ from blinkapp.models.ids import CameraId
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
     from blinkpy.livestream import BlinkLiveStream
+from blinkpy.camera import BlinkCamera
+
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.camera_service import (
     find_camera_by_id,
@@ -35,7 +37,6 @@ from blinkapp.utils.errors import CameraError, ValidationError
 from blinkapp.utils.validators import (
     extract_thumbnail_timestamp,
 )
-from blinkpy.camera import BlinkCamera
 from config import Config
 from route_decorators import api_route_with_validation
 
@@ -233,8 +234,7 @@ def setup_camera_routes(app: Flask) -> None:
         with error_context("refresh camera thumbnail", CameraError):
             # Remove camera thumbnail from cache in background
             def remove_thumbnail_cache() -> None:
-                cache_key = str(camera_id)
-                cached_info = thumbnail_cache.get(cache_key)
+                cached_info = thumbnail_cache.get(camera_id)
                 if cached_info is not None:
                     # Remove cached file
                     if "filename" in cached_info:
@@ -248,7 +248,7 @@ def setup_camera_routes(app: Flask) -> None:
                         except OSError as e:
                             logger.debug(f"Could not remove cached thumbnail: {e}")
                     # Remove from cache
-                    thumbnail_cache.pop(cache_key, None)
+                    thumbnail_cache.pop(camera_id, {})
 
             executor.submit(remove_thumbnail_cache)
 
@@ -431,9 +431,12 @@ def setup_camera_routes(app: Flask) -> None:
             if camera is None:
                 raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
 
-            timestamp = extract_thumbnail_timestamp(camera.thumbnail)
+            thumbnail_url = getattr(camera, "thumbnail", None)
+            timestamp = (
+                extract_thumbnail_timestamp(thumbnail_url) if thumbnail_url else None
+            )
             logger.info(
-                f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {camera.thumbnail}"
+                f"Camera {camera_id} thumbnail timestamp: {timestamp}, URL: {thumbnail_url}"
             )
             response, _ = create_api_response(
                 success=True, data={"timestamp": timestamp}

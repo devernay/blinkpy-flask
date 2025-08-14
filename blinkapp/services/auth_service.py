@@ -33,9 +33,7 @@ def is_authenticated() -> bool:
         True if authenticated and startup complete, False otherwise
     """
     # Import here to avoid circular imports
-    import blinkapp
-
-    blink = blinkapp.blink
+    from blinkapp.services.blink_service import blink
 
     return blink is not None and blink.auth.token is not None
 
@@ -73,13 +71,10 @@ async def initialize_blink(
         ...     pass
     """
     # Import here to avoid circular imports during module initialization
-    import blinkapp
-
-    blink_connection = blinkapp.blink_connection
+    from blinkapp.services.connection_service import blink_connection
 
     with error_context("initialize Blink system", AuthenticationError):
         from aiohttp import ClientSession
-
         from blinkpy.auth import Auth
         from blinkpy.blinkpy import Blink
 
@@ -107,9 +102,10 @@ async def initialize_blink(
         logger.info("Blink system initialized successfully")
 
         # Update global blink reference for use in route handlers
-        import blinkapp
 
-        blinkapp.blink = blink
+        from blinkapp.services import blink_service
+
+        blink_service.blink = blink
 
         return True
 
@@ -205,7 +201,6 @@ async def load_saved_blink() -> bool:
     if cred_file.exists():
         try:
             from aiohttp import ClientSession
-
             from blinkpy.auth import Auth
             from blinkpy.blinkpy import (
                 Blink,

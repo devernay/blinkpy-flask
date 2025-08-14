@@ -17,7 +17,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from blink_connection import BlinkConnection
-    from blinkpy import Blink
+
+from blinkpy.blinkpy import Blink
 
 logger = logging.getLogger(__name__)
 

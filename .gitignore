@@ -2,7 +2,7 @@ cache
 __pycache__
 .DS_Store
 *.bak
-/blinkpy/
+/blinkpy-source/
 .python-version
 *.log
 tests/.coverage

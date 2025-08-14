@@ -69,7 +69,8 @@ def start_camera_stream(
         tcp_url: TCP stream URL from camera
 
     Returns:
-        Tuple of (hls_url, error_message)
+        Tuple of (hls_url, error_message). If successful, hls_url is set and error_message is None.
+        If failed, hls_url is None and error_message contains the error.
     """
     try:
         stream_manager = ensure_stream_manager_initialized()
@@ -135,7 +136,7 @@ def get_hls_file(camera_id: CameraId, filename: str) -> tuple[bytes | None, str 
         filename: HLS filename to retrieve
 
     Returns:
-        Tuple of (file_content, content_type)
+        Tuple of (file_content, content_type). Both None if file not found or error.
     """
     try:
         stream_manager = ensure_stream_manager_initialized()
