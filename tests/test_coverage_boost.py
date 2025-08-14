@@ -60,7 +60,8 @@ class TestBaseIdNotImplementedMethods(BaseTestCase):
 
         # Test through subclass that implements _get_pattern but not _get_type_name
         class TestId(BaseId):
-            def _get_pattern(self):
+            @classmethod
+            def _get_pattern(cls):
                 return r"^test$"
 
             # Missing _get_type_name
@@ -251,12 +252,12 @@ class TestGlobalVariableAccess(BaseTestCase):
 
     def test_blink_connection_access(self) -> None:
         """Test blink_connection access."""
-        self.assertTrue(hasattr(blinkapp.services.blink_service, "blink_connection"))
+        from blinkapp.services import blink_service
+
+        self.assertTrue(hasattr(blink_service, "blink_connection"))
         # blink_connection might be None initially
-        if blinkapp.services.blink_service.blink_connection is not None:
-            self.assertTrue(
-                hasattr(blinkapp.services.blink_service.blink_connection, "execute")
-            )
+        if blink_service.blink_connection is not None:
+            self.assertTrue(hasattr(blink_service.blink_connection, "execute"))
 
     def test_stream_manager_access(self) -> None:
         """Test stream_manager access through service."""
@@ -366,19 +367,23 @@ class TestImportAndModuleLoading(BaseTestCase):
 
     def test_third_party_imports(self) -> None:
         """Test third-party imports."""
-        self.assertTrue(hasattr(blinkapp.services.connection_service, "http_session"))
+        from blinkapp.services import connection_service
+
+        self.assertTrue(hasattr(connection_service, "http_session"))
         if hasattr(blinkapp, "Path"):
             self.assertTrue(hasattr(blinkapp, "Path"))
 
     def test_custom_class_imports(self) -> None:
         """Test custom class availability."""
-        self.assertTrue(hasattr(blinkapp.models.ids, "CameraId"))
-        self.assertTrue(hasattr(blinkapp.models.ids, "ClipId"))
+        from blinkapp.models import ids
+
+        self.assertTrue(hasattr(ids, "CameraId"))
+        self.assertTrue(hasattr(ids, "ClipId"))
         self.assertTrue(hasattr(blinkapp, "Config"))
 
         # Test classes are callable
-        self.assertTrue(callable(blinkapp.models.ids.CameraId))
-        self.assertTrue(callable(blinkapp.models.ids.ClipId))
+        self.assertTrue(callable(ids.CameraId))
+        self.assertTrue(callable(ids.ClipId))
 
 
 class TestBasicOperations(BaseTestCase):

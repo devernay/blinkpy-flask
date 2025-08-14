@@ -50,7 +50,7 @@ class TestUtilsDecorators(unittest.TestCase):
         from blinkapp.utils.decorators import error_context
 
         @error_context("test operation")
-        def test_func() -> None:
+        def test_func() -> str:
             return "success"
 
         result = test_func()
