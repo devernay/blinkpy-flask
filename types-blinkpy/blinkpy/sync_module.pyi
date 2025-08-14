@@ -1,6 +1,7 @@
 # Stubs for blinkpy.sync_module module
 from typing import TYPE_CHECKING, Any
 
+from aiohttp import ClientResponse
 from requests.structures import CaseInsensitiveDict
 
 if TYPE_CHECKING:
@@ -45,7 +46,9 @@ class BlinkSyncModule:
 
     # Async methods
     async def start(self) -> None: ...
-    async def async_arm(self, value: bool) -> bool: ...
+    async def async_arm(
+        self, value: bool
+    ) -> dict[str, Any] | ClientResponse | None: ...
     async def sync_initialize(self) -> None: ...
     async def _init_local_storage(self, sync_id: str) -> None: ...
     async def update_cameras(
