@@ -134,10 +134,6 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
         >>> validate_string_input("<script>alert('xss')</script>", 50, "Username")
         ValueError: Username contains invalid characters
     """
-    # Type validation - ensure we received a string
-    if not isinstance(value, str):
-        raise ValueError(f"{field_name} must be a string")
-
     # Strip whitespace and check for empty values after trimming
     value = value.strip()
     if not value:
@@ -270,15 +266,16 @@ def format_clips_by_day(
         day_data = clips_by_day[day_key]
 
         # Ensure day_data is a dict and has clips list
-        if isinstance(day_data, dict) and "clips" in day_data:
+        if "clips" in day_data:
             clips_list = day_data["clips"]
-            if isinstance(clips_list, list):
-                # Sort clips within each day by time (newest first)
-                # This ensures consistent ordering regardless of API response order
-                clips_list.sort(key=lambda x: x["time"], reverse=True)
-
-                # Add clip count for UI display (shows "5 clips" in interface)
-                day_data["count"] = len(clips_list)
+            # Sort clips within each day by time (newest first)
+            # This ensures consistent ordering regardless of API response order
+            assert isinstance(clips_list, list), (
+                f"Expected clips_list to be list, got {type(clips_list)}"
+            )
+            clips_list.sort(key=lambda x: x["time"], reverse=True)
+            # Add clip count for UI display (shows "5 clips" in interface)
+            day_data["count"] = len(clips_list)
         clips.append(day_data)
     return clips
 

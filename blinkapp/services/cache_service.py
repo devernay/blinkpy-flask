@@ -89,11 +89,11 @@ def ensure_cache_paths_initialized() -> None:
     import blinkapp
 
     if (
-        blinkapp.CACHE_DIR is None
-        or blinkapp.CREDENTIALS_FILE is None
-        or blinkapp.THUMBNAIL_CACHE_DIR is None
-        or blinkapp.CLIPS_CACHE_DIR is None
-        or blinkapp.SETTINGS_FILE is None
+        not blinkapp.CACHE_DIR
+        or not blinkapp.CREDENTIALS_FILE
+        or not blinkapp.THUMBNAIL_CACHE_DIR
+        or not blinkapp.CLIPS_CACHE_DIR
+        or not blinkapp.SETTINGS_FILE
     ):
         raise RuntimeError(
             "Cache paths not initialized. Call initialize_blink() first."
@@ -164,19 +164,19 @@ def load_thumbnail_cache() -> None:
 
     try:
         # Get valid camera IDs from current system
-        valid_camera_ids = set()
+        valid_camera_ids: set[str] = set()
         if blink and blink.available:
             # Type guard: blink is definitely Blink here, not None
             assert blink is not None
-            for sync_name, sync in blink.sync.items():
-                for cam_name, cam in sync.cameras.items():
+            for _, sync in blink.sync.items():
+                for _, cam in sync.cameras.items():
                     # Use isinstance to properly narrow the type
                     if isinstance(cam, BlinkCamera) and cam.camera_id is not None:
-                        valid_camera_ids.add(cam.camera_id)
+                        valid_camera_ids.add(str(cam.camera_id))
 
         # Group thumbnails by camera ID
         camera_thumbnails: dict[str, list[tuple[int, str, Path]]] = {}
-        files_to_remove = []
+        files_to_remove: list[Path] = []
 
         for file_path in cache_dir.glob("*.jpg"):
             filename = file_path.name
@@ -217,7 +217,7 @@ def load_thumbnail_cache() -> None:
 
             # Keep the newest, mark others for removal
             if thumbnails:
-                newest_ts, newest_filename, newest_path = thumbnails[0]
+                newest_ts, newest_filename, _ = thumbnails[0]
                 thumbnail_cache[CameraId(camera_id)] = {
                     "timestamp": newest_ts,
                     "filename": newest_filename,
@@ -227,7 +227,7 @@ def load_thumbnail_cache() -> None:
                 )
 
                 # Mark older thumbnails for removal
-                for old_ts, old_filename, old_path in thumbnails[1:]:
+                for _, old_filename, old_path in thumbnails[1:]:
                     logger.debug(
                         f"Removing old thumbnail {old_filename} for camera {camera_id}"
                     )

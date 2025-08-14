@@ -39,7 +39,7 @@ def get_systems() -> dict[str, Any]:
     assert blink is not None, "Blink must be initialized"
 
     logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
-    systems = []
+    systems: list[dict[str, Any]] = []
     for name, sync in blink.sync.items():
         logger.debug(f"Processing sync: {name}, network_id: {sync.network_id}")
         systems.append(
@@ -74,7 +74,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     from blinkapp.utils.errors import ValidationError
     from blinkapp.utils.validators import extract_thumbnail_timestamp
 
-    devices = []
+    devices: list[dict[str, Any]] = []
 
     # Find the sync module for this network
     sync_module, error_response = require_sync_module(network_id)
@@ -96,7 +96,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
 
     # Add cameras - refresh thumbnails in Blink thread
     thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
-    for camera_name, camera in sync_module.cameras.items():
+    for _, camera in sync_module.cameras.items():
         if not isinstance(camera, BlinkCamera):
             continue
 
@@ -173,7 +173,7 @@ def refresh_system() -> dict[str, Any]:
         success = False
 
     if success is not True:
-        response, status_code = create_api_response(
+        response, _ = create_api_response(
             success=False,
             error=Config.ErrorMessages.SYSTEM_REFRESH_FAILED,
             status_code=500,

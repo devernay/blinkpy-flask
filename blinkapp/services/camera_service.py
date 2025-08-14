@@ -55,8 +55,8 @@ def find_camera_by_id(
         return None
 
     # Search through all sync modules and their cameras
-    for sync_name, sync in blink.sync.items():
-        for cam_name, cam in sync.cameras.items():
+    for _, sync in blink.sync.items():
+        for _, cam in sync.cameras.items():
             if str(cam.camera_id) == str(camera_id):
                 return cam
     return None

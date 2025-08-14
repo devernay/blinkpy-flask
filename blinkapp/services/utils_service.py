@@ -91,7 +91,7 @@ def create_device_data(
             logger.debug(
                 f"Failed to calculate time difference for camera {camera.name}: {e}"
             )
-            if camera.last_record and isinstance(camera.last_record, dict):
+            if camera.last_record:
                 # Extract timestamp from last_record dict (common keys: 'created_at', 'updated_at', 'time')
                 timestamp = (
                     camera.last_record.get("created_at")
@@ -228,7 +228,7 @@ def handle_dump_system() -> None:
         if success:
             # Update local storage manifests first
             assert blink is not None
-            for sync_name, sync in blink.sync.items():
+            for _, sync in blink.sync.items():
                 if sync.local_storage:
                     assert blink_connection is not None
                     blink_connection.execute(sync.update_local_storage_manifest())

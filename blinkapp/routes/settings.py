@@ -60,7 +60,7 @@ def setup_settings_routes(app: Flask) -> None:
         else:  # PUT - Save new settings
             # Validate incoming JSON data
             assert isinstance(request, Request)
-            data = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+            data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
             if data is None or not isinstance(data, dict):
                 response, status_code = create_api_response(
                     success=False,

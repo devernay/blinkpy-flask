@@ -264,7 +264,7 @@ def _validate_json_payload(
     from blinkapp import Config, create_api_response
 
     assert isinstance(request, Request)
-    data = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+    data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
     if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(
             success=False,

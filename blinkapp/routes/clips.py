@@ -94,7 +94,7 @@ def setup_clips_routes(app: Flask) -> None:
 
         clip_id, error_response = parse_clip_id(clip_id_str)
         if error_response is not None:
-            response, status_code = error_response
+            response, _ = error_response
             return response  # Return just the dict, not the tuple
 
         assert clip_id is not None

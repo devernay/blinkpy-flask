@@ -265,13 +265,9 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, ClipCacheEntry]):
         old_clips: list[ClipId] = []
 
         for clip_id, clip_entry in self.items_list():
-            if isinstance(clip_entry, dict):
-                cached_at = clip_entry.get("cached_at", 0)
-                if (
-                    isinstance(cached_at, int | float)
-                    and (current_time - cached_at) > max_age_seconds
-                ):
-                    old_clips.append(clip_id)
+            cached_at = clip_entry.get("cached_at", 0)
+            if (current_time - cached_at) > max_age_seconds:
+                old_clips.append(clip_id)
 
         for clip_id in old_clips:
             del self[clip_id]

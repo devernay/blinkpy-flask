@@ -172,10 +172,9 @@ def update_camera_thumbnail(
 async def _init_camera_stream(camera: "BlinkCamera") -> "BlinkLiveStream | None":
     """Initialize camera livestream."""
     stream = await camera.init_livestream()
-    if stream is not None:
-        await stream.start()
-        # Start feeding the stream in the background
-        asyncio.create_task(stream.feed())
+    await stream.start()
+    # Start feeding the stream in the background
+    asyncio.create_task(stream.feed())
     return stream
 
 
@@ -298,13 +297,7 @@ def setup_camera_routes(app: Flask) -> None:
             logger.info(f"Livestream TCP URL for camera {camera_id}: {tcp_url}")
 
             # Start HLS transcoding from the TCP stream
-            error_msg = "Failed to start HLS transcoding"  # Default error message
-            if stream_manager is not None:
-                hls_url, error_msg = stream_manager.start_stream(
-                    str(camera_id), tcp_url
-                )
-            else:
-                hls_url = None
+            hls_url, error_msg = stream_manager.start_stream(str(camera_id), tcp_url)
 
             if hls_url is not None:
                 # Store the stream object for later cleanup

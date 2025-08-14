@@ -1,5 +1,7 @@
 """System management routes for the Blink Flask application."""
 
+from typing import Any
+
 from flask import Flask, request
 from flask.wrappers import Request
 
@@ -76,9 +78,9 @@ def setup_system_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         assert isinstance(request, Request)
-        data = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+        data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
         if data is not None and isinstance(data, dict):
-            armed = data.get("armed")
+            armed: bool | None = data.get("armed")
             if isinstance(armed, bool):
                 return arm_system(network_id, armed)
         # Handle invalid data - this should be handled by validation decorators

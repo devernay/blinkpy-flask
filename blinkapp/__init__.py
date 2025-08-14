@@ -630,7 +630,7 @@ def load_clips_cache() -> None:
                     try:
                         if clip_id.is_local():
                             # Validate local clip - if local storage is available and ready, trust it
-                            sync_name, item_id = clip_id.get_local_parts()
+                            sync_name, _ = clip_id.get_local_parts()
                             sync_dict = blink.sync
                             if sync_name in sync_dict:
                                 sync_module = sync_dict[sync_name]

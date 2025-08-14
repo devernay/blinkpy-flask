@@ -85,9 +85,6 @@ def start_camera_stream(
     """
     try:
         stream_manager = ensure_stream_manager_initialized()
-        if stream_manager is None:
-            return None, "Stream manager not available"
-
         hls_url, error_msg = stream_manager.start_stream(str(camera_id), tcp_url)
         return hls_url, error_msg
     except Exception as e:
@@ -106,9 +103,6 @@ def stop_camera_stream(camera_id: CameraId) -> bool:
     """
     try:
         stream_manager = ensure_stream_manager_initialized()
-        if stream_manager is None:
-            return False
-
         if stream_manager.is_stream_active(str(camera_id)):
             stream_manager.stop_stream(str(camera_id))
             logger.info(f"Stream stopped for camera {camera_id}")
@@ -130,9 +124,6 @@ def is_stream_active(camera_id: CameraId) -> bool:
     """
     try:
         stream_manager = ensure_stream_manager_initialized()
-        if stream_manager is None:
-            return False
-
         return stream_manager.is_stream_active(str(camera_id))
     except Exception as e:
         logger.error(f"Failed to check stream status for camera {camera_id}: {e}")
@@ -151,9 +142,6 @@ def get_hls_file(camera_id: CameraId, filename: str) -> tuple[bytes | None, str 
     """
     try:
         stream_manager = ensure_stream_manager_initialized()
-        if stream_manager is None:
-            return None, None
-
         return stream_manager.get_hls_file(str(camera_id), filename)
     except Exception as e:
         logger.error(f"Failed to get HLS file {filename} for camera {camera_id}: {e}")
@@ -273,7 +261,7 @@ class HLSStream:
 
                 if self.process.poll() is not None:
                     # Process already terminated
-                    stdout, stderr = self.process.communicate()
+                    _, stderr = self.process.communicate()
                     error_msg = (
                         stderr.decode() if stderr else "FFmpeg process terminated"
                     )
@@ -460,7 +448,7 @@ class StreamManager:
     def cleanup_inactive_streams(self) -> None:
         """Clean up inactive streams."""
         with self.lock:
-            inactive_cameras = []
+            inactive_cameras: list[str] = []
             for camera_id, stream in self.streams.items():
                 if not stream.is_active():
                     inactive_cameras.append(camera_id)
