@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Any
 
 from flask import Flask, jsonify, request
-from flask.typing import ResponseReturnValue
+from flask.typing import (
+    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
+)
 from flask.wrappers import Request
 
 from blinkapp.config import Config
@@ -24,7 +26,7 @@ def setup_settings_routes(app: Flask) -> None:
 
     @app.route("/api/settings", methods=["GET", "PUT"])
     @method_dispatch_route("settings")
-    def settings() -> ResponseReturnValue:
+    def settings() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Get or save application settings.
 
         GET: Returns current user settings (temperature units, clip retention, etc.)

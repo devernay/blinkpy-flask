@@ -371,7 +371,9 @@ def initialize_cache_paths() -> None:
         SETTINGS_FILE
 
     # Get cache directory from Flask config or use sensible default
-    cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
+    cache_dir_str = app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR)
+    assert isinstance(cache_dir_str, str)
+    cache_dir = Path(cache_dir_str)
 
     # Initialize cache-related paths using the base cache directory
     _init_cache_paths(cache_dir)

@@ -21,13 +21,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from flask.typing import ResponseReturnValue
-
-    from blinkapp.models.ids import ClipId
-
 import requests
 from flask import jsonify, send_file
+from flask.typing import (
+    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
+)
+
+if TYPE_CHECKING:
+    from blinkapp.models.ids import ClipId
 
 from blinkapp.config import Config
 from blinkapp.models.cache import ClipCacheEntry
@@ -224,7 +225,7 @@ def process_local_clips() -> list[dict[str, object]]:
     return format_clips_by_day(clips_by_day)
 
 
-def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
+def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
     """Download cloud storage clip."""
     from blinkapp import (
         CLIPS_CACHE_DIR,
@@ -328,7 +329,7 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
 
 def download_local_clip(
     clip_id: ClipId, sync_name: str, item_id: int
-) -> ResponseReturnValue:
+) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
     """Download local storage clip using blinkpy methods."""
     from blinkapp import (
         CLIPS_CACHE_DIR,

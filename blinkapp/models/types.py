@@ -10,7 +10,9 @@ from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
 
 from flask import Response
-from flask.typing import ResponseReturnValue
+from flask.typing import (
+    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
+)
 
 # Common type variables used across the application
 P = ParamSpec("P")
@@ -42,9 +44,9 @@ SystemDict = dict[str, object]  # System information dictionary
 ApiResponse = tuple[JsonDict, int]  # Standard API response (data, status_code)
 ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 
-# Flask response types - more specific typing
+# Flask response types - use Flask's own types
 FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, Any]]
-FlaskRouteResponse = ResponseReturnValue  # What Flask route functions can return
+FlaskRouteResponse = ResponseReturnValue  # pyright: ignore[reportUnknownVariableType]
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
 
