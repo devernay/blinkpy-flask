@@ -18,6 +18,8 @@ __all__ = [
 import logging
 from typing import TYPE_CHECKING, Any
 
+from blinkpy.camera import BlinkCamera
+
 if TYPE_CHECKING:
     from blinkapp.models.cache import ClipsCache, ThumbnailCache
 
@@ -146,7 +148,6 @@ def load_thumbnail_cache() -> None:
         - File system errors: Logged, operation continues
     """
     from pathlib import Path
-    from typing import cast
 
     import blinkapp
     from blinkapp.models.ids import CameraId
@@ -156,7 +157,7 @@ def load_thumbnail_cache() -> None:
     thumbnail_cache = ensure_thumbnail_cache_initialized()
 
     assert blinkapp.THUMBNAIL_CACHE_DIR is not None
-    cache_dir = Path(cast(str, blinkapp.THUMBNAIL_CACHE_DIR))
+    cache_dir = Path(blinkapp.THUMBNAIL_CACHE_DIR)
     if not cache_dir.exists():
         logger.warning(f"Thumbnail cache directory does not exist: {cache_dir}")
         return
@@ -165,9 +166,13 @@ def load_thumbnail_cache() -> None:
         # Get valid camera IDs from current system
         valid_camera_ids = set()
         if blink and blink.available:
+            # Type guard: blink is definitely Blink here, not None
+            assert blink is not None
             for sync_name, sync in blink.sync.items():
                 for cam_name, cam in sync.cameras.items():
-                    valid_camera_ids.add(cam.camera_id)
+                    # Use isinstance to properly narrow the type
+                    if isinstance(cam, BlinkCamera) and cam.camera_id is not None:
+                        valid_camera_ids.add(cam.camera_id)
 
         # Group thumbnails by camera ID
         camera_thumbnails: dict[str, list[tuple[int, str, Path]]] = {}

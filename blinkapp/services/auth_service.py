@@ -15,7 +15,7 @@ __all__ = [
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
@@ -196,7 +196,7 @@ async def load_saved_blink() -> bool:
     from blinkapp.services.blink_service import blink
 
     assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
-    cred_file = Path(cast(str, CREDENTIALS_FILE))
+    cred_file = Path(CREDENTIALS_FILE)
 
     # Check if credentials file exists before attempting to load
     if cred_file.exists():
@@ -212,9 +212,7 @@ async def load_saved_blink() -> bool:
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
             # Type ignore for mypy issue with blinkpy's json_load function
-            auth_data: dict[str, Any] | None = cast(
-                dict[str, Any] | None, await json_load(cast(str, CREDENTIALS_FILE))
-            )
+            auth_data: dict[str, Any] | None = await json_load(CREDENTIALS_FILE)
 
             # Create new HTTP session and attempt authentication with saved data
             session_obj = ClientSession()

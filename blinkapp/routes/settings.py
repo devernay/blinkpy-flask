@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
@@ -36,7 +36,7 @@ def setup_settings_routes(app: Flask) -> None:
         if request.method == "GET":
             # Load existing settings from file
             assert SETTINGS_FILE is not None
-            settings_file = Path(cast(str, SETTINGS_FILE))
+            settings_file = Path(SETTINGS_FILE)
 
             if settings_file.exists():
                 # Read saved settings from JSON file
@@ -69,7 +69,7 @@ def setup_settings_routes(app: Flask) -> None:
 
             # Load existing settings to merge with new data
             assert SETTINGS_FILE is not None
-            settings_file = Path(cast(str, SETTINGS_FILE))
+            settings_file = Path(SETTINGS_FILE)
 
             if settings_file.exists():
                 # Load current settings from file

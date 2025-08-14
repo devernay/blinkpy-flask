@@ -7,8 +7,6 @@ This module handles administrative functionality including:
 - Placeholder/development routes
 """
 
-from typing import cast
-
 from flask import Flask, Response, jsonify
 
 from blinkapp.config import Config
@@ -93,4 +91,4 @@ def register_admin_routes(app: Flask) -> None:
             error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
             status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
         )
-        return cast(Response, jsonify(response)), status_code
+        return jsonify(response), status_code

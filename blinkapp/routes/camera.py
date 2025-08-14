@@ -12,7 +12,7 @@ Extracted from app.py to improve code organization and maintainability.
 import asyncio
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from flask import Flask, Response, jsonify, request
 
@@ -131,7 +131,7 @@ def update_camera_thumbnail(
             old_filename = old_entry.get("filename")
             if old_filename is not None:
                 assert THUMBNAIL_CACHE_DIR is not None
-                old_filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / old_filename
+                old_filepath = Path(THUMBNAIL_CACHE_DIR) / old_filename
                 try:
                     if old_filepath.exists():
                         old_filepath.unlink()
@@ -149,7 +149,7 @@ def update_camera_thumbnail(
             # Save to file with new timestamp
             filename = f"{cache_key}_{current_ts}.jpg"
             assert THUMBNAIL_CACHE_DIR is not None
-            filepath = Path(cast(str, THUMBNAIL_CACHE_DIR)) / filename
+            filepath = Path(THUMBNAIL_CACHE_DIR) / filename
             try:
                 filepath.write_bytes(image_data)
                 # Update cache info atomically
@@ -239,7 +239,7 @@ def setup_camera_routes(app: Flask) -> None:
                     # Remove cached file
                     if "filename" in cached_info:
                         assert THUMBNAIL_CACHE_DIR is not None
-                        cached_file = Path(cast(str, THUMBNAIL_CACHE_DIR)) / str(
+                        cached_file = Path(THUMBNAIL_CACHE_DIR) / str(
                             cached_info["filename"]
                         )
                         try:
@@ -484,9 +484,7 @@ def setup_camera_routes(app: Flask) -> None:
             # Check if cached version is current
             if current_ts <= cached_ts and cached_filename is not None:
                 assert THUMBNAIL_CACHE_DIR is not None
-                cached_file = Path(cast(str, THUMBNAIL_CACHE_DIR)) / str(
-                    cached_filename
-                )
+                cached_file = Path(THUMBNAIL_CACHE_DIR) / str(cached_filename)
                 if cached_file.exists():
                     try:
                         image_data = cached_file.read_bytes()

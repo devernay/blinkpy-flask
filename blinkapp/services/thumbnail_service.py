@@ -14,7 +14,7 @@ __all__ = [
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import ClipId
@@ -68,7 +68,7 @@ def generate_clip_thumbnail(
 
     thumbnail_filename = filename.replace(".mp4", ".jpg")
     assert CLIPS_CACHE_DIR is not None
-    thumbnail_path = Path(cast(str, CLIPS_CACHE_DIR)) / thumbnail_filename
+    thumbnail_path = Path(CLIPS_CACHE_DIR) / thumbnail_filename
 
     if thumbnail_path.exists():
         return thumbnail_path

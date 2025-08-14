@@ -171,7 +171,7 @@ def setup_clips_routes(app: Flask) -> None:
                 # For cloud clips, check if we have cloud thumbnail URL
                 if not clip_id.is_local():
                     cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
-                    if cloud_thumbnail_url:
+                    if cloud_thumbnail_url is not None:
                         response, _ = create_api_response(
                             success=True, data={"available": True, "type": "cloud"}
                         )
@@ -193,7 +193,7 @@ def setup_clips_routes(app: Flask) -> None:
             # For cloud clips, try to download and cache thumbnail
             if not clip_id.is_local():
                 cloud_thumbnail_url = cached_clip.get("cloud_thumbnail_url")
-                if cloud_thumbnail_url:
+                if cloud_thumbnail_url is not None:
                     # Try to download and cache the thumbnail
                     from blinkapp.services.clip_service import (
                         download_and_cache_cloud_thumbnail,

@@ -6,9 +6,9 @@ import traceback
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Protocol, TypeVar, cast
+from typing import Any, Protocol, TypeVar
 
-from flask import jsonify, request
+from flask import Response, jsonify, request
 
 from blinkapp.config import Config
 from blinkapp.models.types import (
@@ -202,7 +202,6 @@ __all__ = [
 
 
 # Type variables for template functions
-TemplateF = TypeVar("TemplateF", bound=Callable[..., TemplateResult])
 
 
 class CacheProtocol(Protocol):
@@ -225,13 +224,17 @@ def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
     from blinkapp import create_api_response
 
     # If the function already returns a Flask response, pass it through
-    if hasattr(result, "status_code") or isinstance(result, tuple):
-        return cast(FlaskResponse, result)
+    if isinstance(result, Response) or (
+        isinstance(result, tuple)
+        and len(result) >= 2
+        and isinstance(result[0], Response)
+    ):
+        return result
 
     # Otherwise, wrap in standard API response
     if isinstance(result, dict):
         # For dict results, cast to the expected type
-        dict_result = cast(dict[str, object], result)
+        dict_result = result
         response, status_code = create_api_response(success=True, data=dict_result)
         return jsonify(response), status_code
     else:
@@ -383,7 +386,7 @@ def _create_base_decorator(
                         return param_error
                     # parameter validation passed, update kwargs
                     # We need to cast back to the original type for the function call
-                    kwargs = cast(Any, kwargs_dict)
+                    kwargs = kwargs_dict
 
                 # Call the original function
                 result = func(*args, **kwargs)
@@ -401,7 +404,7 @@ def _create_base_decorator(
                 if skip_response_formatting:
                     # For file responses and method dispatch, the function should return FlaskResponse
                     # Cast to FlaskResponse as this is the expected contract for these decorators
-                    return cast(FlaskResponse, result)
+                    return result
                 else:
                     return _handle_response_formatting(result)
 
@@ -419,10 +422,10 @@ def _get_cache_key(
     kwargs: dict[str, Any] | None = None,
 ) -> CacheKey:
     """Generate cache key from function arguments."""
-    if cache_key_func:
+    if cache_key_func is not None:
         return cache_key_func(*(args or ()), **(kwargs or {}))
     else:
-        return str(args[0]) if args else "default"
+        return str(args[0]) if args is not None else "default"
 
 
 def _create_cached_response(cached_result: Any) -> FlaskResponse:
@@ -444,8 +447,8 @@ def _create_success_message_response(message: str) -> FlaskResponse:
 
 
 def _is_error_response(result: Any) -> bool:
-    """Check if result is an error response (has status_code or is tuple)."""
-    return hasattr(result, "status_code") or isinstance(result, tuple)
+    """Check if result is an error response (Response object or tuple)."""
+    return isinstance(result, Response | tuple)
 
 
 def api_route(operation_name: str | None = None) -> DecoratorFunction:
@@ -641,7 +644,7 @@ def template_route_with_validation(
     validate_form: bool = False,
     form_fields: dict[str, tuple[int, str]]
     | None = None,  # field_name: (max_length, display_name)
-) -> Callable[[TemplateF], TemplateF]:
+) -> Callable[[Callable[..., TemplateResult]], Callable[..., TemplateResult]]:
     """
     Decorator for template routes with form validation.
 
@@ -654,7 +657,7 @@ def template_route_with_validation(
         Decorated function that handles form validation and error rendering
     """
 
-    def decorator(func: TemplateF) -> TemplateF:
+    def decorator(func: Callable[..., TemplateResult]) -> Callable[..., TemplateResult]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> TemplateResult:
             from flask import render_template, request
@@ -688,8 +691,8 @@ def template_route_with_validation(
 
             except Exception as e:
                 # _handle_error returns ErrorResponse which is compatible with TemplateResult
-                return cast(TemplateResult, _handle_error(e, operation))
+                return _handle_error(e, operation)
 
-        return cast(TemplateF, wrapper)
+        return wrapper
 
     return decorator

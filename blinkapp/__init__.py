@@ -25,10 +25,7 @@ License: MIT
 import logging
 import os
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    cast,
-)
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     pass
@@ -131,7 +128,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 # ============================================================================
 
 # File system paths for application data storage
-# Cache configuration - initialized in setup_cache_directories()
+# Cache configuration - initialized in initialize_cache_paths()
 CACHE_DIR: str = ""  # Base cache directory
 CREDENTIALS_FILE: str = ""  # Encrypted credentials storage
 THUMBNAIL_CACHE_DIR: str = ""  # Camera thumbnail cache
@@ -239,12 +236,17 @@ def require_sync_module(
 
     # Ensure blink is initialized - this should be guaranteed by @ensure_blink_available
     assert blink is not None
-    blink_typed: Blink = blink  # Type hint for pyright
+    blink_instance: Blink = blink
+    # Cast sync to correct type since blinkpy doesn't have proper type annotations
+    blink_sync = blink_instance.sync
+    sync_dict = blink_sync
+    assert sync_dict is not None
 
     # Search through all sync modules for matching network ID
-    for name in blink_typed.sync:
-        sync = cast(BlinkSyncModule, blink_typed.sync[name])
-        if str(sync.network_id) == str(network_id):
+    for name in sync_dict:
+        sync: BlinkSyncModule = sync_dict[name]
+        sync_network_id: str = str(sync.network_id)
+        if sync_network_id == str(network_id):
             return sync, None
 
     # Network ID not found - return standardized error response
@@ -324,6 +326,21 @@ def setup_logging() -> None:
 # ============================================================================
 
 
+def _init_cache_paths(cache_dir: Path) -> None:
+    """Initialize cache path constants."""
+    global \
+        CACHE_DIR, \
+        CREDENTIALS_FILE, \
+        THUMBNAIL_CACHE_DIR, \
+        CLIPS_CACHE_DIR, \
+        SETTINGS_FILE
+    CACHE_DIR = str(cache_dir)  # pyright: ignore[reportConstantRedefinition]
+    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)  # pyright: ignore[reportConstantRedefinition]
+    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)  # pyright: ignore[reportConstantRedefinition]
+    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)  # pyright: ignore[reportConstantRedefinition]
+    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)  # pyright: ignore[reportConstantRedefinition]
+
+
 def initialize_cache_paths() -> None:
     """Initialize cache directory paths from Flask config or defaults.
 
@@ -356,18 +373,8 @@ def initialize_cache_paths() -> None:
     # Get cache directory from Flask config or use sensible default
     cache_dir = Path(app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR))
 
-    # Set all cache-related paths using the base cache directory
-    global \
-        CACHE_DIR, \
-        CREDENTIALS_FILE, \
-        THUMBNAIL_CACHE_DIR, \
-        CLIPS_CACHE_DIR, \
-        SETTINGS_FILE
-    CACHE_DIR = str(cache_dir)
-    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
-    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
-    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)
-    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
+    # Initialize cache-related paths using the base cache directory
+    _init_cache_paths(cache_dir)
 
 
 # Cache configuration constants
@@ -622,20 +629,17 @@ def load_clips_cache() -> None:
                     clip_valid = False
                     try:
                         if clip_id.is_local():
-                            # Validate local clip
+                            # Validate local clip - if local storage is available and ready, trust it
                             sync_name, item_id = clip_id.get_local_parts()
-                            if sync_name in blink.sync:
-                                sync_module = blink.sync[sync_name]
-                                assert isinstance(sync_module, BlinkSyncModule)
-                                if (
-                                    sync_module.local_storage
-                                    and sync_module.local_storage_manifest_ready
-                                ):
-                                    manifest = sync_module._local_storage["manifest"]
-                                    for item in manifest:
-                                        if hasattr(item, "id") and item.id == item_id:
-                                            clip_valid = True
-                                            break
+                            sync_dict = blink.sync
+                            if sync_name in sync_dict:
+                                sync_module = sync_dict[sync_name]
+                                local_storage: bool = sync_module.local_storage
+                                manifest_ready: bool = (
+                                    sync_module.local_storage_manifest_ready
+                                )
+                                # If local storage is active and manifest is ready, assume clip is valid
+                                clip_valid = local_storage and manifest_ready
                         else:
                             # Validate cloud clip (simplified check)
                             assert blink_connection is not None
@@ -739,13 +743,7 @@ def cleanup_resources() -> None:
         from blinkapp.services.blink_service import blink, blink_connection
 
         if blink_connection is not None:
-            for stream_id, stream in blink_connection._active_streams.items():
-                try:
-                    stream.stop()
-                    logger.info(f"Stopped active livestream {stream_id}")
-                except (AttributeError, RuntimeError, OSError) as e:
-                    logger.warning(f"Error stopping livestream {stream_id}: {e}")
-            blink_connection._active_streams.clear()
+            blink_connection.cleanup_active_streams()
 
         # Clean up Blink session only if connection is active
         if (

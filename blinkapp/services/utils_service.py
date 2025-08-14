@@ -91,9 +91,16 @@ def create_device_data(
             logger.debug(
                 f"Failed to calculate time difference for camera {camera.name}: {e}"
             )
-            last_updated = (
-                format_time_ago(camera.last_record) if camera.last_record else "Never"
-            )
+            if camera.last_record and isinstance(camera.last_record, dict):
+                # Extract timestamp from last_record dict (common keys: 'created_at', 'updated_at', 'time')
+                timestamp = (
+                    camera.last_record.get("created_at")
+                    or camera.last_record.get("updated_at")
+                    or camera.last_record.get("time")
+                )
+                last_updated = format_time_ago(timestamp) if timestamp else "Never"
+            else:
+                last_updated = "Never"
 
     # Return standardized device object for consistent API responses
     return {
@@ -169,8 +176,11 @@ def dump_blink_system_info() -> None:
     # All cameras
     logger.info(f"=== CAMERAS ({len(blink.cameras)}) ===")
     for camera_name, camera in blink.cameras.items():
-        logger.info(f"--- Camera: {camera_name} ---")
-        logger.info(f"Attributes: {camera.attributes}")
+        from blinkpy.camera import BlinkCamera
+
+        if isinstance(camera, BlinkCamera):
+            logger.info(f"--- Camera: {camera_name} ---")
+            logger.info(f"Attributes: {camera.attributes}")
 
     logger.info("=== CLOUD VIDEOS (see separate dump) ===")
 
@@ -182,7 +192,6 @@ def handle_dump_system() -> None:
     import logging
     import sys
     from pathlib import Path
-    from typing import cast
 
     from blinkapp import (
         CREDENTIALS_FILE,
@@ -206,7 +215,7 @@ def handle_dump_system() -> None:
     logger.addHandler(console_handler)
 
     assert CREDENTIALS_FILE is not None
-    cred_file = Path(cast(str, CREDENTIALS_FILE))
+    cred_file = Path(CREDENTIALS_FILE)
     if not cred_file.exists():
         logger.error("No saved credentials found.")
         logger.error("Please start the server and login first to save credentials.")

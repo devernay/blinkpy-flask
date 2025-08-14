@@ -19,7 +19,7 @@ __all__ = [
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blinkapp.app_types import ResponseReturnValue
@@ -262,7 +262,7 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
     filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
     assert CLIPS_CACHE_DIR is not None
-    filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
+    filepath = Path(CLIPS_CACHE_DIR) / filename
 
     # Download if not cached
     if not filepath.exists():
@@ -372,7 +372,7 @@ def download_local_clip(
     iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
     filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
     assert CLIPS_CACHE_DIR is not None
-    filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
+    filepath = Path(CLIPS_CACHE_DIR) / filename
 
     # Download if not cached
     if not filepath.exists():
@@ -455,7 +455,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
             filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
             assert CLIPS_CACHE_DIR is not None
-            filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
+            filepath = Path(CLIPS_CACHE_DIR) / filename
 
             if not filepath.exists():
                 media_url = clip_info.get("media")
@@ -591,7 +591,7 @@ def process_local_clip_background(
             iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
             filename = f"{clip_id}_{item.name}_{iso_date}.mp4"
             assert CLIPS_CACHE_DIR is not None
-            filepath = Path(cast(str, CLIPS_CACHE_DIR)) / filename
+            filepath = Path(CLIPS_CACHE_DIR) / filename
 
             if not filepath.exists():
                 if blink_connection:

@@ -10,7 +10,8 @@ import asyncio
 import concurrent.futures
 import logging
 import threading
-from typing import TYPE_CHECKING, Any
+from collections.abc import Coroutine
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
     from concurrent.futures import ThreadPoolExecutor
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
     import requests
 
 from blinkapp.config import Config
+
+T = TypeVar("T")
 
 __all__ = [
     "initialize_connections",
@@ -169,7 +172,7 @@ class BlinkConnection:
             time.sleep(0.1)
             self._started = True
 
-    def execute(self, coro: Any, timeout: int | None = None) -> Any:
+    def execute(self, coro: Coroutine[Any, Any, T], timeout: int | None = None) -> T:
         """Execute async Blink operation in dedicated thread.
 
         Args:
@@ -197,12 +200,34 @@ class BlinkConnection:
         except (RuntimeError, OSError) as e:
             raise BlinkError(f"Blink operation failed: {str(e)}") from e
 
+    def cleanup_active_streams(self) -> None:
+        """Clean up all active livestreams.
+
+        Stops and removes all active streams from the connection.
+        This is typically called during application shutdown.
+        """
+        if not self._active_streams:
+            return
+
+        logger.info(f"Cleaning up {len(self._active_streams)} active streams")
+        for stream_id, stream in list(self._active_streams.items()):
+            try:
+                stream.stop()
+                logger.info(f"Stopped active livestream {stream_id}")
+            except (AttributeError, RuntimeError, OSError) as e:
+                logger.warning(f"Error stopping livestream {stream_id}: {e}")
+
+        self._active_streams.clear()
+
     def shutdown(self) -> None:
         """Shutdown Blink connection and clean up resources.
 
         Gracefully closes Blink session, stops event loop, and marks
         connection as not started.
         """
+        # Clean up active streams first
+        self.cleanup_active_streams()
+
         # Close Blink session
         if self.blink is not None:
             try:

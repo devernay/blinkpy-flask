@@ -7,3 +7,4 @@ __pycache__
 *.log
 tests/.coverage
 /blinkpy-stubs/blinkpy_stubs.egg-info
+/types-blinkpy/types_blinkpy.egg-info

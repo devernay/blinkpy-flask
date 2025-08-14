@@ -16,6 +16,8 @@ __all__ = [
 import logging
 from typing import TYPE_CHECKING, Any
 
+from blinkpy.camera import BlinkCamera
+
 if TYPE_CHECKING:
     from blinkapp.models.ids import NetworkId
 
@@ -95,9 +97,15 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     # Add cameras - refresh thumbnails in Blink thread
     thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
     for camera_name, camera in sync_module.cameras.items():
+        if not isinstance(camera, BlinkCamera):
+            continue
+
         logger.debug(
             f"Processing camera: {camera.name}, current thumbnail: {camera.thumbnail}"
         )
+
+        if camera.camera_id is None:
+            continue
 
         cache_key = CameraId(camera.camera_id)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)

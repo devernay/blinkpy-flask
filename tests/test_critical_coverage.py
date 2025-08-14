@@ -42,17 +42,13 @@ class TestLoggingSetup(BaseTestCase):
         mock_file_handler = Mock()
         mock_file.return_value = mock_file_handler
 
-        try:
-            from blinkapp import initialize_cache_paths, setup_logging
+        from blinkapp import initialize_cache_paths, setup_logging
 
-            # Initialize cache paths before logging setup
-            initialize_cache_paths()
-            setup_logging()
-            # Should create handlers and configure logger
-            mock_logger.assert_called()
-        except (ImportError, AttributeError):
-            # Function may not exist as standalone
-            self.assertTrue(True)
+        # Initialize cache paths before logging setup
+        initialize_cache_paths()
+        setup_logging()
+        # Should create handlers and configure logger
+        mock_logger.assert_called()
 
     @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
     def test_logging_configuration(self) -> None:
@@ -90,19 +86,14 @@ class TestBlinkInitialization(BaseTestCase):
         mock_auth_instance = Mock()
         mock_auth.return_value = mock_auth_instance
 
-        try:
-            from blinkapp.services.auth_service import initialize_blink
+        from blinkapp.services.auth_service import initialize_blink
 
-            # Mock the async execution
-            mock_connection.execute = mock_execute_with_coroutine_cleanup(
-                return_value=True
-            )
-            result = mock_connection.execute(
-                initialize_blink("test@example.com", "password")
-            )
-            self.assertTrue(result)
-        except (ImportError, AttributeError):
-            self.assertTrue(True)
+        # Mock the async execution
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=True)
+        result = mock_connection.execute(
+            initialize_blink("test@example.com", "password")
+        )
+        self.assertTrue(result)
 
     @patch("blinkapp.services.blink_service.blink_connection")
     @patch("aiohttp.ClientSession")

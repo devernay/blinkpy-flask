@@ -32,6 +32,9 @@ exclude = [
     "venv/"
 ]
 
+# Use only type stubs for blinkpy, but allow library types for other packages
+stubPath = "types-blinkpy"
+
 # Ignore third-party library issues
 reportMissingImports = false
 reportMissingTypeStubs = false

@@ -201,7 +201,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
             Clip data if found, None otherwise
         """
         clip_entry = self.get(clip_id)
-        if clip_entry:
+        if clip_entry is not None:
             # Update access statistics
             access_count = clip_entry.get("access_count", 0)
             if isinstance(access_count, int):
