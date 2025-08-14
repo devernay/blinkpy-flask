@@ -103,6 +103,28 @@ class BaseTestCase(unittest.TestCase):
             pass
 
 
+class FlaskTestCase(BaseTestCase):
+    """Base test case for Flask application tests."""
+
+    def setUp(self) -> None:
+        """Set up Flask test client and configuration."""
+        super().setUp()
+        import tempfile
+
+        from blinkapp import app
+
+        self.app = app
+        self.app.config["TESTING"] = True
+        self.app.config["SECRET_KEY"] = "test-secret-key"
+        self.app.config["CACHE_DIR"] = tempfile.mkdtemp()
+        self.client = self.app.test_client()
+
+        # Initialize cache paths for Flask tests
+        import blinkapp
+
+        blinkapp.initialize_cache_paths()
+
+
 def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
     """Create a mock execute function that properly handles coroutines."""
 
