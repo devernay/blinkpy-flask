@@ -52,7 +52,7 @@ def initialize_connections() -> None:
     http_session = requests.Session()
 
 
-def ensure_executor_initialized():
+def ensure_executor_initialized() -> ThreadPoolExecutor:
     """Ensure executor is initialized.
 
     Returns:

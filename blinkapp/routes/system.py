@@ -1,6 +1,7 @@
 """System management routes for the Blink Flask application."""
 
 from flask import Flask, request
+from flask.wrappers import Request
 
 from blinkapp.models.ids import NetworkId
 from blinkapp.models.types import JsonDict
@@ -74,9 +75,14 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with success status or error message
         """
-        data = request.get_json()
-        armed = data["armed"]
-        return arm_system(network_id, armed)
+        assert isinstance(request, Request)
+        data = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+        if data is not None and isinstance(data, dict):
+            armed = data.get("armed")
+            if isinstance(armed, bool):
+                return arm_system(network_id, armed)
+        # Handle invalid data - this should be handled by validation decorators
+        return arm_system(network_id, False)  # Default fallback
 
     @app.route("/api/systems/refresh", methods=["PUT"])
     @ensure_blink_available

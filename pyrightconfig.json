@@ -1,0 +1,9 @@
+{
+  "include": ["blinkapp", "tests"],
+  "exclude": ["**/__pycache__", "venv", ".venv", "cache", "blinkpy-source"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "strict",
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false
+}

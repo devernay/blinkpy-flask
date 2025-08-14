@@ -22,13 +22,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from blinkapp.app_types import ResponseReturnValue
+    from flask.typing import ResponseReturnValue
+
     from blinkapp.models.ids import ClipId
 
 import requests
 from flask import jsonify, send_file
 
 from blinkapp.config import Config
+from blinkapp.models.cache import ClipCacheEntry
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.cache_service import ensure_clips_cache_initialized
@@ -101,16 +103,23 @@ def process_cloud_clips(
             cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None:
                 # Update existing cache entry with cloud thumbnail URL
-                cached_clip["cloud_thumbnail_url"] = cloud_thumbnail_url
+                cached_clip["cloud_thumbnail_url"] = cloud_thumbnail_url  # type: ignore[misc]
                 clips_cache_instance[clip_id] = cached_clip
             else:
                 # Create new cache entry with cloud thumbnail URL
                 if cloud_thumbnail_url:
-                    clips_cache_instance[clip_id] = {
-                        "cloud_thumbnail_url": cloud_thumbnail_url,
-                        "media_url": video.get("media"),
+                    media_url_obj = video.get("media")
+                    assert media_url_obj is None or isinstance(media_url_obj, str), (
+                        f"Expected media to be str, got {type(media_url_obj)}"
+                    )
+                    media_url = str(media_url_obj) if media_url_obj is not None else ""
+
+                    cache_entry: ClipCacheEntry = {
+                        "cloud_thumbnail_url": str(cloud_thumbnail_url),
+                        "media_url": media_url,
                         "created_at": created_at.isoformat(),
                     }
+                    clips_cache_instance[clip_id] = cache_entry
 
             # Build standardized clip object for UI consumption
             clip_data = {
@@ -233,8 +242,9 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     if cached_clip is not None:
         try:
             # Quick existence check - if it fails, we'll re-download
-            if cached_clip["filepath"].exists():
-                response = send_file(str(cached_clip["filepath"]), as_attachment=True)
+            filepath = cached_clip.get("filepath")
+            if filepath is not None and filepath.exists():
+                response = send_file(str(filepath), as_attachment=True)
                 return response, 200
         except (OSError, AttributeError):
             # File doesn't exist or path is invalid, continue to download
@@ -333,8 +343,9 @@ def download_local_clip(
     if cached_clip is not None:
         try:
             # Quick existence check - if it fails, we'll re-download
-            if cached_clip["filepath"].exists():
-                response = send_file(str(cached_clip["filepath"]), as_attachment=True)
+            filepath = cached_clip.get("filepath")
+            if filepath is not None and filepath.exists():
+                response = send_file(str(filepath), as_attachment=True)
                 return response, 200
         except (OSError, AttributeError):
             # File doesn't exist or path is invalid, continue to download
@@ -431,7 +442,9 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         try:
             # Check if already cached
             cached_clip = clips_cache_instance.get(clip_id)
-            if cached_clip is not None and cached_clip["filepath"].exists():
+            if cached_clip is not None and (lambda fp: fp is not None and fp.exists())(
+                cached_clip.get("filepath")
+            ):
                 return
 
             # Get clip metadata
@@ -477,7 +490,8 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                     return
 
             # Cache the clip and generate thumbnail
-            clips_cache_instance[clip_id] = {"filepath": filepath, "thumbnail": None}
+            cache_entry: ClipCacheEntry = {"filepath": filepath, "thumbnail": None}
+            clips_cache_instance[clip_id] = cache_entry
             thumbnail_path = generate_clip_thumbnail(
                 filepath, filename, middle_frame=False
             )
@@ -569,7 +583,9 @@ def process_local_clip_background(
         try:
             # Check if already cached
             cached_clip = clips_cache_instance.get(clip_id)
-            if cached_clip is not None and cached_clip["filepath"].exists():
+            if cached_clip is not None and (lambda fp: fp is not None and fp.exists())(
+                cached_clip.get("filepath")
+            ):
                 return
 
             assert blink is not None
@@ -605,7 +621,8 @@ def process_local_clip_background(
                     return
 
             # Cache the clip and generate thumbnail
-            clips_cache_instance[clip_id] = {"filepath": filepath, "thumbnail": None}
+            cache_entry: ClipCacheEntry = {"filepath": filepath, "thumbnail": None}
+            clips_cache_instance[clip_id] = cache_entry
             thumbnail_path = generate_clip_thumbnail(
                 filepath, filename, middle_frame=True
             )
@@ -641,10 +658,11 @@ def download_clip_common(
     clips_cache_instance = ensure_clips_cache_initialized()
 
     # Cache the clip first (without thumbnail)
-    clips_cache_instance[clip_id] = {
+    cache_entry: ClipCacheEntry = {
         "filepath": filepath,
         "thumbnail": None,
     }
+    clips_cache_instance[clip_id] = cache_entry
 
     # Generate thumbnail in background
     def generate_thumbnail_bg() -> None:
@@ -669,7 +687,5 @@ def download_clip_common(
     from blinkapp.services.connection_service import ensure_executor_initialized
 
     ensure_executor_initialized().submit(generate_thumbnail_bg)
-    response = send_file(
-        str(filepath), as_attachment=True, attachment_filename=filename
-    )
+    response = send_file(str(filepath), as_attachment=True, download_name=filename)
     return response, 200

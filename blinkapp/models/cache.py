@@ -8,11 +8,46 @@ through multiple inheritance.
 import logging
 import threading
 import time
-from typing import Any, TypeVar
+from pathlib import Path
+from typing import Any, TypedDict, TypeVar
 
 from cachetools import Cache, LRUCache
 
 from blinkapp.models.ids import CameraId, ClipId
+
+
+class ClipData(TypedDict):
+    """Structure for clip data returned by the API."""
+
+    id: str
+    camera_name: str
+    system_name: str
+    time: str
+    event_type: str
+    thumbnail: str
+    media_url: str
+
+
+class ClipCacheEntryRequired(TypedDict):
+    """Required fields for clip cache entries."""
+
+    pass
+
+
+class ClipCacheEntry(ClipCacheEntryRequired, total=False):
+    """Structure for clip cache entries."""
+
+    # All fields are optional since entries can be created with different subsets
+    clip_data: ClipData
+    cached_at: float
+    access_count: int
+    last_accessed: float
+    filepath: Path
+    thumbnail: Path | None
+    cloud_thumbnail_url: str
+    media_url: str
+    created_at: str
+
 
 # Generic type variables for key and value types
 K = TypeVar("K")  # Key type
@@ -158,7 +193,7 @@ class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
         self[camera_id] = cache_entry
 
 
-class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
+class ClipsCache(ThreadSafeLRUCache[ClipId, ClipCacheEntry]):
     """Specialized cache for video clips with metadata and access tracking.
 
     Extends ThreadSafeCache with clip-specific functionality including
@@ -173,7 +208,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         """
         super().__init__(maxsize=maxsize)
 
-    def add_clip(self, clip_id: ClipId, clip_data: dict[str, Any]) -> None:
+    def add_clip(self, clip_id: ClipId, clip_data: ClipData) -> None:
         """Add clip with automatic metadata enhancement.
 
         Stores clip data with additional tracking metadata for cache management
@@ -183,7 +218,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
             clip_id: Unique clip identifier
             clip_data: Clip information and metadata from Blink API
         """
-        enhanced_data: dict[str, Any] = {
+        enhanced_data: ClipCacheEntry = {
             "clip_data": clip_data,
             "cached_at": time.time(),  # When clip was added to cache
             "access_count": 0,  # Track access frequency
@@ -191,7 +226,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         }
         self[clip_id] = enhanced_data
 
-    def get_clip(self, clip_id: ClipId) -> dict[str, Any] | None:
+    def get_clip(self, clip_id: ClipId) -> ClipData | None:
         """Get clip and update access statistics.
 
         Args:
@@ -202,19 +237,18 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         """
         clip_entry = self.get(clip_id)
         if clip_entry is not None:
-            # Update access statistics
-            access_count = clip_entry.get("access_count", 0)
-            if isinstance(access_count, int):
-                clip_entry["access_count"] = access_count + 1
-            clip_entry["last_accessed"] = time.time()
+            # Update access statistics if they exist
+            if "access_count" in clip_entry:
+                clip_entry["access_count"] = clip_entry["access_count"] + 1
+            if "last_accessed" in clip_entry:
+                clip_entry["last_accessed"] = time.time()
 
             # Update the cache with new stats
             self[clip_id] = clip_entry
 
-            # Return the actual clip data
-            clip_data: Any = clip_entry.get("clip_data")
-            if isinstance(clip_data, dict):
-                return clip_data
+            # Return the actual clip data if it exists
+            if "clip_data" in clip_entry:
+                return clip_entry["clip_data"]
         return None
 
     def cleanup_old_clips(self, max_age_hours: int = 24) -> int:
@@ -228,7 +262,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, dict[str, Any]]):
         """
         current_time = time.time()
         max_age_seconds = max_age_hours * 3600
-        old_clips = []
+        old_clips: list[ClipId] = []
 
         for clip_id, clip_entry in self.items_list():
             if isinstance(clip_entry, dict):

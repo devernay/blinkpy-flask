@@ -349,9 +349,7 @@ class TestImportAndModuleLoading(BaseTestCase):
     def test_flask_imports(self) -> None:
         """Test Flask-related imports."""
         self.assertTrue(hasattr(blinkapp, "Flask"))
-        self.assertTrue(hasattr(blinkapp, "jsonify"))
-        self.assertTrue(hasattr(blinkapp, "session"))
-        self.assertTrue(hasattr(blinkapp, "render_template"))
+        # Note: jsonify, session, render_template are imported in route modules, not main module
 
     def test_standard_library_imports(self) -> None:
         """Test standard library imports."""

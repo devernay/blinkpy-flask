@@ -6,6 +6,7 @@ from typing import Any
 
 from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
+from flask.wrappers import Request
 
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
@@ -58,8 +59,9 @@ def setup_settings_routes(app: Flask) -> None:
 
         else:  # PUT - Save new settings
             # Validate incoming JSON data
-            data = request.get_json()
-            if not isinstance(data, dict):
+            assert isinstance(request, Request)
+            data = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+            if data is None or not isinstance(data, dict):
                 response, status_code = create_api_response(
                     success=False,
                     error=Config.ErrorMessages.INVALID_JSON_DATA,

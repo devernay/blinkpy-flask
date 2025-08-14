@@ -16,10 +16,10 @@ import logging
 from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, session, url_for
-from flask.typing import ResponseReturnValue
 
 from blinkapp.config import Config
 from blinkapp.models.types import AuthJsonDict as JsonDict
+from blinkapp.models.types import ResponseReturnValue
 from blinkapp.services.auth_service import (
     initialize_blink,
     verify_2fa_and_save,

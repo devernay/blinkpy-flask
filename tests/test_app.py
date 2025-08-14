@@ -20,7 +20,10 @@ from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
+from blinkpy.camera import BlinkCamera
+
 from blinkapp import (
+    BlinkSyncModule,
     Config,
     app,
 )
@@ -2337,7 +2340,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         mock_blink.available = True
 
         # Mock sync module with cameras
-        mock_camera1 = Mock()
+        mock_camera1 = Mock(spec=BlinkCamera)
         mock_camera1.name = "Front Door"
         mock_camera1.camera_id = 12345
         mock_camera1.battery = "ok"  # String value, not Mock
@@ -2347,7 +2350,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         mock_camera1.thumbnail = "https://example.com/thumb1.jpg?ts=1000"
         mock_camera1.last_record = None
 
-        mock_camera2 = Mock()
+        mock_camera2 = Mock(spec=BlinkCamera)
         mock_camera2.name = "Back Door"
         mock_camera2.camera_id = 67890
         mock_camera2.battery = "low"  # String value, not Mock
@@ -2357,7 +2360,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         mock_camera2.thumbnail = "https://example.com/thumb2.jpg?ts=2000"
         mock_camera2.last_record = None
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.network_id = 12345
         mock_sync.online = True
         mock_sync.sync_id = 54321
@@ -3417,7 +3420,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Create multiple mock cameras with different states
         cameras = {}
         for i in range(3):
-            mock_camera = Mock()
+            mock_camera = Mock(spec=BlinkCamera)
             mock_camera.name = f"Camera {i}"
             mock_camera.camera_id = 10000 + i
             mock_camera.battery_voltage = 100 + i * 5
@@ -3436,7 +3439,7 @@ class TestSystemDeviceOperations(BaseTestCase):
             cameras[f"Camera {i}"] = mock_camera
 
         # Mock sync module structure
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.online = True
         mock_sync.sync_id = 54321
         mock_sync.network_id = "12345"  # Use string directly
@@ -3948,8 +3951,8 @@ class TestCacheMaintenanceOperations(BaseTestCase):
 
         # Mock blink system with valid cameras
         mock_blink.available = True
-        mock_sync = Mock()
-        mock_camera = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.camera_id = "12345"  # Valid camera ID
         mock_sync.cameras = {"cam1": mock_camera}
         mock_blink.sync = {"sync1": mock_sync}
@@ -5002,10 +5005,10 @@ class TestAdvancedCacheOperations(BaseTestCase):
         from blinkapp.services.cache_service import load_thumbnail_cache
 
         # Mock blink with specific valid cameras
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.camera_id = 12345
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.cameras = {"Valid Camera": mock_camera}
 
         mock_blink.available = True
@@ -5791,7 +5794,7 @@ class TestTemplateRoutesFixed(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.routes.auth.is_authenticated")
-    @patch("blinkapp.render_template")
+    @patch("flask.render_template")
     def test_index_template_rendering(self, mock_render, mock_auth) -> None:
         """Test index template rendering."""
         mock_auth.return_value = True
@@ -5801,7 +5804,7 @@ class TestTemplateRoutesFixed(BaseTestCase):
         # Should attempt to render template or redirect
         self.assertIn(response.status_code, [200, 302])
 
-    @patch("blinkapp.render_template")
+    @patch("flask.render_template")
     def test_auth_template_rendering(self, mock_render) -> None:
         """Test auth template rendering."""
         mock_render.return_value = "<html>Auth</html>"

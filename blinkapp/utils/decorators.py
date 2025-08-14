@@ -9,6 +9,7 @@ from functools import wraps
 from typing import Any, Protocol, TypeVar
 
 from flask import Response, jsonify, request
+from flask.wrappers import Request
 
 from blinkapp.config import Config
 from blinkapp.models.types import (
@@ -262,8 +263,9 @@ def _validate_json_payload(
     # Import here to avoid circular import
     from blinkapp import Config, create_api_response
 
-    data = request.get_json()
-    if not isinstance(data, dict):
+    assert isinstance(request, Request)
+    data = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+    if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(
             success=False,
             error=Config.ErrorMessages.INVALID_JSON_DATA,
