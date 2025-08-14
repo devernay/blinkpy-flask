@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from flask import Flask, Response, jsonify, request, send_file
+from flask import Flask, Response, jsonify, request
 
 from blinkapp.models.ids import CameraId
 from blinkapp.models.types import FlaskResponse, JsonDict
@@ -387,9 +387,13 @@ def setup_camera_routes(app: Flask) -> None:
         stream_manager = ensure_stream_manager_initialized()
 
         try:
-            file_path = stream_manager.get_stream_file(str(camera_id), filename)
-            if file_path and file_path.exists():
-                return send_file(str(file_path))
+            content, content_type = stream_manager.get_hls_file(
+                str(camera_id), filename
+            )
+            if content and content_type:
+                from flask import Response
+
+                return Response(content, mimetype=content_type)
             else:
                 from flask import jsonify
 

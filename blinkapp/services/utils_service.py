@@ -212,6 +212,7 @@ def handle_dump_system() -> None:
         logger.error("Please start the server and login first to save credentials.")
         sys.exit(1)
 
+    assert blink_connection is not None
     blink_connection.start()
     try:
         success = blink_connection.execute(load_saved_blink())
@@ -220,10 +221,12 @@ def handle_dump_system() -> None:
             assert blink is not None
             for sync_name, sync in blink.sync.items():
                 if sync.local_storage:
+                    assert blink_connection is not None
                     blink_connection.execute(sync.update_local_storage_manifest())
 
             # Get cloud videos in blink thread
             assert blink is not None
+            assert blink_connection is not None
             videos = blink_connection.execute(
                 blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
             )
@@ -244,8 +247,10 @@ def handle_dump_system() -> None:
     finally:
         # Clean up Blink session and shutdown connection
         if blink is not None:
+            assert blink_connection is not None
             blink_connection.execute(cleanup_blink_session())
 
         # Remove console handler
         logger.removeHandler(console_handler)
+        assert blink_connection is not None
         blink_connection.shutdown()

@@ -326,7 +326,11 @@ class HLSStream:
                 return False
 
             # Check idle timeout
-            if time.time() - self.last_access > self.config.idle_timeout:
+            idle_timeout = self.config.idle_timeout
+            if (
+                idle_timeout is not None
+                and time.time() - self.last_access > idle_timeout
+            ):
                 self.stop()
                 return False
 

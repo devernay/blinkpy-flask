@@ -81,6 +81,7 @@ async def initialize_blink(
         # Create new HTTP session for Blink API communication
         session_obj = ClientSession()
         blink = Blink(session=session_obj)
+        assert blink_connection is not None
         blink_connection.blink = blink  # Set reference in connection manager
 
         # Create authentication object with credentials

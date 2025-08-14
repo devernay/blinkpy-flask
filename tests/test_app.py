@@ -1056,6 +1056,7 @@ class TestCacheOperations(BaseTestCase):
         key = CameraId("key1")
         self.cache[key] = {"data": "value1"}
         result = self.cache.get(key)
+        assert result is not None
         self.assertEqual(result["data"], "value1")
 
     def test_cache_get_default(self) -> None:
@@ -5956,6 +5957,7 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
         # Multiple gets should be fast (cache hits)
         for _ in range(5):
             result = cache.get(key)
+            assert result is not None
             self.assertEqual(result["data"], "value1")
 
 

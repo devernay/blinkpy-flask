@@ -91,17 +91,20 @@ class TestLowCoverageExpansion:
         cache = ThumbnailCache(maxsize=10)
 
         # Test timestamp methods
-        timestamp = cache.get_thumbnail_timestamp("cam123")
+        from blinkapp.models.ids import CameraId
+
+        timestamp = cache.get_thumbnail_timestamp(CameraId("cam123"))
         assert timestamp is None
 
     def test_clips_cache_basic(self) -> None:
         """Test ClipsCache basic operations."""
         from blinkapp.models.cache import ClipsCache
+        from blinkapp.models.ids import ClipId
 
         cache = ClipsCache(maxsize=10)
 
         # Test get non-existent clip
-        clip = cache.get_clip("nonexistent")
+        clip = cache.get_clip(ClipId("nonexistent"))
         assert clip is None
 
     def test_connection_service_error(self) -> None:

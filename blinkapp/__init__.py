@@ -552,7 +552,7 @@ def get_config() -> JsonDict:
 
 @app.route("/placeholder")
 @api_route("placeholder")
-def placeholder() -> tuple[FlaskResponse, int]:
+def placeholder() -> tuple[Response, int]:
     """Show placeholder message.
 
     Returns:
@@ -563,7 +563,7 @@ def placeholder() -> tuple[FlaskResponse, int]:
         error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
         status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
     )
-    return cast(tuple[FlaskResponse, int], (jsonify(response), status_code))
+    return jsonify(response), status_code
 
 
 def dump_cloud_videos(videos: list[dict[str, object]]) -> None:

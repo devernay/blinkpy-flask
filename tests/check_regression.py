@@ -8,6 +8,7 @@ This script compares current test results against the baseline to detect regress
 import subprocess
 import sys
 from pathlib import Path
+from typing import TypedDict
 
 
 def run_tests_and_get_results():
@@ -41,9 +42,18 @@ def load_baseline():
         return [line.strip() for line in f if line.strip()]
 
 
-def compare_results(
-    current: list[str], baseline: list[str]
-) -> dict[str, list[str] | int]:
+class TestDiff(TypedDict):
+    regressions: list[str]
+    new_passed: list[str]
+    new_failed: list[str]
+    new_skipped: list[str]
+    missing_passed: list[str]
+    missing_failed: list[str]
+    total_current: int
+    total_baseline: int
+
+
+def compare_results(current: list[str], baseline: list[str]) -> TestDiff:
     """Compare current results with baseline and report differences."""
     current_set = set(current)
     baseline_set = set(baseline)
