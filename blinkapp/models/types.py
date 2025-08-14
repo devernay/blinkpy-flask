@@ -12,6 +12,10 @@ from typing import Any, ParamSpec, TypeVar
 from flask import Response
 from flask.typing import ResponseReturnValue
 
+# Common type variables used across the application
+P = ParamSpec("P")
+T = TypeVar("T")
+
 # Explicitly define what this module exports
 __all__ = [
     "P",
@@ -26,10 +30,6 @@ __all__ = [
     "DecoratorFunction",
     "CacheKey",
 ]
-
-# Type variables for generic functions
-P = ParamSpec("P")
-T = TypeVar("T")
 
 # Basic data types
 JsonDict = dict[str, object]  # Standard JSON-serializable dictionary

@@ -6,7 +6,7 @@ import traceback
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, ParamSpec, Protocol, TypeVar, cast
+from typing import Any, Protocol, TypeVar, cast
 
 from flask import jsonify, request
 
@@ -18,14 +18,14 @@ from blinkapp.models.types import (
     DecoratorFunction,
     ErrorResponse,
     FlaskResponse,
+    P,
     RouteResult,
+    T,
     TemplateResult,
     ValidationFunction,
 )
 
 # Type definitions
-T = TypeVar("T")
-P = ParamSpec("P")
 TemplateF = TypeVar("TemplateF", bound=Callable[..., TemplateResult])
 
 logger = logging.getLogger(__name__)
@@ -114,7 +114,7 @@ def safe_execute(
         return default
 
 
-def ensure_blink_available[P, T](
+def ensure_blink_available(
     func: Callable[P, T],
 ) -> Callable[P, T | FlaskResponse]:
     """Decorator that ensures blink is available before calling the function.
