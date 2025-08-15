@@ -217,6 +217,49 @@ class FlaskTestCase(BaseTestCase):
             self.assertIn(expected_location_contains, response.location or "")
         return response
 
+    def run_test_cases(self, test_cases):
+        """Run multiple test cases with consistent pattern."""
+        for case in test_cases:
+            with self.subTest(**case):
+                method = case.get("method", "GET")
+                path = case["path"]
+                expected_status = case.get("status", 200)
+                kwargs = {
+                    k: v
+                    for k, v in case.items()
+                    if k not in ["method", "path", "status"]
+                }
+                self.check_endpoint(method, path, expected_status, **kwargs)
+
+    @staticmethod
+    def make_test_name(feature, scenario):
+        """Generate consistent test method names."""
+        return f"test_{feature}_{scenario}"
+
+    def skip_if_no_flask(self):
+        """Skip test if Flask app is not available."""
+        if not hasattr(self, "client"):
+            self.skipTest("Flask client not available")
+
+    def check_endpoint(self, method, path, expected_status=200, **kwargs):
+        """Generic endpoint tester to reduce boilerplate."""
+        client_method = getattr(self.client, method.lower())
+        response = client_method(path, **kwargs)
+
+        # Check status first
+        self.assertEqual(response.status_code, expected_status)
+
+        # Only try JSON parsing for API endpoints or endpoints that return JSON errors
+        if path.startswith("/api/") or (
+            expected_status >= 400 and "json" in response.content_type
+        ):
+            if expected_status == 200:
+                return self.assert_api_success(response)
+            else:
+                return self.assert_api_error(response, expected_status)
+        else:
+            return response
+
     def create_mock_camera(self, camera_id=TEST_CAMERA_ID, name="Test Camera"):
         """Create a mock camera with common attributes."""
         from unittest.mock import Mock
@@ -257,19 +300,6 @@ class FlaskTestCase(BaseTestCase):
                 yield mock_blink, mock_conn
 
         return _mock()
-
-    def check_endpoint(self, method, path, expected_status=200, **kwargs):
-        """Generic endpoint tester to reduce boilerplate."""
-        client_method = getattr(self.client, method.lower())
-        response = client_method(path, **kwargs)
-
-        if expected_status == 200:
-            return self.assert_api_success(response)
-        elif expected_status in [404, 500]:
-            return self.assert_api_error(response, expected_status)
-        else:
-            self.assertEqual(response.status_code, expected_status)
-            return response
 
     def with_blink_mocks(self, available=True, sync_data=None):
         """Decorator to automatically patch blink service with common setup."""
