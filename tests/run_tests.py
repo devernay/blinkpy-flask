@@ -40,7 +40,7 @@ Examples:
   python run_tests.py                    # Run all tests with basic coverage
   python run_tests.py --coverage        # Run with detailed coverage report
   python run_tests.py --html            # Generate HTML coverage report
-  python run_tests.py --fast            # Run core tests only (faster)
+
   python run_tests.py --verbose         # Run with verbose output
   python run_tests.py --specific core   # Run specific test suite
         """,
@@ -52,10 +52,6 @@ Examples:
 
     parser.add_argument(
         "--html", action="store_true", help="Generate HTML coverage report"
-    )
-
-    parser.add_argument(
-        "--fast", action="store_true", help="Run core tests only (faster execution)"
     )
 
     parser.add_argument(
@@ -85,23 +81,8 @@ Examples:
     elif args.specific == "boost":
         cmd.append("test_coverage_boost.py")
     elif args.specific == "advanced":
-        cmd.extend(["test_advanced_coverage.py"])
-    elif args.fast:
-        cmd.extend(
-            ["test_app.py", "test_critical_coverage.py", "test_coverage_boost.py"]
-        )
-    else:
-        # Run all tests
-        cmd.extend(
-            [
-                "test_app.py",
-                "test_critical_coverage.py",
-                "test_coverage_boost.py",
-                "test_advanced_coverage.py",
-                "test_route_decorators.py",
-                "test_simple_coverage.py",
-            ]
-        )
+        cmd.append("test_advanced_coverage.py")
+    # else: Let pytest auto-discover all test_*.py files
 
     # Add coverage options
     if args.coverage or args.html:
@@ -125,7 +106,7 @@ Examples:
     # Print test configuration
     print("🧪 Blink Camera Flask Web Interface - Test Runner")
     print("=" * 60)
-    print(f"Test Suite: {'Fast' if args.fast else args.specific or 'All'}")
+    print(f"Test Suite: {args.specific or 'All'}")
     print(f"Coverage: {'Yes' if args.coverage or args.html else 'No'}")
     print(f"HTML Report: {'Yes' if args.html else 'No'}")
     print(f"Verbose: {'Yes' if args.verbose else 'No'}")
