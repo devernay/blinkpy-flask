@@ -23,6 +23,33 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def format_device_temperature(temperature) -> str:
+    """Format device temperature - pure function."""
+    if temperature is None:
+        return "N/A"
+    try:
+        temp_val = float(temperature)
+        return f"{temp_val}°F"
+    except (ValueError, TypeError):
+        return "N/A"
+
+
+def format_battery_level(voltage) -> str:
+    """Format battery level - pure function."""
+    if voltage is None:
+        return "N/A"
+    try:
+        volt_val = float(voltage)
+        if volt_val > 120:
+            return "Good"
+        elif volt_val > 110:
+            return "Fair"
+        else:
+            return "Low"
+    except (ValueError, TypeError):
+        return "N/A"
+
+
 def create_device_data(
     camera: BlinkCamera, cache_key: CameraId, current_ts: int = 0, cached_ts: int = 0
 ) -> dict[str, object]:

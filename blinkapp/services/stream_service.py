@@ -83,6 +83,38 @@ def ensure_stream_manager_initialized(manager_factory=None):
     return stream_manager
 
 
+def parse_tcp_url(tcp_url: str) -> dict[str, str]:
+    """Parse TCP URL components - pure function."""
+    if not tcp_url:
+        return {}
+
+    try:
+        if "://" in tcp_url:
+            protocol, rest = tcp_url.split("://", 1)
+            if ":" in rest:
+                host, port = rest.split(":", 1)
+                return {"protocol": protocol, "host": host, "port": port}
+            return {"protocol": protocol, "host": rest, "port": ""}
+        return {}
+    except (ValueError, AttributeError):
+        return {}
+
+
+def generate_hls_url(camera_id: str, base_url: str = "http://localhost:8080") -> str:
+    """Generate HLS URL for camera - pure function."""
+    return f"{base_url}/hls/{camera_id}/playlist.m3u8"
+
+
+def validate_camera_id(camera_id: str) -> bool:
+    """Validate camera ID format - pure function."""
+    return bool(camera_id and len(camera_id.strip()) > 0)
+
+
+def validate_tcp_url(tcp_url: str) -> bool:
+    """Validate TCP URL format - pure function."""
+    return bool(tcp_url and tcp_url.startswith(("tcp://", "http://")))
+
+
 def start_camera_stream(
     camera_id: CameraId, tcp_url: str
 ) -> tuple[str | None, str | None]:

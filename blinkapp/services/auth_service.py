@@ -43,6 +43,31 @@ def is_authenticated(blink_instance=None) -> bool:
     return blink_instance is not None and blink_instance.auth.token is not None
 
 
+def extract_username_domain(username: str) -> str:
+    """Extract domain from username - pure function."""
+    if "@" in username:
+        return username.split("@")[1]
+    return ""
+
+
+def is_valid_email_format(email: str) -> bool:
+    """Check if email has valid format - pure function."""
+    if not email or "@" not in email:
+        return False
+    parts = email.split("@")
+    return len(parts) == 2 and parts[0] != "" and parts[1] != "" and "." in parts[1]
+
+
+def validate_credentials(username: str, password: str) -> bool:
+    """Validate credential format - pure function."""
+    return bool(username and password and "@" in username)
+
+
+def create_auth_config(username: str, password: str) -> dict[str, str]:
+    """Create auth configuration - pure function."""
+    return {"username": username, "password": password}
+
+
 async def initialize_blink(
     username: str, password: str
 ) -> bool | Literal["2fa_required"]:
