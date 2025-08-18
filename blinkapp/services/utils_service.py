@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_device_data(
-    camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int
+    camera: BlinkCamera, cache_key: CameraId, current_ts: int = 0, cached_ts: int = 0
 ) -> dict[str, object]:
     """Create device data dictionary for camera.
 
@@ -187,8 +187,16 @@ def dump_blink_system_info() -> None:
     logger.info("=== END DUMP ===")
 
 
-def handle_dump_system() -> None:
+def check_credentials_file_exists(credentials_path) -> bool:
+    """Check if credentials file exists - easily mockable."""
+    return credentials_path.exists()
+
+
+def handle_dump_system(credentials_checker=None) -> None:
     """Handle dump-system command line option."""
+    if credentials_checker is None:
+        credentials_checker = check_credentials_file_exists
+
     import logging
     import sys
     from pathlib import Path
@@ -216,7 +224,7 @@ def handle_dump_system() -> None:
 
     assert CREDENTIALS_FILE is not None
     cred_file = Path(CREDENTIALS_FILE)
-    if not cred_file.exists():
+    if not credentials_checker(cred_file):
         logger.error("No saved credentials found.")
         logger.error("Please start the server and login first to save credentials.")
         sys.exit(1)

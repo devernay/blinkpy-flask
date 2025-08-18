@@ -26,16 +26,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def is_authenticated() -> bool:
+def is_authenticated(blink_instance=None) -> bool:
     """Check if user is currently authenticated with Blink.
+
+    Args:
+        blink_instance: Optional blink instance for testing
 
     Returns:
         True if authenticated and startup complete, False otherwise
     """
-    # Import here to avoid circular imports
-    from blinkapp.services.blink_service import blink
+    if blink_instance is None:
+        from blinkapp.services.blink_service import blink
 
-    return blink is not None and blink.auth.token is not None
+        blink_instance = blink
+
+    return blink_instance is not None and blink_instance.auth.token is not None
 
 
 async def initialize_blink(

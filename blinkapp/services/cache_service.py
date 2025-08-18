@@ -6,6 +6,33 @@ cache initialization, management, and cleanup operations.
 
 from __future__ import annotations
 
+import logging
+from typing import TYPE_CHECKING, Any
+
+from blinkpy.camera import BlinkCamera
+
+if TYPE_CHECKING:
+    from blinkapp.models.cache import ClipsCache, ThumbnailCache
+
+
+def validate_cache_directory(cache_dir: str) -> bool:
+    """Validate cache directory - pure function."""
+    from pathlib import Path
+
+    return Path(cache_dir).exists() or Path(cache_dir).parent.exists()
+
+
+def ensure_cache_directory(cache_dir: str, validator=None) -> None:
+    """Ensure cache directory with injectable validator."""
+    if validator is None:
+        validator = validate_cache_directory
+
+    from pathlib import Path
+
+    if not validator(cache_dir):
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+
+
 __all__ = [
     "initialize_caches",
     "ensure_clips_cache_initialized",
@@ -14,14 +41,6 @@ __all__ = [
     "load_thumbnail_cache",
     "get_cache_stats",
 ]
-
-import logging
-from typing import TYPE_CHECKING, Any
-
-from blinkpy.camera import BlinkCamera
-
-if TYPE_CHECKING:
-    from blinkapp.models.cache import ClipsCache, ThumbnailCache
 
 logger = logging.getLogger(__name__)
 

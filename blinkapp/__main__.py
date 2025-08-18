@@ -15,32 +15,8 @@ from blinkapp import app, cleanup_resources, startup
 from blinkapp.models.responses import Config
 
 
-def signal_handler(signum: int, frame: Any) -> None:
-    """Handle shutdown signals.
-
-    Args:
-        signum: Signal number received
-        frame: Current stack frame (unused)
-
-    Side Effects:
-        Triggers cleanup and exits application
-    """
-    from blinkapp import logger
-
-    logger.info(f"Received signal {signum}, shutting down...")
-    cleanup_resources()
-    sys.exit(0)
-
-
-def main() -> None:
-    """Main entry point with command line argument parsing.
-
-    Parses command line arguments and starts the Flask development server
-    or handles special commands like system dumps. Supports configuration
-    of host, port, debug mode, and cache directory.
-    """
-    from blinkapp import logger
-
+def create_argument_parser() -> argparse.ArgumentParser:
+    """Create and configure argument parser."""
     parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
     parser.add_argument(
         "--host",
@@ -63,43 +39,76 @@ def main() -> None:
     parser.add_argument(
         "--cache",
         default=Config.DEFAULT_CACHE_DIR,
-        help=f"Cache directory for credentials, thumbnails, and clips (default: {Config.DEFAULT_CACHE_DIR})",
+        help=f"Cache directory (default: {Config.DEFAULT_CACHE_DIR})",
     )
     parser.add_argument(
-        "--dump-system",
-        action="store_true",
-        help="Dump Blink system information and exit (requires saved credentials)",
+        "--dump-system", action="store_true", help="Dump system info and exit"
     )
+    return parser
 
-    args = parser.parse_args()
 
-    # Set cache directory in app config
-    app.config["CACHE_DIR"] = args.cache
+def setup_signal_handlers() -> None:
+    """Set up signal handlers for graceful shutdown."""
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    atexit.register(cleanup_resources)
 
-    # Set logging level for all loggers
-    log_level = getattr(logging, args.log_level)
-    logging.getLogger().setLevel(log_level)
-    logging.getLogger("blinkpy").setLevel(log_level)
-    logging.getLogger("werkzeug").setLevel(log_level)
-    logging.getLogger("flask").setLevel(log_level)
 
-    # Handle dump-system option
+def run_app(args: argparse.Namespace) -> None:
+    """Run the Flask application with given arguments."""
     if args.dump_system:
         from blinkapp.services.utils_service import handle_dump_system
 
         handle_dump_system()
-        sys.exit(0)
+        return
 
-    # Register cleanup handlers and initialize for server mode
-    atexit.register(cleanup_resources)
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
+    if args.cache:
+        app.config["CACHE_DIR"] = args.cache
 
     startup()
+    app.run(host=args.host, port=args.port, debug=args.debug)
+
+
+def signal_handler(signum: int, frame: Any) -> None:
+    """Handle shutdown signals.
+
+    Args:
+        signum: Signal number received
+        frame: Current stack frame (unused)
+
+    Side Effects:
+        Triggers cleanup and exits application
+    """
+    from blinkapp import logger
+
+    logger.info(f"Received signal {signum}, shutting down...")
+    cleanup_resources()
+    sys.exit(0)
+
+
+def configure_logging(log_level: str) -> None:
+    """Configure logging levels for all loggers."""
+    level = getattr(logging, log_level)
+    logging.getLogger().setLevel(level)
+    logging.getLogger("blinkpy").setLevel(level)
+    logging.getLogger("werkzeug").setLevel(level)
+    logging.getLogger("flask").setLevel(level)
+
+
+def main() -> None:
+    """Main entry point."""
+    parser = create_argument_parser()
+    args = parser.parse_args()
+
+    app.config["CACHE_DIR"] = args.cache
+    configure_logging(args.log_level)
+    setup_signal_handlers()
 
     try:
-        app.run(debug=args.debug, host=args.host, port=args.port)
+        run_app(args)
     except KeyboardInterrupt:
+        from blinkapp import logger
+
         logger.info("Received keyboard interrupt")
     finally:
         cleanup_resources()

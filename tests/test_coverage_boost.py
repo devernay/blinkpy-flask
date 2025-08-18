@@ -447,6 +447,64 @@ class TestBasicOperations(BaseTestCase):
         converted = datetime.fromtimestamp(timestamp)
         self.assertIsInstance(converted, datetime)
 
+    def test_utils_service_create_device_data(self):
+        """Test utils_service create_device_data function."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.utils_service import create_device_data
+
+        # Mock camera object
+        mock_camera = Mock()
+        mock_camera.name = "Test Camera"
+        mock_camera.id = "123"
+        mock_camera.armed = True
+        mock_camera.motion_enabled = True
+        mock_camera.temperature = 72
+        mock_camera.battery_voltage = 110
+        mock_camera.battery_state = "ok"
+        mock_camera.wifi_strength = -50
+        mock_camera.last_record = {"created_at": "2023-01-01T00:00:00Z"}
+
+        cache_key = CameraId("test_camera")
+        current_ts = 1640995200  # 2022-01-01 00:00:00
+        cached_ts = 1640991600  # 2021-12-31 23:00:00
+
+        result = create_device_data(mock_camera, cache_key, current_ts, cached_ts)
+
+        self.assertIsInstance(result, dict)
+        self.assertIn("name", result)
+        self.assertEqual(result["name"], "Test Camera")
+
+    def test_stream_service_initialize_stream_manager(self):
+        """Test stream_service initialize_stream_manager function."""
+        from blinkapp.services.stream_service import initialize_stream_manager
+
+        # Should not raise exception
+        initialize_stream_manager()
+
+    def test_stream_service_ensure_stream_manager_initialized(self):
+        """Test stream_service ensure_stream_manager_initialized function."""
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
+
+        # Should not raise exception
+        result = ensure_stream_manager_initialized()
+        self.assertIsNotNone(result)
+
+    def test_stream_service_is_stream_active(self):
+        """Test stream_service is_stream_active function."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import is_stream_active
+
+        camera_id = CameraId("test_camera")
+        result = is_stream_active(camera_id)
+        self.assertIsInstance(result, bool)
+
+    def test_auth_service_is_authenticated(self):
+        """Test auth_service is_authenticated function."""
+        from blinkapp.services.auth_service import is_authenticated
+
+        result = is_authenticated()
+        self.assertIsInstance(result, bool)
+
 
 if __name__ == "__main__":
     # Run the tests

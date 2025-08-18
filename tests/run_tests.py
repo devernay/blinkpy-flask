@@ -99,6 +99,7 @@ Examples:
                 "test_coverage_boost.py",
                 "test_advanced_coverage.py",
                 "test_route_decorators.py",
+                "test_simple_coverage.py",
             ]
         )
 

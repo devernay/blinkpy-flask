@@ -54,8 +54,18 @@ def initialize_stream_manager() -> None:
     stream_manager = StreamManager(stream_config)
 
 
-def ensure_stream_manager_initialized():
+def create_stream_manager(**kwargs):
+    """Factory function for stream manager - easily mockable."""
+    from blinkapp.services.stream_manager import StreamManager
+
+    return StreamManager(**kwargs)
+
+
+def ensure_stream_manager_initialized(manager_factory=None):
     """Ensure stream manager is initialized.
+
+    Args:
+        manager_factory: Optional factory function for testing
 
     Returns:
         Initialized stream manager instance
@@ -64,6 +74,9 @@ def ensure_stream_manager_initialized():
         RuntimeError: If stream_manager hasn't been initialized
     """
     if stream_manager is None:
+        if manager_factory is None:
+            manager_factory = create_stream_manager
+        # Could initialize here with factory if needed
         raise RuntimeError(
             "Stream manager not initialized. Call initialize_blink() first."
         )
