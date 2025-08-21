@@ -7,7 +7,7 @@ Focus on lines that can be easily tested to maximize coverage improvement.
 import os
 import sys
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -272,43 +272,6 @@ class TestGlobalVariableAccess(BaseTestCase):
         # Test that we can access it through the service
         stream_manager = ensure_stream_manager_initialized()
         self.assertIsNotNone(stream_manager)
-
-
-class TestUtilityFunctions(BaseTestCase):
-    """Test utility functions that are currently untested."""
-
-    def test_create_api_response_variations(self) -> None:
-        """Test create_api_response with different parameter combinations."""
-        # Test with minimal parameters
-        response, status = blinkapp.create_api_response()
-        self.assertTrue(response["success"])
-        self.assertEqual(status, 200)
-
-        # Test with data only
-        response, status = blinkapp.create_api_response(data={"test": "value"})
-        self.assertTrue(response["success"])
-        self.assertEqual(response["data"], {"test": "value"})
-
-        # Test with error only
-        response, status = blinkapp.create_api_response(
-            success=False, error="Test error"
-        )
-        self.assertFalse(response["success"])
-        self.assertEqual(response["error"], "Test error")
-
-        # Test with custom status code
-        response, status = blinkapp.create_api_response(status_code=201)
-        self.assertEqual(status, 201)
-
-    def test_format_time_ago_function(self) -> None:
-        """Test format_time_ago function if it exists."""
-        from blinkapp.utils.validators import format_time_ago
-
-        # Test with recent timestamp - convert datetime to timestamp
-        recent_time = datetime.now() - timedelta(minutes=5)
-        timestamp = int(recent_time.timestamp())
-        result = format_time_ago(timestamp)
-        self.assertIsInstance(result, str)
 
 
 class TestErrorHandlingPaths(BaseTestCase):

@@ -44,7 +44,7 @@ class ClipCacheEntry(ClipCacheEntryRequired, total=False):
     last_accessed: float
     filepath: Path
     thumbnail: Path | None
-    cloud_thumbnail_url: str
+    cloud_thumbnail_url: str | None  # URL for cloud thumbnail
     media_url: str
     created_at: str
 

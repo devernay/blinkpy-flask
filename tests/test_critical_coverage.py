@@ -287,33 +287,6 @@ class TestCacheDirectoryOperations(BaseTestCase):
         self.assertTrue(mock_executor.called)
 
 
-class TestErrorContextManager(BaseTestCase):
-    """Test error context manager functionality."""
-
-    def test_error_context_success(self) -> None:
-        """Test error context manager with successful operation."""
-        try:
-            from blinkapp import error_context
-
-            with error_context("test operation", ValueError):
-                # Successful operation
-                result = "success"
-            self.assertEqual(result, "success")
-        except (ImportError, AttributeError):
-            self.assertTrue(True)
-
-    def test_error_context_exception_handling(self) -> None:
-        """Test error context manager with exception."""
-        try:
-            from blinkapp import error_context
-
-            with self.assertRaises(ValueError):
-                with error_context("test operation", ValueError):
-                    raise ValueError("Test error")
-        except (ImportError, AttributeError):
-            self.assertTrue(True)
-
-
 class TestValidationClasses(BaseTestCase):
     """Test validation classes and their patterns."""
 

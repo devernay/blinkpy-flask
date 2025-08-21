@@ -91,9 +91,12 @@ def process_cloud_clips(
                 }
 
             clip_id = ClipId(str(video.get("id")))
-            cloud_thumbnail_url = video.get(
-                "thumbnail"
-            )  # Store original cloud thumbnail URL
+            cloud_thumbnail_url_raw = video.get("thumbnail")
+            cloud_thumbnail_url = (
+                str(cloud_thumbnail_url_raw)
+                if cloud_thumbnail_url_raw is not None
+                else None
+            )
 
             # Always use our thumbnail endpoint for cloud clips
             # This will handle redirect to Blink CDN or serve cached thumbnails
@@ -104,7 +107,7 @@ def process_cloud_clips(
             cached_clip = clips_cache_instance.get(clip_id)
             if cached_clip is not None:
                 # Update existing cache entry with cloud thumbnail URL
-                cached_clip["cloud_thumbnail_url"] = cloud_thumbnail_url  # type: ignore[misc]
+                cached_clip["cloud_thumbnail_url"] = cloud_thumbnail_url
                 clips_cache_instance[clip_id] = cached_clip
             else:
                 # Create new cache entry with cloud thumbnail URL
