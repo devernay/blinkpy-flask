@@ -22,30 +22,6 @@ class TestAuthServiceExpansion(unittest.TestCase):
         # Should return a boolean
         self.assertIsInstance(result, bool)
 
-    def test_extract_username_domain_valid(self):
-        """Test extract_username_domain with valid email."""
-        result = extract_username_domain("user@example.com")
-
-        self.assertEqual(result, "example.com")
-
-    def test_extract_username_domain_no_at(self):
-        """Test extract_username_domain with no @ symbol."""
-        result = extract_username_domain("userexample.com")
-
-        self.assertEqual(result, "")
-
-    def test_is_valid_email_format_valid(self):
-        """Test is_valid_email_format with valid email."""
-        result = is_valid_email_format("user@example.com")
-
-        self.assertTrue(result)
-
-    def test_is_valid_email_format_invalid(self):
-        """Test is_valid_email_format with invalid email."""
-        result = is_valid_email_format("invalid-email")
-
-        self.assertFalse(result)
-
     def test_validate_credentials_basic(self):
         """Test validate_credentials basic functionality."""
         result = validate_credentials("user@example.com", "password123")
