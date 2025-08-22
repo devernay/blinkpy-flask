@@ -13,17 +13,6 @@ from blinkapp.utils.decorators import (
 class TestDecoratorsSimple(unittest.TestCase):
     """Test decorators simple functions."""
 
-    def test_safe_execute_success(self) -> None:
-        """Test safe_execute with successful function - line 100."""
-
-        def success_func():
-            return "success"
-
-        result = safe_execute(success_func)
-
-        # Should return function result
-        self.assertEqual(result, "success")
-
     def test_safe_execute_exception_with_default(self) -> None:
         """Test safe_execute with exception and default - lines 102-107."""
 

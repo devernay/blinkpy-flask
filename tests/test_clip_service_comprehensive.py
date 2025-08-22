@@ -238,9 +238,17 @@ class TestClipServiceComprehensive:
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("pathlib.Path.write_bytes"):
-                success, error, filepath = _download_cloud_clip_core(
-                    self.clip_id, mock_blink, cache_dir
-                )
+                with patch(
+                    "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+                ) as mock_conn:
+                    # Mock the connection to return proper video metadata
+                    mock_connection = Mock()
+                    mock_connection.execute.return_value = [clip_info]
+                    mock_conn.return_value = mock_connection
+
+                    success, error, filepath = _download_cloud_clip_core(
+                        self.clip_id, mock_blink, cache_dir
+                    )
 
         assert success
         assert error == ""
@@ -289,9 +297,13 @@ class TestClipServiceComprehensive:
         cache_dir = Path("/tmp/test_cache")
 
         with patch("pathlib.Path.exists", return_value=False):
-            success, error, filepath = _download_cloud_clip_core(
-                self.clip_id, mock_blink, cache_dir
-            )
+            with patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+                return_value=Mock(execute=Mock(return_value=[clip_info])),
+            ):
+                success, error, filepath = _download_cloud_clip_core(
+                    self.clip_id, mock_blink, cache_dir
+                )
 
         assert not success
         assert "download" in error.lower() or "failed" in error.lower()
@@ -337,9 +349,13 @@ class TestClipServiceComprehensive:
         cache_dir = Path("/tmp/test_cache")
 
         with patch("pathlib.Path.exists", return_value=False):
-            success, error, filepath = _download_cloud_clip_core(
-                self.clip_id, mock_blink, cache_dir
-            )
+            with patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+                return_value=Mock(execute=Mock(return_value=[clip_info])),
+            ):
+                success, error, filepath = _download_cloud_clip_core(
+                    self.clip_id, mock_blink, cache_dir
+                )
 
         assert not success
         # Verify executor was called

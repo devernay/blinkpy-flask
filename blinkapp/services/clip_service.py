@@ -290,8 +290,21 @@ def _download_cloud_clip_core(
             # File doesn't exist or path is invalid, continue to download
             pass
 
-    # Get clip metadata
-    videos_metadata = blink_instance.videos.get("all", [])  # pyright: ignore[reportAttributeAccessIssue]
+    # Get clip metadata using blink_connection
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
+    blink_connection = ensure_blink_connection_initialized()
+    if blink_connection is None:
+        return False, "Blink connection not available", None
+
+    try:
+        videos_metadata = blink_connection.execute(
+            blink_instance.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
+        )
+    except Exception as e:
+        logger.error(f"Failed to get videos metadata: {e}")
+        return False, f"Failed to get videos metadata: {e}", None
+
     clip_info = next(
         (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
     )
@@ -580,7 +593,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             cache_entry: ClipCacheEntry = {"filepath": filepath, "thumbnail": None}
             clips_cache_instance[clip_id] = cache_entry
             thumbnail_path = generate_clip_thumbnail(
-                filepath, filename, middle_frame=False
+                filepath, filename, middle_frame=True
             )
             if thumbnail_path is not None:
                 cached_clip = clips_cache_instance.get(clip_id)
@@ -811,3 +824,29 @@ def download_clip_common(
 
     response = send_file_func(str(filepath), as_attachment=True, download_name=filename)
     return response, 200
+
+
+# Testability improvement functions - these provide injectable dependencies
+# for better unit testing without changing existing functionality
+
+
+def _download_clip_content_testable(
+    media_url: str, filepath: Path, clip_id: str, session_factory=None
+) -> bool:
+    """Download clip content with injectable session for testing."""
+    if session_factory is None:
+        from blinkapp.services.connection_service import ensure_http_session_initialized
+
+        session_factory = ensure_http_session_initialized
+
+    try:
+        response = session_factory().get(media_url, timeout=Config.HTTP_TIMEOUT)
+        if response.status_code == Config.HTTP_STATUS_OK:
+            filepath.write_bytes(response.content)
+            return True
+        else:
+            logger.error(f"HTTP {response.status_code} downloading clip {clip_id}")
+            return False
+    except (requests.RequestException, OSError) as e:
+        logger.error(f"Error downloading clip {clip_id}: {e}")
+        return False

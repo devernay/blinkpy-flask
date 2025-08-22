@@ -178,7 +178,8 @@ class TestClipServiceBackground:
         """Test download_clip_common function."""
         from blinkapp.services.clip_service import download_clip_common
 
-        mock_filepath = Path("/tmp/test.mp4")
+        mock_filepath = Mock(spec=Path)
+        mock_filepath.exists.return_value = True
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
 
@@ -186,9 +187,14 @@ class TestClipServiceBackground:
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"
+        mock_jsonify = Mock(return_value="json_response")
 
         result = download_clip_common(
-            self.clip_id, mock_filepath, "test.mp4", middle_frame=True
+            self.clip_id,
+            mock_filepath,
+            "test.mp4",
+            middle_frame=True,
+            jsonify_func=mock_jsonify,
         )
 
         assert result == ("file_response", 200)
@@ -211,7 +217,8 @@ class TestClipServiceBackground:
         """Test download_clip_common with proper download name."""
         from blinkapp.services.clip_service import download_clip_common
 
-        mock_filepath = Path("/tmp/test.mp4")
+        mock_filepath = Mock(spec=Path)
+        mock_filepath.exists.return_value = True
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
 
@@ -219,10 +226,15 @@ class TestClipServiceBackground:
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"
+        mock_jsonify = Mock(return_value="json_response")
 
         filename = "custom_filename.mp4"
         result = download_clip_common(
-            self.clip_id, mock_filepath, filename, middle_frame=False
+            self.clip_id,
+            mock_filepath,
+            filename,
+            middle_frame=False,
+            jsonify_func=mock_jsonify,
         )
 
         assert result == ("file_response", 200)

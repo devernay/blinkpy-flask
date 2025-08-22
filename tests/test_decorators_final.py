@@ -16,14 +16,6 @@ class TestDecoratorsFinal(unittest.TestCase):
         with error_context("test operation"):
             pass  # Should not raise
 
-    def test_error_context_with_exception(self) -> None:
-        """Test error_context with exception."""
-        from blinkapp.utils.errors import BlinkError
-
-        with self.assertRaises(BlinkError):
-            with error_context("test operation"):
-                raise ValueError("Test error")
-
     def test_error_context_custom_exception(self) -> None:
         """Test error_context with custom exception type."""
         from blinkapp.utils.errors import ValidationError
@@ -31,16 +23,6 @@ class TestDecoratorsFinal(unittest.TestCase):
         with self.assertRaises(ValidationError):
             with error_context("test operation", ValidationError):
                 raise ValueError("Test error")
-
-    def test_safe_execute_success(self) -> None:
-        """Test safe_execute with successful operation."""
-
-        def test_func() -> str:
-            return "success"
-
-        result = safe_execute(test_func)
-
-        self.assertEqual(result, "success")
 
     def test_safe_execute_exception(self) -> None:
         """Test safe_execute with exception."""

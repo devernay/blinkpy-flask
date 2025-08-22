@@ -39,11 +39,18 @@ logger = logging.getLogger(__name__)
 stream_manager: StreamManager | None = None
 
 
-def initialize_stream_manager() -> None:
-    """Initialize the global stream manager instance."""
+def initialize_stream_manager(manager_factory=None) -> None:
+    """Initialize the global stream manager instance with injectable factory."""
     global stream_manager
     from blinkapp import Config
     from blinkapp.services.stream_service import StreamConfig, StreamManager
+
+    if manager_factory is None:
+
+        def default_factory(config):
+            return StreamManager(config)
+
+        manager_factory = default_factory
 
     stream_config = StreamConfig(
         segment_time=Config.HLS_SEGMENT_TIME,
@@ -51,7 +58,7 @@ def initialize_stream_manager() -> None:
         timeout=Config.FFMPEG_TIMEOUT,
         idle_timeout=Config.STREAM_IDLE_TIMEOUT,
     )
-    stream_manager = StreamManager(stream_config)
+    stream_manager = manager_factory(stream_config)
 
 
 def create_stream_manager(**kwargs):
@@ -238,6 +245,44 @@ class StreamConfig:
             self.idle_timeout = Config.STREAM_IDLE_TIMEOUT
 
 
+def _create_ffmpeg_process(
+    cmd: list[str], process_factory=None
+) -> subprocess.Popen | None:
+    """Create FFmpeg process with injectable factory."""
+    if process_factory is None:
+        process_factory = subprocess.Popen
+
+    try:
+        return process_factory(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _build_ffmpeg_command(tcp_url: str, output_path: Path, config) -> list[str]:
+    """Build FFmpeg command for TCP to HLS transcoding."""
+    return [
+        "ffmpeg",
+        "-i",
+        tcp_url,
+        "-c",
+        "copy",
+        "-f",
+        "hls",
+        "-hls_time",
+        str(config.segment_time),
+        "-hls_list_size",
+        str(config.list_size),
+        "-hls_flags",
+        "delete_segments",
+        str(output_path),
+    ]
+
+
 class HLSStream:
     """Manages a single HLS stream from TCP source."""
 
@@ -276,30 +321,12 @@ class HLSStream:
                 output_path = Path(self.temp_dir.name) / "stream.m3u8"
 
                 # FFmpeg command for TCP to HLS transcoding
-                cmd = [
-                    "ffmpeg",
-                    "-i",
-                    self.tcp_url,
-                    "-c",
-                    "copy",
-                    "-f",
-                    "hls",
-                    "-hls_time",
-                    str(self.config.segment_time),
-                    "-hls_list_size",
-                    str(self.config.list_size),
-                    "-hls_flags",
-                    "delete_segments",
-                    str(output_path),
-                ]
+                cmd = _build_ffmpeg_command(self.tcp_url, output_path, self.config)
 
                 # Start FFmpeg process
-                self.process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.DEVNULL,
-                )
+                self.process = _create_ffmpeg_process(cmd)
+                if self.process is None:
+                    return None, "Failed to create FFmpeg process"
 
                 # Wait a moment for stream to start
                 time.sleep(2)
@@ -507,3 +534,47 @@ class StreamManager:
             for stream in self.streams.values():
                 stream.stop()
             self.streams.clear()
+
+
+# Testability improvement functions - these provide injectable dependencies
+# for better unit testing without changing existing functionality
+
+
+def _create_ffmpeg_process_testable(
+    cmd: list[str], process_factory=None
+) -> subprocess.Popen | None:
+    """Create FFmpeg process with injectable factory for testing."""
+    if process_factory is None:
+        process_factory = subprocess.Popen
+
+    try:
+        return process_factory(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _build_ffmpeg_command_testable(
+    tcp_url: str, output_path: Path, config
+) -> list[str]:
+    """Build FFmpeg command for TCP to HLS transcoding - testable version."""
+    return [
+        "ffmpeg",
+        "-i",
+        tcp_url,
+        "-c",
+        "copy",
+        "-f",
+        "hls",
+        "-hls_time",
+        str(config.segment_time),
+        "-hls_list_size",
+        str(config.list_size),
+        "-hls_flags",
+        "delete_segments",
+        str(output_path),
+    ]

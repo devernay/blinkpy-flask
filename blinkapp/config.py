@@ -218,3 +218,27 @@ class Config:
             "Something went wrong on our end. Please try again in a few moments."
         )
         THUMBNAIL_NOT_FOUND = "Image not available. The camera may be offline or the image may have expired."
+
+
+# ========================================================================
+# Configuration Validation Functions
+# ========================================================================
+
+
+def validate_cache_directory(cache_dir: str) -> bool:
+    """Validate cache directory - pure function for better testability."""
+    from pathlib import Path
+
+    cache_path = Path(cache_dir)
+    return cache_path.exists() or cache_path.parent.exists()
+
+
+def ensure_cache_directory(cache_dir: str, validator=None) -> None:
+    """Ensure cache directory exists with injectable validator for testing."""
+    from pathlib import Path
+
+    if validator is None:
+        validator = validate_cache_directory
+
+    if not validator(cache_dir):
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)

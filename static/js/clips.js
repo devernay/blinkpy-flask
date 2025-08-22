@@ -194,7 +194,7 @@ async function playClip(clip) {
                         <h2 style="font-size: 16px; font-weight: 600;">${clip.camera_name} - ${formatClipDate(clip)} - ${clip.time}</h2>
                         <button class="close-btn" onclick="window.Clips.closeVideoModal(this)">&times;</button>
                     </div>
-                    <video controls style="width: 100%; border-radius: 8px;">
+                    <video controls preload="metadata" style="width: 100%; border-radius: 8px;">
                         <source src="${videoUrl}" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>

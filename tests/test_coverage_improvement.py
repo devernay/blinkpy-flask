@@ -114,13 +114,6 @@ class TestCacheService(FlaskTestCase):
 class TestValidators(FlaskTestCase):
     """Test validators.py (currently 18% coverage)."""
 
-    def test_validate_string_input_valid(self) -> None:
-        """Test validate_string_input with valid input."""
-        from blinkapp.utils.validators import validate_string_input
-
-        result = validate_string_input("test", 10, "test_field")
-        self.assertEqual(result, "test")
-
     def test_validate_string_input_too_long(self) -> None:
         """Test validate_string_input with too long input."""
         from blinkapp.utils.validators import validate_string_input

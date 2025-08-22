@@ -1,4 +1,6 @@
-Write an http server running the flask Python framework, which allows full access to a Blink camera system, through the blinkpy python package (available on github as https://github.com/fronzbot/blinkpy, which is cloned in the `blinkpy` subdirectory). The blinkpy package is meant to be run in a signe thread, so make sure that every call to the blinkpy If some of the functionality described below is not accessible through the blinkpy package, please use placeholders. When pressed, a placeholder should pop up a text which says that the feature is not yet available, with a "close" button to dismiss the popup.
+# Specifications
+
+Write an http server running the flask Python framework (with default port 5001), which allows full access to a Blink camera system, through the blinkpy python package (available on github as https://github.com/fronzbot/blinkpy, which is cloned in the `blinkpy` subdirectory). The blinkpy package is meant to be run in a signe thread, so make sure that every call to the blinkpy If some of the functionality described below is not accessible through the blinkpy package, please use placeholders. When pressed, a placeholder should pop up a text which says that the feature is not yet available, with a "close" button to dismiss the popup.
 
 The script to run the server is `python -m blinkapp`, and `python -m blinkapp -h` should show help and command-line parameters.
 
@@ -16,7 +18,13 @@ The top of the home page should have a three buttons to select one of the views:
 - "Clips" button should have a "play video" icon and the word "Clips" below.
 - "Settings" should have a "gear" icon" and the word "Settings" below.
 
-# "Home" view
+## blinkpy package usage
+
+The blinkpy package is not meant to be used in a multi-threaded context, so the code will implement a BlinkConnection class which handles executing all blinkpy calls in a single thread.
+
+The source of the blinpy package is given in the directory blinkpy-source, for reference.
+
+## "Home" view
 
 The "Home" view should allow to select the current Blink system on top (if there is more than one), and have a "plus" button on the right to add a new device to the system.
 
@@ -26,12 +34,12 @@ Below the header is the list of devices in this system, which is scrollable. A d
 
 At the bottom of the page, there is a non-scrollable toggle button that has two possible states: "Disarmed" or "Armed", and it is used to arm or disarm the selected Blink system.
 
-## Blink camera
+### Blink camera
 
 A blink camera device is displayed as the latest captured thumbnail, with some information overlaid:
 - On the top-left of the thumbnail is the name of the camera
-- On the bottom-left of the thumbnail is the last time the thumbnail was updated , in days, e.g. "105d ago" if it was last updated 105 days ago. the date when each thumbnail was last updated can be extracted from the ts parameter of the thumbnail URL.
-For example if the URL is /api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext= , the thumbnail was last updated at 1742459551 since epoch. This has then to be converted into days before the current server timezone and displayed.
+- On the bottom-left of the thumbnail is the last time the thumbnail was updated in human-readable format: seconds (e.g. "30s ago"), minutes (e.g. "5m ago"), hours (e.g. "2h ago"), or days (e.g. "105d ago"). The timestamp is extracted from the ts parameter of the thumbnail URL.
+For example if the URL is /api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext= , the thumbnail was last updated at 1742459551 since epoch. This is converted to the appropriate time unit based on age: seconds for <1 minute, minutes for <1 hour, hours for <1 day, days for ≥1 day.
 - On the bottom-right of the thumbnail is a kebab button, which allows accessing the camera pane (described below)
 - In the middle of the thumbnail, there is a "play" button (with a "play icon") that switches to the "Live View" for that camera (see details below).
 
@@ -39,13 +47,13 @@ The thumbnails for all cameras should be cached by the server in the `<cache>/th
 
 When the app is launched, it scans the thumbnail cache directory for existing thumbnails with their date, loads them from the cache, and updates the thumbnail date. It should fetch a new thumbnail only if the thumbnail date from the device list is more recent than this of the cached thumbnail, in which case it will remove and update the cached thumbnail.
 
-## Live View
+### Live View
 
 Clicking on the the "play" button in the middle of a thumbnail opens the "Live View" page for that camera.
 On the top-left of the Live View page, there is a "Back" button (back arrow), that goes back to the "Home" view.
 On the top-right of the Live View page, there is a "Mute" button ("speaker" icon) to mute the sound of the live view.
 
-### Live streaming MPEG-TS livestreaming via local TCP proxy server
+#### Live streaming MPEG-TS livestreaming via local TCP proxy server
 
 Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. The `requirements.txt` file installs this version of blinkpy.
 
@@ -83,31 +91,31 @@ The URL given to ffplay is `stream.url` from the code above.
 
 In our implementation, the MPEG-TS should be transcoded to HLS and played by the browser.
 
-## Camera pane
+### Camera pane
 
 The camera pane is overlaid on the page when the camera kebab button is pressed. It has:
 - On top-right a "close" button (with a cross) to close the pane and get back to the Home view.
 - On top-left, the name of the camera in boldface
 - below, a text saying whether the camera is online or offline.
-- below, a "Motion Detection" toggle, with a text saying it is "On (System Armed)" or "Off (System Disarmed)"
+- below, a "Motion Detection" toggle, with a text saying "On (System Armed)", "On (System Disarmed)", "Off (System Armed)", or "Off (System Disarmed)" depending on the camera's motion detection setting and the system's armed/disarmed status
 - below, a "Refresh thumbnail" button with a camera icon, to refresh the camera thumbnail.
 - below, a "Device Settings" with a gear icon. We will detail later (TODO) what this button does. it is a placeholder for now.
 
 "Refresh thumbnail" should immediately close the Camera pane, and display the text "Refreshing thumbnail..." on a green background banner inside the camera thumbnail, on the top. The thumbnail and the thumbnail age should be updated both in the cache and in the "Home" view as soon as available,  the previous camera thumbnail should be removed from the cache, and the banner text should say "Thumbnail updated!" for 1s, then disappear.
 
-## Sync module
+### Sync module
 
 A sync module is displayed as the word "Sync Module", with a text on the right saying whether it is "Online" or "Offline"
 
 We will detail later (TODO) what clicking on the sync module does.
 
-# "Clips" view
+## "Clips" view
 
 The "Clips" view should show a scrollable list of clips. At the bottom of the list of clips, there is a non-scrollable popup button to select between "Local storage" or "Cloud storage".
 
 If "Cloud storage" is empty, "Local storage" should be automatically selected. A spinning wheel should be displayed while the list of clips is being loaded.
 
-## List of clips
+### List of clips
 
 The list of clips should should the clips available, either on the sync module local storage, or on Blink cloud storage, depending on the selection.
 
@@ -135,7 +143,7 @@ The clip player should also have those additional buttons on the top-left:
 - A trashcan button to delete the clip. This should show a modal dialog saying "<b>Are you sure?</b><br />This will delete the clip and cannot be undone." with two buttons "Delete Clip" (default action) and "Nevermind".
 - A download button to download the clip.
 
-The clips (either cloud-based or local) should be cached by the server in a FIFO cache, and the cache size should have a default size of 100 clips. Identify clearly the clips cache size in the code. For each clip, a thumbnail should be shown if it is available from the clip cache. The thumbnail for downloaded clips is the middle frame from the clip. Clip thumbnails (either cloud-based or local) should be cached in the same directory as the clips. When a thumbnail is not available for a given clip, the thumbnail should show a "play" button. As soon as a clip thumbnail is cached, the "Clips" view should display that thumbnail without having to reload the page.
+The clips (either cloud-based or local) should be cached by the server in a FIFO cache, and the cache size should have a default size of 100 clips. Identify clearly the clips cache size in the code. For each clip, a thumbnail should be shown if it is available from the clip cache. The thumbnail for downloaded clips is the middle frame from the clip. Clip thumbnails (either cloud-based or local) should be cached in the same directory as the clips. The thumbnail from "cloud" clips can be obtained from the API (they don't have to be extracted from the clip itself), and they have to be cached in the same clips cache (with an empty clip if the clip was not downloaded yet). When a thumbnail is not available for a given "local storage" clip, the thumbnail should show a "play" button. As soon as a clip thumbnail is cached, the "Clips" view should display that thumbnail without having to reload the page.
 
 See blinkpy/blinksync/blinksync.py for the correct way to get the list of local storage clips. Whenever needed, local storage clips can be downloaded using item.prepare_download() followed by item.download_video(), as in blinkpy/blinksync/blinksync.py
 
@@ -143,7 +151,7 @@ On the top of the local storage clips list, there should be a "Update xx Clips" 
 
 When all local clip thumbnails are already available, the "Update All" button should be hidden. When some local clip thumbnails are not available, the text should not say "Update All" but "Update xx Clips", where xx is the number of clip thumbnails missing.
 
-# "Settings" view
+## "Settings" view
 
 The "Settings" view should have:
 - "Temperature Units" with the choces "Celsius" or "Fahrenheit".
@@ -155,7 +163,75 @@ The "Settings" view should have:
 
 The settings should be saved in a settings.json file in the cache. settings.json should not be removed when logging out.
 
-# TODO
+## Additional Features
+
+### API Documentation and Development Tools
+
+The server should provide comprehensive API documentation through an OpenAPI 3.0 specification file (`api.json`) that documents all available endpoints, request/response schemas, and authentication requirements. This enables developers to integrate with the Blink camera system programmatically.
+
+The development environment should include modern tooling for code quality:
+- Pre-commit hooks for automated code formatting and linting
+- Type safety with comprehensive type hints throughout the codebase
+- Automated testing with a comprehensive test suite covering core functionality
+- Code formatting with ruff and type checking with pyright
+
+### Advanced Caching and Performance
+
+The application should implement intelligent caching strategies beyond basic thumbnail caching:
+- FIFO (First In, First Out) cache management with configurable size limits
+- Automatic cache cleanup to prevent disk space issues
+- Connection pooling for efficient HTTP requests
+- Background processing for non-blocking operations like clip downloads and thumbnail generation
+
+### Mobile and Responsive Design
+
+The web interface should be fully responsive and optimized for mobile devices:
+- Compact layouts that work well on small screens
+- Touch-friendly button sizes and spacing
+- Responsive navigation that adapts to screen size
+- Mobile-optimized video playback controls
+
+### Security and Input Validation
+
+The application should implement comprehensive security measures:
+- Input validation and sanitization to prevent XSS attacks
+- Secure credential storage with proper encryption
+- Request validation with structured error responses
+- Protection against common web vulnerabilities
+
+### Settings and Configuration Management
+
+Beyond the basic settings specified, the application should provide:
+- Persistent settings storage using JSON files in the cache directory
+- Real-time settings updates without requiring page refresh
+- Configurable cache sizes and retention policies
+- Advanced stream configuration options (segment time, quality settings)
+
+### Resource Management and Cleanup
+
+The application should properly manage system resources:
+- Automatic cleanup of temporary files and processes on shutdown
+- Proper termination of background threads and streams
+- Memory management for long-running operations
+- Graceful handling of system interrupts and errors
+
+### Logging and Monitoring
+
+The application should provide comprehensive logging capabilities:
+- Structured logging with configurable levels (DEBUG, INFO, WARNING, ERROR)
+- Log rotation to prevent disk space issues
+- Performance monitoring and error tracking
+- Detailed request/response logging for debugging
+
+### Stream Management for Live Video
+
+The live streaming functionality should include advanced stream management:
+- Dedicated HLS stream manager for handling multiple concurrent streams
+- Automatic stream cleanup when clients disconnect
+- Configurable stream quality and bandwidth settings
+- Stream health monitoring and automatic recovery
+
+## TODO
 
 - Fix live view
 - add motion_enabled button to each camera in Home view
@@ -167,11 +243,150 @@ The settings should be saved in a settings.json file in the cache. settings.json
 - Continuous live view using a strategy similar to blinkbridge https://github.com/roger-/blinkbridge
 - Pan/tilt control, if it becomes available https://github.com/MattTW/BlinkMonitorProtocol/issues/69
 
-# Code quality improvements
+# **Differences Between Specifications and Current Implementation**
 
-Re-read IMPLEMENTATION.md, and make sure that *everything* is implemented as described. If there are differences, list those and wait for my instructions, don't do the changes immediately:  Maybe I need to change IMPLEMENTATION.md, not the code.
+### **✅ CORRECTLY IMPLEMENTED:**
 
-Read the whole code again, including the Python code, the Javascript code and the HTML templates. How would you rate the code quality? Is there room for improvement?  Is there code that can be de-duplicated or factorized? Add a section to IMPLEMENTATION.md with the proposed code quality improvements.
+1. Main Entry Point: python -m blinkapp works with proper CLI arguments including --cache
+2. Authentication Flow: Login, 2FA, credential saving/loading from <cache>/blink.json
+3. Three-Button Navigation: Home/Clips/Settings with proper icons
+4. Home View Structure: System selector, device list, arm/disarm toggle
+5. Camera Thumbnails: Cached in <cache>/thumbnails with timestamp tracking
+6. Live View: Basic implementation with back/mute buttons
+7. Clips View: Cloud/Local storage selection, empty state message
+8. Settings View: All specified settings (temperature, retention, thumbnail size, clear cache, logout)
+9. API Endpoints: Most RESTful endpoints are implemented
+
+# Code Quality Analysis & Improvement Recommendations
+
+## Overall Code Quality Rating: B+ (Good with room for improvement)
+
+The codebase demonstrates solid engineering practices with comprehensive type hints, good error handling, and clean separation of concerns. However, there are several areas where code quality can be significantly improved through refactoring and consolidation.
+
+### Strengths
+- **Type Safety**: Comprehensive type hints throughout codebase
+- **Error Handling**: Consistent patterns with proper exception handling
+- **Documentation**: Good docstrings and inline comments
+- **Architecture**: Clean separation of concerns with dedicated service classes
+- **Testing**: 50% code coverage with 388 passing tests
+
+### Areas for Improvement
+
+#### 1. Code Duplication (High Priority)
+**Problem**: Excessive repeated patterns across the codebase
+- **8+ instances** of "Import locally to avoid circular imports" scattered across route handlers
+- **14 instances** of repeated `ensure_blink_connection_initialized()` pattern with identical error handling
+- **Repeated service initialization** pattern in multiple route handlers
+
+**Impact**: Code duplication, maintenance burden, unclear dependencies
+
+**Solution**: Create centralized service management
+```python
+# Create a centralized import manager
+class ServiceManager:
+    @staticmethod
+    def get_services() -> dict[str, Any]:
+        return {
+            'blink_connection': ensure_blink_connection_initialized(),
+            'executor': ensure_executor_initialized(),
+            'thumbnail_cache': ensure_thumbnail_cache_initialized(),
+            'stream_manager': ensure_stream_manager_initialized()
+        }
+
+# Service injection decorator
+@inject_services(['blink_connection', 'executor'])
+def route_handler(camera_id: CameraId, services: dict[str, Any]) -> JsonDict:
+    # Services automatically available
+```
+
+#### 2. Large Function Complexity (Medium Priority)
+**Problem**: Functions with excessive complexity and length
+- `update_camera_thumbnail()`: 167 lines
+- Several route handlers: 50+ lines each
+- Complex nested logic in clip processing functions
+
+**Impact**: Hard to test, maintain, and understand
+
+**Solution**: Extract business logic into service classes
+```python
+class ThumbnailUpdateService:
+    def update_if_needed(self, camera, cache_key, current_ts, cached_ts) -> None
+    def _download_and_cache(self, camera, cache_key, current_ts) -> None
+    def _cleanup_old_thumbnail(self, cache_key) -> None
+```
+
+#### 3. Inconsistent Error Handling (Medium Priority)
+**Problem**: Mixed patterns of ValidationError, CameraError, and direct responses
+**Impact**: Inconsistent API responses, harder debugging
+**Solution**: Standardize error handling with middleware
+```python
+@standardize_errors
+def route_handler() -> JsonDict:
+    # Automatic error conversion to standard API format
+```
+
+#### 4. Template JavaScript Duplication (Low Priority)
+**Problem**: Inline JavaScript mixed with HTML (60+ lines in base.html), limited reusability
+**Impact**: Harder to maintain, test, and extend
+**Solution**: Extract to separate JS modules with proper organization
+
+### Refactoring Opportunities
+
+#### Route Handler Consolidation
+```python
+# Current: Repeated pattern in 6+ route handlers
+def route_handler(id: SomeId) -> JsonDict:
+    # Import locally to avoid circular imports
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    blink_connection = ensure_blink_connection_initialized()
+    # ... validation logic
+    # ... business logic
+
+# Proposed: Base class with common patterns
+class BaseRouteHandler:
+    def __init__(self):
+        self.services = ServiceManager.get_services()
+
+    def handle_with_validation(self, validator_func, business_logic_func):
+        # Common validation and error handling
+```
+
+#### Cache Management Consolidation
+```python
+# Current: Scattered cache operations
+thumbnail_cache = ensure_thumbnail_cache_initialized()
+clips_cache = ensure_clips_cache_initialized()
+
+# Proposed: Unified cache manager
+class CacheManager:
+    def get_cache(self, cache_type: CacheType) -> Cache
+    def clear_all(self) -> dict[str, object]
+    def get_stats(self) -> dict[str, Any]
+```
+
+### Implementation Priority
+
+#### Phase 1 (High Impact, Low Risk)
+1. Create ServiceManager for dependency injection
+2. Standardize error handling middleware
+3. Extract common route handler patterns
+
+#### Phase 2 (Medium Impact, Medium Risk)
+4. Refactor large functions into service classes
+5. Consolidate cache management
+6. Create base route handler class
+
+#### Phase 3 (Low Impact, Low Risk)
+7. Extract JavaScript to separate files
+8. Create standardized API client
+9. Add comprehensive JSDoc documentation
+
+### Expected Benefits
+- **Maintainability**: 40% reduction in code duplication
+- **Testability**: Easier unit testing with dependency injection
+- **Consistency**: Standardized error handling and API responses
+- **Performance**: Better caching strategies and resource management
+- **Developer Experience**: Clearer code organization and documentation
 
 Do it **step** by **step**, **one** file at a time. For each file from the list above:
 - create the file if it does not exist yet
@@ -228,79 +443,27 @@ First, you should sketch the plan of the documentation, with sections and subsec
 
 # MISSING FUNCTIONALITIES
 
-## **Unused blinkpy Functionalities**
+## Unused blinkpy Functionalities
 
-Available in blinkpy:
-• camera.recent_clips[] - List of recent motion-triggered clips
-• camera.save_recent_clips() - Save all recent clips with timestamp patterns
-• camera.expire_recent_clips() - Auto-expire old clips
+The current Flask application implements all core Blink camera functionality specified in the requirements. However, several advanced features available in the blinkpy library are not yet utilized, presenting opportunities for future enhancement.
 
-Current Flask app: Not implemented - we only show cloud/local storage clips
-
-### 2. Camera Properties Not Exposed
-Available in blinkpy:
-camera.temperature          # Temperature reading
-camera.temperature_calibrated
-camera.battery_level        # Battery percentage
-camera.battery_voltage      # Raw battery voltage
-camera.wifi_strength        # WiFi signal strength
+### 1. Camera Properties Not Exposed
+**Available in blinkpy:**
+```python
+camera.battery_level        # Battery percentage (0-100%)
+camera.battery_voltage      # Raw battery voltage (in 100ths of volts)
+camera.temperature         # Temperature reading in Fahrenheit
+camera.temperature_c        # Temperature in Celsius
+camera.wifi_strength        # WiFi signal strength (signal bars)
 camera.sync_signal_strength # Sync module signal strength
 camera.motion_detected      # Current motion detection state
 camera.battery_state        # Battery status string
+```
 
+**Current Flask app:** Only shows online/offline status
 
-Current Flask app: Only shows online/offline status
-
-### 3. Advanced Camera Controls
-Available in blinkpy:
-• camera.snap_picture() - Take new thumbnail
-• Motion detection enable/disable per camera
-• Camera sensor information
-
-Current Flask app: Only implements thumbnail refresh
-
-### 4. Local Storage Advanced Features
-Available in blinkpy:
-• item.delete_video() - Delete videos from sync module
-• item.download_video_delete() - Download and delete in one operation
-
-Current Flask app: Only downloads, no deletion capability
-
-### 5. Video Information API
-Available in blinkpy:
-• api.request_video_count() - Total video count
-• api.request_videos() - Paginated video list with metadata
-• Unwatched videos list
-
-Current Flask app: Not implemented
-
-### 6. System Health and Diagnostics
-Available in blinkpy:
-• System health checks
-• Client device information
-• Region information
-• Network diagnostics
-Current Flask app: Not implemented
-
-## **Specific Missing Features**
-
-### **Battery and Signal Information**
-python
-# Available but not used
-camera_info = {
-    "battery_level": camera.battery_level,      # 0-100%
-    "wifi_strength": camera.wifi_strength,     # Signal bars
-    "temperature": camera.temperature,         # Celsius
-    "sync_signal": camera.sync_signal_strength
-}
-
-
-## **Recommendations for Implementation**
-
-### **High Priority (Easy Wins):**
-
-1. Camera Properties Display
-python
+**Implementation opportunity:**
+```python
 # Add to camera info API
 @app.route("/api/camera/<camera_id>/info")
 def get_camera_info(camera_id):
@@ -311,41 +474,94 @@ def get_camera_info(camera_id):
         "wifi_strength": camera.wifi_strength,
         "motion_detected": camera.motion_detected
     }
+```
 
+### 2. Recent Clips Management
+**Available in blinkpy:**
+```python
+camera.recent_clips[]           # List of recent motion-triggered clips
+camera.save_recent_clips()      # Save all recent clips with timestamp patterns
+camera.expire_recent_clips()    # Auto-expire old clips
+```
 
-2. Recent Clips Feature
-python
+**Current Flask app:** Not implemented - we only show cloud/local storage clips
+
+**Implementation opportunity:**
+```python
 # Add recent clips endpoint
 @app.route("/api/camera/<camera_id>/recent-clips")
 def get_recent_clips(camera_id):
     camera = find_camera_by_id(camera_id)
     return {"clips": camera.recent_clips}
+```
 
+### 3. Advanced Camera Controls
+**Available in blinkpy:**
+```python
+camera.record()               # Manual recording trigger
+camera.set_motion_detect()    # Per-camera motion detection toggle
+camera.get_sensor_info()      # Camera sensor information
+```
 
-### **Medium Priority:**
+**Current Flask app:**
+- ✅ `camera.snap_picture()` - Already implemented for thumbnail refresh
+- ❌ Manual recording trigger - Not implemented
+- ❌ Per-camera motion detection - Not implemented
 
-3. Video Management API
-• Total video count
-• Paginated video lists
-• Video deletion capabilities
+### 4. Local Storage Advanced Features
+**Available in blinkpy:**
+```python
+item.delete_video()           # Delete videos from sync module
+item.download_video_delete()  # Download and delete in one operation
+```
 
-4. Advanced Camera Controls
-• Per-camera motion detection toggle
-• Manual video recording trigger
-• Camera sensor readings
+**Current Flask app:** Only downloads, no deletion capability
 
-### **Low Priority:**
+### 5. Video Information API
+**Available in blinkpy:**
+```python
+api.request_video_count()     # Total video count
+api.request_videos()          # Paginated video list with metadata
+# Unwatched videos list
+```
 
-5. System Diagnostics
-• Health monitoring
-• Network diagnostics
-• Client device management
+**Current Flask app:** Not implemented
 
-## **Impact Assessment**
+### 6. System Health and Diagnostics
+**Available in blinkpy:**
+```python
+# System health checks
+# Client device information
+# Region information
+# Network diagnostics
+```
 
-Camera Properties: Would provide much richer device information to users, matching what's available in the official Blink app.
+**Current Flask app:** Not implemented
 
-Recent Clips: Would show motion-triggered clips immediately without waiting for cloud sync.
+## Implementation Recommendations
+
+### High Priority (Easy Wins)
+1. **Camera Properties Display** - Would provide much richer device information to users, matching what's available in the official Blink app
+2. **Recent Clips Feature** - Would show motion-triggered clips immediately without waiting for cloud sync
+3. **Manual Recording Trigger** - Allow users to manually start recording from camera pane
+
+### Medium Priority
+4. **Video Management API** - Total video count, paginated video lists, video deletion capabilities
+5. **Per-Camera Motion Detection** - Individual camera motion detection toggle
+6. **Camera Sensor Readings** - Detailed sensor information display
+
+### Low Priority
+7. **System Diagnostics** - Health monitoring, network diagnostics, client device management
+
+## Impact Assessment
+
+**Camera Properties:** Would provide much richer device information to users, matching what's available in the official Blink app.
+
+**Recent Clips:** Would show motion-triggered clips immediately without waiting for cloud sync.
+
+**Manual Recording:** Would allow users to trigger recording on-demand, useful for testing or capturing specific events.
+
+These features would enhance the application's functionality while maintaining the current stable foundation.
 
 
 # **Code Quality Analysis & Improvement Recommendations**
@@ -497,18 +713,15 @@ class BlinkApiClient {
 
 The codebase has a solid foundation and these improvements would elevate it from "good" to "excellent" while maintaining backward compatibility and system stability.
 
-Fix all ruff check and pytest (full suite) issues. Don't add exports to the main module. I prefer if the only exports for each modul is the ones it defines, and symbols are imported from where they are defined.
+
 
 
 Check all the api route names. Do they look consistent, logical, and RESTful? Is there room for improvements?
 
-ok, implement the recommended improvements. Also update api.json, the pytrhon code and tests, the javascript and the documentation
+ok, implement the recommended improvements. Also update api.json, the python code and tests, the javascript and the documentation
 
 did you update api.json? Is it complete? Are there more actions missing or outdated? Also update the documentation.
 
 run ruff check, pyright, and pytest (full test suites), and fix all issues. Do not stop until all issues are fixed.
 
-take a look at the content of the following files. Should it be moved to different places? What do you suggest? Don't do anything for now.
-- app_types.py
-- config.py
-- blink_connection.py
+are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.

@@ -27,6 +27,35 @@ async function renderDevices(devices) {
 /**
  * Create a camera card element
  */
+function formatDuration(seconds) {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+
+    const days = Math.floor(seconds / 86400);
+    return `${days}d`;
+}
+
+function calculateThumbnailAge(thumbnailUrl) {
+    if (!thumbnailUrl) return '';
+
+    try {
+        const url = new URL(thumbnailUrl, window.location.origin);
+        const ts = url.searchParams.get('ts');
+        if (!ts) return '';
+
+        const thumbnailTime = parseInt(ts) * 1000; // Convert to milliseconds
+        const now = Date.now();
+        const ageSeconds = Math.floor((now - thumbnailTime) / 1000);
+
+        if (ageSeconds <= 0) return 'now';
+        return formatDuration(ageSeconds) + ' ago';
+    } catch (error) {
+        console.warn('Error calculating thumbnail age:', error);
+        return '';
+    }
+}
+
 async function createCameraCard(camera) {
     const card = document.createElement('div');
     card.className = 'device-card camera-card';
@@ -44,13 +73,15 @@ async function createCameraCard(camera) {
         }
     }
 
+    const thumbnailAge = calculateThumbnailAge(thumbnailUrl);
+
     card.innerHTML = `
         ${thumbnailUrl ? `<img src="${thumbnailUrl}" class="camera-thumbnail" alt="${camera.name}">` : ''}
         <div class="camera-overlay">
             <div class="camera-name">${camera.name}</div>
             <button class="play-btn" onclick="window.LiveStream.show('${camera.id}', '${camera.name}')">▶</button>
             <div class="camera-bottom">
-                <div class="camera-time">${camera.last_updated}</div>
+                <div class="camera-time">${thumbnailAge}</div>
                 <button class="kebab-btn" onclick="window.Camera.showPane('${camera.id}', '${camera.name}')">⋮</button>
             </div>
         </div>
@@ -93,16 +124,17 @@ function showCameraPane(cameraId, cameraName) {
         const isArmed = currentSystem && currentSystem.armed;
         const motionEnabled = camera.motion_enabled;
 
-        if (motionEnabled && isArmed) {
-            motionStatus.textContent = 'On (System Armed)';
-            motionSwitch.classList.add('on');
-        } else if (motionEnabled && !isArmed) {
-            motionStatus.textContent = 'On (System Disarmed)';
+        // Update switch state based on motion detection setting
+        if (motionEnabled) {
             motionSwitch.classList.add('on');
         } else {
-            motionStatus.textContent = 'Off';
             motionSwitch.classList.remove('on');
         }
+
+        // Update status text: motion state + system state
+        const motionState = motionEnabled ? 'On' : 'Off';
+        const systemState = isArmed ? '(System Armed)' : '(System Disarmed)';
+        motionStatus.textContent = `${motionState} ${systemState}`;
     }
 
     window.showModal('camera-modal');

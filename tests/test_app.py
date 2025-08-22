@@ -1403,13 +1403,25 @@ class TestClipProcessing(BaseTestCase):
         self, mock_blink: Mock, mock_connection: Mock
     ) -> None:
         """Test downloading non-existent clip."""
+        # Mock blink to be available
+        mock_blink.available = True
+
+        # Mock a clip in videos so we get past the "Clip not found" check
+        mock_clip = {
+            "id": "nonexistent",
+            "created_at": "2025-01-15T10:30:00Z",
+            "device_name": "Test Camera",
+            "media": "https://example.com/clip.mp4",
+        }
+        mock_blink.videos = {"all": [mock_clip]}
+
         # Mock connection to raise BlinkError for non-existent clip
         from blinkapp.services.connection_service import BlinkError
 
         mock_connection.execute.side_effect = BlinkError("Clip not found")
 
         response = self.client.get("/api/clips/nonexistent/download")
-        self.assertEqual(response.status_code, 500)  # BlinkError causes 500, not 404
+        self.assertEqual(response.status_code, 404)  # "Clip not found" triggers 404
 
 
 class TestAsyncOperations(BaseTestCase):
@@ -2013,12 +2025,14 @@ class TestClipDownloadOperations(BaseTestCase):
         setup_test_globals()
 
     @patch("blinkapp.services.blink_service.blink")
-    @patch("blinkapp.services.blink_service.blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_download_cloud_clip_success(
-        self, mock_connection: Mock, mock_blink: Mock
+        self, mock_connection_func: Mock, mock_blink: Mock
     ) -> None:
         """Test successful cloud clip download."""
+        # Mock blink to be available
+        mock_blink.available = True
 
         # Mock cloud clip metadata
         mock_clip = {
@@ -2029,9 +2043,16 @@ class TestClipDownloadOperations(BaseTestCase):
         }
 
         mock_blink.get_videos_metadata.return_value = [mock_clip]
-        mock_connection.execute.return_value = [mock_clip]
 
-        with patch("pathlib.Path.exists", return_value=False):  # Not cached
+        # Mock the connection returned by ensure_blink_connection_initialized
+        mock_connection = Mock()
+        mock_connection.execute.return_value = [mock_clip]
+        mock_connection._started = True  # Mark as started
+        mock_connection_func.return_value = mock_connection
+
+        with patch("pathlib.Path.exists") as mock_exists:  # Mock file existence
+            # First call (cache check) returns False, second call (after download) returns True
+            mock_exists.side_effect = [False, True]
             with patch(
                 "blinkapp.services.connection_service.ensure_http_session_initialized"
             ) as mock_session:
@@ -2040,7 +2061,11 @@ class TestClipDownloadOperations(BaseTestCase):
                 mock_response.content = b"fake_video_data"
                 mock_session.return_value.get.return_value = mock_response
 
-                with patch("pathlib.Path.write_bytes") as mock_write:
+                with (
+                    patch("pathlib.Path.write_bytes") as mock_write,
+                    patch("pathlib.Path.mkdir"),
+                    patch("pathlib.Path.parent", create=True),
+                ):
                     response = self.client.get("/api/clips/123456/download")
 
                     # Should attempt to download and cache
@@ -2076,6 +2101,8 @@ class TestClipDownloadOperations(BaseTestCase):
         self, mock_connection, mock_blink
     ) -> None:
         """Test downloading clip when cached file exists."""
+        # Mock blink to be available
+        mock_blink.available = True
 
         # Mock cloud clip metadata
         mock_clip = {
@@ -4342,6 +4369,9 @@ class TestIntegrationScenarios(BaseTestCase):
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
         """Test complete clip workflow from list to download."""
+        # Mock blink to be available
+        mock_blink.available = True
+
         # Mock clip data
         mock_clip = {
             "id": 123456,
@@ -4359,19 +4389,34 @@ class TestIntegrationScenarios(BaseTestCase):
         response1 = self.client.get("/api/clips?storage=cloud")
         self.assertEqual(response1.status_code, 200)
 
-        # 2. Download specific clip
-        with patch("pathlib.Path.exists", return_value=False):
-            with patch(
-                "blinkapp.services.connection_service.ensure_http_session_initialized"
-            ) as mock_session:
-                mock_response = Mock()
-                mock_response.content = b"video_data"
-                mock_response.status_code = 200
-                mock_session.return_value.get.return_value = mock_response
+        # 2. Download specific clip - need to mock the ensure_blink_connection_initialized for download
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+        ) as mock_connection_func:
+            # Mock the connection returned by ensure_blink_connection_initialized
+            mock_download_connection = Mock()
+            mock_download_connection.execute.return_value = [mock_clip]
+            mock_download_connection._started = True  # Mark as started
+            mock_connection_func.return_value = mock_download_connection
 
-                with patch("pathlib.Path.write_bytes"):
-                    response2 = self.client.get("/api/clips/123456/download")
-                    self.assertIn(response2.status_code, [200, 500])
+            with patch("pathlib.Path.exists") as mock_exists:
+                # First call (cache check) returns False, second call (after download) returns True
+                mock_exists.side_effect = [False, True]
+                with patch(
+                    "blinkapp.services.connection_service.ensure_http_session_initialized"
+                ) as mock_session:
+                    mock_response = Mock()
+                    mock_response.content = b"video_data"
+                    mock_response.status_code = 200
+                    mock_session.return_value.get.return_value = mock_response
+
+                    with (
+                        patch("pathlib.Path.write_bytes"),
+                        patch("pathlib.Path.mkdir"),
+                        patch("pathlib.Path.parent", create=True),
+                    ):
+                        response2 = self.client.get("/api/clips/123456/download")
+                        self.assertIn(response2.status_code, [200, 500])
 
     def test_error_recovery_workflow(self) -> None:
         """Test error recovery across multiple requests."""

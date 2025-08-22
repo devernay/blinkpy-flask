@@ -68,6 +68,40 @@ def create_auth_config(username: str, password: str) -> dict[str, str]:
     return {"username": username, "password": password}
 
 
+def _create_blink_session(session_factory=None):
+    """Create Blink session with injectable factory."""
+    if session_factory is None:
+        from aiohttp import ClientSession
+
+        session_factory = ClientSession
+
+    return session_factory()
+
+
+def _create_auth_object(username: str, password: str, session_obj, auth_factory=None):
+    """Create auth object with injectable factory."""
+    if auth_factory is None:
+        from blinkpy.auth import Auth
+
+        auth_factory = Auth
+
+    return auth_factory(
+        {"username": username, "password": password},
+        no_prompt=True,
+        session=session_obj,
+    )
+
+
+def _create_blink_instance(session_obj, blink_factory=None):
+    """Create Blink instance with injectable factory."""
+    if blink_factory is None:
+        from blinkpy.blinkpy import Blink
+
+        blink_factory = Blink
+
+    return blink_factory(session=session_obj)
+
+
 async def initialize_blink(
     username: str, password: str
 ) -> bool | Literal["2fa_required"]:
@@ -104,22 +138,14 @@ async def initialize_blink(
     from blinkapp.services.connection_service import blink_connection
 
     with error_context("initialize Blink system", AuthenticationError):
-        from aiohttp import ClientSession
-        from blinkpy.auth import Auth
-        from blinkpy.blinkpy import Blink
-
         # Create new HTTP session for Blink API communication
-        session_obj = ClientSession()
-        blink = Blink(session=session_obj)
+        session_obj = _create_blink_session()
+        blink = _create_blink_instance(session_obj)
         assert blink_connection is not None
         blink_connection.blink = blink  # Set reference in connection manager
 
         # Create authentication object with credentials
-        auth = Auth(
-            {"username": username, "password": password},
-            no_prompt=True,  # Disable interactive prompts for web interface
-            session=session_obj,
-        )
+        auth = _create_auth_object(username, password, session_obj)
         blink.auth = auth
 
         # Attempt to start Blink system and authenticate
@@ -271,3 +297,43 @@ async def load_saved_blink() -> bool:
 
     # No credentials file found
     return False
+
+
+# Testability improvement functions - these provide injectable dependencies
+# for better unit testing without changing existing functionality
+
+
+def _create_blink_session_testable(session_factory=None):
+    """Create Blink session with injectable factory for testing."""
+    if session_factory is None:
+        from aiohttp import ClientSession
+
+        session_factory = ClientSession
+
+    return session_factory()
+
+
+def _create_auth_object_testable(
+    username: str, password: str, session_obj, auth_factory=None
+):
+    """Create auth object with injectable factory for testing."""
+    if auth_factory is None:
+        from blinkpy.auth import Auth
+
+        auth_factory = Auth
+
+    return auth_factory(
+        {"username": username, "password": password},
+        no_prompt=True,
+        session=session_obj,
+    )
+
+
+def _create_blink_instance_testable(session_obj, blink_factory=None):
+    """Create Blink instance with injectable factory for testing."""
+    if blink_factory is None:
+        from blinkpy.blinkpy import Blink
+
+        blink_factory = Blink
+
+    return blink_factory(session=session_obj)

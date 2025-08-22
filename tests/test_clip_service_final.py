@@ -17,14 +17,6 @@ class TestClipServiceFinal:
         """Set up test fixtures."""
         self.clip_id = ClipId("123456")
 
-    def test_get_blink_instance(self) -> None:
-        """Test _get_blink_instance helper function."""
-        from blinkapp.services.clip_service import _get_blink_instance
-
-        with patch("blinkapp.services.blink_service.blink", "mock_blink"):
-            result = _get_blink_instance()
-            assert result == "mock_blink"
-
     def test_get_clips_cache_dir(self) -> None:
         """Test _get_clips_cache_dir helper function."""
         from blinkapp.services.clip_service import _get_clips_cache_dir
@@ -51,9 +43,13 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        success, error, filepath = _download_cloud_clip_core(
-            self.clip_id, None, Path("/tmp")
-        )
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+            return_value=Mock(execute=Mock(return_value=[])),
+        ):
+            success, error, filepath = _download_cloud_clip_core(
+                self.clip_id, None, Path("/tmp")
+            )
 
         assert not success
         assert "blink instance" in error.lower()
@@ -68,37 +64,16 @@ class TestClipServiceFinal:
         mock_blink = Mock()
         mock_blink.videos = {"all": []}  # No clips
 
-        success, error, filepath = _download_cloud_clip_core(
-            self.clip_id, mock_blink, Path("/tmp")
-        )
-
-        assert not success
-        assert "not found" in error.lower()
-
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_no_media_url(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core with no media URL."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
-
-        mock_cache.return_value = {}
-
-        clip_info = {
-            "id": "123456",
-            "created_at": "2023-01-01T12:00:00Z",
-            "device_name": "test_camera",
-            "media": None,
-        }
-
-        mock_blink = Mock()
-        mock_blink.videos = {"all": [clip_info]}
-
-        with patch("pathlib.Path.exists", return_value=False):
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+            return_value=Mock(execute=Mock(return_value=[])),
+        ):
             success, error, filepath = _download_cloud_clip_core(
                 self.clip_id, mock_blink, Path("/tmp")
             )
 
-            assert not success
-            assert "not available" in error.lower()
+        assert not success
+        assert "not found" in error.lower()
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_exists(self, mock_cache: Mock) -> None:
@@ -113,9 +88,13 @@ class TestClipServiceFinal:
 
         mock_blink = Mock()
 
-        success, error, filepath = _download_cloud_clip_core(
-            self.clip_id, mock_blink, Path("/tmp")
-        )
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+            return_value=Mock(execute=Mock(return_value=[])),
+        ):
+            success, error, filepath = _download_cloud_clip_core(
+                self.clip_id, mock_blink, Path("/tmp")
+            )
 
         assert success
         assert filepath == mock_filepath
@@ -155,9 +134,13 @@ class TestClipServiceFinal:
                     mock_executor_instance.submit.return_value = mock_future
                     mock_executor.return_value = mock_executor_instance
 
-                    success, error, filepath = _download_cloud_clip_core(
-                        self.clip_id, mock_blink, Path("/tmp")
-                    )
+                    with patch(
+                        "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+                        return_value=Mock(execute=Mock(return_value=[])),
+                    ):
+                        success, error, filepath = _download_cloud_clip_core(
+                            self.clip_id, mock_blink, Path("/tmp")
+                        )
 
                     assert not success
 

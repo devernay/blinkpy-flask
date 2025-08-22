@@ -62,9 +62,13 @@ class TestClipServiceCoreLogic:
 
         self.mock_blink.videos = {"all": []}
 
-        success, error, filepath = _download_cloud_clip_core(
-            self.clip_id, self.mock_blink, self.mock_cache_dir
-        )
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+            return_value=Mock(execute=Mock(return_value=[])),
+        ):
+            success, error, filepath = _download_cloud_clip_core(
+                self.clip_id, self.mock_blink, self.mock_cache_dir
+            )
 
         assert not success
         assert error == "Clip not found"
@@ -78,9 +82,13 @@ class TestClipServiceCoreLogic:
         mock_cache.return_value = {}
         self.mock_blink.videos = {"all": []}
 
-        success, error, filepath = _download_cloud_clip_core(
-            self.clip_id, self.mock_blink, self.mock_cache_dir
-        )
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+            return_value=Mock(execute=Mock(return_value=[])),
+        ):
+            success, error, filepath = _download_cloud_clip_core(
+                self.clip_id, self.mock_blink, self.mock_cache_dir
+            )
 
         assert not success
         assert error == "Clip not found"
@@ -105,9 +113,13 @@ class TestClipServiceCoreLogic:
         self.mock_blink.videos = {"all": [clip_info]}
 
         with patch("pathlib.Path.exists", return_value=False):
-            success, error, filepath = _download_cloud_clip_core(
-                self.clip_id, self.mock_blink, self.mock_cache_dir
-            )
+            with patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+                return_value=Mock(execute=Mock(return_value=[clip_info])),
+            ):
+                success, error, filepath = _download_cloud_clip_core(
+                    self.clip_id, self.mock_blink, self.mock_cache_dir
+                )
 
         assert not success
         # Check for the actual error message from Config.ErrorMessages.CLIP_NO_MEDIA_URL
