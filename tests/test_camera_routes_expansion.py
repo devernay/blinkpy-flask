@@ -38,8 +38,8 @@ class TestCameraRoutesExpansion(unittest.TestCase):
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
-            # Test camera liveview endpoint exists
-            response = client.get("/api/cameras/12345/liveview")
+            # Test camera stream endpoint exists
+            response = client.post("/api/cameras/12345/streams")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
@@ -50,6 +50,6 @@ class TestCameraRoutesExpansion(unittest.TestCase):
 
         with app.test_client() as client:
             # Test HLS endpoint exists
-            response = client.get("/api/cameras/12345/hls/test.m3u8")
+            response = client.get("/api/cameras/12345/streams/test.m3u8")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)

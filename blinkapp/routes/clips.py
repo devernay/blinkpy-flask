@@ -73,11 +73,11 @@ def setup_clips_routes(app: Flask) -> None:
 
         return {"clips": clips}
 
-    @app.route("/api/clips/<clip_id_str>/process", methods=["PUT"])
+    @app.route("/api/clips/<clip_id_str>/thumbnail", methods=["POST"])
     @ensure_blink_available
-    @simple_success_response("Clip processing initiated")
-    def process_clip(clip_id_str: str) -> JsonDict:
-        """Process clip on server (download and generate thumbnail) without sending to client.
+    @simple_success_response("Clip thumbnail generation initiated")
+    def create_clip_thumbnail(clip_id_str: str) -> JsonDict:
+        """Generate thumbnail for clip (download and process) without sending to client.
 
         Initiates background processing of clip for thumbnail generation.
         Used by "Update All" functionality to process clips sequentially.

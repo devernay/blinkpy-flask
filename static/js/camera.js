@@ -153,8 +153,8 @@ async function refreshThumbnail() {
     showThumbnailBanner(currentCameraId, 'Refreshing thumbnail...', 'refreshing');
 
     try {
-        const response = await fetch(`/api/cameras/${currentCameraId}/refresh`, {
-            method: 'POST'
+        const response = await fetch(`/api/cameras/${currentCameraId}/thumbnail`, {
+            method: 'DELETE'
         });
 
         if (response.ok) {

@@ -31,6 +31,7 @@ from blinkapp.services.camera_service import (
     require_camera,
 )
 from blinkapp.utils.decorators import (
+    api_route,
     api_route_with_validation,
     ensure_blink_available,
     error_context,
@@ -182,6 +183,56 @@ def setup_camera_routes(app: Flask) -> None:
         app: Flask application instance
     """
 
+    @app.route("/api/cameras")
+    @ensure_blink_available
+    @api_route("get all cameras")
+    def get_all_cameras() -> JsonDict:
+        """Get list of all cameras across all systems.
+
+        Returns:
+            JSON response with list of cameras or error message
+        """
+        from blinkapp.services.system_service import get_systems
+
+        return get_systems()
+
+    @app.route("/api/cameras/<camera_id_str>")
+    @ensure_blink_available
+    @api_route_with_validation(
+        "get camera details", validate_params={"camera_id_str": CameraId}
+    )
+    def get_camera_details(camera_id: CameraId) -> JsonDict:
+        """Get details for a specific camera.
+
+        Args:
+            camera_id: Validated CameraId object
+
+        Returns:
+            JSON response with camera details or error message
+        """
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+        from blinkapp.services.camera_service import find_camera_by_id
+
+        ensure_blink_connection_initialized()
+        camera = find_camera_by_id(camera_id)
+
+        if camera is None:
+            return {"success": False, "error": f"Camera {camera_id} not found"}
+
+        return {
+            "success": True,
+            "camera": {
+                "id": str(camera_id),
+                "name": camera.name,
+                "armed": camera.arm,
+                "motion_enabled": camera.motion_enabled,
+                "temperature": camera.temperature,
+                "battery_voltage": camera.battery_voltage,
+                "battery_state": camera.battery_state,
+                "wifi_strength": camera.wifi_strength,
+            },
+        }
+
     @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])
     @ensure_blink_available
     @api_route_with_validation(
@@ -216,13 +267,13 @@ def setup_camera_routes(app: Flask) -> None:
             else:
                 raise CameraError("Failed to initiate camera recording", 500)
 
-    @app.route("/api/cameras/<camera_id_str>/refresh", methods=["PUT"])
+    @app.route("/api/cameras/<camera_id_str>/thumbnail", methods=["DELETE"])
     @ensure_blink_available
     @api_route_with_validation(
-        "refresh camera thumbnail", validate_params={"camera_id_str": CameraId}
+        "clear camera thumbnail cache", validate_params={"camera_id_str": CameraId}
     )
-    def refresh_camera(camera_id: CameraId) -> JsonDict:
-        """Refresh camera thumbnail.
+    def clear_camera_thumbnail_cache(camera_id: CameraId) -> JsonDict:
+        """Clear camera thumbnail cache and refresh.
 
         Args:
             camera_id: Validated CameraId object (converted from camera_id_str by decorator)
@@ -287,13 +338,13 @@ def setup_camera_routes(app: Flask) -> None:
 
             return {"success": True, "message": "Camera thumbnail refresh initiated"}
 
-    @app.route("/api/cameras/<camera_id_str>/liveview")
+    @app.route("/api/cameras/<camera_id_str>/streams", methods=["POST"])
     @ensure_blink_available
     @api_route_with_validation(
-        "start camera liveview", validate_params={"camera_id_str": CameraId}
+        "start camera stream", validate_params={"camera_id_str": CameraId}
     )
-    def get_camera_liveview(camera_id: CameraId) -> JsonDict:
-        """Get live view stream for camera using init_livestream().
+    def start_camera_stream(camera_id: CameraId) -> JsonDict:
+        """Start live stream for camera using init_livestream().
 
         Args:
             camera_id: Validated CameraId object
@@ -348,13 +399,13 @@ def setup_camera_routes(app: Flask) -> None:
         else:
             return {"success": False, "error": "Failed to initialize live stream"}
 
-    @app.route("/api/cameras/<camera_id_str>/liveview", methods=["DELETE"])
+    @app.route("/api/cameras/<camera_id_str>/streams", methods=["DELETE"])
     @ensure_blink_available
     @api_route_with_validation(
-        "stop camera liveview", validate_params={"camera_id_str": CameraId}
+        "stop camera stream", validate_params={"camera_id_str": CameraId}
     )
-    def stop_camera_liveview(camera_id: CameraId) -> JsonDict:
-        """Stop live view stream for camera.
+    def stop_camera_stream(camera_id: CameraId) -> JsonDict:
+        """Stop live stream for camera.
 
         Args:
             camera_id: Validated CameraId object (converted from camera_id_str by decorator)
@@ -390,19 +441,19 @@ def setup_camera_routes(app: Flask) -> None:
             logger.error(f"Error stopping live stream for camera {camera_id}: {e}")
             return {"success": False, "error": "Failed to stop live stream"}
 
-    @app.route("/api/cameras/<camera_id_str>/hls/<path:filename>")
+    @app.route("/api/cameras/<camera_id_str>/streams/<path:filename>")
     @api_route_with_validation(
-        "serve HLS file", validate_params={"camera_id_str": CameraId}
+        "serve stream file", validate_params={"camera_id_str": CameraId}
     )
-    def serve_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
-        """Serve HLS files for live streaming.
+    def serve_stream_file(camera_id: CameraId, filename: str) -> FlaskResponse:
+        """Serve HLS stream files for live streaming.
 
         Args:
             camera_id: Validated CameraId object (converted from camera_id_str by decorator)
-            filename: HLS file to serve
+            filename: Stream file to serve
 
         Returns:
-            Flask Response with HLS file content or error
+            Flask Response with stream file content or error
         """
         # Import locally to avoid circular imports
         from blinkapp.services.stream_service import ensure_stream_manager_initialized

@@ -38,29 +38,29 @@ class TestCameraRoutesFinal(unittest.TestCase):
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
-            # Test camera liveview endpoint exists
-            response = client.get("/api/cameras/12345/liveview")
+            # Test camera stream endpoint exists
+            response = client.post("/api/cameras/12345/streams")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
     def test_camera_hls_route_registration(self) -> None:
-        """Test camera HLS route registration."""
+        """Test camera stream file route registration."""
         app = Flask(__name__)
         setup_camera_routes(app)
 
         with app.test_client() as client:
-            # Test HLS endpoint exists
-            response = client.get("/api/cameras/12345/hls/playlist.m3u8")
+            # Test stream file endpoint exists
+            response = client.get("/api/cameras/12345/streams/playlist.m3u8")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
     def test_camera_refresh_route_registration(self) -> None:
-        """Test camera refresh route registration."""
+        """Test camera thumbnail cache clear route registration."""
         app = Flask(__name__)
         setup_camera_routes(app)
 
         with app.test_client() as client:
-            # Test refresh endpoint exists
-            response = client.put("/api/cameras/12345/refresh")
+            # Test thumbnail cache clear endpoint exists
+            response = client.delete("/api/cameras/12345/thumbnail")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)

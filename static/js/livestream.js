@@ -13,7 +13,9 @@ async function showLiveView(cameraId, cameraName) {
 
     try {
         console.log('Starting live view for camera:', cameraId);
-        const response = await fetch(`/api/cameras/${cameraId}/liveview`);
+        const response = await fetch(`/api/cameras/${cameraId}/streams`, {
+            method: 'POST'
+        });
         const data = await response.json();
 
         console.log('Live view response:', data);
@@ -99,8 +101,8 @@ async function stopLiveStream() {
         }
 
         // Call the backend to stop the stream
-        const response = await fetch(`/api/cameras/${currentLiveStream.cameraId}/liveview`, {
-            method: 'POST'
+        const response = await fetch(`/api/cameras/${currentLiveStream.cameraId}/streams`, {
+            method: 'DELETE'
         });
 
         if (response.ok) {

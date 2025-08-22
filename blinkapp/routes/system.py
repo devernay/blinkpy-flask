@@ -44,6 +44,23 @@ def setup_system_routes(app: Flask) -> None:
         """
         return get_systems()
 
+    @app.route("/api/systems/<network_id_str>")
+    @ensure_blink_available
+    @api_route_with_validation(
+        "get system details",
+        validate_params={"network_id_str": NetworkId},
+    )
+    def get_system_route(network_id: NetworkId) -> JsonDict:
+        """Get details for a specific Blink system.
+
+        Args:
+            network_id: Network ID of the system to retrieve
+
+        Returns:
+            JSON response with system details or error message
+        """
+        return get_devices(network_id)
+
     @app.route("/api/systems/<network_id_str>/devices")
     @ensure_blink_available
     @api_route_with_validation(
@@ -60,16 +77,16 @@ def setup_system_routes(app: Flask) -> None:
         """
         return get_devices(network_id)
 
-    @app.route("/api/systems/<network_id_str>/arm", methods=["POST"])
+    @app.route("/api/systems/<network_id_str>", methods=["PUT"])
     @ensure_blink_available
     @api_route_with_validation(
-        "arm/disarm system",
+        "update system",
         validate_params={"network_id_str": NetworkId},
         validate_json=True,
         required_fields=["armed"],
     )
-    def arm_system_route(network_id: NetworkId) -> JsonDict:
-        """Arm or disarm a Blink system.
+    def update_system_route(network_id: NetworkId) -> JsonDict:
+        """Update a Blink system (arm/disarm).
 
         Args:
             network_id: Validated NetworkId object
@@ -86,11 +103,11 @@ def setup_system_routes(app: Flask) -> None:
         # Handle invalid data - this should be handled by validation decorators
         return arm_system(network_id, False)  # Default fallback
 
-    @app.route("/api/systems/refresh", methods=["PUT"])
+    @app.route("/api/systems/cache", methods=["DELETE"])
     @ensure_blink_available
-    @simple_success_response("System refreshed successfully")
-    def refresh_system_route() -> JsonDict:
-        """Manually refresh the Blink system.
+    @simple_success_response("Systems cache cleared")
+    def clear_systems_cache_route() -> JsonDict:
+        """Clear systems cache.
 
         Returns:
             JSON response with success status or error message

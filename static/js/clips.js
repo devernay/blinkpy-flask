@@ -482,7 +482,7 @@ async function processDownloadQueue() {
 
         try {
             // Trigger server-side processing (download + thumbnail generation)
-            const response = await fetch(`/api/clips/${clip.id}/process`, {
+            const response = await fetch(`/api/clips/${clip.id}/thumbnail`, {
                 method: 'POST'
             });
 

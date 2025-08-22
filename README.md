@@ -102,19 +102,24 @@ All API endpoints return standardized JSON responses:
 
 ### System Management
 - `GET /api/systems` - List available Blink systems
+- `GET /api/systems/<network_id>` - Get system details
 - `GET /api/systems/<network_id>/devices` - Get devices for system
-- `POST /api/systems/<network_id>/arm` - Arm/disarm system
-- `PUT /api/systems/refresh` - Refresh system data
+- `PUT /api/systems/<network_id>` - Update system (arm/disarm)
+- `DELETE /api/systems/cache` - Clear systems cache
 
 ### Camera Operations
+- `GET /api/cameras` - List all cameras
+- `GET /api/cameras/<camera_id>` - Get camera details
 - `GET /api/cameras/<camera_id>/thumbnail` - Get camera thumbnail
 - `GET /api/cameras/<camera_id>/thumbnail?timestamp=true` - Get thumbnail timestamp
-- `PUT /api/cameras/<camera_id>/refresh` - Refresh camera thumbnail
-- `GET /api/cameras/<camera_id>/liveview` - Start live stream
-- `DELETE /api/cameras/<camera_id>/liveview` - Stop live stream
-- `GET /api/cameras/<camera_id>/hls/<filename>` - Get HLS stream segments
+- `DELETE /api/cameras/<camera_id>/thumbnail` - Clear thumbnail cache and refresh
+- `POST /api/cameras/<camera_id>/streams` - Start live stream
+- `DELETE /api/cameras/<camera_id>/streams` - Stop live stream
+- `GET /api/cameras/<camera_id>/streams/<filename>` - Get HLS stream segments
+- `POST /api/cameras/<camera_id>/record` - Start recording
 
-Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. The `requirements.txt` file will install this version of blinkpy.
+**Live Streaming Implementation:**
+Live streaming uses blinkpy PR [#1078](https://github.com/fronzbot/blinkpy/pull/1078) with MPEG-TS to HLS transcoding via FFmpeg. The camera's `init_livestream()` method creates a local TCP proxy server that streams MPEG-TS data, which is then transcoded to HLS segments for web browser compatibility.
 
 If you need to checkout the code for this PR from the blinkpy repo:
 ```
@@ -127,7 +132,7 @@ git checkout pr-1078
 ### Clip Management
 - `GET /api/clips?storage=cloud|local` - List clips by storage type
 - `GET /api/clips/<clip_id>/download` - Download clip file
-- `PUT /api/clips/<clip_id>/process` - Process clip (generate thumbnail)
+- `POST /api/clips/<clip_id>/thumbnail` - Generate clip thumbnail
 - `GET /api/clips/<clip_id>/thumbnail` - Get clip thumbnail
 - `GET /api/clips/<clip_id>/thumbnail?check=true` - Check thumbnail availability
 - `DELETE /api/clips/<clip_id>` - Delete clip
@@ -137,6 +142,8 @@ git checkout pr-1078
 - `GET /api/settings` - Get user settings
 - `PUT /api/settings` - Save user settings
 - `DELETE /api/cache` - Clear all caches
+- `DELETE /api/cache/thumbnails` - Clear thumbnail cache only
+- `DELETE /api/cache/clips` - Clear clips cache only
 - `POST /logout` - Logout and clear credentials
 
 ## Configuration

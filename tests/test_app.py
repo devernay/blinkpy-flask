@@ -1137,7 +1137,7 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_arm_system_invalid_network(self, mock_blink: Mock) -> None:
         """Test arm_system with invalid network ID."""
         mock_blink.networks = {}
-        response = self.client.post("/api/systems/99999/arm", json={"armed": True})
+        response = self.client.put("/api/systems/99999", json={"armed": True})
         self.assert_api_error(response, 404)
 
     @patch("blinkapp.services.blink_service.blink")
@@ -1146,7 +1146,7 @@ class TestAPIEndpoints(FlaskTestCase):
         mock_network = Mock()
         mock_blink.networks = {"12345": mock_network}
 
-        response = self.client.post("/api/systems/12345/arm", json={})
+        response = self.client.put("/api/systems/12345", json={})
         self.assertEqual(response.status_code, 400)
 
     @patch("blinkapp.services.blink_service.blink")
@@ -1300,7 +1300,7 @@ class TestStreamingEndpoints(FlaskTestCase):
         """Test get_liveview with invalid camera ID."""
         mock_blink.cameras = {}
 
-        response = self.client.get("/api/cameras/99999/liveview")
+        response = self.client.post("/api/cameras/99999/streams")
         self.assertEqual(response.status_code, 404)
 
 
@@ -1349,7 +1349,7 @@ class TestThumbnailManagement(FlaskTestCase):
             ),
             patch("blinkapp.CACHE_DIR", "/tmp/test_cache"),
         ):
-            response = self.client.put("/api/cameras/12345/refresh")
+            response = self.client.delete("/api/cameras/12345/thumbnail")
             # May return 200 (success) or 500 (cache error) - both acceptable for this test
             self.assertIn(response.status_code, [200, 500])
 
@@ -1455,7 +1455,7 @@ class TestAsyncOperations(BaseTestCase):
         mock_blink.refresh.return_value = mock_refresh_task
         mock_connection.execute.return_value = True  # Success
 
-        response = self.client.put("/api/systems/refresh")
+        response = self.client.delete("/api/systems/cache")
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -1534,7 +1534,7 @@ class TestErrorScenarios(BaseTestCase):
     def test_invalid_json_requests(self) -> None:
         """Test endpoints with invalid JSON."""
         endpoints = [
-            ("/api/systems/12345/arm", "POST"),
+            ("/api/systems/12345", "PUT"),
             ("/api/settings", "PUT"),
         ]
 
@@ -1562,11 +1562,6 @@ class TestErrorScenarios(BaseTestCase):
         mock_blink.sync = {}  # Empty sync to ensure no cameras found
         mock_connection.return_value = Mock()
 
-        endpoints = [
-            "/api/cameras/99999/thumbnail",
-            "/api/cameras/99999/liveview",
-        ]
-
         with patch(
             "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized",
             return_value={},
@@ -1582,9 +1577,17 @@ class TestErrorScenarios(BaseTestCase):
                                 with patch(
                                     "blinkapp.SETTINGS_FILE", "/tmp/cache/settings.json"
                                 ):
-                                    for endpoint in endpoints:
-                                        response = self.client.get(endpoint)
-                                        self.assertEqual(response.status_code, 404)
+                                    # Test GET endpoints
+                                    response = self.client.get(
+                                        "/api/cameras/99999/thumbnail"
+                                    )
+                                    self.assertEqual(response.status_code, 404)
+
+                                    # Test POST endpoints
+                                    response = self.client.post(
+                                        "/api/cameras/99999/streams"
+                                    )
+                                    self.assertEqual(response.status_code, 404)
 
 
 class TestConfigurationEdgeCases(BaseTestCase):
@@ -1654,7 +1657,7 @@ class TestStreamingOperations(BaseTestCase):
         mock_camera.name = "Test Camera"
         mock_blink.cameras = {12345: mock_camera}
 
-        response = self.client.get("/api/cameras/12345/liveview")
+        response = self.client.post("/api/cameras/12345/streams")
         # Should either succeed or fail gracefully
         self.assertIn(response.status_code, [200, 500, 404])
 
@@ -2141,7 +2144,7 @@ class TestClipDownloadOperations(BaseTestCase):
             with patch("subprocess.run") as mock_subprocess:
                 mock_subprocess.return_value = Mock(returncode=0)
 
-                response = self.client.put("/api/clips/test_clip/process")
+                response = self.client.post("/api/clips/test_clip/thumbnail")
 
                 # Should attempt thumbnail generation
                 self.assertIn(response.status_code, [200, 500])
@@ -2308,14 +2311,14 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         mock_connection.execute.return_value = None
 
         # Test arming
-        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
+        response = self.client.put("/api/systems/12345", json={"armed": True})
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
         # Test disarming
-        response = self.client.post("/api/systems/12345/arm", json={"armed": False})
+        response = self.client.put("/api/systems/12345", json={"armed": False})
         self.assertEqual(response.status_code, 200)
 
         data = json.loads(response.data)
@@ -2396,7 +2399,7 @@ class TestStreamingAndLiveView(BaseTestCase):
                 "http://localhost:8080/stream.m3u8"
             )
 
-            response = self.client.get("/api/cameras/12345/liveview")
+            response = self.client.post("/api/cameras/12345/streams")
 
             # Should attempt to start stream
             self.assertIn(response.status_code, [200, 500])
@@ -2423,7 +2426,7 @@ class TestStreamingAndLiveView(BaseTestCase):
         ) as mock_stream_manager:
             mock_stream_manager.start_stream.side_effect = Exception("Stream failed")
 
-            response = self.client.get("/api/cameras/12345/liveview")
+            response = self.client.post("/api/cameras/12345/streams")
 
             # Should handle stream errors
             self.assertIn(response.status_code, [500, 404])
@@ -3136,7 +3139,7 @@ class TestLiveStreamOperations(BaseTestCase):
                 "http://localhost:8080/stream.m3u8"
             )
 
-            response = self.client.get("/api/cameras/12345/liveview")
+            response = self.client.post("/api/cameras/12345/streams")
 
             # Should initialize stream successfully
             self.assertIn(response.status_code, [200, 500])
@@ -3156,7 +3159,7 @@ class TestLiveStreamOperations(BaseTestCase):
         # Mock stream initialization failure
         mock_connection.execute.return_value = None
 
-        response = self.client.get("/api/cameras/12345/liveview")
+        response = self.client.post("/api/cameras/12345/streams")
 
         # Should handle stream init failure
         self.assertIn(response.status_code, [500, 404])
@@ -3193,7 +3196,7 @@ class TestLiveStreamOperations(BaseTestCase):
                 "http://localhost:8080/stream.m3u8"
             )
 
-            response = self.client.get("/api/cameras/12345/liveview")
+            response = self.client.post("/api/cameras/12345/streams")
 
             # Should integrate with stream manager
             self.assertIn(response.status_code, [200, 500])
@@ -3292,7 +3295,7 @@ class TestAdvancedClipOperations(BaseTestCase):
                 with patch(
                     "blinkapp.services.clip_service.process_cloud_clip_background"
                 ) as mock_process:
-                    response = self.client.put("/api/clips/test_clip/process")
+                    response = self.client.post("/api/clips/test_clip/thumbnail")
                     self.assertEqual(response.status_code, 200)
                     mock_process.assert_called_once()
 
@@ -3312,7 +3315,7 @@ class TestAdvancedClipOperations(BaseTestCase):
                 "blinkapp.services.thumbnail_service.generate_clip_thumbnail",
                 return_value=None,
             ):
-                response = self.client.put("/api/clips/test_clip/process")
+                response = self.client.post("/api/clips/test_clip/thumbnail")
 
                 # Should handle thumbnail generation failure
                 self.assertIn(response.status_code, [200, 500])
@@ -3429,7 +3432,7 @@ class TestSystemDeviceOperations(BaseTestCase):
 
         mock_connection.execute.side_effect = slow_execute
 
-        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
+        response = self.client.put("/api/systems/12345", json={"armed": True})
 
         # Should handle delays gracefully
         self.assertIn(response.status_code, [200, 500])
@@ -3517,7 +3520,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         ) as mock_connection:
             mock_connection.execute.side_effect = Exception("Camera error")
 
-            response = self.client.put("/api/cameras/12345/refresh")
+            response = self.client.delete("/api/cameras/12345/thumbnail")
 
             # Should handle camera errors gracefully
             self.assertIn(response.status_code, [500, 400])
@@ -3602,7 +3605,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
             with patch("blinkapp.services.blink_service.blink") as mock_blink:
                 mock_blink.cameras = {12345: Mock()}
 
-                response = self.client.get("/api/cameras/12345/liveview")
+                response = self.client.post("/api/cameras/12345/streams")
 
                 # Should handle missing stream manager gracefully
                 self.assertIn(response.status_code, [500, 404])
@@ -4007,7 +4010,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         with patch("blinkapp.services.connection_service.executor") as mock_executor:
             mock_executor.submit.return_value = Mock()
 
-            response = self.client.put("/api/systems/refresh")
+            response = self.client.delete("/api/systems/cache")
             self.assertEqual(response.status_code, 200)
 
             data = json.loads(response.data)
@@ -4049,7 +4052,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         # Mock partial failure - connection succeeds but arm fails
         mock_connection.execute.side_effect = Exception("Arm failed")
 
-        response = self.client.post("/api/systems/12345/arm", json={"armed": True})
+        response = self.client.put("/api/systems/12345", json={"armed": True})
 
         # Should handle partial failures
         self.assertIn(response.status_code, [200, 500])
@@ -4701,7 +4704,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 return_value=mock_stream_manager,
             ):
                 with patch("blinkapp.routes.camera.logger") as mock_logger:
-                    response = self.client.get("/api/cameras/12345/liveview")
+                    response = self.client.post("/api/cameras/12345/streams")
 
                     # Should complete full initialization
                     self.assertIn(response.status_code, [200, 500])
@@ -4745,7 +4748,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=mock_stream_manager,
             ):
-                response = self.client.get("/api/cameras/12345/liveview")
+                response = self.client.post("/api/cameras/12345/streams")
 
                 # Should handle HLS transcoding error
                 self.assertEqual(response.status_code, 200)
@@ -4783,7 +4786,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
                 "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=Mock(),
             ):
-                response = self.client.get("/api/cameras/12345/liveview")
+                response = self.client.post("/api/cameras/12345/streams")
 
                 # Should handle async initialization failure
                 self.assertIn(response.status_code, [500, 400])
@@ -4802,7 +4805,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         mock_stream.url = "tcp://localhost:8080"
         mock_connection.execute.return_value = mock_stream
 
-        response = self.client.get("/api/cameras/12345/liveview")
+        response = self.client.post("/api/cameras/12345/streams")
 
         # Should handle missing stream manager
         self.assertIn(response.status_code, [500, 400])
@@ -5286,7 +5289,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         initial_armed_state = data1["data"]["systems"][0]["armed"]
 
         # 2. Change state
-        response2 = self.client.post("/api/systems/12345/arm", json={"armed": True})
+        response2 = self.client.put("/api/systems/12345", json={"armed": True})
         self.assertEqual(response2.status_code, 200)
 
         # 3. Verify state change

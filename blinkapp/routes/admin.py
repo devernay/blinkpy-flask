@@ -79,6 +79,56 @@ def register_admin_routes(app: Flask) -> None:
         ensure_executor_initialized().submit(clear_all_caches)
         return {}  # Decorator will handle the actual response
 
+    @app.route("/api/cache/thumbnails", methods=["DELETE"])
+    @simple_success_response("Thumbnail cache cleared")
+    def clear_thumbnail_cache() -> JsonDict:
+        """Clear thumbnail cache only.
+
+        Returns:
+            JSON response with success status
+        """
+        from pathlib import Path
+
+        from blinkapp.services.connection_service import ensure_executor_initialized
+
+        def clear_thumbnails() -> None:
+            import shutil
+
+            from blinkapp import THUMBNAIL_CACHE_DIR
+
+            cache_path = Path(THUMBNAIL_CACHE_DIR)
+            if cache_path.exists():
+                shutil.rmtree(cache_path)
+                cache_path.mkdir(parents=True, exist_ok=True)
+
+        ensure_executor_initialized().submit(clear_thumbnails)
+        return {}
+
+    @app.route("/api/cache/clips", methods=["DELETE"])
+    @simple_success_response("Clips cache cleared")
+    def clear_clips_cache() -> JsonDict:
+        """Clear clips cache only.
+
+        Returns:
+            JSON response with success status
+        """
+        from pathlib import Path
+
+        from blinkapp.services.connection_service import ensure_executor_initialized
+
+        def clear_clips() -> None:
+            import shutil
+
+            from blinkapp import CLIPS_CACHE_DIR
+
+            cache_path = Path(CLIPS_CACHE_DIR)
+            if cache_path.exists():
+                shutil.rmtree(cache_path)
+                cache_path.mkdir(parents=True, exist_ok=True)
+
+        ensure_executor_initialized().submit(clear_clips)
+        return {}
+
     @app.route("/placeholder")
     @api_route("placeholder")
     def placeholder() -> tuple[Response, int]:

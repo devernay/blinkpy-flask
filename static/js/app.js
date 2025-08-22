@@ -269,8 +269,8 @@ async function setArmState(armed) {
     if (!currentSystem || currentSystem.armed === armed) return;
 
     try {
-        const response = await fetch(`/api/systems/${currentSystem.network_id}/arm`, {
-            method: 'POST',
+        const response = await fetch(`/api/systems/${currentSystem.network_id}`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -299,8 +299,8 @@ async function toggleArm() {
     const newArmedState = !currentSystem.armed;
 
     try {
-        const response = await fetch(`/api/systems/${currentSystem.network_id}/arm`, {
-            method: 'POST',
+        const response = await fetch(`/api/systems/${currentSystem.network_id}`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },

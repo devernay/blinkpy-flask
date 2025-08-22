@@ -3,7 +3,7 @@
   "info": {
     "title": "Blink Flask Web Interface API",
     "description": "RESTful API for managing Blink camera systems with live streaming, clip management, and settings",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -18,152 +18,42 @@
   "paths": {
     "/": {
       "get": {
-        "summary": "Main web interface",
-        "operationId": "getMainPage",
+        "summary": "Main page",
+        "description": "Redirect to login if not authenticated, otherwise show main interface",
         "responses": {
           "200": {
-            "description": "Main HTML page",
-            "content": {
-              "text/html": {
-                "schema": {"type": "string"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/login": {
-      "get": {
-        "summary": "Login page",
-        "operationId": "getLoginPage",
-        "responses": {
-          "200": {
-            "description": "Login HTML page",
-            "content": {
-              "text/html": {
-                "schema": {"type": "string"}
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Process login credentials",
-        "operationId": "processLogin",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "required": ["username", "password"],
-                "properties": {
-                  "username": {"type": "string"},
-                  "password": {"type": "string"}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "302": {
-            "description": "Redirect to 2FA or main page"
-          }
-        }
-      }
-    },
-    "/2fa": {
-      "get": {
-        "summary": "2FA verification page",
-        "operationId": "get2FAPage",
-        "responses": {
-          "200": {
-            "description": "2FA HTML page",
-            "content": {
-              "text/html": {
-                "schema": {"type": "string"}
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Process 2FA verification code",
-        "operationId": "process2FA",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "required": ["verification_code"],
-                "properties": {
-                  "verification_code": {"type": "string"}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "302": {
-            "description": "Redirect to main page or back to 2FA"
-          }
-        }
-      }
-    },
-    "/logout": {
-      "post": {
-        "summary": "Logout user and clear session",
-        "operationId": "logout",
-        "responses": {
-          "302": {
-            "description": "Redirect to login page"
-          }
-        }
-      }
-    },
-    "/placeholder": {
-      "get": {
-        "summary": "Placeholder image for missing thumbnails",
-        "operationId": "getPlaceholder",
-        "responses": {
-          "200": {
-            "description": "Placeholder image",
-            "content": {
-              "image/svg+xml": {
-                "schema": {"type": "string"}
-              }
-            }
+            "description": "Main interface or login redirect"
           }
         }
       }
     },
     "/api/systems": {
       "get": {
-        "summary": "Get list of available Blink systems",
-        "operationId": "getSystemList",
+        "summary": "List all Blink systems",
+        "description": "Get list of available Blink sync modules and their network information",
         "responses": {
           "200": {
-            "description": "List of systems retrieved successfully",
+            "description": "List of systems",
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {"$ref": "#/components/schemas/ApiResponse"},
-                    {
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "properties": {
-                            "systems": {
-                              "type": "array",
-                              "items": {"$ref": "#/components/schemas/SystemData"}
-                            }
-                          }
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "systems": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "network_id": {"type": "string"},
+                          "name": {"type": "string"},
+                          "armed": {"type": "boolean"},
+                          "status": {"type": "string"}
                         }
                       }
-                    }
-                  ]
+                    },
+                    "timestamp": {"type": "string", "format": "date-time"}
+                  }
                 }
               }
             }
@@ -171,68 +61,30 @@
         }
       }
     },
-    "/api/systems/refresh": {
-      "put": {
-        "summary": "Manually refresh the Blink system data",
-        "operationId": "refreshSystem",
-        "responses": {
-          "200": {
-            "description": "System refresh initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/systems/{network_id}/devices": {
+    "/api/systems/{network_id}": {
       "get": {
-        "summary": "Get devices for a specific Blink system",
-        "operationId": "getDevices",
+        "summary": "Get system details",
+        "description": "Get detailed information about a specific Blink system",
         "parameters": [
           {
             "name": "network_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"},
-            "description": "Network ID of the Blink system"
+            "schema": {"type": "string"}
           }
         ],
         "responses": {
           "200": {
-            "description": "Devices retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {"$ref": "#/components/schemas/ApiResponse"},
-                    {
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "properties": {
-                            "devices": {
-                              "type": "array",
-                              "items": {"$ref": "#/components/schemas/DeviceData"}
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
+            "description": "System details"
+          },
+          "404": {
+            "description": "System not found"
           }
         }
-      }
-    },
-    "/api/systems/{network_id}/arm": {
-      "post": {
-        "summary": "Arm or disarm a Blink system",
-        "operationId": "armSystem",
+      },
+      "put": {
+        "summary": "Update system",
+        "description": "Update system settings (arm/disarm)",
         "parameters": [
           {
             "name": "network_id",
@@ -247,30 +99,118 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["armed"],
                 "properties": {
                   "armed": {"type": "boolean"}
-                }
+                },
+                "required": ["armed"]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Arm status updated",
+            "description": "System updated successfully"
+          },
+          "404": {
+            "description": "System not found"
+          }
+        }
+      }
+    },
+    "/api/systems/{network_id}/devices": {
+      "get": {
+        "summary": "Get system devices",
+        "description": "Get all devices (cameras, sync modules) for a specific system",
+        "parameters": [
+          {
+            "name": "network_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of devices"
+          },
+          "404": {
+            "description": "System not found"
+          }
+        }
+      }
+    },
+    "/api/systems/cache": {
+      "delete": {
+        "summary": "Clear systems cache",
+        "description": "Clear cached system information to force refresh",
+        "responses": {
+          "200": {
+            "description": "Systems cache cleared"
+          }
+        }
+      }
+    },
+    "/api/cameras": {
+      "get": {
+        "summary": "List all cameras",
+        "description": "Get list of all available cameras across all systems",
+        "responses": {
+          "200": {
+            "description": "List of cameras",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "cameras": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {"type": "string"},
+                          "name": {"type": "string"},
+                          "network_id": {"type": "string"},
+                          "enabled": {"type": "boolean"},
+                          "status": {"type": "string"}
+                        }
+                      }
+                    },
+                    "timestamp": {"type": "string", "format": "date-time"}
+                  }
+                }
               }
             }
           }
         }
       }
     },
+    "/api/cameras/{camera_id}": {
+      "get": {
+        "summary": "Get camera details",
+        "description": "Get detailed information about a specific camera",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Camera details"
+          },
+          "404": {
+            "description": "Camera not found"
+          }
+        }
+      }
+    },
     "/api/cameras/{camera_id}/thumbnail": {
       "get": {
-        "summary": "Get camera thumbnail image or timestamp",
-        "operationId": "getCameraThumbnail",
+        "summary": "Get camera thumbnail",
+        "description": "Get current thumbnail image for a camera",
         "parameters": [
           {
             "name": "camera_id",
@@ -282,103 +222,22 @@
             "name": "timestamp",
             "in": "query",
             "required": false,
-            "schema": {"type": "string", "enum": ["true"]},
-            "description": "If 'true', return timestamp instead of image"
+            "description": "Return timestamp instead of image",
+            "schema": {"type": "boolean"}
           }
         ],
         "responses": {
           "200": {
-            "description": "Camera thumbnail image or timestamp",
-            "content": {
-              "image/jpeg": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              },
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-
-    "/api/cameras/{camera_id}/record": {
-      "post": {
-        "summary": "Trigger camera to record a new clip",
-        "operationId": "triggerCameraRecording",
-        "parameters": [
-          {
-            "name": "camera_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Recording initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/cameras/{camera_id}/refresh": {
-      "put": {
-        "summary": "Refresh camera thumbnail",
-        "operationId": "refreshCamera",
-        "parameters": [
-          {
-            "name": "camera_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Thumbnail refresh initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/cameras/{camera_id}/liveview": {
-      "get": {
-        "summary": "Start live stream for camera",
-        "operationId": "getLiveView",
-        "parameters": [
-          {
-            "name": "camera_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Live stream URLs",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
+            "description": "Thumbnail image or timestamp"
+          },
+          "404": {
+            "description": "Camera or thumbnail not found"
           }
         }
       },
       "delete": {
-        "summary": "Stop live stream for camera",
-        "operationId": "stopLiveView",
+        "summary": "Refresh camera thumbnail",
+        "description": "Clear thumbnail cache and trigger refresh from camera",
         "parameters": [
           {
             "name": "camera_id",
@@ -389,180 +248,94 @@
         ],
         "responses": {
           "200": {
-            "description": "Live stream stopped",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/clips": {
-      "get": {
-        "summary": "Get clips from cloud or local storage",
-        "operationId": "getClips",
-        "parameters": [
-          {
-            "name": "storage",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": ["cloud", "local"],
-              "default": "cloud"
-            },
-            "description": "Storage type"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Clips retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "allOf": [
-                    {"$ref": "#/components/schemas/ApiResponse"},
-                    {
-                      "properties": {
-                        "data": {
-                          "type": "object",
-                          "properties": {
-                            "clips": {
-                              "type": "array",
-                              "items": {"$ref": "#/components/schemas/ClipData"}
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/clips/{clip_id}/download": {
-      "get": {
-        "summary": "Download a specific clip",
-        "operationId": "downloadClip",
-        "parameters": [
-          {
-            "name": "clip_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"},
-            "description": "Clip ID (cloud ID or local sync~item format)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Video clip file",
-            "content": {
-              "video/mp4": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/clips/{clip_id}/process": {
-      "put": {
-        "summary": "Process clip on server (download and generate thumbnail)",
-        "operationId": "processClip",
-        "parameters": [
-          {
-            "name": "clip_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Processing initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/clips/{clip_id}/thumbnail": {
-      "get": {
-        "summary": "Get clip thumbnail image or check availability",
-        "operationId": "getClipThumbnail",
-        "parameters": [
-          {
-            "name": "clip_id",
-            "in": "path",
-            "required": true,
-            "schema": {"type": "string"}
+            "description": "Thumbnail refresh initiated"
           },
-          {
-            "name": "check",
-            "in": "query",
-            "required": false,
-            "schema": {"type": "string", "enum": ["true"]},
-            "description": "If 'true', check availability instead of returning image"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Clip thumbnail image or availability status",
-            "content": {
-              "image/jpeg": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              },
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
+          "404": {
+            "description": "Camera not found"
           }
         }
       }
     },
-
-    "/api/clips/{clip_id}": {
-      "delete": {
-        "summary": "Delete a clip and its cached files",
-        "operationId": "deleteClip",
+    "/api/cameras/{camera_id}/record": {
+      "post": {
+        "summary": "Start recording",
+        "description": "Start recording a clip on the camera",
         "parameters": [
           {
-            "name": "clip_id",
+            "name": "camera_id",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"},
-            "description": "Clip ID (cloud ID or local sync~item format)"
+            "schema": {"type": "string"}
           }
         ],
         "responses": {
           "200": {
-            "description": "Deletion status",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
+            "description": "Recording started"
+          },
+          "404": {
+            "description": "Camera not found"
           }
         }
       }
     },
-    "/api/cameras/{camera_id}/hls/{filename}": {
+    "/api/cameras/{camera_id}/streams": {
+      "post": {
+        "summary": "Start live stream",
+        "description": "Start live streaming from camera using TCP to HLS transcoding",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live stream started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "stream_url": {"type": "string"},
+                    "playlist_url": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Camera not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Stop live stream",
+        "description": "Stop active live stream for camera",
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live stream stopped"
+          },
+          "404": {
+            "description": "Camera not found"
+          }
+        }
+      }
+    },
+    "/api/cameras/{camera_id}/streams/{filename}": {
       "get": {
-        "summary": "Serve HLS playlist and segment files",
-        "operationId": "getHLSFile",
+        "summary": "Get HLS stream segments",
+        "description": "Get HLS playlist or video segments for live streaming",
         "parameters": [
           {
             "name": "camera_id",
@@ -574,21 +347,60 @@
             "name": "filename",
             "in": "path",
             "required": true,
-            "schema": {"type": "string"},
-            "description": "HLS playlist (.m3u8) or segment (.ts) filename"
+            "schema": {"type": "string"}
           }
         ],
         "responses": {
           "200": {
-            "description": "HLS file content",
+            "description": "HLS content"
+          },
+          "404": {
+            "description": "Stream or file not found"
+          }
+        }
+      }
+    },
+    "/api/clips": {
+      "get": {
+        "summary": "List clips",
+        "description": "Get list of clips from cloud or local storage",
+        "parameters": [
+          {
+            "name": "storage",
+            "in": "query",
+            "required": false,
+            "description": "Storage type to filter by",
+            "schema": {
+              "type": "string",
+              "enum": ["cloud", "local"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of clips",
             "content": {
-              "application/vnd.apple.mpegurl": {
-                "schema": {"type": "string"}
-              },
-              "video/mp2t": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "format": "binary"
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "clips": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {"type": "string"},
+                          "name": {"type": "string"},
+                          "created_at": {"type": "string", "format": "date-time"},
+                          "size": {"type": "integer"},
+                          "camera_name": {"type": "string"},
+                          "storage_type": {"type": "string"}
+                        }
+                      }
+                    },
+                    "timestamp": {"type": "string", "format": "date-time"}
+                  }
                 }
               }
             }
@@ -596,16 +408,130 @@
         }
       }
     },
+    "/api/clips/{clip_id}": {
+      "delete": {
+        "summary": "Delete clip",
+        "description": "Delete a clip from storage",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clip deleted"
+          },
+          "404": {
+            "description": "Clip not found"
+          }
+        }
+      }
+    },
+    "/api/clips/{clip_id}/download": {
+      "get": {
+        "summary": "Download clip",
+        "description": "Download clip file",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clip file",
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Clip not found"
+          }
+        }
+      }
+    },
+    "/api/clips/{clip_id}/thumbnail": {
+      "get": {
+        "summary": "Get clip thumbnail",
+        "description": "Get thumbnail image for a clip",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "check",
+            "in": "query",
+            "required": false,
+            "description": "Check thumbnail availability without generating",
+            "schema": {"type": "boolean"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail image or availability status"
+          },
+          "404": {
+            "description": "Clip or thumbnail not found"
+          }
+        }
+      },
+      "post": {
+        "summary": "Generate clip thumbnail",
+        "description": "Generate thumbnail for a clip",
+        "parameters": [
+          {
+            "name": "clip_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail generation initiated"
+          }
+        }
+      }
+    },
     "/api/config": {
       "get": {
         "summary": "Get application configuration",
-        "operationId": "getConfig",
+        "description": "Get current application configuration and status",
         "responses": {
           "200": {
             "description": "Application configuration",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "config": {
+                      "type": "object",
+                      "properties": {
+                        "thumbnail_cache_size": {"type": "integer"},
+                        "clips_cache_size": {"type": "integer"},
+                        "thumbnail_processing_display_time": {"type": "integer"},
+                        "thumbnail_error_display_time": {"type": "integer"},
+                        "clip_processing_display_time": {"type": "integer"}
+                      }
+                    },
+                    "timestamp": {"type": "string", "format": "date-time"}
+                  }
+                }
               }
             }
           }
@@ -615,21 +541,42 @@
     "/api/settings": {
       "get": {
         "summary": "Get user settings",
-        "operationId": "getSettings",
+        "description": "Get current user preferences and settings",
         "responses": {
           "200": {
-            "description": "User settings retrieved",
+            "description": "User settings",
             "content": {
               "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "temperature_unit": {
+                          "type": "string",
+                          "enum": ["celsius", "fahrenheit"]
+                        },
+                        "cloud_clip_retention_days": {"type": "integer"},
+                        "local_clip_retention_days": {"type": "integer"},
+                        "thumbnail_size": {
+                          "type": "string",
+                          "enum": ["small", "medium", "large"]
+                        }
+                      }
+                    },
+                    "timestamp": {"type": "string", "format": "date-time"}
+                  }
+                }
               }
             }
           }
         }
       },
       "put": {
-        "summary": "Save user settings",
-        "operationId": "saveSettings",
+        "summary": "Update user settings",
+        "description": "Update user preferences and settings",
         "requestBody": {
           "required": true,
           "content": {
@@ -637,13 +584,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "temperatureUnits": {
+                  "temperature_unit": {
                     "type": "string",
                     "enum": ["celsius", "fahrenheit"]
                   },
-                  "cloudClipRetention": {"type": "string"},
-                  "localClipRetention": {"type": "string"},
-                  "clipThumbnailSize": {
+                  "cloud_clip_retention_days": {"type": "integer"},
+                  "local_clip_retention_days": {"type": "integer"},
+                  "thumbnail_size": {
                     "type": "string",
                     "enum": ["small", "medium", "large"]
                   }
@@ -654,12 +601,7 @@
         },
         "responses": {
           "200": {
-            "description": "Settings saved successfully",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
+            "description": "Settings updated successfully"
           }
         }
       }
@@ -667,15 +609,43 @@
     "/api/cache": {
       "delete": {
         "summary": "Clear all caches",
-        "operationId": "clearCache",
+        "description": "Clear all application caches (thumbnails, clips, systems)",
         "responses": {
           "200": {
-            "description": "Cache clearing initiated",
-            "content": {
-              "application/json": {
-                "schema": {"$ref": "#/components/schemas/ApiResponse"}
-              }
-            }
+            "description": "All caches cleared"
+          }
+        }
+      }
+    },
+    "/api/cache/thumbnails": {
+      "delete": {
+        "summary": "Clear thumbnail cache",
+        "description": "Clear only the thumbnail cache",
+        "responses": {
+          "200": {
+            "description": "Thumbnail cache cleared"
+          }
+        }
+      }
+    },
+    "/api/cache/clips": {
+      "delete": {
+        "summary": "Clear clips cache",
+        "description": "Clear only the clips cache",
+        "responses": {
+          "200": {
+            "description": "Clips cache cleared"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "Logout",
+        "description": "Logout and clear credentials",
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
           }
         }
       }
@@ -685,64 +655,23 @@
     "schemas": {
       "ApiResponse": {
         "type": "object",
-        "required": ["success", "timestamp"],
         "properties": {
           "success": {"type": "boolean"},
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "data": {
+          "timestamp": {"type": "string", "format": "date-time"}
+        },
+        "required": ["success", "timestamp"]
+      },
+      "ErrorResponse": {
+        "allOf": [
+          {"$ref": "#/components/schemas/ApiResponse"},
+          {
             "type": "object",
-            "description": "Response data (success only)"
-          },
-          "error": {
-            "type": "string",
-            "description": "Error message (failure only)"
+            "properties": {
+              "error": {"type": "string"}
+            },
+            "required": ["error"]
           }
-        }
-      },
-      "ClipData": {
-        "type": "object",
-        "properties": {
-          "date": {"type": "string"},
-          "clips": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "string"},
-                "created_at": {"type": "string"},
-                "thumbnail": {"type": "string"},
-                "size": {"type": "integer"},
-                "length": {"type": "number"}
-              }
-            }
-          },
-          "count": {"type": "integer"}
-        }
-      },
-      "SystemData": {
-        "type": "object",
-        "properties": {
-          "name": {"type": "string"},
-          "network_id": {"type": "integer"},
-          "armed": {"type": "boolean"},
-          "online": {"type": "boolean"}
-        }
-      },
-      "DeviceData": {
-        "type": "object",
-        "properties": {
-          "type": {"type": "string"},
-          "name": {"type": "string"},
-          "online": {"type": "boolean"},
-          "id": {"type": "string"},
-          "thumbnail": {"type": "string"},
-          "battery": {"type": "string"},
-          "temperature": {"type": "integer"},
-          "wifi_strength": {"type": "integer"}
-        }
+        ]
       }
     }
   }

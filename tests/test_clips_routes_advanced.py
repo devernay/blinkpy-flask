@@ -55,12 +55,12 @@ class TestClipsRoutesAdvanced(unittest.TestCase):
             self.assertIsNotNone(response)
 
     def test_clips_process_route_registration(self) -> None:
-        """Test clips process route registration."""
+        """Test clips thumbnail generation route registration."""
         app = Flask(__name__)
         setup_clips_routes(app)
 
         with app.test_client() as client:
-            # Test process endpoint exists
-            response = client.put("/api/clips/12345/process")
+            # Test thumbnail generation endpoint exists
+            response = client.post("/api/clips/12345/thumbnail")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
