@@ -14,7 +14,7 @@ from blinkapp import (
 class TestInitAdvanced(unittest.TestCase):
     """Test advanced __init__.py functions with highest missed lines."""
 
-    def test_clear_all_caches_basic(self):
+    def test_clear_all_caches_basic(self) -> None:
         """Test clear_all_caches basic functionality."""
         # Should not raise exception
         try:
@@ -25,7 +25,7 @@ class TestInitAdvanced(unittest.TestCase):
             pass
 
     @patch("blinkapp.logging")
-    def test_setup_logging_with_mock(self, mock_logging):
+    def test_setup_logging_with_mock(self, mock_logging: Mock) -> None:
         """Test setup_logging with mocked logging."""
         mock_logging.basicConfig = Mock()
         mock_logging.getLogger = Mock()
@@ -38,7 +38,7 @@ class TestInitAdvanced(unittest.TestCase):
             pass
 
     @patch("blinkapp.Path")
-    def test_initialize_cache_paths_with_mock(self, mock_path):
+    def test_initialize_cache_paths_with_mock(self, mock_path: Mock) -> None:
         """Test initialize_cache_paths with mocked Path."""
         mock_path_instance = Mock()
         mock_path.return_value = mock_path_instance
@@ -51,7 +51,7 @@ class TestInitAdvanced(unittest.TestCase):
             # Expected to fail in test environment, but function exists
             pass
 
-    def test_init_functions_exist(self):
+    def test_init_functions_exist(self) -> None:
         """Test that init functions are importable."""
         # All functions should be callable
         self.assertTrue(callable(clear_all_caches))

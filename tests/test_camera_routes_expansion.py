@@ -11,7 +11,7 @@ from blinkapp.routes.camera import setup_camera_routes
 class TestCameraRoutesExpansion(unittest.TestCase):
     """Test uncovered camera route functions with highest missed lines."""
 
-    def test_setup_camera_routes(self):
+    def test_setup_camera_routes(self) -> None:
         """Test setup_camera_routes function."""
         app = Flask(__name__)
 
@@ -26,7 +26,7 @@ class TestCameraRoutesExpansion(unittest.TestCase):
         endpoints = [rule.endpoint for rule in rules]
         self.assertIn("get_camera_thumbnail", endpoints)
 
-    def test_camera_routes_registration(self):
+    def test_camera_routes_registration(self) -> None:
         """Test camera routes are properly registered."""
         app = Flask(__name__)
         setup_camera_routes(app)
@@ -43,7 +43,7 @@ class TestCameraRoutesExpansion(unittest.TestCase):
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
-    def test_camera_hls_route_registration(self):
+    def test_camera_hls_route_registration(self) -> None:
         """Test camera HLS route registration."""
         app = Flask(__name__)
         setup_camera_routes(app)

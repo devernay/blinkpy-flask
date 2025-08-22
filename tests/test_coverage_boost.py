@@ -410,7 +410,7 @@ class TestBasicOperations(BaseTestCase):
         converted = datetime.fromtimestamp(timestamp)
         self.assertIsInstance(converted, datetime)
 
-    def test_utils_service_create_device_data(self):
+    def test_utils_service_create_device_data(self) -> None:
         """Test utils_service create_device_data function."""
         from blinkapp.models.ids import CameraId
         from blinkapp.services.utils_service import create_device_data
@@ -437,14 +437,14 @@ class TestBasicOperations(BaseTestCase):
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Test Camera")
 
-    def test_stream_service_initialize_stream_manager(self):
+    def test_stream_service_initialize_stream_manager(self) -> None:
         """Test stream_service initialize_stream_manager function."""
         from blinkapp.services.stream_service import initialize_stream_manager
 
         # Should not raise exception
         initialize_stream_manager()
 
-    def test_stream_service_ensure_stream_manager_initialized(self):
+    def test_stream_service_ensure_stream_manager_initialized(self) -> None:
         """Test stream_service ensure_stream_manager_initialized function."""
         from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
@@ -452,7 +452,7 @@ class TestBasicOperations(BaseTestCase):
         result = ensure_stream_manager_initialized()
         self.assertIsNotNone(result)
 
-    def test_stream_service_is_stream_active(self):
+    def test_stream_service_is_stream_active(self) -> None:
         """Test stream_service is_stream_active function."""
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import is_stream_active
@@ -461,7 +461,7 @@ class TestBasicOperations(BaseTestCase):
         result = is_stream_active(camera_id)
         self.assertIsInstance(result, bool)
 
-    def test_auth_service_is_authenticated(self):
+    def test_auth_service_is_authenticated(self) -> None:
         """Test auth_service is_authenticated function."""
         from blinkapp.services.auth_service import is_authenticated
 

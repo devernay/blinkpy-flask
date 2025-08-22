@@ -116,11 +116,13 @@ def generate_clip_thumbnail(
                 "-i",
                 str(video_path),
                 "-ss",
-                "00:00:01",
+                "00:00:00",
                 "-vframes",
                 "1",
                 "-f",
                 "image2",
+                "-strict",
+                "unofficial",
                 str(thumbnail_path),
             ]
 

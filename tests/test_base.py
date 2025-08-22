@@ -88,7 +88,7 @@ def initialize_for_testing() -> None:
             cache_service.thumbnail_cache = MagicMock()
 
 
-def setup_test_globals():
+def setup_test_globals() -> None:
     """Function to call in setUp methods to initialize globals."""
     initialize_for_testing()
 

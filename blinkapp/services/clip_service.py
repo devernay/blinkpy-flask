@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
-from flask import jsonify, send_file
 from flask.typing import (
     ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
 )
@@ -147,7 +146,9 @@ def process_cloud_clips(
     return format_clips_by_day(clips_by_day)
 
 
-def process_local_clips() -> list[dict[str, object]]:
+def process_local_clips(
+    blink_instance=None, blink_connection_instance=None
+) -> list[dict[str, object]]:
     """Process local storage clips into day-grouped format.
 
     Retrieves clips from USB storage connected to Blink sync modules.
@@ -155,21 +156,39 @@ def process_local_clips() -> list[dict[str, object]]:
     and the manifest to be ready. Each clip gets a composite ID that
     includes the sync module name for proper identification.
 
+    Args:
+        blink_instance: Optional blink instance for testing
+        blink_connection_instance: Optional blink connection for testing
+
     Returns:
         List of day groups with clips sorted by date, or empty list if
         no local storage is available or manifest isn't ready
     """
-    from blinkapp.services.blink_service import blink, blink_connection
+    # Use injected dependencies or defaults
+    if blink_instance is None or blink_connection_instance is None:
+        from blinkapp.services.blink_service import blink, blink_connection
+
+        if blink_instance is None:
+            blink_instance = blink
+        if blink_connection_instance is None:
+            blink_connection_instance = blink_connection
 
     clips_by_day: dict[str, dict[str, object]] = {}
 
-    assert blink is not None
-    for sync_name, sync_module in blink.sync.items():
+    assert blink_instance is not None
+    for sync_name, sync_module in blink_instance.sync.items():
         try:
             # Refresh sync module to update local storage manifest
             # This ensures we have the latest clip information
-            if blink_connection:
-                blink_connection.execute(sync_module.refresh())
+            if blink_connection_instance:
+                try:
+                    refresh_result = sync_module.refresh()
+                    blink_connection_instance.execute(refresh_result)
+                except Exception as refresh_error:
+                    logger.warning(
+                        f"Failed to refresh sync module {sync_name}: {refresh_error}"
+                    )
+                    # Continue processing even if refresh fails
 
             # Get clips from local storage manifest if ready
             if sync_module.local_storage and sync_module.local_storage_manifest_ready:
@@ -228,18 +247,36 @@ def process_local_clips() -> list[dict[str, object]]:
     return format_clips_by_day(clips_by_day)
 
 
-def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
-    """Download cloud storage clip."""
-    from blinkapp import (
-        CLIPS_CACHE_DIR,
-    )
-    from blinkapp.services.blink_service import blink, blink_connection
+def _get_blink_instance():
+    """Get blink instance - extracted for testability."""
+    from blinkapp.services.blink_service import blink
+
+    return blink
+
+
+def _get_clips_cache_dir():
+    """Get clips cache directory - extracted for testability."""
+    from blinkapp import CLIPS_CACHE_DIR
+
+    return Path(CLIPS_CACHE_DIR)
+
+
+def _download_cloud_clip_core(
+    clip_id: ClipId, blink_instance, cache_dir
+) -> tuple[bool, str, Path | None]:
+    """Core download logic for cloud clips without Flask dependencies.
+
+    Returns:
+        Tuple of (success, error_message, filepath)
+    """
     from blinkapp.services.connection_service import (
         ensure_executor_initialized,
         ensure_http_session_initialized,
     )
 
-    assert blink is not None
+    if blink_instance is None:
+        return False, "No blink instance", None
+
     # Check if already cached
     clips_cache_instance = ensure_clips_cache_initialized()
     cached_clip = clips_cache_instance.get(clip_id)
@@ -248,46 +285,31 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ign
             # Quick existence check - if it fails, we'll re-download
             filepath = cached_clip.get("filepath")
             if filepath is not None and filepath.exists():
-                response = send_file(str(filepath), as_attachment=True)
-                return response, 200
+                return True, "", filepath
         except (OSError, AttributeError):
             # File doesn't exist or path is invalid, continue to download
             pass
 
     # Get clip metadata
-    if blink_connection:
-        videos_metadata = blink_connection.execute(
-            blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
-        )
-    else:
-        videos_metadata = []
+    videos_metadata = blink_instance.videos.get("all", [])  # pyright: ignore[reportAttributeAccessIssue]
     clip_info = next(
         (v for v in videos_metadata if str(v.get("id")) == str(clip_id)), None
     )
     if clip_info is None:
-        api_response, status_code = create_api_response(
-            success=False, error=Config.ErrorMessages.CLIP_NOT_FOUND, status_code=404
-        )
-        return jsonify(api_response), status_code
+        return False, "Clip not found", None
 
     # Generate filename
     created_at = datetime.fromisoformat(clip_info["created_at"].replace("Z", "+00:00"))
     camera_name = clip_info.get("device_name", "unknown")
     iso_date = created_at.strftime("%Y-%m-%dT%H-%M-%S")
     filename = f"{clip_id}_{camera_name}_{iso_date}.mp4"
-    assert CLIPS_CACHE_DIR is not None
-    filepath = Path(CLIPS_CACHE_DIR) / filename
+    filepath = cache_dir / filename
 
     # Download if not cached
     if not filepath.exists():
         media_url = clip_info.get("media")
         if media_url is None:
-            api_response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.CLIP_NO_MEDIA_URL,
-                status_code=404,
-            )
-            return jsonify(api_response), status_code
+            return False, Config.ErrorMessages.CLIP_NO_MEDIA_URL, None
 
         # Download in executor to avoid blocking
         def download_file() -> bool:
@@ -312,26 +334,70 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ign
         try:
             success = future.result(timeout=Config.DOWNLOAD_TIMEOUT)
             if not success:
-                api_response, status_code = create_api_response(
-                    success=False,
-                    error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
-                    status_code=500,
-                )
-                return jsonify(api_response), status_code
+                return False, Config.ErrorMessages.CLIP_DOWNLOAD_FAILED, None
         except Exception as e:
             logger.error(f"Download timeout or error for clip {clip_id}: {e}")
-            api_response, status_code = create_api_response(
-                success=False,
-                error=Config.ErrorMessages.CLIP_DOWNLOAD_TIMEOUT,
-                status_code=500,
-            )
-            return jsonify(api_response), status_code
+            return False, Config.ErrorMessages.CLIP_DOWNLOAD_TIMEOUT, None
 
-    return download_clip_common(clip_id, filepath, filename, middle_frame=False)
+    return True, "", filepath
+
+
+def download_cloud_clip(
+    clip_id: ClipId,
+    blink_instance=None,
+    cache_dir=None,
+    jsonify_func=None,
+    send_file_func=None,
+) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    """Download cloud storage clip."""
+    # Use injected dependencies or defaults
+    if blink_instance is None:
+        blink_instance = _get_blink_instance()
+    if cache_dir is None:
+        cache_dir = _get_clips_cache_dir()
+    if jsonify_func is None:
+        from flask import jsonify
+
+        jsonify_func = jsonify
+
+    success, error_message, filepath = _download_cloud_clip_core(
+        clip_id, blink_instance, cache_dir
+    )
+
+    if not success:
+        api_response, status_code = create_api_response(
+            success=False,
+            error=error_message,
+            status_code=404 if "not found" in error_message.lower() else 500,
+        )
+        return jsonify_func(api_response), status_code
+
+    if filepath is not None:
+        # Use download_clip_common for consistent handling and background thumbnail generation
+        return download_clip_common(
+            clip_id,
+            filepath,
+            filepath.name,
+            middle_frame=False,
+            send_file_func=send_file_func,
+            jsonify_func=jsonify_func,
+        )
+
+    # This should not happen, but handle gracefully
+    api_response, status_code = create_api_response(
+        success=False,
+        error="Unexpected error in clip download",
+        status_code=500,
+    )
+    return jsonify_func(api_response), status_code
 
 
 def download_local_clip(
-    clip_id: ClipId, sync_name: str, item_id: int
+    clip_id: ClipId,
+    sync_name: str,
+    item_id: int,
+    jsonify_func=None,
+    send_file_func=None,
 ) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
     """Download local storage clip using blinkpy methods."""
     from blinkapp import (
@@ -339,6 +405,16 @@ def download_local_clip(
         logger,
     )
     from blinkapp.services.blink_service import blink, blink_connection
+
+    # Use injected dependencies or defaults
+    if jsonify_func is None:
+        from flask import jsonify
+
+        jsonify_func = jsonify
+    if send_file_func is None:
+        from flask import send_file
+
+        send_file_func = send_file
 
     assert blink is not None
     # Check if already cached
@@ -349,7 +425,7 @@ def download_local_clip(
             # Quick existence check - if it fails, we'll re-download
             filepath = cached_clip.get("filepath")
             if filepath is not None and filepath.exists():
-                response = send_file(str(filepath), as_attachment=True)
+                response = send_file_func(str(filepath), as_attachment=True)
                 return response, 200
         except (OSError, AttributeError):
             # File doesn't exist or path is invalid, continue to download
@@ -363,7 +439,7 @@ def download_local_clip(
             error=Config.ErrorMessages.SYNC_MODULE_NOT_FOUND,
             status_code=404,
         )
-        return jsonify(api_response), status_code
+        return jsonify_func(api_response), status_code
 
     if not sync_module.local_storage or not sync_module.local_storage_manifest_ready:
         api_response, status_code = create_api_response(
@@ -371,7 +447,7 @@ def download_local_clip(
             error=Config.ErrorMessages.LOCAL_STORAGE_NOT_AVAILABLE,
             status_code=404,
         )
-        return jsonify(api_response), status_code
+        return jsonify_func(api_response), status_code
 
     manifest = sync_module._local_storage["manifest"]
     item = next((i for i in manifest if i.id == item_id), None)
@@ -381,7 +457,7 @@ def download_local_clip(
             error=Config.ErrorMessages.LOCAL_CLIP_NOT_FOUND,
             status_code=404,
         )
-        return jsonify(api_response), status_code
+        return jsonify_func(api_response), status_code
 
     # Generate filename
     iso_date = item.created_at.strftime("%Y-%m-%dT%H-%M-%S")
@@ -405,7 +481,7 @@ def download_local_clip(
                     error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
                     status_code=500,
                 )
-                return jsonify(api_response), status_code
+                return jsonify_func(api_response), status_code
         except Exception as e:
             logger.error(f"Error downloading local clip: {e}")
             api_response, status_code = create_api_response(
@@ -413,9 +489,16 @@ def download_local_clip(
                 error=Config.ErrorMessages.CLIP_DOWNLOAD_FAILED,
                 status_code=500,
             )
-            return jsonify(api_response), status_code
+            return jsonify_func(api_response), status_code
 
-    return download_clip_common(clip_id, filepath, filename, middle_frame=True)
+    return download_clip_common(
+        clip_id,
+        filepath,
+        filename,
+        middle_frame=True,
+        send_file_func=send_file_func,
+        jsonify_func=jsonify_func,
+    )
 
 
 def process_cloud_clip_background(clip_id: ClipId) -> None:
@@ -512,22 +595,19 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 
 
 def download_and_cache_cloud_thumbnail(
-    clip_id: ClipId, thumbnail_url: str
+    clip_id: ClipId, thumbnail_url: str, cache_instance=None, session_instance=None
 ) -> Path | None:
     """Download and cache cloud thumbnail image.
 
     Args:
         clip_id: The clip ID
         thumbnail_url: URL of the thumbnail to download
+        cache_instance: Optional cache instance for testing
+        session_instance: Optional session instance for testing
 
     Returns:
         Path to cached thumbnail file, or None if download failed
     """
-    from blinkapp import logger
-    from blinkapp.config import Config
-    from blinkapp.services.cache_service import ensure_clips_cache_initialized
-    from blinkapp.services.connection_service import ensure_http_session_initialized
-
     try:
         # Get cache directory
         cache_dir = Path(Config.DEFAULT_CACHE_DIR)
@@ -536,7 +616,15 @@ def download_and_cache_cloud_thumbnail(
         thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Download thumbnail
-        session = ensure_http_session_initialized()
+        if session_instance is None:
+            from blinkapp.services.connection_service import (
+                ensure_http_session_initialized,
+            )
+
+            session = ensure_http_session_initialized()
+        else:
+            session = session_instance
+
         response = session.get(thumbnail_url, timeout=10)
         response.raise_for_status()
 
@@ -545,7 +633,11 @@ def download_and_cache_cloud_thumbnail(
             f.write(response.content)
 
         # Update cache with thumbnail path
-        clips_cache_instance = ensure_clips_cache_initialized()
+        if cache_instance is None:
+            clips_cache_instance = ensure_clips_cache_initialized()
+        else:
+            clips_cache_instance = cache_instance
+
         cached_clip = clips_cache_instance.get(clip_id)
         if cached_clip is not None:
             cached_clip["thumbnail"] = thumbnail_path
@@ -643,7 +735,12 @@ def process_local_clip_background(
 
 
 def download_clip_common(
-    clip_id: ClipId, filepath: Path, filename: str, middle_frame: bool = False
+    clip_id: ClipId,
+    filepath: Path,
+    filename: str,
+    middle_frame: bool = False,
+    send_file_func=None,
+    jsonify_func=None,
 ) -> tuple[ResponseReturnValue, int]:
     """Common clip download logic after file is downloaded.
 
@@ -656,7 +753,21 @@ def download_clip_common(
     Returns:
         Flask response with clip file or error message
     """
-    from flask import send_file
+
+    # Use injected jsonify function or default
+    if jsonify_func is None:
+        from flask import jsonify
+
+        jsonify_func = jsonify
+
+    # Check if file exists
+    if not filepath.exists():
+        api_response = {
+            "success": False,
+            "error": "File not found",
+            "timestamp": datetime.now().isoformat(),
+        }
+        return jsonify_func(api_response), 404
 
     # Ensure clips cache is initialized
     clips_cache_instance = ensure_clips_cache_initialized()
@@ -691,5 +802,12 @@ def download_clip_common(
     from blinkapp.services.connection_service import ensure_executor_initialized
 
     ensure_executor_initialized().submit(generate_thumbnail_bg)
-    response = send_file(str(filepath), as_attachment=True, download_name=filename)
+
+    # Use injected send_file function or default
+    if send_file_func is None:
+        from flask import send_file
+
+        send_file_func = send_file
+
+    response = send_file_func(str(filepath), as_attachment=True, download_name=filename)
     return response, 200

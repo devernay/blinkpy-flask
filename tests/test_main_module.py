@@ -21,7 +21,7 @@ from blinkapp.models.responses import Config
 class TestArgumentParser:
     """Test argument parser creation and configuration."""
 
-    def test_create_argument_parser(self):
+    def test_create_argument_parser(self) -> None:
         """Test argument parser creation with default values."""
         parser = create_argument_parser()
 
@@ -31,7 +31,7 @@ class TestArgumentParser:
             and "Blink Camera Flask Web Interface" in parser.description
         )
 
-    def test_parser_default_values(self):
+    def test_parser_default_values(self) -> None:
         """Test parser with no arguments uses defaults."""
         parser = create_argument_parser()
         args = parser.parse_args([])
@@ -43,7 +43,7 @@ class TestArgumentParser:
         assert args.cache == Config.DEFAULT_CACHE_DIR
         assert args.dump_system is False
 
-    def test_parser_custom_values(self):
+    def test_parser_custom_values(self) -> None:
         """Test parser with custom arguments."""
         parser = create_argument_parser()
         args = parser.parse_args(
@@ -72,7 +72,7 @@ class TestArgumentParser:
 class TestLoggingConfiguration:
     """Test logging configuration functionality."""
 
-    def test_configure_logging_info(self):
+    def test_configure_logging_info(self) -> None:
         """Test logging configuration with INFO level."""
         configure_logging("INFO")
 
@@ -81,14 +81,14 @@ class TestLoggingConfiguration:
         assert logging.getLogger("werkzeug").level == logging.INFO
         assert logging.getLogger("flask").level == logging.INFO
 
-    def test_configure_logging_debug(self):
+    def test_configure_logging_debug(self) -> None:
         """Test logging configuration with DEBUG level."""
         configure_logging("DEBUG")
 
         assert logging.getLogger().level == logging.DEBUG
         assert logging.getLogger("blinkpy").level == logging.DEBUG
 
-    def test_configure_logging_error(self):
+    def test_configure_logging_error(self) -> None:
         """Test logging configuration with ERROR level."""
         configure_logging("ERROR")
 
@@ -100,7 +100,7 @@ class TestSignalHandling:
 
     @patch("signal.signal")
     @patch("atexit.register")
-    def test_setup_signal_handlers(self, mock_atexit, mock_signal):
+    def test_setup_signal_handlers(self, mock_atexit: Mock, mock_signal: Mock) -> None:
         """Test signal handler setup."""
         setup_signal_handlers()
 
@@ -109,7 +109,7 @@ class TestSignalHandling:
         mock_atexit.assert_called_once()
 
     @patch("sys.exit")
-    def test_signal_handler(self, mock_exit):
+    def test_signal_handler(self, mock_exit: Mock) -> None:
         """Test signal handler execution."""
         signal_handler(15, None)
 
@@ -120,7 +120,7 @@ class TestAppExecution:
     """Test application execution functionality."""
 
     @patch("blinkapp.services.utils_service.handle_dump_system")
-    def test_run_app_dump_system(self, mock_dump):
+    def test_run_app_dump_system(self, mock_dump: Mock) -> None:
         """Test run_app with dump_system flag."""
         args = Mock()
         args.dump_system = True
@@ -130,7 +130,7 @@ class TestAppExecution:
         mock_dump.assert_called_once()
 
     @patch("blinkapp.app.run")
-    def test_run_app_normal(self, mock_run):
+    def test_run_app_normal(self, mock_run: Mock) -> None:
         """Test normal app execution."""
         args = Mock()
         args.dump_system = False
@@ -144,7 +144,7 @@ class TestAppExecution:
         mock_run.assert_called_once_with(host="127.0.0.1", port=5000, debug=False)
 
     @patch("blinkapp.app.run")
-    def test_run_app_no_cache_override(self, mock_run):
+    def test_run_app_no_cache_override(self, mock_run: Mock) -> None:
         """Test app execution without cache override."""
         args = Mock()
         args.dump_system = False
@@ -165,7 +165,9 @@ class TestMainFunction:
     @patch("blinkapp.__main__.setup_signal_handlers")
     @patch("blinkapp.__main__.configure_logging")
     @patch("sys.argv", ["blinkapp"])
-    def test_main_default_args(self, mock_logging, mock_signals, mock_run):
+    def test_main_default_args(
+        self, mock_logging: Mock, mock_signals: Mock, mock_run: Mock
+    ) -> None:
         """Test main function with default arguments."""
         with patch("blinkapp.app.config", {}) as mock_config:
             main()
@@ -180,7 +182,9 @@ class TestMainFunction:
     @patch("blinkapp.__main__.configure_logging")
     @patch("blinkapp.cleanup_resources")
     @patch("sys.argv", ["blinkapp", "--log-level", "DEBUG", "--cache", "/custom"])
-    def test_main_custom_args(self, mock_cleanup, mock_logging, mock_signals, mock_run):
+    def test_main_custom_args(
+        self, mock_cleanup: Mock, mock_logging: Mock, mock_signals: Mock, mock_run: Mock
+    ) -> None:
         """Test main function with custom arguments."""
         with patch("blinkapp.app.config", {}) as mock_config:
             main()
@@ -195,7 +199,9 @@ class TestMainFunction:
     @patch("blinkapp.__main__.configure_logging")
     @patch("blinkapp.app.config", {})
     @patch("sys.argv", ["blinkapp"])
-    def test_main_keyboard_interrupt(self, mock_logging, mock_signals, mock_run):
+    def test_main_keyboard_interrupt(
+        self, mock_logging: Mock, mock_signals: Mock, mock_run: Mock
+    ) -> None:
         """Test main function handles KeyboardInterrupt."""
         main()
 
@@ -204,7 +210,9 @@ class TestMainFunction:
     @patch("blinkapp.__main__.configure_logging")
     @patch("blinkapp.app.config", {})
     @patch("sys.argv", ["blinkapp"])
-    def test_main_exception_cleanup(self, mock_logging, mock_signals, mock_run):
+    def test_main_exception_cleanup(
+        self, mock_logging: Mock, mock_signals: Mock, mock_run: Mock
+    ) -> None:
         """Test main function cleanup on exception."""
         with pytest.raises(Exception, match="Test error"):
             main()

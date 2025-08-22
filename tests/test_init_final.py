@@ -14,20 +14,20 @@ from blinkapp import (
 class TestInitFinal(unittest.TestCase):
     """Test __init__.py functions with more missed lines."""
 
-    def test_clear_all_caches_exists(self):
+    def test_clear_all_caches_exists(self) -> None:
         """Test clear_all_caches function exists."""
         self.assertTrue(callable(clear_all_caches))
 
-    def test_setup_logging_exists(self):
+    def test_setup_logging_exists(self) -> None:
         """Test setup_logging function exists."""
         self.assertTrue(callable(setup_logging))
 
-    def test_initialize_cache_paths_exists(self):
+    def test_initialize_cache_paths_exists(self) -> None:
         """Test initialize_cache_paths function exists."""
         self.assertTrue(callable(initialize_cache_paths))
 
     @patch("blinkapp.Path")
-    def test_initialize_cache_paths_basic(self, mock_path):
+    def test_initialize_cache_paths_basic(self, mock_path: Mock) -> None:
         """Test initialize_cache_paths basic functionality."""
         mock_path_instance = Mock()
         mock_path.return_value = mock_path_instance
@@ -40,7 +40,7 @@ class TestInitFinal(unittest.TestCase):
             # Expected to fail in test environment
             pass
 
-    def test_init_module_imports(self):
+    def test_init_module_imports(self) -> None:
         """Test that init module imports work."""
         import blinkapp
 

@@ -11,7 +11,7 @@ from blinkapp.routes.admin import register_admin_routes
 class TestAdminRoutesFinal(unittest.TestCase):
     """Test remaining uncovered admin route functions."""
 
-    def test_register_admin_routes(self):
+    def test_register_admin_routes(self) -> None:
         """Test register_admin_routes function."""
         app = Flask(__name__)
 

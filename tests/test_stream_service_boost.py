@@ -17,17 +17,17 @@ from blinkapp.services.stream_service import (
 class TestStreamServiceBoost(unittest.TestCase):
     """Test stream service coverage boost."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """Clean up test fixtures."""
         import shutil
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def test_stream_config_creation(self):
+    def test_stream_config_creation(self) -> None:
         """Test StreamConfig dataclass creation."""
         config = StreamConfig(segment_time=4, list_size=5, timeout=30, idle_timeout=60)
 
@@ -36,7 +36,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         self.assertEqual(config.timeout, 30)
         self.assertEqual(config.idle_timeout, 60)
 
-    def test_stream_config_defaults(self):
+    def test_stream_config_defaults(self) -> None:
         """Test StreamConfig with default values."""
         with patch("blinkapp.services.stream_service.Config") as mock_config:
             mock_config.HLS_SEGMENT_TIME = 4
@@ -51,7 +51,7 @@ class TestStreamServiceBoost(unittest.TestCase):
             self.assertEqual(config.timeout, 30)
             self.assertEqual(config.idle_timeout, 60)
 
-    def test_hls_stream_creation(self):
+    def test_hls_stream_creation(self) -> None:
         """Test HLSStream creation."""
         config = StreamConfig(segment_time=4, list_size=5)
 
@@ -67,7 +67,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         self.assertIsNotNone(stream.lock)
         self.assertFalse(stream._active)
 
-    def test_initialize_stream_manager(self):
+    def test_initialize_stream_manager(self) -> None:
         """Test initialize_stream_manager function."""
         with patch("blinkapp.services.stream_service.Config") as mock_config:
             mock_config.HLS_SEGMENT_TIME = 4
@@ -81,7 +81,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
             self.assertIsNotNone(stream_manager)
 
-    def test_ensure_stream_manager_initialized_with_existing(self):
+    def test_ensure_stream_manager_initialized_with_existing(self) -> None:
         """Test ensure_stream_manager_initialized with existing manager."""
         # Set up existing manager
         import blinkapp.services.stream_service
@@ -93,7 +93,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
         self.assertEqual(result, mock_manager)
 
-    def test_stream_manager_creation(self):
+    def test_stream_manager_creation(self) -> None:
         """Test StreamManager creation."""
         config = StreamConfig(segment_time=4, list_size=5)
 
@@ -102,7 +102,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         self.assertEqual(manager.config, config)
         self.assertEqual(manager.streams, {})
 
-    def test_hls_stream_is_active_false(self):
+    def test_hls_stream_is_active_false(self) -> None:
         """Test HLSStream.is_active returns False."""
         config = StreamConfig(segment_time=4, list_size=5)
         stream = HLSStream("test_camera", "tcp://localhost:8080", config)
@@ -111,7 +111,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_hls_stream_is_active_true(self):
+    def test_hls_stream_is_active_true(self) -> None:
         """Test HLSStream.is_active returns True."""
         config = StreamConfig(segment_time=4, list_size=5)
         stream = HLSStream("test_camera", "tcp://localhost:8080", config)
@@ -125,7 +125,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_hls_stream_is_active_process_dead(self):
+    def test_hls_stream_is_active_process_dead(self) -> None:
         """Test HLSStream.is_active with dead process."""
         config = StreamConfig(segment_time=4, list_size=5)
         stream = HLSStream("test_camera", "tcp://localhost:8080", config)
@@ -140,7 +140,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         self.assertFalse(result)
         self.assertFalse(stream._active)
 
-    def test_stream_manager_is_stream_active_false(self):
+    def test_stream_manager_is_stream_active_false(self) -> None:
         """Test StreamManager.is_stream_active returns False."""
         config = StreamConfig(segment_time=4, list_size=5)
         manager = StreamManager(config)
@@ -149,7 +149,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_stream_manager_stop_stream_nonexistent(self):
+    def test_stream_manager_stop_stream_nonexistent(self) -> None:
         """Test StreamManager.stop_stream with nonexistent stream."""
         config = StreamConfig(segment_time=4, list_size=5)
         manager = StreamManager(config)
@@ -158,7 +158,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_stream_manager_cleanup_inactive_streams(self):
+    def test_stream_manager_cleanup_inactive_streams(self) -> None:
         """Test StreamManager.cleanup_inactive_streams."""
         config = StreamConfig(segment_time=4, list_size=5)
         manager = StreamManager(config)

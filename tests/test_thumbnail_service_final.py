@@ -11,7 +11,7 @@ class TestThumbnailServiceFinal(unittest.TestCase):
     """Test remaining uncovered thumbnail service functions."""
 
     @patch("blinkapp.services.cache_service.ensure_thumbnail_cache_initialized")
-    def test_get_thumbnail_cache_stats_success(self, mock_ensure_cache):
+    def test_get_thumbnail_cache_stats_success(self, mock_ensure_cache: Mock) -> None:
         """Test get_thumbnail_cache_stats successful execution."""
         mock_cache = Mock()
         mock_cache.__len__ = Mock(return_value=10)
@@ -27,7 +27,9 @@ class TestThumbnailServiceFinal(unittest.TestCase):
 
     @patch("blinkapp.services.cache_service.ensure_thumbnail_cache_initialized")
     @patch("blinkapp.services.thumbnail_service.logger")
-    def test_get_thumbnail_cache_stats_exception(self, mock_logger, mock_ensure_cache):
+    def test_get_thumbnail_cache_stats_exception(
+        self, mock_logger: Mock, mock_ensure_cache: Mock
+    ) -> None:
         """Test get_thumbnail_cache_stats exception handling."""
         mock_ensure_cache.side_effect = Exception("Cache error")
 
@@ -38,7 +40,9 @@ class TestThumbnailServiceFinal(unittest.TestCase):
         mock_logger.error.assert_called_once()
 
     @patch("blinkapp.services.cache_service.ensure_thumbnail_cache_initialized")
-    def test_get_thumbnail_cache_stats_missing_attributes(self, mock_ensure_cache):
+    def test_get_thumbnail_cache_stats_missing_attributes(
+        self, mock_ensure_cache: Mock
+    ) -> None:
         """Test get_thumbnail_cache_stats with missing cache attributes."""
         mock_cache = Mock()
         mock_cache.__len__ = Mock(return_value=5)

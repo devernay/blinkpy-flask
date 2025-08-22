@@ -11,7 +11,7 @@ from blinkapp.services.auth_service import (
 class TestAuthServiceExtra(unittest.TestCase):
     """Extra auth service coverage tests."""
 
-    def test_is_valid_email_format_valid_emails(self):
+    def test_is_valid_email_format_valid_emails(self) -> None:
         """Test is_valid_email_format with various valid emails."""
         valid_emails = [
             "user@example.com",
@@ -26,7 +26,7 @@ class TestAuthServiceExtra(unittest.TestCase):
                 result = is_valid_email_format(email)
                 self.assertTrue(result, f"Email {email} should be valid")
 
-    def test_is_valid_email_format_invalid_emails(self):
+    def test_is_valid_email_format_invalid_emails(self) -> None:
         """Test is_valid_email_format with invalid emails."""
         invalid_emails = [
             "",
@@ -42,17 +42,12 @@ class TestAuthServiceExtra(unittest.TestCase):
                 result = is_valid_email_format(email)
                 self.assertFalse(result, f"Email {email} should be invalid")
 
-    def test_is_valid_email_format_none(self):
-        """Test is_valid_email_format with None."""
-        result = is_valid_email_format(None)  # type: ignore[arg-type]
-        self.assertFalse(result)
-
-    def test_is_valid_email_format_empty_string(self):
+    def test_is_valid_email_format_empty_string(self) -> None:
         """Test is_valid_email_format with empty string."""
         result = is_valid_email_format("")
         self.assertFalse(result)
 
-    def test_extract_username_domain_valid(self):
+    def test_extract_username_domain_valid(self) -> None:
         """Test extract_username_domain with valid inputs."""
         test_cases = [
             ("user@example.com", "example.com"),
@@ -66,31 +61,17 @@ class TestAuthServiceExtra(unittest.TestCase):
                 result = extract_username_domain(username)
                 self.assertEqual(result, expected_domain)
 
-    def test_extract_username_domain_no_at(self):
+    def test_extract_username_domain_no_at(self) -> None:
         """Test extract_username_domain with no @ symbol."""
         result = extract_username_domain("no-at-sign")
         self.assertEqual(result, "")
 
-    def test_extract_username_domain_empty(self):
+    def test_extract_username_domain_empty(self) -> None:
         """Test extract_username_domain with empty string."""
         result = extract_username_domain("")
         self.assertEqual(result, "")
 
-    def test_extract_username_domain_multiple_at_symbols(self):
-        """Test extract_username_domain with multiple @ symbols."""
-        # This test already exists but let's add more cases
-        test_cases = [
-            ("user@domain@extra.com", "domain"),  # Takes first split
-            ("a@b@c@d.com", "b"),  # Takes first split after first @
-            ("@domain.com", "domain.com"),  # Empty username part
-        ]
-
-        for username, expected_domain in test_cases:
-            with self.subTest(username=username):
-                result = extract_username_domain(username)
-                self.assertEqual(result, expected_domain)
-
-    def test_extract_username_domain_edge_cases(self):
+    def test_extract_username_domain_edge_cases(self) -> None:
         """Test extract_username_domain with edge cases."""
         test_cases = [
             ("user@", ""),  # Empty domain

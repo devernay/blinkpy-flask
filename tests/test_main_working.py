@@ -9,7 +9,7 @@ from blinkapp.__main__ import (
 )
 
 
-def test_create_argument_parser_defaults():
+def test_create_argument_parser_defaults() -> None:
     """Test argument parser with default values."""
     parser = create_argument_parser()
     args = parser.parse_args([])
@@ -17,7 +17,7 @@ def test_create_argument_parser_defaults():
     assert args.port == 5001
 
 
-def test_run_app_dump_system():
+def test_run_app_dump_system() -> None:
     """Test run_app with dump system option."""
     args = Mock()
     args.dump_system = True
@@ -27,7 +27,7 @@ def test_run_app_dump_system():
         mock_dump.assert_called_once()
 
 
-def test_run_app_normal():
+def test_run_app_normal() -> None:
     """Test run_app normal execution."""
     args = Mock()
     args.dump_system = False
@@ -44,7 +44,7 @@ def test_run_app_normal():
         mock_startup.assert_called_once()
 
 
-def test_configure_logging_levels():
+def test_configure_logging_levels() -> None:
     """Test logging configuration."""
     with patch("logging.getLogger") as mock_get_logger:
         mock_logger = Mock()

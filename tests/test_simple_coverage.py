@@ -6,7 +6,7 @@ from test_base import BaseTestCase
 class TestSimpleCoverage(BaseTestCase):
     """Simple coverage improvement tests."""
 
-    def test_models_cache_basic_operations(self):
+    def test_models_cache_basic_operations(self) -> None:
         """Test basic cache operations."""
         import time
         from pathlib import Path
@@ -31,7 +31,7 @@ class TestSimpleCoverage(BaseTestCase):
         result = cache[clip_id]
         self.assertIn("cached_at", result)
 
-    def test_models_ids_string_methods(self):
+    def test_models_ids_string_methods(self) -> None:
         """Test ID model string methods."""
         from blinkapp.models.ids import CameraId, ClipId, NetworkId
 
@@ -48,18 +48,18 @@ class TestSimpleCoverage(BaseTestCase):
         clip_id = ClipId("test_clip")
         self.assertEqual(str(clip_id), "test_clip")
 
-    def test_decorators_basic_usage(self):
+    def test_decorators_basic_usage(self) -> None:
         """Test basic decorator usage."""
         from blinkapp.utils.decorators import error_context
 
         @error_context("test operation")
-        def test_function():
+        def test_function() -> str:
             return "success"
 
         result = test_function()
         self.assertEqual(result, "success")
 
-    def test_connection_service_basic(self):
+    def test_connection_service_basic(self) -> None:
         """Test basic connection service."""
         from blinkapp.services.connection_service import get_blink_connection
 
@@ -67,7 +67,7 @@ class TestSimpleCoverage(BaseTestCase):
         result = get_blink_connection()
         self.assertIsNone(result)
 
-    def test_cache_service_stats(self):
+    def test_cache_service_stats(self) -> None:
         """Test cache service stats."""
         from blinkapp.services.cache_service import get_cache_stats
 

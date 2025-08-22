@@ -9,7 +9,7 @@ from blinkapp.models.ids import CameraId, NetworkId
 class TestFinalPush(unittest.TestCase):
     """Test simple functions to push coverage over 70%."""
 
-    def test_camera_id_edge_cases(self):
+    def test_camera_id_edge_cases(self) -> None:
         """Test CameraId edge cases."""
         # Test with string input
         camera_id = CameraId("12345")
@@ -19,7 +19,7 @@ class TestFinalPush(unittest.TestCase):
         camera_id2 = CameraId(12345)
         self.assertEqual(camera_id, camera_id2)
 
-    def test_network_id_edge_cases(self):
+    def test_network_id_edge_cases(self) -> None:
         """Test NetworkId edge cases."""
         # Test with string input
         network_id = NetworkId("67890")
@@ -29,7 +29,7 @@ class TestFinalPush(unittest.TestCase):
         network_id2 = NetworkId(67890)
         self.assertEqual(network_id, network_id2)
 
-    def test_id_string_representations(self):
+    def test_id_string_representations(self) -> None:
         """Test string representations of ID classes."""
         camera_id = CameraId(12345)
         self.assertIn("12345", str(camera_id))
@@ -37,7 +37,7 @@ class TestFinalPush(unittest.TestCase):
         network_id = NetworkId(67890)
         self.assertIn("67890", str(network_id))
 
-    def test_id_hash_functionality(self):
+    def test_id_hash_functionality(self) -> None:
         """Test hash functionality for ID classes."""
         camera_id1 = CameraId(12345)
         camera_id2 = CameraId(12345)

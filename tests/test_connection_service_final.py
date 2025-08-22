@@ -9,7 +9,7 @@ from blinkapp.services.connection_service import ensure_executor_initialized
 class TestConnectionServiceFinal(unittest.TestCase):
     """Test remaining uncovered connection service functions."""
 
-    def test_ensure_executor_initialized_error(self):
+    def test_ensure_executor_initialized_error(self) -> None:
         """Test ensure_executor_initialized raises error when not initialized."""
         # Reset executor to None
         import blinkapp.services.connection_service

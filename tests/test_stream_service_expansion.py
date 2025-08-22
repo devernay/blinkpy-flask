@@ -16,7 +16,7 @@ from blinkapp.services.stream_service import (
 class TestStreamServiceExpansion(unittest.TestCase):
     """Test uncovered stream service functions with highest missed lines."""
 
-    def test_create_stream_manager_factory(self):
+    def test_create_stream_manager_factory(self) -> None:
         """Test create_stream_manager factory function."""
         # Should not raise exception when called
         try:
@@ -27,7 +27,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
             # Expected to fail due to missing dependencies, but function exists
             pass
 
-    def test_ensure_stream_manager_initialized_basic(self):
+    def test_ensure_stream_manager_initialized_basic(self) -> None:
         """Test ensure_stream_manager_initialized basic functionality."""
         # Should not raise exception when called
         try:
@@ -38,7 +38,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
             # Expected to fail due to missing dependencies, but function exists
             pass
 
-    def test_validate_camera_id_valid(self):
+    def test_validate_camera_id_valid(self) -> None:
         """Test validate_camera_id with valid ID."""
         camera_id = "12345"
 
@@ -46,7 +46,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_validate_tcp_url_valid(self):
+    def test_validate_tcp_url_valid(self) -> None:
         """Test validate_tcp_url with valid URL."""
         tcp_url = "tcp://127.0.0.1:8080"
 
@@ -54,7 +54,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_parse_tcp_url_valid(self):
+    def test_parse_tcp_url_valid(self) -> None:
         """Test parse_tcp_url with valid URL."""
         tcp_url = "tcp://127.0.0.1:8080"
 
@@ -66,7 +66,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
         self.assertEqual(result["host"], "127.0.0.1")
         self.assertEqual(result["port"], "8080")  # Port is returned as string
 
-    def test_generate_hls_url_basic(self):
+    def test_generate_hls_url_basic(self) -> None:
         """Test generate_hls_url basic functionality."""
         camera_id = "12345"
         filename = "test.m3u8"
@@ -77,7 +77,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
         self.assertIn("12345", result)
         self.assertIn("test.m3u8", result)
 
-    def test_parse_tcp_url_invalid(self):
+    def test_parse_tcp_url_invalid(self) -> None:
         """Test parse_tcp_url with invalid URL."""
         tcp_url = "invalid://url"
 
@@ -86,7 +86,7 @@ class TestStreamServiceExpansion(unittest.TestCase):
         # Function still parses but may not be valid TCP
         self.assertIsInstance(result, dict)
 
-    def test_validate_tcp_url_invalid(self):
+    def test_validate_tcp_url_invalid(self) -> None:
         """Test validate_tcp_url with invalid URL."""
         tcp_url = "invalid://url"
 

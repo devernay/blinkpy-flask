@@ -13,7 +13,7 @@ from blinkapp.services.utils_service import (
 class TestUtilsServiceAdvanced(unittest.TestCase):
     """Test advanced utils service functions with highest missed lines."""
 
-    def test_check_credentials_file_exists_basic(self):
+    def test_check_credentials_file_exists_basic(self) -> None:
         """Test check_credentials_file_exists basic functionality."""
         # Should not raise exception
         try:
@@ -23,7 +23,7 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
             # Expected to fail in test environment, but function exists
             pass
 
-    def test_create_device_data_with_timestamps(self):
+    def test_create_device_data_with_timestamps(self) -> None:
         """Test create_device_data with timestamp parameters."""
         from blinkapp.models.ids import CameraId
 
@@ -46,7 +46,7 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Test Camera")
 
-    def test_create_device_data_edge_cases(self):
+    def test_create_device_data_edge_cases(self) -> None:
         """Test create_device_data with edge case values."""
         from blinkapp.models.ids import CameraId
 

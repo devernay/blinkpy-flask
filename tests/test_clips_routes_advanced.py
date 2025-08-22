@@ -11,7 +11,7 @@ from blinkapp.routes.clips import setup_clips_routes
 class TestClipsRoutesAdvanced(unittest.TestCase):
     """Test advanced clips route functions with highest missed lines."""
 
-    def test_setup_clips_routes(self):
+    def test_setup_clips_routes(self) -> None:
         """Test setup_clips_routes function."""
         app = Flask(__name__)
 
@@ -26,7 +26,7 @@ class TestClipsRoutesAdvanced(unittest.TestCase):
         endpoints = [rule.endpoint for rule in rules]
         self.assertIn("get_clips", endpoints)
 
-    def test_clips_routes_registration(self):
+    def test_clips_routes_registration(self) -> None:
         """Test clips routes are properly registered."""
         app = Flask(__name__)
         setup_clips_routes(app)
@@ -43,7 +43,7 @@ class TestClipsRoutesAdvanced(unittest.TestCase):
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
-    def test_clips_thumbnail_route_registration(self):
+    def test_clips_thumbnail_route_registration(self) -> None:
         """Test clips thumbnail route registration."""
         app = Flask(__name__)
         setup_clips_routes(app)
@@ -54,7 +54,7 @@ class TestClipsRoutesAdvanced(unittest.TestCase):
             # Should not be 404 (route exists) - but may be other error
             self.assertIsNotNone(response)
 
-    def test_clips_process_route_registration(self):
+    def test_clips_process_route_registration(self) -> None:
         """Test clips process route registration."""
         app = Flask(__name__)
         setup_clips_routes(app)

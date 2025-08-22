@@ -9,7 +9,7 @@ from blinkapp.models.ids import CameraId, ClipId, NetworkId
 class TestIdsModelsFinal(unittest.TestCase):
     """Test remaining uncovered ID model functions."""
 
-    def test_camera_id_string_methods(self):
+    def test_camera_id_string_methods(self) -> None:
         """Test CameraId string method delegation."""
         camera_id = CameraId("test_camera_123")
 
@@ -33,7 +33,7 @@ class TestIdsModelsFinal(unittest.TestCase):
         self.assertEqual(len(chars), 15)
         self.assertEqual(chars[0], "t")
 
-    def test_clip_id_string_methods(self):
+    def test_clip_id_string_methods(self) -> None:
         """Test ClipId string method delegation."""
         clip_id = ClipId("clip_456")
 
@@ -47,7 +47,7 @@ class TestIdsModelsFinal(unittest.TestCase):
         # Test getitem slice
         self.assertEqual(clip_id[:4], "clip")
 
-    def test_network_id_string_methods(self):
+    def test_network_id_string_methods(self) -> None:
         """Test NetworkId string method delegation."""
         network_id = NetworkId("789")
 
@@ -59,7 +59,7 @@ class TestIdsModelsFinal(unittest.TestCase):
         first_char = next(iter(network_id))
         self.assertEqual(first_char, "7")
 
-    def test_id_equality_with_string(self):
+    def test_id_equality_with_string(self) -> None:
         """Test ID equality comparison with strings."""
         camera_id = CameraId("12345")
 
@@ -71,7 +71,7 @@ class TestIdsModelsFinal(unittest.TestCase):
         self.assertFalse(camera_id == 12345)
         self.assertFalse(camera_id is None)
 
-    def test_id_hash_functionality(self):
+    def test_id_hash_functionality(self) -> None:
         """Test ID hash functionality for sets and dicts."""
         camera_id1 = CameraId("test")
         camera_id2 = CameraId("test")

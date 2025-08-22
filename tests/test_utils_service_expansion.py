@@ -14,7 +14,7 @@ from blinkapp.services.utils_service import (
 class TestUtilsServiceExpansion(unittest.TestCase):
     """Test uncovered utils service functions with highest missed lines."""
 
-    def test_create_device_data_basic(self):
+    def test_create_device_data_basic(self) -> None:
         """Test create_device_data with mock camera."""
         from blinkapp.models.ids import CameraId
 
@@ -35,7 +35,7 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Test Camera")
 
-    def test_create_device_data_minimal(self):
+    def test_create_device_data_minimal(self) -> None:
         """Test create_device_data with minimal camera data."""
         from blinkapp.models.ids import CameraId
 
@@ -56,7 +56,7 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Minimal Camera")
 
-    def test_dump_blink_system_info_basic(self):
+    def test_dump_blink_system_info_basic(self) -> None:
         """Test dump_blink_system_info basic functionality."""
         # Should not raise exception
         try:
@@ -65,7 +65,7 @@ class TestUtilsServiceExpansion(unittest.TestCase):
             # Expected to fail due to missing dependencies, but function exists
             pass
 
-    def test_handle_dump_system_basic(self):
+    def test_handle_dump_system_basic(self) -> None:
         """Test handle_dump_system basic functionality."""
         # Should not raise exception (but may exit)
         try:
@@ -77,7 +77,7 @@ class TestUtilsServiceExpansion(unittest.TestCase):
             # Other exceptions are also expected
             pass
 
-    def test_handle_dump_system_with_checker(self):
+    def test_handle_dump_system_with_checker(self) -> None:
         """Test handle_dump_system with credentials checker."""
         mock_checker = Mock(return_value=True)
 
