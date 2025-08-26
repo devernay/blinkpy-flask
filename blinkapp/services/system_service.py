@@ -65,12 +65,12 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     """
     from blinkapp import (
         logger,
-        require_sync_module,
     )
     from blinkapp.models.ids import CameraId
     from blinkapp.routes.camera import update_camera_thumbnail
     from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
     from blinkapp.services.utils_service import create_device_data
+    from blinkapp.utils.error_handlers import require_sync_module
     from blinkapp.utils.errors import ValidationError
     from blinkapp.utils.validators import extract_thumbnail_timestamp
 
@@ -133,9 +133,9 @@ def arm_system(network_id: NetworkId, armed: bool) -> dict[str, Any]:
     Returns:
         Dictionary with operation result
     """
-    from blinkapp import require_sync_module
     from blinkapp.services.blink_service import blink_connection
     from blinkapp.utils.decorators import error_context
+    from blinkapp.utils.error_handlers import require_sync_module
     from blinkapp.utils.errors import ValidationError
 
     logger.debug(f"{'Arming' if armed else 'Disarming'} system {network_id}")

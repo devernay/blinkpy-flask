@@ -36,17 +36,11 @@ if TYPE_CHECKING:
 # ID validation and type safety
 # Type definitions for better code clarity
 # Blink camera library - third-party integration
-from blinkpy.sync_module import BlinkSyncModule
 
 # Application configuration
 from blinkapp.config import Config
-from blinkapp.models.ids import ClipId, NetworkId
-
-# API response models
+from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
-from blinkapp.models.types import (
-    ApiResponse,
-)
 
 # Admin routes
 from blinkapp.routes.admin import register_admin_routes
@@ -75,10 +69,15 @@ from blinkapp.utils.decorators import (
     ensure_blink_available,
     error_context,
 )
+
+# Utilities
+from blinkapp.utils.error_handlers import handle_api_error, require_sync_module
+
+# Utilities
 from blinkapp.utils.errors import (
     CacheError,
-    ValidationError,
 )
+from blinkapp.utils.logging_config import setup_logging
 
 # Live streaming management
 
@@ -99,7 +98,7 @@ __all__ = [
     # Flask application instance
     "app",
     # Core initialization functions
-    # Utility functions
+    # Utility functions (now imported from utils modules)
     "handle_api_error",
     "require_sync_module",
     "setup_logging",
@@ -113,6 +112,8 @@ __all__ = [
     "startup",
     "cleanup_resources",
     "main",
+    # API utilities
+    "create_api_response",
 ]
 
 # ============================================================================
@@ -140,185 +141,8 @@ SETTINGS_FILE: str = ""  # User settings persistence
 # ============================================================================
 
 
-def handle_api_error(
-    error: Exception,
-    operation: str,
-    status_code: int = Config.HTTP_STATUS_INTERNAL_ERROR,
-) -> ApiResponse:
-    """Handle API errors with user-friendly messages.
-
-    Provides centralized error handling for all API endpoints with consistent
-    error response format and appropriate HTTP status codes. This function
-    translates technical exceptions into user-friendly messages while
-    preserving the original error information in logs.
-
-    Args:
-        error: Exception that occurred during operation
-        operation: Human-readable description of the failed operation
-        status_code: HTTP status code to return (default: 500)
-
-    Returns:
-        Standardized error response tuple (response_dict, status_code)
-
-    Example:
-        >>> try:
-        ...     # Some operation that might fail
-        ...     pass
-        ... except Exception as e:
-        ...     return handle_api_error(e, "updating camera settings")
-    """
-    # Log the full technical error for debugging
-    logger.error(f"Error {operation}: {error}")
-
-    # Handle ValidationError with custom status code - these have specific
-    # status codes that should be preserved (e.g., 400 for bad input)
-    if isinstance(error, ValidationError):
-        return create_api_response(
-            success=False, error=str(error), status_code=error.status_code
-        )
-
-    # Map common exceptions to user-friendly messages that don't expose
-    # internal implementation details to end users
-    error_message = str(error)
-    if isinstance(error, ConnectionError):
-        error_message = (
-            "Unable to connect to your Blink system. Please check your "
-            "internet connection and try again."
-        )
-    elif isinstance(error, TimeoutError):
-        error_message = "The request timed out. Please try again in a moment."
-    elif isinstance(error, ValueError):
-        error_message = "Invalid data provided. Please check your input and try again."
-    elif "authentication" in str(error).lower() or "login" in str(error).lower():
-        # Use predefined auth error message for consistency
-        error_message = Config.ErrorMessages.AUTH_FAILED
-    elif "not found" in str(error).lower():
-        error_message = "The requested item could not be found."
-    elif status_code >= 500:
-        # For server errors, use generic message to avoid exposing internals
-        error_message = Config.ErrorMessages.INTERNAL_ERROR
-
-    return create_api_response(
-        success=False, error=error_message, status_code=status_code
-    )
-
-
-# Decorators for authentication and error handling
-
-
-def require_sync_module(
-    network_id: NetworkId,
-) -> tuple[BlinkSyncModule | None, ApiResponse | None]:
-    """Find sync module by network ID, return error response if not found.
-
-    Searches through all available Blink sync modules to find one matching
-    the provided network ID. This is used by API endpoints that need to
-    operate on specific Blink systems.
-
-    Args:
-        network_id: Network ID to find (validated NetworkId instance)
-
-    Returns:
-        Tuple of (sync_module, error_response). Exactly one will be None:
-        - If found: (BlinkSyncModule, None)
-        - If not found: (None, error_response_tuple)
-
-    Example:
-        >>> sync, error = require_sync_module(NetworkId("12345"))
-        >>> if error:
-        ...     return error  # Return error response to client
-        >>> # Use sync module for operations
-        >>> sync.arm = True
-    """
-    from blinkpy.blinkpy import Blink
-
-    from blinkapp.services.blink_service import blink
-
-    # Ensure blink is initialized - this should be guaranteed by @ensure_blink_available
-    assert blink is not None
-    blink_instance: Blink = blink
-    # Cast sync to correct type since blinkpy doesn't have proper type annotations
-    blink_sync = blink_instance.sync
-    sync_dict = blink_sync
-    assert sync_dict is not None
-
-    # Search through all sync modules for matching network ID
-    for name in sync_dict:
-        sync: BlinkSyncModule = sync_dict[name]
-        sync_network_id: str = str(sync.network_id)
-        if sync_network_id == str(network_id):
-            return sync, None
-
-    # Network ID not found - return standardized error response
-    error_response = create_api_response(
-        success=False, error=Config.ErrorMessages.SYSTEM_NOT_FOUND, status_code=404
-    )
-    return None, error_response
-
-
 # Configure logging - will be reconfigured after cache paths are set
 logger = logging.getLogger(__name__)
-
-
-def setup_logging() -> None:
-    """Configure logging with rotating file handler in cache directory.
-
-    Sets up both console and file logging with consistent formatting.
-    File logs are rotated to prevent disk space issues. This function
-    must be called after cache paths are initialized via initialize_cache_paths().
-
-    The logging configuration includes:
-    - Console handler for immediate feedback during development
-    - Rotating file handler for persistent logs with size limits
-    - Consistent timestamp formatting across all handlers
-    - Automatic log rotation on startup to ensure fresh logs
-
-    Side Effects:
-        - Clears existing handlers to prevent duplicates
-        - Creates log file in cache directory
-        - Configures root logger level and handlers
-    """
-    # Clear any existing handlers to avoid duplicates on app restart
-    logger.handlers.clear()
-    logging.getLogger().handlers.clear()
-
-    # Create consistent formatter for all handlers with timestamp and level
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    # Console handler for immediate feedback during development/debugging
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-
-    # Rotating file handler in cache directory for persistent logs
-    from logging.handlers import RotatingFileHandler
-
-    # Ensure cache directory is initialized before creating log file
-    assert CACHE_DIR is not None, (
-        "Cache directory must be initialized before logging setup"
-    )
-    log_file_path = Path(CACHE_DIR) / Config.LOG_FILE
-
-    # Configure file rotation to prevent disk space issues
-    # maxBytes: Maximum size before rotation, backupCount: Number of old logs to keep
-    file_handler = RotatingFileHandler(
-        log_file_path,
-        maxBytes=Config.LOG_MAX_BYTES,
-        backupCount=Config.LOG_BACKUP_COUNT,
-    )
-    file_handler.setFormatter(formatter)
-
-    # Configure root logger with both handlers for comprehensive logging
-    root_logger = logging.getLogger()
-    root_logger.setLevel(
-        logging.INFO
-    )  # Default level, will be overridden by command line arguments
-    root_logger.addHandler(console_handler)
-    root_logger.addHandler(file_handler)
-
-    # Force rotation on startup to ensure we start with a fresh log
-    file_handler.doRollover()
 
 
 # ============================================================================

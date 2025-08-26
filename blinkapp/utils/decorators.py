@@ -249,7 +249,7 @@ def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
 def _handle_error(e: Exception, operation_name: str) -> ErrorResponse:
     """Handle common error processing logic."""
     # Import here to avoid circular import
-    from blinkapp import handle_api_error
+    from blinkapp.utils.error_handlers import handle_api_error
 
     logger.error(f"Error in {operation_name}: {e}")
     response, status_code = handle_api_error(e, operation_name)

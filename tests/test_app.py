@@ -19,6 +19,7 @@ from typing import cast
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from blinkpy.camera import BlinkCamera
+from blinkpy.sync_module import BlinkSyncModule
 from test_base import (
     BaseTestCase,
     FlaskTestCase,
@@ -26,7 +27,6 @@ from test_base import (
 )
 
 from blinkapp import (
-    BlinkSyncModule,
     Config,
     app,
 )
