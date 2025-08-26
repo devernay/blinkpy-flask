@@ -47,6 +47,8 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "update_camera_thumbnail",
     "setup_camera_routes",
+    "_init_camera_stream",  # Internal function used in tests
+    "logger",  # Logger used in tests
 ]
 
 

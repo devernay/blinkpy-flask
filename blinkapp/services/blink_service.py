@@ -10,6 +10,8 @@ __all__ = [
     "initialize_blink_objects",
     "ensure_blink_initialized",
     "ensure_blink_connection_initialized",
+    "blink",
+    "blink_connection",
 ]
 
 import logging

@@ -2489,43 +2489,45 @@ class TestSettingsAdvanced(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json")
     def test_save_settings_with_validation(self) -> None:
         """Test saving settings with validation."""
-        valid_settings = {
-            "temperature_unit": "celsius",
-            "cloud_clip_retention_days": 15,
-            "local_clip_retention_days": 45,
-            "clip_thumbnail_size": "large",
-        }
+        with patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json"):
+            valid_settings = {
+                "temperature_unit": "celsius",
+                "cloud_clip_retention_days": 15,
+                "local_clip_retention_days": 45,
+                "clip_thumbnail_size": "large",
+            }
 
-        with patch("pathlib.Path.write_text"):
-            response = self.client.put("/api/settings", json=valid_settings)
+            with patch("pathlib.Path.write_text"):
+                response = self.client.put("/api/settings", json=valid_settings)
 
-            # Should validate and save settings
-            self.assertIn(response.status_code, [200, 500])
-            if response.status_code == 200:
-                data = json.loads(response.data)
-                self.assertTrue(data["success"])
+                # Should validate and save settings
+                self.assertIn(response.status_code, [200, 500])
+                if response.status_code == 200:
+                    data = json.loads(response.data)
+                    self.assertTrue(data["success"])
 
-    @patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json")
     def test_load_settings_with_existing_file(self) -> None:
         """Test loading settings from existing file."""
-        mock_settings = {
-            "temperatureUnits": "fahrenheit",
-            "cloudClipRetention": "7",
-            "localClipRetention": "never",
-            "clipThumbnailSize": "medium",
-        }
+        with patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json"):
+            mock_settings = {
+                "temperatureUnits": "fahrenheit",
+                "cloudClipRetention": "7",
+                "localClipRetention": "never",
+                "clipThumbnailSize": "medium",
+            }
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("builtins.open", mock_open(read_data=json.dumps(mock_settings))):
-                response = self.client.get("/api/settings")
-                self.assertEqual(response.status_code, 200)
+            with patch("pathlib.Path.exists", return_value=True):
+                with patch(
+                    "builtins.open", mock_open(read_data=json.dumps(mock_settings))
+                ):
+                    response = self.client.get("/api/settings")
+                    self.assertEqual(response.status_code, 200)
 
-                data = json.loads(response.data)
-                self.assertTrue(data["success"])
-                self.assertEqual(data["data"]["temperatureUnits"], "fahrenheit")
+                    data = json.loads(response.data)
+                    self.assertTrue(data["success"])
+                    self.assertEqual(data["data"]["temperatureUnits"], "fahrenheit")
 
 
 class TestVideoProcessingOperations(BaseTestCase):
@@ -2959,8 +2961,11 @@ class TestSecurityFeatures(BaseTestCase):
                 "/api/settings", json={"temperature_unit": malicious_input}
             )
 
-            # Should reject or sanitize malicious input
-            self.assertIn(response.status_code, [400, 500])
+            # Should reject malicious input
+            self.assertEqual(response.status_code, 400)
+            data = json.loads(response.data)
+            self.assertFalse(data["success"])
+            self.assertIn("Invalid content", data["error"])
 
     def test_path_traversal_prevention(self) -> None:
         """Test path traversal prevention."""
@@ -2988,7 +2993,10 @@ class TestSecurityFeatures(BaseTestCase):
         )
 
         # Should reject overly long input
-        self.assertIn(response.status_code, [400, 500])
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data)
+        self.assertFalse(data["success"])
+        self.assertIn("Input too long", data["error"])
 
 
 class TestLocalClipDownloadOperations(BaseTestCase):
@@ -4102,7 +4110,7 @@ class TestAdvancedFileOperations(BaseTestCase):
         from blinkapp import startup
 
         with patch("pathlib.Path.mkdir", side_effect=OSError("Permission denied")):
-            with patch("blinkapp.logger") as mock_logger:
+            with patch("blinkapp.services.cache_management.logger") as mock_logger:
                 with patch("blinkapp.setup_logging"):
                     with patch("blinkapp.services.stream_service.StreamManager"):
                         with patch("blinkapp.services.cache_service.initialize_caches"):

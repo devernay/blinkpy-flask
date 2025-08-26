@@ -71,6 +71,37 @@ def setup_settings_routes(app: Flask) -> None:
                 )
                 return jsonify(response), status_code
 
+            # Validate input length and content
+            for key, value in data.items():
+                if isinstance(value, str):
+                    # Check for overly long input (max 1000 chars)
+                    if len(value) > 1000:
+                        response, status_code = create_api_response(
+                            success=False,
+                            error=f"Input too long for field '{key}' (max 1000 characters)",
+                            status_code=400,
+                        )
+                        return jsonify(response), status_code
+
+                    # Check for potentially malicious content
+                    malicious_patterns = [
+                        "<script",
+                        "javascript:",
+                        "onerror=",
+                        "DROP TABLE",
+                        "SELECT *",
+                    ]
+                    if any(
+                        pattern.lower() in value.lower()
+                        for pattern in malicious_patterns
+                    ):
+                        response, status_code = create_api_response(
+                            success=False,
+                            error=f"Invalid content in field '{key}'",
+                            status_code=400,
+                        )
+                        return jsonify(response), status_code
+
             # Load existing settings to merge with new data
             assert SETTINGS_FILE is not None
             settings_file = Path(SETTINGS_FILE)

@@ -19,6 +19,11 @@ from blinkapp.utils.errors import ValidationError
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "handle_api_error",
+    "require_sync_module",
+]
+
 
 def handle_api_error(
     error: Exception,

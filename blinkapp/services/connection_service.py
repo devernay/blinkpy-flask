@@ -32,6 +32,7 @@ __all__ = [
     "initialize_blink_connection",
     "get_blink_connection",
     "shutdown_blink_connection",
+    "executor",  # Global executor instance used in tests
 ]
 
 logger = logging.getLogger(__name__)

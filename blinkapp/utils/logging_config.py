@@ -11,6 +11,10 @@ from pathlib import Path
 
 from blinkapp.config import Config
 
+__all__ = [
+    "setup_logging",
+]
+
 
 def setup_logging() -> None:
     """Configure logging with rotating file handler in cache directory.

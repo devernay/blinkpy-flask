@@ -40,6 +40,8 @@ if TYPE_CHECKING:
 # Application configuration
 from blinkapp.config import Config
 from blinkapp.models.ids import ClipId
+
+# API response models
 from blinkapp.models.responses import create_api_response
 
 # Admin routes
@@ -63,20 +65,22 @@ from blinkapp.routes.settings import register_settings_routes, setup_settings_ro
 # System management routes
 from blinkapp.routes.system import setup_system_routes
 
+# Cache management
+from blinkapp.services.cache_management import (
+    clear_all_caches,
+    initialize_cache_paths,
+)
+
 # Route decorators and error handling
 # Route decorators for API endpoints
 from blinkapp.utils.decorators import (
     ensure_blink_available,
-    error_context,
 )
 
 # Utilities
 from blinkapp.utils.error_handlers import handle_api_error, require_sync_module
 
 # Utilities
-from blinkapp.utils.errors import (
-    CacheError,
-)
 from blinkapp.utils.logging_config import setup_logging
 
 # Live streaming management
@@ -114,6 +118,14 @@ __all__ = [
     "main",
     # API utilities
     "create_api_response",
+    # Configuration files and paths (commonly patched in tests)
+    "SETTINGS_FILE",
+    "CREDENTIALS_FILE",
+    "CACHE_DIR",
+    "CLIPS_CACHE_DIR",
+    "THUMBNAIL_CACHE_DIR",
+    # Logger (commonly patched in tests)
+    "logger",
 ]
 
 # ============================================================================
@@ -148,60 +160,8 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # Cache and File System Management
 # ============================================================================
-
-
-def _init_cache_paths(cache_dir: Path) -> None:
-    """Initialize cache path constants."""
-    global \
-        CACHE_DIR, \
-        CREDENTIALS_FILE, \
-        THUMBNAIL_CACHE_DIR, \
-        CLIPS_CACHE_DIR, \
-        SETTINGS_FILE
-    CACHE_DIR = str(cache_dir)  # pyright: ignore[reportConstantRedefinition]
-    CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)  # pyright: ignore[reportConstantRedefinition]
-    THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)  # pyright: ignore[reportConstantRedefinition]
-    CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)  # pyright: ignore[reportConstantRedefinition]
-    SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)  # pyright: ignore[reportConstantRedefinition]
-
-
-def initialize_cache_paths() -> None:
-    """Initialize cache directory paths from Flask config or defaults.
-
-    Sets global path variables for cache directories and credential file.
-    Uses Flask app config 'CACHE_DIR' or defaults to Config.DEFAULT_CACHE_DIR.
-    This function must be called before any cache operations or logging setup.
-
-    The cache directory structure created:
-    - CACHE_DIR/: Base cache directory
-    - CACHE_DIR/thumbnails/: Camera thumbnail cache
-    - CACHE_DIR/clips/: Downloaded clips storage
-    - CACHE_DIR/blink.json: Encrypted credentials
-    - CACHE_DIR/settings.json: User preferences
-    - CACHE_DIR/blink_app.log: Application logs
-
-    Side Effects:
-        Updates global variables: CACHE_DIR, CREDENTIALS_FILE,
-        THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR, SETTINGS_FILE
-
-    Raises:
-        OSError: If cache directory cannot be created or accessed
-    """
-    global \
-        CACHE_DIR, \
-        CREDENTIALS_FILE, \
-        THUMBNAIL_CACHE_DIR, \
-        CLIPS_CACHE_DIR, \
-        SETTINGS_FILE
-
-    # Get cache directory from Flask config or use sensible default
-    cache_dir_str = app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR)
-    assert isinstance(cache_dir_str, str)
-    cache_dir = Path(cache_dir_str)
-
-    # Initialize cache-related paths using the base cache directory
-    _init_cache_paths(cache_dir)
-
+# Cache and File System Management
+# ============================================================================
 
 # Cache configuration constants
 CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
@@ -212,60 +172,6 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 
 
 # Camera thumbnail update functionality
-
-
-def clear_all_caches() -> dict[str, object]:
-    """Clear all caches except credentials (background operation)."""
-    with error_context("clear cache", CacheError):
-        # Clear memory caches first (fast operation) using OO cache methods
-        from blinkapp.services.cache_service import (
-            ensure_clips_cache_initialized,
-            ensure_thumbnail_cache_initialized,
-        )
-
-        thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
-        clips_cache_instance = ensure_clips_cache_initialized()
-
-        thumbnail_cache_instance.clear()
-        clips_cache_instance.clear()
-
-        # Clear file caches (slow I/O operations)
-        def clear_file_cache(cache_dir: str, cache_name: str) -> None:
-            try:
-                if os.path.exists(cache_dir):
-                    import shutil
-
-                    shutil.rmtree(cache_dir)
-                    os.makedirs(cache_dir, exist_ok=True)
-                    logger.debug(f"Cleared {cache_name} directory")
-            except OSError as e:
-                logger.warning(f"Could not clear {cache_name} directory: {e}")
-
-        # Execute file operations in parallel
-        assert THUMBNAIL_CACHE_DIR is not None
-        from blinkapp.services.connection_service import ensure_executor_initialized
-
-        executor_instance = ensure_executor_initialized()
-        thumbnail_future = executor_instance.submit(
-            clear_file_cache, THUMBNAIL_CACHE_DIR, "thumbnail"
-        )
-        assert CLIPS_CACHE_DIR is not None
-        clips_future = executor_instance.submit(
-            clear_file_cache, CLIPS_CACHE_DIR, "clips"
-        )
-
-        # Wait for completion with timeout
-        try:
-            thumbnail_future.result(timeout=Config.CACHE_CLEAR_TIMEOUT)
-            clips_future.result(timeout=Config.CACHE_CLEAR_TIMEOUT)
-            logger.info("All caches cleared successfully")
-            return {"status": "success", "message": "All caches cleared successfully"}
-        except Exception as e:
-            logger.warning(f"Cache clearing completed with errors: {e}")
-            return {
-                "status": "warning",
-                "message": f"Cache clearing completed with errors: {e}",
-            }
 
 
 # ============================================================================

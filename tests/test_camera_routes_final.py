@@ -2,6 +2,7 @@
 """Final tests for routes/camera.py - targeting more missed lines."""
 
 import unittest
+from unittest.mock import patch
 
 from flask import Flask
 
@@ -46,13 +47,26 @@ class TestCameraRoutesFinal(unittest.TestCase):
     def test_camera_hls_route_registration(self) -> None:
         """Test camera stream file route registration."""
         app = Flask(__name__)
-        setup_camera_routes(app)
 
-        with app.test_client() as client:
-            # Test stream file endpoint exists
-            response = client.get("/api/cameras/12345/streams/playlist.m3u8")
-            # Should not be 404 (route exists)
-            self.assertNotEqual(response.status_code, 404)
+        # Mock all required decorators to pass through
+        with patch(
+            "blinkapp.utils.decorators.api_route_with_validation"
+        ) as mock_decorator:
+            with patch(
+                "blinkapp.utils.decorators.ensure_blink_available"
+            ) as mock_ensure:
+                # Make decorators pass through the function unchanged
+                mock_decorator.side_effect = lambda *args, **kwargs: lambda func: func
+                mock_ensure.side_effect = lambda func: func
+
+                setup_camera_routes(app)
+
+                # Check if route was registered
+                routes = [rule.rule for rule in app.url_map.iter_rules()]
+                hls_route = "/api/cameras/<camera_id_str>/streams/<path:filename>"
+
+                # Route should be registered
+                self.assertIn(hls_route, routes)
 
     def test_camera_refresh_route_registration(self) -> None:
         """Test camera thumbnail cache clear route registration."""

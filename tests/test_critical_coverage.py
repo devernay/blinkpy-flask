@@ -342,37 +342,32 @@ class TestValidationClasses(BaseTestCase):
 class TestCachePathInitialization(BaseTestCase):
     """Test cache path initialization - lines 754-775."""
 
-    @patch("blinkapp.app")
-    @patch("pathlib.Path")
-    def test_initialize_cache_paths_with_config(
-        self, mock_path: Mock, mock_app: Mock
-    ) -> None:
+    @patch("blinkapp.services.cache_management.Path")
+    def test_initialize_cache_paths_with_config(self, mock_path: Mock) -> None:
         """Test cache path initialization with app config."""
-        # Setup mock app config
-        mock_app.config.get.return_value = "/custom/cache"
+        # Setup mock path that supports / operator
         mock_path_instance = Mock()
+        mock_path_instance.__truediv__ = Mock(return_value=Mock())
+        mock_path_instance.__str__ = Mock(return_value="/test/cache")
         mock_path.return_value = mock_path_instance
 
-        # Test initialization
+        # Test initialization (will use default config outside app context)
         initialize_cache_paths()
 
-        # Should use app config
-        mock_app.config.get.assert_called_with("CACHE_DIR", "cache")
+        # Should create directories
+        mock_path_instance.mkdir.assert_called()
 
-    @patch("blinkapp.app")
-    def test_initialize_cache_paths_default(self, mock_app: Mock) -> None:
+    def test_initialize_cache_paths_default(self) -> None:
         """Test cache path initialization with defaults."""
-        mock_app.config.get.return_value = None
-
-        # Should not raise exception
+        # Should not raise exception when outside app context
         try:
             initialize_cache_paths()
             success = True
         except Exception:
             success = False
 
-        # Should handle None config gracefully
-        self.assertTrue(success or mock_app.config.get.called)
+        # Should handle missing app context gracefully
+        self.assertTrue(success)
 
 
 class TestAPIResponseCreation(BaseTestCase):

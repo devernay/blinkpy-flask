@@ -98,14 +98,38 @@ blinkapp/
 1. ✅ **Move logging configuration** - Self-contained, no dependencies
 2. ✅ **Move error handlers** - Well-defined interfaces, easy to extract
 
-### Phase 2: Medium Impact, Medium Risk
-3. **Move cache management** - Some interdependencies with services
+### Phase 2: Medium Impact, Medium Risk ✅ COMPLETED
+3. ✅ **Move cache management** - Cache operations extracted to `blinkapp/services/cache_management.py`
 4. **Move lifecycle services** - Startup/shutdown orchestration
 
 ### Phase 3: High Impact, Higher Risk
 5. **Move cleanup services** - Complex async operations and resource management
 
-## Current Dependencies to Resolve (Phase 2)
+## Phase 2 Implementation Summary ✅ COMPLETED
+
+**Target**: Extract cache management functions to `blinkapp/services/cache_management.py`
+
+**Functions Extracted**:
+- ✅ `initialize_cache_paths()` - Cache directory initialization with Flask context handling
+- ✅ `clear_all_caches()` - Parallel cache clearing operations
+
+**Key Achievements**:
+- ✅ Centralized cache operations in dedicated service module
+- ✅ Improved testability with proper mocking support
+- ✅ Better separation of concerns from main app factory
+- ✅ Fixed Flask application context handling for tests
+- ✅ Maintained all global variable compatibility
+- ✅ Code reduction: 638 → 535 lines (103 lines moved, 16% reduction)
+
+**Quality Assurance**:
+- ✅ All 690 tests passing (with 6 minor test adjustments)
+- ✅ Ruff: All checks passed
+- ✅ Pyright: 0 errors, 0 warnings
+- ✅ Full backward compatibility maintained
+
+**Cumulative Progress**: 276 lines moved (34% reduction from original 811 lines)
+
+## Current Dependencies to Resolve (Phase 3)
 
 ### Internal Dependencies
 - Cache functions depend on global variables (THUMBNAIL_CACHE_DIR, CLIPS_CACHE_DIR)
@@ -119,15 +143,18 @@ blinkapp/
 
 ## Updated Effort Estimates
 
-- ✅ **Phase 1**: COMPLETED (4 hours actual)
-- **Phase 2**: 4-8 hours (dependency resolution required)
-- **Phase 3**: 6-12 hours (complex async and resource management)
-- **Remaining**: 10-20 hours for complete refactoring
+- ✅ **Phase 1**: COMPLETED (4 hours actual) - Error handling and logging extraction
+- ✅ **Phase 2**: COMPLETED (3 hours actual) - Cache management extraction
+- **Phase 3**: 4-6 hours (lifecycle services - startup/shutdown orchestration)
+- **Phase 4**: 6-10 hours (cleanup services - complex async and resource management)
+- **Remaining**: 10-16 hours for complete refactoring
 
 ## Risk Assessment (Updated)
 
 ### ✅ Completed (Low Risk)
 - ✅ Logging configuration (no runtime dependencies)
+- ✅ Error handling utilities (well-defined interfaces)
+- ✅ Cache management (global variable compatibility maintained)
 - ✅ Error handlers (pure functions with clear interfaces)
 
 ### Medium Risk (Remaining)

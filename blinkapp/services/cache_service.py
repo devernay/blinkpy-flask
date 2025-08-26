@@ -40,6 +40,8 @@ __all__ = [
     "ensure_cache_paths_initialized",
     "load_thumbnail_cache",
     "get_cache_stats",
+    "clips_cache",
+    "thumbnail_cache",
 ]
 
 logger = logging.getLogger(__name__)
