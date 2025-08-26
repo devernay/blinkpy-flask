@@ -61,29 +61,33 @@ pip install -e types-blinkpy/
 
 4. **Run the application:**
 ```bash
-# Set PYTHONPATH to use the included blinkpy module
-export PYTHONPATH="/path/to/blinkpy-flask/blinkpy:$PYTHONPATH"
-python app.py
+# Run as Python module (recommended)
+python -m blinkapp
 
-# Or use the helper script
-./run_with_blinkpy.sh python app.py
+# Or with custom options
+python -m blinkapp --host 127.0.0.1 --port 8080 --debug
+
+# Or use the helper script with blinkpy path
+./run_with_blinkpy.sh python -m blinkapp
 ```
 
 **Command line options:**
 ```bash
-python app.py --help
-python app.py --host 127.0.0.1 --port 8080 --debug
-python app.py --cache /custom/cache/path
+python -m blinkapp --help
+python -m blinkapp --host 127.0.0.1 --port 8080 --debug
+python -m blinkapp --cache /custom/cache/path
+python -m blinkapp --log-level DEBUG
+python -m blinkapp --dump-system  # Show system info and exit
 ```
 
-4. **Access the interface:**
-   - Web UI: `http://localhost:5000`
-   - API: `http://localhost:5000/api/`
+5. **Access the interface:**
+   - Web UI: `http://localhost:5001` (default port is 5001, not 5000)
+   - API: `http://localhost:5001/api/`
 
 ## Authentication
 
 ### First Time Setup
-1. Navigate to `http://localhost:5000`
+1. Navigate to `http://localhost:5001`
 2. Enter your Blink credentials (email/password)
 3. Complete 2FA verification if required
 4. Credentials are securely cached for future sessions
@@ -169,7 +173,10 @@ CACHE_DIR=cache  # Default cache directory
 
 ```
 blinkpy-flask/
-├── app.py              # Main Flask application with CLI (2000+ lines)
+├── blinkapp/           # Main Flask application package
+│   ├── __main__.py    # CLI entry point
+│   ├── __init__.py    # Flask app factory (811 lines)
+│   ├── config.py      # Configuration management
 ├── blink_connection.py # Blink thread management and async operations
 ├── stream_manager.py   # TCP to HLS stream management for Blink cameras
 ├── requirements.txt    # Python dependencies
@@ -195,7 +202,7 @@ blinkpy-flask/
 pip install gunicorn
 
 # Run with Gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+gunicorn -w 4 -b 0.0.0.0:5001 "blinkapp:app"
 ```
 
 ### Security Considerations
@@ -248,9 +255,9 @@ This provides type checking for blinkpy in any Python project without conflicts.
 
 ### Logging
 - Application logs: `cache/blink_app.log` (rotated)
-- Debug mode: `python app.py --debug`
-- Log levels: `python app.py --log-level DEBUG`
-- System dump: `python app.py --dump-system` (requires login)
+- Debug mode: `python -m blinkapp --debug`
+- Log levels: `python -m blinkapp --log-level DEBUG`
+- System dump: `python -m blinkapp --dump-system` (requires login)
 
 ## Technical Architecture
 
@@ -433,7 +440,7 @@ pre-commit install    # Install git hooks
 pre-commit run --all-files  # Run on all files
 
 # Run in debug mode
-python blinkapp.py --debug
+python -m blinkapp --debug
 
 # Test API endpoints
 curl http://localhost:5001/api/systems

@@ -348,7 +348,7 @@ async function loadSettings() {
 async function saveSetting(key, value) {
     try {
         const response = await fetch('/api/settings', {
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -376,7 +376,7 @@ async function saveSetting(key, value) {
 async function clearCache() {
     try {
         const response = await fetch('/api/cache', {
-            method: 'POST'
+            method: 'DELETE'
         });
 
         if (response.ok) {
