@@ -168,9 +168,51 @@ function getStreamStatus() {
     };
 }
 
+/**
+ * Record a clip from the current live stream
+ */
+async function recordClip() {
+    const currentStream = getCurrentStream();
+    if (!currentStream) {
+        alert('No active live stream to record');
+        return;
+    }
+
+    const saveBtn = document.querySelector('.save-btn');
+    if (!saveBtn) return;
+
+    // Disable button and show loading state
+    saveBtn.disabled = true;
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '💾 Recording...';
+
+    try {
+        const response = await fetch(`/api/cameras/${currentStream.cameraId}/record`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            saveBtn.textContent = '✅ Saved!';
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }, 2000);
+        } else {
+            throw new Error(`Recording failed: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error recording clip:', error);
+        alert('Failed to start recording. Please try again.');
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
 // Export functions for global access
 window.showLiveView = showLiveView;
 window.toggleMute = toggleMute;
+window.recordClip = recordClip;
 
 // Export module
 window.LiveStream = {

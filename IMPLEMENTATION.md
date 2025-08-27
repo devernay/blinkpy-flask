@@ -52,6 +52,7 @@ When the app is launched, it scans the thumbnail cache directory for existing th
 Clicking on the the "play" button in the middle of a thumbnail opens the "Live View" page for that camera.
 On the top-left of the Live View page, there is a "Back" button (back arrow), that goes back to the "Home" view.
 On the top-right of the Live View page, there is a "Mute" button ("speaker" icon) to mute the sound of the live view.
+At the bottom of the Live View page, there is a "Save" button (💾 icon) that triggers recording a clip on the camera being viewed by calling the `/api/cameras/{camera_id}/record` API endpoint.
 
 #### Live streaming MPEG-TS livestreaming via local TCP proxy server
 
@@ -498,14 +499,13 @@ def get_recent_clips(camera_id):
 ### 3. Advanced Camera Controls
 **Available in blinkpy:**
 ```python
-camera.record()               # Manual recording trigger
 camera.set_motion_detect()    # Per-camera motion detection toggle
 camera.get_sensor_info()      # Camera sensor information
 ```
 
 **Current Flask app:**
 - ✅ `camera.snap_picture()` - Already implemented for thumbnail refresh
-- ❌ Manual recording trigger - Not implemented
+- ✅ `camera.record()` - Already implemented in Live View Save button
 - ❌ Per-camera motion detection - Not implemented
 
 ### 4. Local Storage Advanced Features

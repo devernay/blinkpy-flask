@@ -642,6 +642,32 @@
             justify-content: center;
         }
 
+        .live-view-controls {
+            padding: 0 20px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .save-btn:hover {
+            background: #218838;
+        }
+
+        .save-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
         #live-video {
             width: 100%;
             max-width: 800px;

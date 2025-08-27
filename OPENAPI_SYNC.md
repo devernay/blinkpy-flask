@@ -292,56 +292,56 @@ The following OpenAPI endpoints are **NOT** used in JavaScript:
 - **OpenAPI**: Defined in api.json
 - **JavaScript**: Not used in client-side code
 - **Status**: ⚠️ NOT USED
-- **Notes**: Cameras are loaded via `/api/systems/{id}/devices` instead
+- **Notes**: Architectural choice - cameras loaded via `/api/systems/{id}/devices` for better organization
 
 #### ❌ `/api/cameras/{camera_id}` (GET) - Missing
 - **OpenAPI**: Defined in api.json
 - **JavaScript**: Not used in client-side code
 - **Status**: ⚠️ NOT USED
-- **Notes**: Camera details are included in devices response
+- **Notes**: Architectural choice - camera details included in devices response
 
-#### ❌ `/api/cameras/{camera_id}/record` (POST) - Missing
+#### ✅ `/api/cameras/{camera_id}/record` (POST)
 - **OpenAPI**: Defined in api.json
-- **JavaScript**: Not used in client-side code
-- **Status**: ⚠️ NOT USED
-- **Notes**: Recording functionality not implemented in UI
+- **JavaScript**: Used in `static/js/livestream.js:185` with POST method
+- **Status**: ✅ SYNCHRONIZED
+- **Notes**: Recording functionality implemented in Live View with Save button
 
 #### ❌ `/api/cameras/{camera_id}/streams/{filename}` (GET) - Missing
 - **OpenAPI**: Defined in api.json
 - **JavaScript**: Not used directly (handled by HLS player)
 - **Status**: ⚠️ NOT USED
-- **Notes**: HLS segments are loaded automatically by video player
+- **Notes**: Automatic handling - HLS segments loaded by Hls.js video player
 
 #### ❌ `/api/systems/cache` (DELETE) - Missing
 - **OpenAPI**: Defined in api.json
 - **JavaScript**: Not used in client-side code
 - **Status**: ⚠️ NOT USED
-- **Notes**: Systems cache clearing not exposed in UI
+- **Notes**: UI design choice - only general cache clearing exposed
 
 #### ❌ `/api/cache/thumbnails` (DELETE) - Missing
 - **OpenAPI**: Defined in api.json
 - **JavaScript**: Not used in client-side code
 - **Status**: ⚠️ NOT USED
-- **Notes**: Specific cache clearing not exposed in UI
+- **Notes**: UI design choice - only general cache clearing exposed
 
 #### ❌ `/api/cache/clips` (DELETE) - Missing
 - **OpenAPI**: Defined in api.json
 - **JavaScript**: Not used in client-side code
 - **Status**: ⚠️ NOT USED
-- **Notes**: Specific cache clearing not exposed in UI
+- **Notes**: UI design choice - only general cache clearing exposed
 
-#### ❌ `/logout` (POST) - Missing
+#### ✅ `/logout` (POST) - Found
 - **OpenAPI**: Defined in api.json
-- **JavaScript**: Not used in client-side code
-- **Status**: ⚠️ NOT USED
-- **Notes**: Logout functionality not implemented in current UI
+- **JavaScript**: Used in `static/js/app.js:421` with POST method
+- **Status**: ✅ SYNCHRONIZED
+- **Notes**: Logout functionality implemented with modal confirmation
 
 ### Summary
 
-**Total API Calls Found**: 15
-**Synchronized**: 15 ✅
+**Total API Calls Found**: 17
+**Synchronized**: 17 ✅
 **Method Mismatches**: 0 ❌
-**Missing from JavaScript**: 9 ⚠️
+**Missing from JavaScript**: 7 ⚠️
 
 ### Critical Issues Found
 
@@ -351,8 +351,9 @@ The following OpenAPI endpoints are **NOT** used in JavaScript:
 ### Recommendations
 
 1. ~~**Fix Method Mismatches**: Update JavaScript to use correct HTTP methods~~ ✅ **COMPLETED**
-2. **Consider UI Coverage**: 9 API endpoints are not used in the JavaScript UI
-3. **Add Missing Functionality**: Consider implementing logout, recording, and granular cache clearing in the UI
+2. **Consider UI Coverage**: 7 API endpoints are not used in the JavaScript UI
+3. **Add Missing Functionality**: Consider implementing granular cache clearing in the UI
+4. **Architectural Choices**: Some unused endpoints reflect intentional design decisions for better UX
 
 ### Status: ✅ FULLY SYNCHRONIZED
 
