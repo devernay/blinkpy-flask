@@ -48,6 +48,7 @@ test_app.py::TestAdvancedStreamingOperations::test_livestream_async_initializati
 test_app.py::TestAdvancedStreamingOperations::test_livestream_complete_initialization
 test_app.py::TestAdvancedStreamingOperations::test_livestream_hls_transcoding_error
 test_app.py::TestAdvancedStreamingOperations::test_livestream_no_stream_manager
+test_app.py::TestAdvancedStreamingOperations::test_streaming_logger_verification
 test_app.py::TestAdvancedSystemOperations::test_arm_system_partial_failure
 test_app.py::TestAdvancedSystemOperations::test_get_systems_with_complex_network_data
 test_app.py::TestAdvancedSystemOperations::test_system_refresh_with_multiple_networks
@@ -99,7 +100,7 @@ test_app.py::TestCacheLoadingOperations::test_load_clips_cache_success
 test_app.py::TestCacheLoadingOperations::test_load_thumbnail_cache_success
 test_app.py::TestCacheLoadingOperationsFixed::test_cache_loading_with_missing_directory
 test_app.py::TestCacheLoadingOperationsFixed::test_load_clips_cache_success
-test_app.py::TestCacheLoadingOperationsFixed::test_load_thumbnail_cache_success
+test_app.py::TestCacheLoadingOperationsFixed::test_load_thumbnail_cache_success_alternate
 test_app.py::TestCacheMaintenanceOperations::test_cache_maintenance_with_size_limits
 test_app.py::TestCacheMaintenanceOperations::test_load_clips_cache_with_various_formats
 test_app.py::TestCacheMaintenanceOperations::test_load_thumbnail_cache_cleanup_old_files
@@ -198,7 +199,7 @@ test_app.py::TestFlaskApp::test_api_systems_success
 test_app.py::TestFlaskApp::test_index_redirect_to_login
 test_app.py::TestFlaskApp::test_login_page_get
 test_app.py::TestFlaskApp::test_login_page_post_validation_error
-test_app.py::TestFlaskApp::test_placeholder_endpoint_removed
+test_app.py::TestFlaskApp::test_placeholder_endpoint
 test_app.py::TestIntegrationScenarios::test_complete_camera_workflow
 test_app.py::TestIntegrationScenarios::test_complete_clip_workflow
 test_app.py::TestIntegrationScenarios::test_error_recovery_workflow

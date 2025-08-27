@@ -2644,15 +2644,19 @@ class TestCacheLoadingOperations(BaseTestCase):
 
             with patch("pathlib.Path.exists", return_value=True):
                 with patch("pathlib.Path.glob", return_value=mock_files):
-                    with patch(
-                        "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized"
-                    ) as mock_ensure_cache:
-                        mock_cache = {}  # Use dict to support __setitem__
-                        mock_ensure_cache.return_value = mock_cache
-                        load_thumbnail_cache()
+                    # Mock file operations to prevent actual file creation
+                    with patch("pathlib.Path.open", mock_open()):
+                        with patch("pathlib.Path.write_bytes"):
+                            with patch("pathlib.Path.mkdir"):
+                                with patch(
+                                    "blinkapp.services.cache_service.ensure_thumbnail_cache_initialized"
+                                ) as mock_ensure_cache:
+                                    mock_cache = {}  # Use dict to support __setitem__
+                                    mock_ensure_cache.return_value = mock_cache
+                                    load_thumbnail_cache()
 
-                        # Should populate cache with thumbnail data
-                        self.assertGreater(len(mock_cache), 0)
+                                    # Should populate cache with thumbnail data
+                                    self.assertGreater(len(mock_cache), 0)
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_load_clips_cache_success(self) -> None:
@@ -6069,10 +6073,10 @@ class TestCacheLoadingOperationsFixed(BaseTestCase):
 
     @patch("os.listdir")
     @patch("os.path.exists")
-    def test_load_thumbnail_cache_success(
+    def test_load_thumbnail_cache_success_alternate(
         self, mock_exists: Mock, mock_listdir: Mock
     ) -> None:
-        """Test successful thumbnail cache loading."""
+        """Test successful thumbnail cache loading (alternate implementation)."""
         mock_exists.return_value = True
         mock_listdir.return_value = ["thumb1.jpg", "thumb2.jpg"]
 
