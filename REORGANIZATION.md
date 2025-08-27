@@ -17,25 +17,26 @@ This plan addresses organizational issues in the blinkapp codebase by splitting 
 
 ## Step-by-Step Implementation
 
-### Phase 1: Utils Directory Cleanup ❌ NOT IMPLEMENTED
+### Phase 1: Utils Directory Cleanup ⚠️ PARTIALLY IMPLEMENTED (1/3 steps)
 
-#### Step 1.1: Split `utils/validators.py` ❌ NOT IMPLEMENTED
+#### Step 1.1: Split `utils/validators.py` ✅ IMPLEMENTED
 ```bash
 # Create new files
 touch blinkapp/utils/parsers.py
 touch blinkapp/utils/formatters.py
 ```
 
-**Move to `utils/parsers.py`:**
+**Move to `utils/parsers.py`:** ✅ DONE
 - `extract_thumbnail_timestamp()`
 - `parse_arguments()`
 - `parse_clip_id()`
 
-**Move to `utils/formatters.py`:**
+**Move to `utils/formatters.py`:** ✅ DONE
 - `format_clips_by_day()`
+- `format_time_duration()`
 - `format_time_ago()`
 
-**Keep in `utils/validators.py`:**
+**Keep in `utils/validators.py`:** ✅ DONE
 - `validate_string_input()`
 - `validate_camera_id()`
 - `validate_tcp_url()`
@@ -77,7 +78,7 @@ touch blinkapp/services/blink_validators.py
 **Keep in `utils/error_handlers.py`:**
 - `handle_api_error()`
 
-### Phase 2: Services Directory Consolidation ⚠️ PARTIALLY IMPLEMENTED (3/5 steps)
+### Phase 2: Services Directory Consolidation ⚠️ PARTIALLY IMPLEMENTED (4/5 steps)
 
 #### Step 2.1: Merge Cache Services ✅ IMPLEMENTED
 ```bash
@@ -98,6 +99,8 @@ touch blinkapp/services/debug_service.py
 
 **Move to `services/device_service.py`:** ✅ DONE
 - `create_device_data()`
+- `format_device_temperature()`
+- `format_battery_level()`
 
 **Move to `services/debug_service.py`:** ✅ DONE
 - `dump_blink_system_info()`
@@ -124,7 +127,19 @@ touch blinkapp/services/blink_connection.py
 - `ensure_executor_initialized()`
 - `ensure_http_session_initialized()`
 
-#### Step 2.4: Split `services/clip_service.py` ❌ NOT IMPLEMENTED
+#### Step 2.4: Create Time Service ✅ IMPLEMENTED
+```bash
+# Create new file
+touch blinkapp/services/time_service.py
+```
+
+**Move to `services/time_service.py`:** ✅ DONE
+- `get_current_timestamp()`
+- `format_timestamp_as_time_ago()`
+- `get_current_time()`
+- `seconds_since_now_from_datetime()`
+
+#### Step 2.5: Split `services/clip_service.py` ❌ NOT IMPLEMENTED
 ```bash
 # Create new files
 touch blinkapp/services/clip_download.py
@@ -145,7 +160,7 @@ touch blinkapp/services/clip_processing.py
 - `process_cloud_clips()`
 - `process_local_clips()`
 
-#### Step 2.5: Split `services/stream_service.py` ❌ NOT IMPLEMENTED
+#### Step 2.6: Split `services/stream_service.py` ❌ NOT IMPLEMENTED
 ```bash
 # Create new file
 touch blinkapp/services/hls_service.py
@@ -258,7 +273,10 @@ rm -rf blinkapp/types/
 
 After each phase:
 - [x] All imports updated
-- [x] Tests pass
+- [x] Symbols explicitly exported using `__all__` in every module
+- [x] Tests pass (full test suite, not just core tests)
+- [x] Strong typing: reduce usage of `Any` or `object`
+- [x] Avoid functions that have multiple behaviors depending on the parameter type. It is allowed to use `<type> | None` but not `<type1> | <type2>` with different processing logics for type1 and type2
 - [x] No circular imports
 - [x] Functions moved to correct modules
 - [x] Route registration works
@@ -279,7 +297,8 @@ blinkapp/
 │   ├── debug_service.py         # ✅ Debug operations
 │   ├── device_service.py        # ✅ Device data
 │   ├── hls_service.py           # ❌ HLS/FFmpeg ops
-│   └── lifecycle_service.py     # ✅ Core lifecycle only
+│   ├── lifecycle_service.py     # ✅ Core lifecycle only
+│   └── time_service.py          # ✅ Time operations
 ├── routes/
 │   ├── camera.py                # ✅ Core camera ops only
 │   ├── config.py                # ❌ App configuration
@@ -288,8 +307,8 @@ blinkapp/
 ├── utils/
 │   ├── decorators.py            # ✅ Core utilities only
 │   ├── error_handlers.py        # ✅ Generic errors only
-│   ├── formatters.py            # ❌ Formatting functions
-│   ├── parsers.py               # ❌ Parsing functions
+│   ├── formatters.py            # ✅ Formatting functions
+│   ├── parsers.py               # ✅ Parsing functions
 │   ├── route_decorators.py      # ✅ Flask decorators
 │   └── validators.py            # ✅ Pure validation only
 └── models/                      # ✅ No changes (well organized)
@@ -303,24 +322,27 @@ blinkapp/
 ## Implementation Status
 
 ### Completed:
+- ✅ **Utils validators split** (Step 1.1) - Created `parsers.py` and `formatters.py`
 - ✅ **Cache service consolidation** (Step 2.1) - Merged `cache_management.py` into `cache_service.py`
 - ✅ **Utils service split** (Step 2.2) - Created `device_service.py` and `debug_service.py`
 - ✅ **Connection service split** (Step 2.3) - Created `blink_connection.py`
+- ✅ **Time service creation** (Step 2.4) - Created `time_service.py`
 - ✅ **Route decorators split** (Step 1.2) - Created `route_decorators.py`
 - ✅ **Camera routes split** (Step 3.1) - Created `thumbnails.py` and `streaming.py`
 - ✅ **Import updates** (Phase 4) - All 50+ import statements updated
 - ✅ **Test fixes** (Phase 5) - All tests passing (695 total)
 - ✅ **Code quality** - Ruff, pyright, and formatting all passing
+- ✅ **Function reorganization** - Moved `seconds_since_now_from_datetime` to correct location
+- ✅ **Strict typing** - Renamed `format_timestamp` to `format_timestamp_as_time_ago` for clarity
 
 ### Remaining Work:
-- ❌ **Utils validators split** (Step 1.1) - Create `parsers.py` and `formatters.py`
-- ❌ **Clip service split** (Step 2.4) - Create `clip_download.py` and `clip_processing.py`
-- ❌ **Stream service split** (Step 2.5) - Create `hls_service.py`
+- ❌ **Clip service split** (Step 2.5) - Create `clip_download.py` and `clip_processing.py`
+- ❌ **Stream service split** (Step 2.6) - Create `hls_service.py`
 - ❌ **Settings routes split** (Step 3.2) - Create `config.py`
 - ❌ **Error handlers split** (Step 1.3) - Create `blink_validators.py`
 - ❌ **Admin routes cleanup** (Step 3.3) - Remove placeholder routes
 
-**Progress: 8/14 major steps completed (57%)**
+**Progress: 12/17 major steps completed (71%)**
 
 ## Benefits
 

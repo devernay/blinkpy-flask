@@ -46,43 +46,23 @@ def create_device_data(
     camera: BlinkCamera, cache_key: CameraId, current_ts: int = 0, cached_ts: int = 0
 ) -> dict[str, object]:
     """Create device data dictionary for camera."""
-    from datetime import datetime
+    from datetime import UTC, datetime
 
     from blinkapp import logger
-    from blinkapp.utils.formatters import format_time_ago
+    from blinkapp.services.time_service import seconds_since_now_from_datetime
+    from blinkapp.utils.formatters import format_time_duration
 
     display_ts = max(cached_ts, current_ts)
     last_updated = "Never"
 
     if display_ts > 0:
         try:
-            thumbnail_time = datetime.fromtimestamp(display_ts)
-            now = datetime.now()
-            diff = now - thumbnail_time
-            days = diff.days
-
-            if days == 0:
-                hours = diff.seconds // 3600
-                if hours == 0:
-                    minutes = diff.seconds // 60
-                    last_updated = f"{minutes}m ago"
-                else:
-                    last_updated = f"{hours}h ago"
-            else:
-                last_updated = f"{days}d ago"
-        except (ValueError, TypeError, AttributeError) as e:
-            logger.debug(
-                f"Failed to calculate time difference for camera {camera.name}: {e}"
-            )
-            if camera.last_record:
-                timestamp = (
-                    camera.last_record.get("created_at")
-                    or camera.last_record.get("updated_at")
-                    or camera.last_record.get("time")
-                )
-                last_updated = format_time_ago(timestamp) if timestamp else "Never"
-            else:
-                last_updated = "Never"
+            dt = datetime.fromtimestamp(display_ts, tz=UTC)
+            seconds = seconds_since_now_from_datetime(dt)
+            last_updated = f"{format_time_duration(seconds)} ago"
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Failed to format timestamp {display_ts}: {e}")
+            last_updated = "Unknown"
 
     return {
         "type": "camera",

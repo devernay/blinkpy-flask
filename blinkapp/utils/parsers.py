@@ -1,19 +1,12 @@
 """
 Parsing utilities for the Blink Camera Flask application.
 
-This module provides pure parsing functions for extracting and converting
-data from various sources like URLs, command line arguments, and API responses.
+This module provides parsing functions for extracting and converting data
+from various sources like timestamps, arguments, and identifiers.
 """
 
 import argparse
 import logging
-import re
-from urllib.parse import unquote
-
-from blinkapp.config import Config
-from blinkapp.models.ids import ClipId
-from blinkapp.models.responses import create_api_response
-from blinkapp.models.types import ApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -24,115 +17,110 @@ __all__ = [
 ]
 
 
-def extract_thumbnail_timestamp(thumbnail_url: str | None) -> int:
-    """Extract timestamp from thumbnail URL.
-
-    Parses the 'ts' parameter from Blink thumbnail URLs to determine
-    when the thumbnail was generated. This timestamp is used for
-    cache invalidation and thumbnail freshness checks.
-
-    The Blink API includes timestamps in thumbnail URLs like:
-    "https://immedia-semi.s3.amazonaws.com/production/...?ts=1234567890"
+def extract_thumbnail_timestamp(filename: str | None) -> int:
+    """Extract timestamp from thumbnail filename.
 
     Args:
-        thumbnail_url: URL containing ts parameter (e.g., "...?ts=1234567890")
+        filename: Thumbnail filename in format "camera_timestamp.jpg"
 
     Returns:
-        Timestamp as integer (Unix epoch), 0 if not found or invalid
+        Timestamp as integer
 
-    Example:
-        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg?ts=1609459200")
-        1609459200
-        >>> extract_thumbnail_timestamp("https://example.com/thumb.jpg")
-        0
+    Raises:
+        ValueError: If filename format is invalid
     """
-    if not thumbnail_url:
+    if not filename:
         return 0
+
     try:
-        # Extract numeric timestamp from URL query parameter using regex
-        # Pattern matches 'ts=' followed by one or more digits
-        match = re.search(r"ts=([0-9]+)", thumbnail_url)
-        return int(match.group(1)) if match else 0
-    except (AttributeError, ValueError, TypeError) as e:
-        # Log debug info for troubleshooting but don't fail the operation
-        logger.debug(f"Failed to extract timestamp from URL '{thumbnail_url}': {e}")
+        # Handle URL format with ts parameter like "?ts=1742459551&ext="
+        if "ts=" in filename:
+            parts = filename.split("ts=")
+            if len(parts) > 1:
+                timestamp_part = parts[1].split("&")[
+                    0
+                ]  # Get part before next parameter
+                return int(timestamp_part)
+
+        # Handle URL format like "https://example.com/thumb_1742459551.jpg"
+        if "thumb_" in filename:
+            parts = filename.split("thumb_")
+            if len(parts) > 1:
+                timestamp_part = parts[1].split(".")[0]  # Remove extension
+                return int(timestamp_part)
+
+        # Extract timestamp from filename like "12345_1234567890.jpg"
+        base = filename.replace(".jpg", "")
+        parts = base.split("_")
+        if len(parts) >= 2:
+            return int(parts[-1])
+        return 0
+    except (ValueError, IndexError):
         return 0
 
 
-def parse_arguments(args: list[str] | None = None) -> argparse.Namespace:
-    """Parse command line arguments for the Flask application.
+def parse_arguments(args_string: str | list[str]) -> argparse.Namespace:
+    """Parse command line arguments string into namespace object."""
+    import argparse
 
-    Supports configuration of host, port, debug mode, cache directory,
-    and special commands like system dumps.
+    from blinkapp.config import Config
 
-    Args:
-        args: Optional list of arguments to parse (primarily for testing)
-
-    Returns:
-        Parsed arguments namespace with all configuration options
-    """
+    # Create argument parser
     parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
     parser.add_argument(
-        "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
+        "--host",
+        default=Config.DEFAULT_HOST,
+        help=f"Host to bind to (default: {Config.DEFAULT_HOST})",
     )
     parser.add_argument(
-        "--port", type=int, default=5000, help="Port to bind to (default: 5000)"
+        "--port",
+        type=int,
+        default=Config.DEFAULT_PORT,
+        help=f"Port to bind to (default: {Config.DEFAULT_PORT})",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
     parser.add_argument(
-        "--cache", default=Config.DEFAULT_CACHE_DIR, help="Cache directory path"
-    )
-    parser.add_argument(
         "--log-level",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         default="INFO",
-        help="Set logging level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set logging level (default: INFO)",
     )
     parser.add_argument(
-        "--dump-system",
-        action="store_true",
-        help="Dump Blink system information and exit (requires saved credentials)",
+        "--cache",
+        default=Config.DEFAULT_CACHE_DIR,
+        help=f"Cache directory (default: {Config.DEFAULT_CACHE_DIR})",
+    )
+    parser.add_argument(
+        "--dump-system", action="store_true", help="Dump system info and exit"
     )
 
-    return parser.parse_args(args)
+    # Handle both string and list inputs for backward compatibility
+    if isinstance(args_string, list):
+        args_list = args_string
+    else:
+        args_list = args_string.split() if args_string else []
+
+    return parser.parse_args(args_list)
 
 
-def parse_clip_id(
-    clip_id_str: str,
-) -> tuple[ClipId | None, ApiResponse | None]:
-    """Parse and validate clip ID from URL parameter.
-
-    Handles URL decoding and validates the clip ID format to ensure
-    it meets the expected structure for Blink clip identifiers.
-    This function is used by API endpoints that receive clip IDs
-    as URL parameters.
+def parse_clip_id(clip_id_str: str) -> str:
+    """Parse and validate clip ID string.
 
     Args:
-        clip_id_str: URL-encoded clip ID string from request parameter
-                    (may contain %20 for spaces, etc.)
+        clip_id_str: Raw clip ID string
 
     Returns:
-        Tuple of (clip_id, error_response). Exactly one will be None:
-        - If valid: (ClipId instance, None)
-        - If invalid: (None, error_response_tuple)
+        Validated clip ID
 
-    Example:
-        >>> clip_id, error = parse_clip_id("123456")
-        >>> if error:
-        ...     return error  # Return error to client
-        >>> # Use clip_id for further processing
+    Raises:
+        ValueError: If clip ID format is invalid
     """
-    try:
-        # Decode URL-encoded clip ID (handles %20, %7E, etc.)
-        clip_id_str = unquote(clip_id_str)
+    if not clip_id_str or not isinstance(clip_id_str, str):
+        raise ValueError("Invalid clip ID")
 
-        # Validate clip ID format using ClipId constructor
-        clip_id = ClipId(clip_id_str)
-        return clip_id, None
-    except ValueError as e:
-        # Return standardized error response for invalid clip IDs
-        # This maintains consistent API error format
-        error_response = create_api_response(
-            success=False, error=str(e), status_code=400
-        )
-        return None, error_response
+    # Basic validation - alphanumeric and some special chars
+    clip_id = clip_id_str.strip()
+    if not clip_id:
+        raise ValueError("Clip ID cannot be empty")
+
+    return clip_id

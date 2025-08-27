@@ -4,10 +4,10 @@ import unittest
 from unittest.mock import Mock
 
 from blinkapp.services.time_service import (
-    format_timestamp,
     get_current_time,
     get_current_timestamp,
 )
+from blinkapp.utils.formatters import format_time_ago
 
 
 class TestTimeService(unittest.TestCase):
@@ -26,19 +26,13 @@ class TestTimeService(unittest.TestCase):
         self.assertIsInstance(result, int)
         self.assertGreater(result, 0)
 
-    def test_format_timestamp_with_formatter(self) -> None:
-        """Test format timestamp with custom formatter."""
-        mock_formatter = Mock(return_value="formatted")
-        result = format_timestamp(1234567890, mock_formatter)
-        self.assertEqual(result, "formatted")
-        mock_formatter.assert_called_once_with(1234567890)
-
-    def test_format_timestamp_default_formatter(self) -> None:
-        """Test format timestamp with default formatter."""
-        result = format_timestamp(1234567890)
+    def test_format_time_ago(self) -> None:
+        """Test format timestamp as time ago."""
+        result = format_time_ago(1234567890)
         self.assertIsInstance(result, str)
         # Should contain time ago format
         self.assertTrue(any(char in result for char in "dhms"))
+        self.assertTrue(result.endswith(" ago"))
 
     def test_get_current_time_with_provider(self) -> None:
         """Test get current time with custom provider."""

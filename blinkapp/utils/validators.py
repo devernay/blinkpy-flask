@@ -7,58 +7,35 @@ and reusable across different modules.
 """
 
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     "validate_string_input",
-    "format_clips_by_day",
-    "format_time_ago",
+    "validate_camera_id",
+    "validate_tcp_url",
+    "is_valid_email_format",
+    "validate_credentials",
 ]
 
 
 def validate_string_input(value: str, max_length: int, field_name: str) -> str:
-    """Validate string input for length and basic safety.
-
-    Performs comprehensive validation on user input strings to prevent
-    security issues and ensure data quality. This includes type checking,
-    length limits, XSS prevention, SQL injection detection, and other
-    malicious input patterns.
-
-    Args:
-        value: Input string to validate (may contain leading/trailing whitespace)
-        max_length: Maximum allowed length after trimming whitespace
-        field_name: Human-readable name of field for error messages
-
-    Returns:
-        Validated and stripped string ready for use
-
-    Raises:
-        ValueError: If validation fails with specific error message
-
-    Example:
-        >>> validate_string_input("  test@example.com  ", 50, "Email")
-        "test@example.com"
-        >>> validate_string_input("<script>alert('xss')</script>", 50, "Username")
-        ValueError: Username contains invalid characters
-    """
-    # Strip whitespace and check for empty values after trimming
+    """Validate string input for length and basic safety."""
     value = value.strip()
     if not value:
         raise ValueError(f"{field_name} cannot be empty")
 
-    # Length validation to prevent abuse and database overflow
     if len(value) > max_length:
         raise ValueError(f"{field_name} too long (max {max_length} characters)")
 
-    # Convert to lowercase for case-insensitive pattern matching
     value_lower = value.lower()
 
-    # XSS prevention - reject HTML-like content
+    # XSS prevention
     if "<" in value or ">" in value or "&" in value:
         raise ValueError(f"{field_name} contains invalid characters")
 
-    # SQL injection prevention - detect common SQL injection patterns
+    # SQL injection prevention
     sql_patterns = [
         "'",
         '"',
@@ -91,11 +68,53 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
     return value
 
 
-def format_clips_by_day(clips):
-    """Format clips grouped by day."""
-    return {}
+def validate_camera_id(camera_id: str) -> str:
+    """Validate camera ID format."""
+    if not camera_id or not isinstance(camera_id, str):
+        raise ValueError("Invalid camera ID")
+
+    camera_id = camera_id.strip()
+    if not camera_id:
+        raise ValueError("Camera ID cannot be empty")
+
+    # Basic alphanumeric validation
+    if not re.match(r"^[a-zA-Z0-9_-]+$", camera_id):
+        raise ValueError("Camera ID contains invalid characters")
+
+    return camera_id
 
 
-def format_time_ago(timestamp):
-    """Format timestamp as time ago string."""
-    return "just now"
+def validate_tcp_url(url: str) -> str:
+    """Validate TCP URL format."""
+    if not url or not isinstance(url, str):
+        raise ValueError("Invalid TCP URL")
+
+    url = url.strip()
+    if not url.startswith("tcp://"):
+        raise ValueError("URL must start with tcp://")
+
+    return url
+
+
+def is_valid_email_format(email: str) -> bool:
+    """Check if email has valid format."""
+    if not email or not isinstance(email, str):
+        return False
+
+    # Basic email regex
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email.strip()))
+
+
+def validate_credentials(username: str, password: str) -> tuple[str, str]:
+    """Validate login credentials."""
+    if not username or not password:
+        raise ValueError("Username and password are required")
+
+    username = validate_string_input(username, 100, "Username")
+    password = validate_string_input(password, 200, "Password")
+
+    if not is_valid_email_format(username):
+        raise ValueError("Username must be a valid email address")
+
+    return username, password

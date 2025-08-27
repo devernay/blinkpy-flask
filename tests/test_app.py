@@ -32,7 +32,7 @@ from blinkapp import (
 )
 from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
 from blinkapp.models.responses import create_api_response
-from blinkapp.utils.formatters import format_time_ago
+from blinkapp.utils.formatters import format_time_duration
 from blinkapp.utils.parsers import extract_thumbnail_timestamp
 from blinkapp.utils.validators import validate_string_input
 
@@ -331,26 +331,23 @@ class TestUtilityFunctions(BaseTestCase):
         timestamp = extract_thumbnail_timestamp(None)
         self.assertEqual(timestamp, 0)
 
-    def test_format_time_ago_days(self) -> None:
-        """Test formatting time ago for days."""
-        from datetime import datetime, timedelta
+    def test_format_time_duration_days(self) -> None:
+        """Test formatting time duration for days."""
+        seconds = 5 * 24 * 3600  # 5 days in seconds
+        result = format_time_duration(seconds)
+        self.assertEqual(result, "5d")
 
-        past_time = datetime.now() - timedelta(days=5)
-        result = format_time_ago(past_time.isoformat())
-        self.assertEqual(result, "5d ago")
+    def test_format_time_duration_hours(self) -> None:
+        """Test formatting time duration for hours."""
+        seconds = 3 * 3600  # 3 hours in seconds
+        result = format_time_duration(seconds)
+        self.assertEqual(result, "3h")
 
-    def test_format_time_ago_hours(self) -> None:
-        """Test formatting time ago for hours."""
-        from datetime import datetime, timedelta
-
-        past_time = datetime.now() - timedelta(hours=3)
-        result = format_time_ago(past_time.isoformat())
-        self.assertEqual(result, "3h ago")
-
-    def test_format_time_ago_none(self) -> None:
+    def test_format_time_duration_negative(self) -> None:
         """Test formatting time ago for None."""
-        result = format_time_ago(None)
-        self.assertEqual(result, "Unknown")
+        """Test formatting time duration with negative value."""
+        with self.assertRaises(ValueError):
+            format_time_duration(-1)
 
 
 class TestFlaskApp(FlaskTestCase):
@@ -524,24 +521,19 @@ class TestValidationExtended(BaseTestCase):
 class TestUtilityFunctionsExtended(BaseTestCase):
     """Test extended utility functions."""
 
-    def test_format_time_ago_edge_cases(self) -> None:
-        """Test format_time_ago with edge cases."""
-        import time
+    def test_format_time_duration_edge_cases(self) -> None:
+        """Test format_time_duration with edge cases."""
+        # Test very recent time (30 seconds)
+        result = format_time_duration(30)
+        self.assertEqual(result, "30s")
 
-        # Test very recent time (less than 1 minute)
-        recent = int(time.time()) - 30
-        result = format_time_ago(recent)
-        self.assertIn("0m", result)
+        # Test exactly 1 hour (3600 seconds)
+        result = format_time_duration(3600)
+        self.assertEqual(result, "1h")
 
-        # Test exactly 1 hour ago
-        one_hour_ago = int(time.time()) - 3600
-        result = format_time_ago(one_hour_ago)
-        self.assertIn("1h", result)
-
-        # Test exactly 1 day ago
-        one_day_ago = int(time.time()) - 86400
-        result = format_time_ago(one_day_ago)
-        self.assertIn("1d", result)
+        # Test exactly 1 day (86400 seconds)
+        result = format_time_duration(86400)
+        self.assertEqual(result, "1d")
 
     def test_extract_thumbnail_timestamp_various_formats(self) -> None:
         """Test thumbnail timestamp extraction with various formats."""
@@ -2725,7 +2717,7 @@ class TestCommandLineInterface(BaseTestCase):
         args = parse_arguments(["--host", "127.0.0.1"])
 
         self.assertEqual(args.host, "127.0.0.1")
-        self.assertEqual(args.port, 5000)  # Default port
+        self.assertEqual(args.port, 5001)  # Default port
         self.assertFalse(args.debug)  # Default debug
 
     def test_parse_arguments_all_options(self) -> None:

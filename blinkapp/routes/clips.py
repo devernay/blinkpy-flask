@@ -96,12 +96,16 @@ def setup_clips_routes(app: Flask) -> None:
         )
         from blinkapp.utils.parsers import parse_clip_id
 
-        clip_id, error_response = parse_clip_id(clip_id_str)
-        if error_response is not None:
-            response, _ = error_response
-            return response  # Return just the dict, not the tuple
+        try:
+            clip_id_parsed = parse_clip_id(clip_id_str)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
 
-        assert clip_id is not None
+        # Convert to ClipId object
+        from blinkapp.models.ids import ClipId
+
+        clip_id = ClipId(clip_id_parsed)
+
         if clip_id.is_local():
             sync_name, item_id = clip_id.get_local_parts()
             process_local_clip_background(clip_id, sync_name, item_id)

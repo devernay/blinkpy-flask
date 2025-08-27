@@ -234,7 +234,7 @@ class TestTimeFormatting(BaseTestCase):
 
     def test_time_formatting_error_handling(self) -> None:
         """Test error handling in time formatting."""
-        with patch("blinkapp.utils.validators.format_time_ago") as mock_format:
+        with patch("blinkapp.utils.formatters.format_time_ago") as mock_format:
             mock_format.return_value = "Never"
 
             # Test invalid timestamp handling

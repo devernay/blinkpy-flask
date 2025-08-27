@@ -138,9 +138,17 @@ class TestValidators(FlaskTestCase):
 
     def test_format_time_ago_recent(self) -> None:
         """Test format_time_ago with recent timestamp."""
+        from datetime import datetime
+
         from blinkapp.utils.formatters import format_time_ago
 
-        result = format_time_ago("2025-01-01T10:00:00")
+        # Convert ISO string to timestamp first
+        iso_string = "2025-01-01T10:00:00Z"
+        dt = datetime.fromisoformat(iso_string.replace("Z", "+00:00"))
+        timestamp = int(dt.timestamp())
+
+        result = format_time_ago(timestamp)
+        self.assertIsInstance(result, str)
         self.assertIsInstance(result, str)
 
 

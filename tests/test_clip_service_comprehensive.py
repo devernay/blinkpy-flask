@@ -59,7 +59,7 @@ class TestClipServiceComprehensive:
         assert call_args["2023-01-01"]["date"] == "January 01, 2023"
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_with_existing_cache_entry(
         self, mock_format, mock_cache
     ):
@@ -91,7 +91,7 @@ class TestClipServiceComprehensive:
         )
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_exception_handling(
         self, mock_format, mock_cache
     ) -> None:

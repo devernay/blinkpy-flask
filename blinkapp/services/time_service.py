@@ -5,8 +5,8 @@ from datetime import datetime
 
 __all__ = [
     "get_current_timestamp",
-    "format_timestamp",
     "get_current_time",
+    "seconds_since_now_from_datetime",
 ]
 
 
@@ -30,13 +30,26 @@ def get_current_time(time_provider: Callable[[], datetime] | None = None) -> dat
     return time_provider()
 
 
-def format_timestamp(
-    timestamp: int, formatter: Callable[[int], str] | None = None
-) -> str:
-    """Format timestamp with injectable formatter."""
-    if formatter is None:
-        from blinkapp.utils.formatters import format_time_ago
+def seconds_since_now_from_datetime(dt: "datetime") -> int:
+    """Calculate seconds elapsed since now from datetime object.
 
-        formatter = format_time_ago
+    Args:
+        dt: Datetime object with timezone info
 
-    return formatter(timestamp)
+    Returns:
+        Seconds elapsed since now (positive if datetime is in the past)
+
+    Raises:
+        ValueError: If datetime has no timezone info
+    """
+    from datetime import UTC, datetime
+
+    if dt.tzinfo is None:
+        raise ValueError("Datetime object must include timezone information")
+
+    now = datetime.now(UTC)
+    if dt.tzinfo != UTC:
+        dt = dt.astimezone(UTC)
+
+    diff = now - dt
+    return int(diff.total_seconds())

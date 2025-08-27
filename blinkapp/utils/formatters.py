@@ -1,9 +1,8 @@
 """
 Formatting utilities for the Blink Camera Flask application.
 
-This module provides pure formatting functions for converting data into
-user-friendly display formats, including time formatting, data organization,
-and UI display helpers.
+This module provides formatting functions for displaying data in user-friendly
+formats, including time formatting and data organization.
 """
 
 import logging
@@ -13,117 +12,86 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "format_clips_by_day",
+    "format_time_duration",
     "format_time_ago",
 ]
 
 
-def format_clips_by_day(
-    clips_by_day: dict[str, dict[str, object]],
-) -> list[dict[str, object]]:
-    """Format clips by day into sorted list.
+def format_clips_by_day(clips: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Format clips grouped by day."""
+    if not clips:
+        return []
 
-    Takes a dictionary of clips grouped by day and converts it to a
-    sorted list suitable for JSON API responses. This function handles
-    the final formatting step for both cloud and local clips.
+    # Group clips by date
+    days: dict[str, dict[str, object]] = {}
+    for clip in clips:
+        try:
+            if "created_at" in clip:
+                dt = datetime.fromisoformat(
+                    str(clip["created_at"]).replace("Z", "+00:00")
+                )
+                date_key = dt.strftime("%Y-%m-%d")
+                date_display = dt.strftime("%B %d, %Y")
+            else:
+                dt = datetime.now(UTC)
+                date_key = dt.strftime("%Y-%m-%d")
+                date_display = dt.strftime("%B %d, %Y")
 
-    The function sorts days in reverse chronological order (newest first)
-    and clips within each day by time. It also adds clip counts for
-    UI display purposes.
+            if date_key not in days:
+                days[date_key] = {"date": date_display, "clips": []}
+            clips_list = days[date_key]["clips"]
+            if isinstance(clips_list, list):
+                clips_list.append(clip)
+        except (ValueError, KeyError):
+            continue
 
-    Args:
-        clips_by_day: Dictionary with day keys (YYYY-MM-DD) mapping to
-                     day objects containing date string and clips list
-
-    Returns:
-        Sorted list of day groups, each containing:
-        - date: Human-readable date string (e.g., "January 01, 2023")
-        - clips: List of clip objects sorted by time (newest first)
-        - count: Number of clips in this day for UI display
-
-    Example:
-        >>> clips_dict = {"2023-01-01": {"date": "January 01, 2023", "clips": [...]}}
-        >>> result = format_clips_by_day(clips_dict)
-        >>> result[0]["count"]
-        5
-    """
-    clips = []
-    # Sort days in reverse chronological order (newest first for better UX)
-    for day_key in sorted(clips_by_day.keys(), reverse=True):
-        day_data = clips_by_day[day_key]
-
-        # Ensure day_data is a dict and has clips list
-        if "clips" in day_data:
-            clips_list = day_data["clips"]
-            # Sort clips within each day by time (newest first)
-            # This ensures consistent ordering regardless of API response order
-            assert isinstance(clips_list, list), (
-                f"Expected clips_list to be list, got {type(clips_list)}"
-            )
-            clips_list.sort(key=lambda x: x["time"], reverse=True)
-            # Add clip count for UI display (shows "5 clips" in interface)
-            day_data["count"] = len(clips_list)
-        clips.append(day_data)
-    return clips
+    return sorted(days.values(), key=lambda x: str(x["date"]), reverse=True)
 
 
-def format_time_ago(timestamp_str: str | int | None) -> str:
-    """Format timestamp as 'Xd ago' format.
-
-    Converts various timestamp formats into human-readable relative time
-    strings like '5d ago', '2h ago', '30m ago' for better user experience.
-    This function handles multiple input formats from different parts of
-    the Blink API.
+def format_time_duration(seconds: int) -> str:
+    """Format a time duration in seconds to human readable string.
 
     Args:
-        timestamp_str: Timestamp in one of these formats:
-                      - ISO format string (e.g., "2023-01-01T12:00:00Z")
-                      - Unix timestamp integer (seconds since epoch)
-                      - None (for missing timestamps)
+        seconds: Duration in seconds (must be non-negative)
 
     Returns:
-        Human-readable time string:
-        - "Xd ago" for days (e.g., "5d ago")
-        - "Xh ago" for hours (e.g., "2h ago")
-        - "Xm ago" for minutes (e.g., "30m ago")
-        - "Unknown" if timestamp is invalid or None
+        Formatted duration string (e.g., "30s", "5m", "2h", "3d")
 
-    Example:
-        >>> format_time_ago("2023-01-01T12:00:00Z")
-        "5d ago"
-        >>> format_time_ago(1672574400)
-        "2h ago"
-        >>> format_time_ago(None)
-        "Unknown"
+    Raises:
+        ValueError: If seconds is negative
     """
-    try:
-        if timestamp_str is None:
-            return "Unknown"
+    if seconds < 0:
+        raise ValueError("Duration cannot be negative")
+    elif seconds < 60:
+        return f"{seconds}s"
+    elif seconds < 3600:
+        minutes = seconds // 60
+        return f"{minutes}m"
+    elif seconds < 86400:
+        hours = seconds // 3600
+        return f"{hours}h"
+    else:
+        days = seconds // 86400
+        return f"{days}d"
 
-        # Handle different input types from various Blink API endpoints
-        if isinstance(timestamp_str, int):
-            # Unix timestamp (seconds since epoch) from some API responses
-            timestamp = datetime.fromtimestamp(timestamp_str, tz=UTC)
-        elif isinstance(timestamp_str, str):
-            # ISO format timestamp string from Blink API (handle Z suffix)
-            timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-        else:
-            logger.debug(f"Unsupported timestamp type: {type(timestamp_str)}")
-            return "Unknown"
 
-        # Calculate time difference using timezone-aware comparison
-        now = datetime.now(timestamp.tzinfo)
-        diff = now - timestamp
-        days = diff.days
+def format_time_ago(timestamp: int) -> str:
+    """Format Unix timestamp as 'X ago' string.
 
-        # Format in most appropriate unit (days > hours > minutes)
-        if days == 0:
-            hours = diff.seconds // 3600
-            if hours == 0:
-                minutes = diff.seconds // 60
-                return f"{minutes}m ago"
-            return f"{hours}h ago"
-        return f"{days}d ago"
-    except (ValueError, TypeError, AttributeError, OSError) as e:
-        # Log debug info but don't fail the operation
-        logger.debug(f"Failed to format time ago for '{timestamp_str}': {e}")
-        return "Unknown"
+    Args:
+        timestamp: Unix timestamp (seconds since epoch)
+
+    Returns:
+        Formatted time ago string (e.g., "5m ago", "2h ago")
+
+    Raises:
+        ValueError: If timestamp is invalid
+        OSError: If timestamp is out of range
+    """
+    from datetime import UTC, datetime
+
+    dt = datetime.fromtimestamp(timestamp, tz=UTC)
+    from blinkapp.services.time_service import seconds_since_now_from_datetime
+
+    seconds = seconds_since_now_from_datetime(dt)
+    return f"{format_time_duration(seconds)} ago"

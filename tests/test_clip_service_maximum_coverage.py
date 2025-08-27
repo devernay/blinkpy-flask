@@ -369,7 +369,7 @@ class TestClipServiceMaximumCoverage:
         mock_format.assert_called_once()
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_invalid_timestamp(
         self, mock_format, mock_cache
     ) -> None:
@@ -393,7 +393,7 @@ class TestClipServiceMaximumCoverage:
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_no_blink(
         self, mock_format, mock_connection, mock_blink
     ):
@@ -441,7 +441,7 @@ class TestClipServiceMaximumCoverage:
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_sync_error(
         self, mock_format, mock_connection, mock_blink
     ):

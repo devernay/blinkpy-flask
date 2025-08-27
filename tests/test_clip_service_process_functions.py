@@ -47,7 +47,7 @@ class TestClipProcessingFunctions:
         assert "2023-01-01" in call_args
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_invalid_timestamp(
         self, mock_format, mock_cache
     ) -> None:
@@ -70,7 +70,7 @@ class TestClipProcessingFunctions:
             mock_logger.warning.assert_called()
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_with_cached_clip(
         self, mock_format, mock_cache
     ) -> None:
@@ -100,7 +100,7 @@ class TestClipProcessingFunctions:
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_no_blink(
         self, mock_format, mock_connection, mock_blink
     ):
@@ -173,7 +173,7 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_no_local_storage(
         self, mock_format, mock_cache, mock_connection, mock_blink
     ):
@@ -196,7 +196,7 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.utils.validators.format_clips_by_day")
+    @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_manifest_not_ready(
         self, mock_format, mock_cache, mock_connection, mock_blink
     ):

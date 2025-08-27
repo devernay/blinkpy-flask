@@ -725,3 +725,11 @@ did you update api.json? Is it complete? Are there more actions missing or outda
 run ruff check, pyright, and pytest (full test suites), and fix all issues. Do not stop until all issues are fixed.
 
 are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
+
+Is seconds_since_now_from_datetime in the right file? It doesn't seem to be a parser.
+
+format_timestamp should be named more explicitly. It's not just "formatting a timestamp", it's returning a string that says how long ago the timestamp was.
+
+Is format_timestamp_as_time_ago in the right file? Isn't it a formatter?
+
+Is there duplicate functionalities between format_time_duration, format_time_duration and format_timestamp_as_time_ago?

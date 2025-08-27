@@ -161,7 +161,7 @@ class TestClipServiceFinal:
             }
         ]
 
-        with patch("blinkapp.utils.validators.format_clips_by_day") as mock_format:
+        with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             mock_format.return_value = []
 
             result = process_cloud_clips(videos_metadata)
@@ -184,7 +184,7 @@ class TestClipServiceFinal:
 
         mock_connection = Mock()
 
-        with patch("blinkapp.utils.validators.format_clips_by_day") as mock_format:
+        with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             mock_format.return_value = []
 
             result = process_local_clips(
@@ -210,7 +210,7 @@ class TestClipServiceFinal:
 
         mock_connection = Mock()
 
-        with patch("blinkapp.utils.validators.format_clips_by_day") as mock_format:
+        with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             mock_format.return_value = []
 
             result = process_local_clips(
@@ -246,7 +246,7 @@ class TestClipServiceFinal:
         mock_connection = Mock()
         mock_connection.execute = Mock()
 
-        with patch("blinkapp.utils.validators.format_clips_by_day") as mock_format:
+        with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             with patch("blinkapp.services.clip_service.logger") as mock_logger:
                 mock_format.return_value = []
 
@@ -379,7 +379,7 @@ class TestClipServiceFinal:
         with patch("blinkapp.services.blink_service.blink") as mock_blink:
             with patch("blinkapp.services.blink_service.blink_connection"):
                 with patch(
-                    "blinkapp.utils.validators.format_clips_by_day"
+                    "blinkapp.utils.formatters.format_clips_by_day"
                 ) as mock_format:
                     mock_blink.sync = {}
                     mock_format.return_value = []
@@ -395,7 +395,7 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        with patch("blinkapp.utils.validators.format_clips_by_day") as mock_format:
+        with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             mock_format.return_value = []
 
             result = process_cloud_clips([])
