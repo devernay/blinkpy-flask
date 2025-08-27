@@ -231,7 +231,6 @@ def handle_dump_system(credentials_checker=None) -> None:
     from blinkapp import (
         CREDENTIALS_FILE,
         Config,
-        cleanup_blink_session,
         dump_cloud_videos,
         initialize_cache_paths,
         logger,
@@ -239,6 +238,7 @@ def handle_dump_system(credentials_checker=None) -> None:
     from blinkapp.services.auth_service import load_saved_blink
     from blinkapp.services.blink_service import blink
     from blinkapp.services.connection_service import blink_connection
+    from blinkapp.services.lifecycle_service import cleanup_blink_session
 
     initialize_cache_paths()
 

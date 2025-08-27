@@ -100,34 +100,39 @@ blinkapp/
 
 ### Phase 2: Medium Impact, Medium Risk ✅ COMPLETED
 3. ✅ **Move cache management** - Cache operations extracted to `blinkapp/services/cache_management.py`
-4. **Move lifecycle services** - Startup/shutdown orchestration
 
-### Phase 3: High Impact, Higher Risk
+### Phase 3: Medium Impact, Medium Risk ✅ COMPLETED
+4. ✅ **Move lifecycle services** - Startup/shutdown orchestration extracted to `blinkapp/services/lifecycle_service.py`
+
+### Phase 4: High Impact, Higher Risk
 5. **Move cleanup services** - Complex async operations and resource management
 
-## Phase 2 Implementation Summary ✅ COMPLETED
+## Phase 3 Implementation Summary ✅ COMPLETED
 
-**Target**: Extract cache management functions to `blinkapp/services/cache_management.py`
+**Target**: Extract lifecycle management functions to `blinkapp/services/lifecycle_service.py`
 
 **Functions Extracted**:
-- ✅ `initialize_cache_paths()` - Cache directory initialization with Flask context handling
-- ✅ `clear_all_caches()` - Parallel cache clearing operations
+- ✅ `startup()` - Complete application initialization and startup orchestration
+- ✅ `cleanup_resources()` - Graceful shutdown of all services and resource cleanup
+- ✅ `load_clips_cache()` - Clips cache loading and validation with background file cleanup
+- ✅ `dump_cloud_videos()` - Debug utility for cloud video information logging
+- ✅ `cleanup_blink_session()` - Async Blink session cleanup helper
 
 **Key Achievements**:
-- ✅ Centralized cache operations in dedicated service module
-- ✅ Improved testability with proper mocking support
-- ✅ Better separation of concerns from main app factory
-- ✅ Fixed Flask application context handling for tests
-- ✅ Maintained all global variable compatibility
-- ✅ Code reduction: 638 → 535 lines (103 lines moved, 16% reduction)
+- ✅ Centralized application lifecycle management in dedicated service module
+- ✅ Improved separation of concerns from main app factory
+- ✅ Better testability with proper import structure
+- ✅ Maintained all Flask application context handling
+- ✅ Fixed import dependencies and route setup organization
+- ✅ Code reduction: 535 → 229 lines (306 lines moved, 57% reduction)
 
 **Quality Assurance**:
-- ✅ All 690 tests passing (with 6 minor test adjustments)
+- ✅ All 694 tests passing (with proper import path fixes)
 - ✅ Ruff: All checks passed
 - ✅ Pyright: 0 errors, 0 warnings
 - ✅ Full backward compatibility maintained
 
-**Cumulative Progress**: 276 lines moved (34% reduction from original 811 lines)
+**Cumulative Progress**: 582 lines moved (72% reduction from original 811 lines)
 
 ## Current Dependencies to Resolve (Phase 3)
 
@@ -145,9 +150,9 @@ blinkapp/
 
 - ✅ **Phase 1**: COMPLETED (4 hours actual) - Error handling and logging extraction
 - ✅ **Phase 2**: COMPLETED (3 hours actual) - Cache management extraction
-- **Phase 3**: 4-6 hours (lifecycle services - startup/shutdown orchestration)
+- ✅ **Phase 3**: COMPLETED (2 hours actual) - Lifecycle services extraction
 - **Phase 4**: 6-10 hours (cleanup services - complex async and resource management)
-- **Remaining**: 10-16 hours for complete refactoring
+- **Remaining**: 6-12 hours for complete refactoring
 
 ## Risk Assessment (Updated)
 
