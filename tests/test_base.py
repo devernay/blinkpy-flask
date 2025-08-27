@@ -65,8 +65,10 @@ def initialize_for_testing() -> None:
         initialize_stream_manager()
 
     # Initialize cache directories
-    if blinkapp.CACHE_DIR is None:
-        blinkapp.initialize_cache_paths()
+    if not blinkapp.CACHE_DIR:
+        from blinkapp.services.cache_service import initialize_cache_paths
+
+        initialize_cache_paths()
 
     # Initialize cache objects
     try:

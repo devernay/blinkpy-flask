@@ -2,12 +2,11 @@
 """Advanced tests for services/utils_service.py - targeting more missed lines."""
 
 import unittest
+from pathlib import Path
 from unittest.mock import Mock
 
-from blinkapp.services.utils_service import (
-    check_credentials_file_exists,
-    create_device_data,
-)
+from blinkapp.services.debug_service import check_credentials_file_exists
+from blinkapp.services.device_service import create_device_data
 
 
 class TestUtilsServiceAdvanced(unittest.TestCase):
@@ -17,7 +16,7 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
         """Test check_credentials_file_exists basic functionality."""
         # Should not raise exception
         try:
-            result = check_credentials_file_exists("/nonexistent/path")
+            result = check_credentials_file_exists(Path("/nonexistent/path"))
             self.assertIsInstance(result, bool)
         except Exception:
             # Expected to fail in test environment, but function exists

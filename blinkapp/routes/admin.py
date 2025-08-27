@@ -9,7 +9,6 @@ This module handles administrative functionality including:
 
 from flask import Flask, Response, jsonify
 
-from blinkapp.config import Config
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.route_decorators import api_route, simple_success_response
 
@@ -138,6 +137,7 @@ def register_admin_routes(app: Flask) -> None:
             JSON response with placeholder message
         """
         from blinkapp import create_api_response
+        from blinkapp.config import Config
 
         response, status_code = create_api_response(
             success=False,

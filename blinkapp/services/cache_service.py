@@ -6,6 +6,22 @@ cache initialization, management, and cleanup operations.
 
 from __future__ import annotations
 
+__all__ = [
+    "validate_cache_directory",
+    "ensure_cache_directory",
+    "initialize_caches",
+    "ensure_clips_cache_initialized",
+    "ensure_thumbnail_cache_initialized",
+    "ensure_cache_paths_initialized",
+    "get_cache_stats",
+    "load_thumbnail_cache",
+    "initialize_cache_paths",
+    "clear_all_caches",
+    "load_clips_cache",
+    "thumbnail_cache",
+    "clips_cache",
+]
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -270,3 +286,106 @@ def load_thumbnail_cache() -> None:
 
     except Exception as e:
         logger.error(f"Error scanning thumbnail cache: {e}")
+
+
+# Cache management functions merged from cache_management.py
+def initialize_cache_paths() -> None:
+    """Initialize cache directory paths from Flask config or defaults."""
+    from pathlib import Path
+
+    import blinkapp
+    from blinkapp.config import Config
+
+    try:
+        from flask import current_app
+
+        cache_dir_config = getattr(
+            current_app.config, "CACHE_DIR", Config.DEFAULT_CACHE_DIR
+        )
+    except RuntimeError:
+        cache_dir_config = Config.DEFAULT_CACHE_DIR
+
+    cache_dir = Path(cache_dir_config)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    blinkapp.CACHE_DIR = str(cache_dir)
+    blinkapp.CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
+    blinkapp.THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
+    blinkapp.CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)
+    blinkapp.HLS_OUTPUT_DIR = str(cache_dir / "hls")
+    blinkapp.SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
+
+    Path(blinkapp.THUMBNAIL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    Path(blinkapp.CLIPS_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    Path(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+
+
+def clear_all_caches() -> dict[str, Any]:
+    """Clear all caches except credentials."""
+    import os
+    import shutil
+
+    import blinkapp
+    from blinkapp.services.connection_service import ensure_executor_initialized
+
+    thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
+    clips_cache_instance = ensure_clips_cache_initialized()
+
+    thumbnail_cache_instance.clear()
+    clips_cache_instance.clear()
+
+    def clear_file_cache(cache_dir: str, cache_name: str) -> None:
+        try:
+            if os.path.exists(cache_dir):
+                shutil.rmtree(cache_dir)
+                os.makedirs(cache_dir, exist_ok=True)
+        except OSError as e:
+            logger.warning(f"Could not clear {cache_name} directory: {e}")
+
+    executor_instance = ensure_executor_initialized()
+    if blinkapp.THUMBNAIL_CACHE_DIR:
+        executor_instance.submit(
+            clear_file_cache, blinkapp.THUMBNAIL_CACHE_DIR, "thumbnail"
+        )
+    if blinkapp.CLIPS_CACHE_DIR:
+        executor_instance.submit(clear_file_cache, blinkapp.CLIPS_CACHE_DIR, "clips")
+
+    return {"status": "success", "message": "All caches cleared successfully"}
+
+
+def load_clips_cache() -> None:
+    """Load clips cache directory and populate memory cache."""
+    from pathlib import Path
+
+    import blinkapp
+    from blinkapp.models.ids import ClipId
+
+    if not blinkapp.CLIPS_CACHE_DIR:
+        return
+
+    cache_dir = Path(blinkapp.CLIPS_CACHE_DIR)
+    if not cache_dir.exists():
+        return
+
+    clips_cache_instance = ensure_clips_cache_initialized()
+
+    for video_file in cache_dir.glob("*.mp4"):
+        filename = video_file.name
+        try:
+            parts = filename.replace(".mp4", "").split("_", 1)
+            if len(parts) >= 2:
+                clip_id = ClipId(parts[0])
+                from blinkapp.models.cache import ClipData
+
+                clip_data: ClipData = {
+                    "id": str(clip_id),
+                    "camera_name": parts[1] if len(parts) > 1 else "unknown",
+                    "system_name": "cached",
+                    "time": "",
+                    "event_type": "cached",
+                    "thumbnail": "",
+                    "media_url": str(video_file),
+                }
+                clips_cache_instance.add_clip(clip_id, clip_data)
+        except Exception as e:
+            logger.debug(f"Error processing cached clip {filename}: {e}")

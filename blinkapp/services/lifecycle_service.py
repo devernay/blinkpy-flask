@@ -54,7 +54,7 @@ def startup() -> None:
     # Import here to avoid circular imports
     from blinkapp import CACHE_DIR, CLIPS_CACHE_DIR, THUMBNAIL_CACHE_DIR
     from blinkapp.config import Config
-    from blinkapp.services.cache_management import initialize_cache_paths
+    from blinkapp.services.cache_service import initialize_cache_paths
     from blinkapp.utils.logging_config import setup_logging
 
     try:
@@ -129,7 +129,7 @@ def startup() -> None:
                 )
             elif logger.isEnabledFor(logging.INFO):
                 # Log system information for debugging if verbose logging enabled
-                from blinkapp.services.utils_service import dump_blink_system_info
+                from blinkapp.services.debug_service import dump_blink_system_info
 
                 dump_blink_system_info()
         except Exception as e:

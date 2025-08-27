@@ -61,7 +61,7 @@ class TestSimpleCoverage(BaseTestCase):
 
     def test_connection_service_basic(self) -> None:
         """Test basic connection service."""
-        from blinkapp.services.connection_service import get_blink_connection
+        from blinkapp.services.blink_connection import get_blink_connection
 
         # Should return None when not initialized
         result = get_blink_connection()

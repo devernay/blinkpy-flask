@@ -119,7 +119,7 @@ class TestSignalHandling:
 class TestAppExecution:
     """Test application execution functionality."""
 
-    @patch("blinkapp.services.utils_service.handle_dump_system")
+    @patch("blinkapp.services.debug_service.handle_dump_system")
     def test_run_app_dump_system(self, mock_dump: Mock) -> None:
         """Test run_app with dump_system flag."""
         args = Mock()

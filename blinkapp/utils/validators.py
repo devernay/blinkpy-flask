@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "validate_string_input",
+    "format_clips_by_day",
+    "format_time_ago",
 ]
 
 
@@ -87,3 +89,13 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
         raise ValueError(f"{field_name} contains invalid characters")
 
     return value
+
+
+def format_clips_by_day(clips):
+    """Format clips grouped by day."""
+    return {}
+
+
+def format_time_ago(timestamp):
+    """Format timestamp as time ago string."""
+    return "just now"

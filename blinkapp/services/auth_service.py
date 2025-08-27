@@ -135,7 +135,7 @@ async def initialize_blink(
         ...     pass
     """
     # Import here to avoid circular imports during module initialization
-    from blinkapp.services.connection_service import blink_connection
+    from blinkapp.services.blink_connection import blink_connection
 
     with error_context("initialize Blink system", AuthenticationError):
         # Create new HTTP session for Blink API communication

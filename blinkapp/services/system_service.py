@@ -67,10 +67,10 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
         logger,
     )
     from blinkapp.models.ids import CameraId
-    from blinkapp.routes.camera import update_camera_thumbnail
+    from blinkapp.routes.thumbnails import update_camera_thumbnail
     from blinkapp.services.blink_validators import require_sync_module
     from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
-    from blinkapp.services.utils_service import create_device_data
+    from blinkapp.services.device_service import create_device_data
     from blinkapp.utils.errors import ValidationError
     from blinkapp.utils.parsers import extract_thumbnail_timestamp
 

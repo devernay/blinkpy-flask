@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import Mock
 
-from blinkapp.services.utils_service import (
+from blinkapp.services.device_service import (
     create_device_data,
     format_battery_level,
     format_device_temperature,

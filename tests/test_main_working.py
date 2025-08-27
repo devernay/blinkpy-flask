@@ -22,7 +22,7 @@ def test_run_app_dump_system() -> None:
     args = Mock()
     args.dump_system = True
 
-    with patch("blinkapp.services.utils_service.handle_dump_system") as mock_dump:
+    with patch("blinkapp.services.debug_service.handle_dump_system") as mock_dump:
         run_app(args)
         mock_dump.assert_called_once()
 

@@ -413,7 +413,7 @@ class TestBasicOperations(BaseTestCase):
     def test_utils_service_create_device_data(self) -> None:
         """Test utils_service create_device_data function."""
         from blinkapp.models.ids import CameraId
-        from blinkapp.services.utils_service import create_device_data
+        from blinkapp.services.device_service import create_device_data
 
         # Mock camera object
         mock_camera = Mock()

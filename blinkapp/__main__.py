@@ -57,7 +57,7 @@ def setup_signal_handlers() -> None:
 def run_app(args: argparse.Namespace) -> None:
     """Run the Flask application with given arguments."""
     if args.dump_system:
-        from blinkapp.services.utils_service import handle_dump_system
+        from blinkapp.services.debug_service import handle_dump_system
 
         handle_dump_system()
         return

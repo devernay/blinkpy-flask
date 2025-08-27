@@ -23,29 +23,30 @@ class TestCameraRoutesFinal(unittest.TestCase):
         rules = list(app.url_map.iter_rules())
         self.assertGreater(len(rules), 0)
 
-        # Check specific routes are registered
+        # Check specific routes are registered (thumbnail routes moved to thumbnails module)
         endpoints = [rule.endpoint for rule in rules]
-        self.assertIn("get_camera_thumbnail", endpoints)
+        self.assertIn("list_cameras", endpoints)
+        self.assertIn("get_camera_details", endpoints)
 
     def test_camera_routes_registration(self) -> None:
         """Test camera routes are properly registered."""
         app = Flask(__name__)
         setup_camera_routes(app)
 
-        # Test that routes exist
+        # Test that camera routes exist
         with app.test_client() as client:
-            # Test camera thumbnail endpoint exists (will fail auth but route exists)
-            response = client.get("/api/cameras/12345/thumbnail")
+            # Test camera list endpoint exists
+            response = client.get("/api/cameras")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
-            # Test camera stream endpoint exists
-            response = client.post("/api/cameras/12345/streams")
+            # Test camera details endpoint exists
+            response = client.get("/api/cameras/12345")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
 
-    def test_camera_hls_route_registration(self) -> None:
-        """Test camera stream file route registration."""
+    def test_camera_recording_route_registration(self) -> None:
+        """Test camera recording route registration."""
         app = Flask(__name__)
 
         # Mock all required decorators to pass through
@@ -61,20 +62,20 @@ class TestCameraRoutesFinal(unittest.TestCase):
 
                 setup_camera_routes(app)
 
-                # Check if route was registered
+                # Check if recording route was registered
                 routes = [rule.rule for rule in app.url_map.iter_rules()]
-                hls_route = "/api/cameras/<camera_id_str>/streams/<path:filename>"
+                recording_route = "/api/cameras/<camera_id_str>/record"
 
                 # Route should be registered
-                self.assertIn(hls_route, routes)
+                self.assertIn(recording_route, routes)
 
     def test_camera_refresh_route_registration(self) -> None:
-        """Test camera thumbnail cache clear route registration."""
+        """Test camera details route registration."""
         app = Flask(__name__)
         setup_camera_routes(app)
 
         with app.test_client() as client:
-            # Test thumbnail cache clear endpoint exists
-            response = client.delete("/api/cameras/12345/thumbnail")
+            # Test camera details endpoint exists
+            response = client.get("/api/cameras/12345")
             # Should not be 404 (route exists)
             self.assertNotEqual(response.status_code, 404)

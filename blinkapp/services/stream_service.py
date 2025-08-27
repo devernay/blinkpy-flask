@@ -6,6 +6,24 @@ live stream management, HLS transcoding, and stream cleanup.
 
 from __future__ import annotations
 
+__all__ = [
+    "initialize_stream_manager",
+    "create_stream_manager",
+    "ensure_stream_manager_initialized",
+    "parse_tcp_url",
+    "generate_hls_url",
+    "validate_camera_id",
+    "validate_tcp_url",
+    "start_camera_stream",
+    "stop_camera_stream",
+    "is_stream_active",
+    "get_hls_file",
+    "StreamConfig",
+    "HLSStream",
+    "StreamManager",
+    "stream_manager",
+]
+
 import logging
 import subprocess
 import tempfile

@@ -2,7 +2,7 @@
 
 import unittest
 
-from blinkapp.services.utils_service import (
+from blinkapp.services.device_service import (
     format_device_temperature,
 )
 

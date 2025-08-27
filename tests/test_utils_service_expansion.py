@@ -4,11 +4,8 @@
 import unittest
 from unittest.mock import Mock
 
-from blinkapp.services.utils_service import (
-    create_device_data,
-    dump_blink_system_info,
-    handle_dump_system,
-)
+from blinkapp.services.debug_service import dump_blink_system_info, handle_dump_system
+from blinkapp.services.device_service import create_device_data
 
 
 class TestUtilsServiceExpansion(unittest.TestCase):

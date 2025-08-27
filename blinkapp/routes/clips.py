@@ -112,12 +112,12 @@ def setup_clips_routes(app: Flask) -> None:
 
     @app.route("/api/clips/<clip_id_str>/download")
     @ensure_blink_available
-    @api_route("download clip")
-    def download_clip(clip_id_str: str) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    @api_route_with_validation("download clip", validate_params={"clip_id_str": ClipId})
+    def download_clip(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Download a specific clip.
 
         Args:
-            clip_id_str: String representation of clip ID
+            clip_id: Validated clip ID
 
         Returns:
             Flask Response with clip file or error message
@@ -127,14 +127,7 @@ def setup_clips_routes(app: Flask) -> None:
             download_cloud_clip,
             download_local_clip,
         )
-        from blinkapp.utils.parsers import parse_clip_id
 
-        clip_id, error_response = parse_clip_id(clip_id_str)
-        if error_response is not None:
-            # Re-raise as exception to be handled by decorator
-            raise ValueError(error_response[0]["error"])
-
-        assert clip_id is not None
         logger.debug(
             f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})"
         )

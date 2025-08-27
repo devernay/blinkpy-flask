@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import Mock, patch
 
+from blinkapp.services.blink_connection import BlinkConnection
 from blinkapp.services.connection_service import (
-    BlinkConnection,
     ensure_executor_initialized,
     ensure_http_session_initialized,
 )
@@ -22,7 +22,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
         mock_stream.stop.side_effect = RuntimeError("Stream error")
         connection._active_streams = {"stream1": mock_stream}
 
-        with patch("blinkapp.services.connection_service.logger") as mock_logger:
+        with patch("blinkapp.services.blink_connection.logger") as mock_logger:
             connection.cleanup_active_streams()
 
             # Should log warning about stream error
@@ -39,7 +39,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
 
         with (
             patch("asyncio.run_coroutine_threadsafe") as mock_run_coro,
-            patch("blinkapp.services.connection_service.logger") as mock_logger,
+            patch("blinkapp.services.blink_connection.logger") as mock_logger,
         ):
             # Mock future that times out
             mock_future = Mock()
@@ -60,7 +60,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
 
         with (
             patch("asyncio.run_coroutine_threadsafe") as mock_run_coro,
-            patch("blinkapp.services.connection_service.logger") as mock_logger,
+            patch("blinkapp.services.blink_connection.logger") as mock_logger,
         ):
             # Mock future that raises runtime error
             mock_future = Mock()
@@ -81,7 +81,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
 
         with (
             patch("asyncio.run_coroutine_threadsafe") as mock_run_coro,
-            patch("blinkapp.services.connection_service.logger") as mock_logger,
+            patch("blinkapp.services.blink_connection.logger") as mock_logger,
         ):
             # Mock future that raises OS error
             mock_future = Mock()

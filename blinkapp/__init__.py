@@ -22,6 +22,14 @@ Author: Fredderic Devernay
 License: MIT
 """
 
+__all__ = [
+    "app",
+    "CLIPS_CACHE_SIZE",
+    "THUMBNAIL_CACHE_DIR",
+    "CLIPS_CACHE_DIR",
+    "logger",
+]
+
 import logging
 import os
 from pathlib import Path
@@ -58,15 +66,24 @@ from blinkapp.routes.camera import (
 # Clip management routes
 from blinkapp.routes.clips import setup_clips_routes
 
+# Configuration routes
+from blinkapp.routes.config import setup_config_routes
+
 # Settings management routes
 from blinkapp.routes.settings import setup_settings_routes
 
+# Streaming routes
+from blinkapp.routes.streaming import setup_streaming_routes
+
 # System management routes
 from blinkapp.routes.system import setup_system_routes
+
+# Thumbnail routes
+from blinkapp.routes.thumbnails import setup_thumbnail_routes
 from blinkapp.services.blink_validators import require_sync_module
 
 # Cache management
-from blinkapp.services.cache_management import (
+from blinkapp.services.cache_service import (
     clear_all_caches,
     initialize_cache_paths,
 )
@@ -129,6 +146,7 @@ __all__ = [
     "CACHE_DIR",
     "CLIPS_CACHE_DIR",
     "THUMBNAIL_CACHE_DIR",
+    "HLS_OUTPUT_DIR",
     # Logger (commonly patched in tests)
     "logger",
 ]
@@ -146,6 +164,15 @@ setup_auth_routes(app)
 
 # Set up camera routes
 setup_camera_routes(app)
+
+# Set up thumbnail routes
+setup_thumbnail_routes(app)
+
+# Set up streaming routes
+setup_streaming_routes(app)
+
+# Set up configuration routes
+setup_config_routes(app)
 
 # Set up clip routes
 setup_clips_routes(app)
@@ -172,6 +199,7 @@ CACHE_DIR: str = ""  # Base cache directory
 CREDENTIALS_FILE: str = ""  # Encrypted credentials storage
 THUMBNAIL_CACHE_DIR: str = ""  # Camera thumbnail cache
 CLIPS_CACHE_DIR: str = ""  # Downloaded clips storage
+HLS_OUTPUT_DIR: str = ""  # HLS streaming output directory
 SETTINGS_FILE: str = ""  # User settings persistence
 
 # ============================================================================

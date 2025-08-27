@@ -12,8 +12,7 @@ from flask.wrappers import Request
 
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
-from blinkapp.models.types import JsonDict
-from blinkapp.utils.route_decorators import api_route, method_dispatch_route
+from blinkapp.utils.route_decorators import method_dispatch_route
 
 # Explicitly define what this module exports
 __all__ = [
@@ -129,37 +128,4 @@ def setup_settings_routes(app: Flask) -> None:
 
 def register_settings_routes(app: Flask) -> None:
     """Register settings routes with the Flask app."""
-
-    @app.route("/api/config")
-    @api_route("get config")
-    def get_config() -> JsonDict:
-        """Get client-side configuration constants."""
-        from blinkapp.config import Config
-
-        config_data: dict[str, Any] = {
-            "hls_stream_check_interval": Config.HLS_STREAM_CHECK_INTERVAL,
-            "hls_stream_check_delay": Config.HLS_STREAM_CHECK_DELAY,
-            "hls_stream_max_attempts": Config.HLS_STREAM_MAX_ATTEMPTS,
-            "thumbnail_update_poll_interval": Config.THUMBNAIL_UPDATE_POLL_INTERVAL,
-            "thumbnail_success_display_time": Config.THUMBNAIL_SUCCESS_DISPLAY_TIME,
-            "thumbnail_processing_display_time": Config.THUMBNAIL_PROCESSING_DISPLAY_TIME,
-            "clip_thumbnail_check_interval": Config.CLIP_THUMBNAIL_CHECK_INTERVAL,
-            "clip_thumbnail_poll_max_attempts": Config.CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS,
-            "thumbnail_error_display_time": Config.THUMBNAIL_ERROR_DISPLAY_TIME,
-            "milliseconds_to_seconds": Config.MILLISECONDS_TO_SECONDS,
-            "error_messages": {
-                "live_stream_failed": "Unable to start live video. Please check your camera connection and try again.",
-                "live_stream_connection_failed": "Unable to start live video. Please check your internet connection and try again.",
-                "live_view_failed": "Unable to start live view. Please check that your camera is online and try again.",
-                "connection_error": "Unable to connect. Please check your internet connection and try again.",
-                "arm_state_failed": "Unable to change system status. Please check your connection and try again.",
-                "clip_download_failed": "Unable to download video. Please try again later.",
-                "clip_play_failed": "Unable to play video. Please check your connection and try again.",
-                "cache_clear_success": "Cache cleared successfully! Your storage space has been freed up.",
-                "cache_clear_failed": "Unable to clear cache. Please check your connection and try again.",
-                "logout_failed": "Unable to log out. Please try again.",
-                "clips_updated": "All your local video clips are already up to date!",
-                "feature_coming_soon": "This feature is coming soon! We're working hard to bring it to you.",
-            },
-        }
-        return config_data
+    setup_settings_routes(app)

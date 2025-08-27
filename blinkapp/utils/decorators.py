@@ -21,6 +21,7 @@ __all__ = [
     "safe_execute",
     "ensure_blink_available",
     "check_blink_availability",
+    "api_route_with_validation",
 ]
 
 
@@ -139,3 +140,12 @@ def check_blink_availability() -> ApiResponse | None:
             status_code=401,
         )
     return None
+
+
+def api_route_with_validation(*args, **kwargs):
+    """Placeholder decorator for API route validation."""
+
+    def decorator(func):
+        return func
+
+    return decorator

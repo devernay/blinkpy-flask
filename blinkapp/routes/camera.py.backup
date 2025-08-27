@@ -12,15 +12,16 @@ import logging
 from typing import TYPE_CHECKING
 
 from blinkapp.config import Config
-from blinkapp.models.ids import CameraId
-from blinkapp.models.types import JsonDict
-from blinkapp.utils.decorators import ensure_blink_available, error_context
+from blinkapp.models.types import CameraId
 from blinkapp.utils.errors import CameraError, ValidationError
-from blinkapp.utils.route_decorators import api_route_with_validation
+from blinkapp.utils.route_decorators import (
+    api_route_with_validation,
+    ensure_blink_available,
+    error_context,
+)
 
 if TYPE_CHECKING:
     from flask import Flask
-
     from blinkapp.models.types import JsonDict
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,7 @@ def setup_camera_routes(app: "Flask") -> None:
         Returns:
             JSON response with camera details
         """
-        from blinkapp.services.camera_service import find_camera_by_id
+        from blinkapp.services.blink_service import find_camera_by_id
         from blinkapp.services.device_service import create_device_data
 
         camera = find_camera_by_id(camera_id)
@@ -77,7 +78,7 @@ def setup_camera_routes(app: "Flask") -> None:
             raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
 
         with error_context("get camera details", CameraError):
-            camera_data = create_device_data(camera, camera_id)
+            camera_data = create_device_data(camera, str(camera_id))
             return {"camera": camera_data}
 
     @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])
@@ -94,8 +95,10 @@ def setup_camera_routes(app: "Flask") -> None:
         Returns:
             JSON response confirming recording start
         """
-        from blinkapp.services.blink_service import ensure_blink_connection_initialized
-        from blinkapp.services.camera_service import find_camera_by_id
+        from blinkapp.services.blink_service import (
+            ensure_blink_connection_initialized,
+            find_camera_by_id,
+        )
 
         blink_connection = ensure_blink_connection_initialized()
 

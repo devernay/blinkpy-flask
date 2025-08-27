@@ -157,7 +157,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
 
         try:
             from blinkapp import initialize_cache_paths
-            from blinkapp.routes.camera import update_camera_thumbnail
+            from blinkapp.routes.thumbnails import update_camera_thumbnail
             from blinkapp.services.cache_service import initialize_caches
 
             # Initialize cache paths and caches before thumbnail operations
@@ -342,7 +342,7 @@ class TestValidationClasses(BaseTestCase):
 class TestCachePathInitialization(BaseTestCase):
     """Test cache path initialization - lines 754-775."""
 
-    @patch("blinkapp.services.cache_management.Path")
+    @patch("pathlib.Path")
     def test_initialize_cache_paths_with_config(self, mock_path: Mock) -> None:
         """Test cache path initialization with app config."""
         # Setup mock path that supports / operator

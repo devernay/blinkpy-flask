@@ -158,8 +158,18 @@ def _validate_parameters(
                 new_param_name = param_name.replace("_str", "")
                 kwargs[new_param_name] = validated_value
             except (ValueError, TypeError) as e:
+                # URL validation errors should return 404 (Not Found) like Flask
+                # Other validation errors should return 400 (Bad Request)
+                error_msg = str(e)
+                if "Invalid Clip ID format" in error_msg and any(
+                    char in error_msg for char in ["/", "\\", ":"]
+                ):
+                    status_code = 404  # Path traversal attempts
+                else:
+                    status_code = 400  # Regular validation errors
+
                 response, status_code = create_api_response(
-                    success=False, error=str(e), status_code=400
+                    success=False, error=error_msg, status_code=status_code
                 )
                 return jsonify(response), status_code
 
