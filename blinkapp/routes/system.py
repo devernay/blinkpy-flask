@@ -14,9 +14,11 @@ from blinkapp.services.system_service import (
     refresh_system,
 )
 from blinkapp.utils.decorators import (
+    ensure_blink_available,
+)
+from blinkapp.utils.route_decorators import (
     api_route,
     api_route_with_validation,
-    ensure_blink_available,
     simple_success_response,
 )
 

@@ -31,14 +31,16 @@ from blinkapp.services.camera_service import (
     require_camera,
 )
 from blinkapp.utils.decorators import (
-    api_route,
-    api_route_with_validation,
     ensure_blink_available,
     error_context,
 )
 from blinkapp.utils.errors import CameraError, ValidationError
-from blinkapp.utils.validators import (
+from blinkapp.utils.parsers import (
     extract_thumbnail_timestamp,
+)
+from blinkapp.utils.route_decorators import (
+    api_route,
+    api_route_with_validation,
 )
 
 logger = logging.getLogger(__name__)

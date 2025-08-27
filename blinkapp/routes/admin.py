@@ -11,7 +11,7 @@ from flask import Flask, Response, jsonify
 
 from blinkapp.config import Config
 from blinkapp.models.types import JsonDict
-from blinkapp.utils.decorators import api_route, simple_success_response
+from blinkapp.utils.route_decorators import api_route, simple_success_response
 
 # Explicitly define what this module exports
 __all__ = ["register_admin_routes"]

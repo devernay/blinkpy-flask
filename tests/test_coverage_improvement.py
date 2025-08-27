@@ -123,7 +123,7 @@ class TestValidators(FlaskTestCase):
 
     def test_extract_thumbnail_timestamp_valid(self) -> None:
         """Test extract_thumbnail_timestamp with valid URL."""
-        from blinkapp.utils.validators import extract_thumbnail_timestamp
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
 
         url = "https://example.com/thumb.jpg?ts=1234567890"
         result = extract_thumbnail_timestamp(url)
@@ -131,14 +131,14 @@ class TestValidators(FlaskTestCase):
 
     def test_extract_thumbnail_timestamp_none(self) -> None:
         """Test extract_thumbnail_timestamp with None."""
-        from blinkapp.utils.validators import extract_thumbnail_timestamp
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
 
         result = extract_thumbnail_timestamp(None)
         self.assertEqual(result, 0)
 
     def test_format_time_ago_recent(self) -> None:
         """Test format_time_ago with recent timestamp."""
-        from blinkapp.utils.validators import format_time_ago
+        from blinkapp.utils.formatters import format_time_ago
 
         result = format_time_ago("2025-01-01T10:00:00")
         self.assertIsInstance(result, str)

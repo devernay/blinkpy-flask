@@ -26,8 +26,8 @@ from blinkapp.services.auth_service import (
     initialize_blink,
     verify_2fa_and_save,
 )
-from blinkapp.utils.decorators import simple_success_response
 from blinkapp.utils.errors import AuthenticationError
+from blinkapp.utils.route_decorators import simple_success_response
 from blinkapp.utils.validators import validate_string_input
 
 

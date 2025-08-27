@@ -13,7 +13,7 @@ from flask.wrappers import Request
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
-from blinkapp.utils.decorators import api_route, method_dispatch_route
+from blinkapp.utils.route_decorators import api_route, method_dispatch_route
 
 # Explicitly define what this module exports
 __all__ = [

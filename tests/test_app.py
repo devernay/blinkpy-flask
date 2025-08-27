@@ -32,11 +32,9 @@ from blinkapp import (
 )
 from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
 from blinkapp.models.responses import create_api_response
-from blinkapp.utils.validators import (
-    extract_thumbnail_timestamp,
-    format_time_ago,
-    validate_string_input,
-)
+from blinkapp.utils.formatters import format_time_ago
+from blinkapp.utils.parsers import extract_thumbnail_timestamp
+from blinkapp.utils.validators import validate_string_input
 
 
 def get_session_transaction(client):
@@ -2720,7 +2718,7 @@ class TestCommandLineInterface(BaseTestCase):
 
     def test_parse_arguments_default(self) -> None:
         """Test argument parsing with defaults."""
-        from blinkapp.utils.validators import parse_arguments
+        from blinkapp.utils.parsers import parse_arguments
 
         # Test with minimal arguments
         args = parse_arguments(["--host", "127.0.0.1"])
@@ -2731,7 +2729,7 @@ class TestCommandLineInterface(BaseTestCase):
 
     def test_parse_arguments_all_options(self) -> None:
         """Test argument parsing with all options."""
-        from blinkapp.utils.validators import parse_arguments
+        from blinkapp.utils.parsers import parse_arguments
 
         args = parse_arguments(
             [
@@ -2755,7 +2753,7 @@ class TestCommandLineInterface(BaseTestCase):
 
     def test_parse_arguments_help(self) -> None:
         """Test help argument."""
-        from blinkapp.utils.validators import parse_arguments
+        from blinkapp.utils.parsers import parse_arguments
 
         with self.assertRaises(SystemExit):
             parse_arguments(["--help"])
@@ -5475,7 +5473,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_extract_timestamp_basic_cases(self) -> None:
         """Test extract_thumbnail_timestamp with basic cases."""
-        from blinkapp.utils.validators import extract_thumbnail_timestamp
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
 
         # Test valid timestamp extraction
         url_with_ts = "https://example.com/thumb.jpg?ts=1234567890"

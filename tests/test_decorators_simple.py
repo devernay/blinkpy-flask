@@ -4,9 +4,11 @@
 import unittest
 
 from blinkapp.utils.decorators import (
+    safe_execute,
+)
+from blinkapp.utils.route_decorators import (
     _get_operation_name,
     _is_error_response,
-    safe_execute,
 )
 
 

@@ -35,7 +35,7 @@ def format_timestamp(
 ) -> str:
     """Format timestamp with injectable formatter."""
     if formatter is None:
-        from blinkapp.utils.validators import format_time_ago
+        from blinkapp.utils.formatters import format_time_ago
 
         formatter = format_time_ago
 

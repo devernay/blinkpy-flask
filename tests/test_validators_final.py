@@ -3,7 +3,7 @@
 
 import unittest
 
-from blinkapp.utils.validators import format_time_ago
+from blinkapp.utils.formatters import format_time_ago
 
 
 class TestValidatorsFinal(unittest.TestCase):

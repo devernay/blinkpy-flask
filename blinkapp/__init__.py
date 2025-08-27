@@ -63,6 +63,7 @@ from blinkapp.routes.settings import setup_settings_routes
 
 # System management routes
 from blinkapp.routes.system import setup_system_routes
+from blinkapp.services.blink_validators import require_sync_module
 
 # Cache management
 from blinkapp.services.cache_management import (
@@ -81,7 +82,7 @@ from blinkapp.services.lifecycle_service import (
 # Route setup functions
 # Route decorators and error handling
 # Utilities
-from blinkapp.utils.error_handlers import handle_api_error, require_sync_module
+from blinkapp.utils.error_handlers import handle_api_error
 
 # Utilities
 from blinkapp.utils.logging_config import setup_logging

@@ -10,14 +10,16 @@ from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import (
-    api_route,
-    api_route_with_validation,
     ensure_blink_available,
     error_context,
+)
+from blinkapp.utils.errors import ValidationError
+from blinkapp.utils.route_decorators import (
+    api_route,
+    api_route_with_validation,
     file_response_route,
     simple_success_response,
 )
-from blinkapp.utils.errors import ValidationError
 
 # Explicitly define what this module exports
 __all__ = [
@@ -92,7 +94,7 @@ def setup_clips_routes(app: Flask) -> None:
             process_cloud_clip_background,
             process_local_clip_background,
         )
-        from blinkapp.utils.validators import parse_clip_id
+        from blinkapp.utils.parsers import parse_clip_id
 
         clip_id, error_response = parse_clip_id(clip_id_str)
         if error_response is not None:
@@ -125,7 +127,7 @@ def setup_clips_routes(app: Flask) -> None:
             download_cloud_clip,
             download_local_clip,
         )
-        from blinkapp.utils.validators import parse_clip_id
+        from blinkapp.utils.parsers import parse_clip_id
 
         clip_id, error_response = parse_clip_id(clip_id_str)
         if error_response is not None:

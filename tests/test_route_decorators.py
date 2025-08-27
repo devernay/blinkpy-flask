@@ -80,7 +80,7 @@ class TestRouteDecorators(BaseTestCase):
         """Test @api_route decorator with successful response."""
         # Setup mock and import decorator
         self._setup_mock_blinkapp()
-        from blinkapp.utils.decorators import api_route
+        from blinkapp.utils.route_decorators import api_route
 
         @api_route("test operation")
         def test_success() -> dict[str, object]:
@@ -100,7 +100,7 @@ class TestRouteDecorators(BaseTestCase):
     def test_api_route_exception(self) -> None:
         """Test @api_route decorator with exception handling."""
         self._setup_mock_blinkapp()
-        from blinkapp.utils.decorators import api_route
+        from blinkapp.utils.route_decorators import api_route
 
         @api_route("test error operation")
         def test_error() -> dict[str, object]:
@@ -119,7 +119,7 @@ class TestRouteDecorators(BaseTestCase):
         """Test @api_route decorator with validation success."""
         self._setup_mock_blinkapp()
         from blinkapp.models.ids import CameraId
-        from blinkapp.utils.decorators import api_route_with_validation
+        from blinkapp.utils.route_decorators import api_route_with_validation
 
         @api_route_with_validation(
             "test operation", validate_params={"camera_id_str": CameraId}
@@ -142,7 +142,7 @@ class TestRouteDecorators(BaseTestCase):
         """Test @api_route decorator with validation invalid param."""
         self._setup_mock_blinkapp()
         from blinkapp.models.ids import CameraId
-        from blinkapp.utils.decorators import api_route_with_validation
+        from blinkapp.utils.route_decorators import api_route_with_validation
 
         @api_route_with_validation(
             "test operation", validate_params={"camera_id_str": CameraId}
@@ -164,7 +164,7 @@ class TestRouteDecorators(BaseTestCase):
     def test_simple_success_response(self) -> None:
         """Test simple success response decorator."""
         self._setup_mock_blinkapp()
-        from blinkapp.utils.decorators import simple_success_response
+        from blinkapp.utils.route_decorators import simple_success_response
 
         @simple_success_response("test operation")
         def test_simple_success() -> dict[str, str]:
@@ -182,7 +182,7 @@ class TestRouteDecorators(BaseTestCase):
     def test_simple_success_response_with_exception(self) -> None:
         """Test simple success response with exception."""
         self._setup_mock_blinkapp()
-        from blinkapp.utils.decorators import simple_success_response
+        from blinkapp.utils.route_decorators import simple_success_response
 
         @simple_success_response("test operation")
         def test_simple_error() -> dict[str, str]:

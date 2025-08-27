@@ -34,7 +34,7 @@ from blinkapp.models.cache import ClipCacheEntry
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.services.cache_service import ensure_clips_cache_initialized
-from blinkapp.utils.validators import format_clips_by_day
+from blinkapp.utils.formatters import format_clips_by_day
 
 logger = logging.getLogger(__name__)
 
