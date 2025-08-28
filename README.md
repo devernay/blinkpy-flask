@@ -177,8 +177,26 @@ blinkpy-flask/
 │   ├── __main__.py    # CLI entry point
 │   ├── __init__.py    # Flask app factory (811 lines)
 │   ├── config.py      # Configuration management
-├── blink_connection.py # Blink thread management and async operations
-├── stream_manager.py   # TCP to HLS stream management for Blink cameras
+│   ├── services/      # Business logic services (Phase 2 reorganized)
+│   │   ├── auth_service.py        # Authentication and 2FA handling
+│   │   ├── blink_connection.py    # Async Blink connection management
+│   │   ├── cache_service.py       # Cache initialization and management
+│   │   ├── clip_service.py        # Cloud and local clip operations
+│   │   ├── device_service.py      # Device data formatting utilities
+│   │   ├── debug_service.py       # System debugging and diagnostics
+│   │   ├── stream_service.py      # Live streaming coordination
+│   │   ├── hls_service.py         # HLS transcoding with FFmpeg
+│   │   └── ...                    # Additional specialized services
+│   ├── routes/        # Flask route handlers
+│   │   ├── auth.py    # Authentication routes
+│   │   ├── api.py     # RESTful API endpoints
+│   │   └── ...        # Additional route modules
+│   ├── utils/         # Utility functions and helpers
+│   │   ├── decorators.py          # Function decorators
+│   │   ├── validators.py          # Input validation
+│   │   ├── formatters.py          # Data formatting utilities
+│   │   └── ...                    # Additional utilities
+│   └── models/        # Data models and type definitions
 ├── requirements.txt    # Python dependencies
 ├── templates/          # HTML templates
 │   ├── base.html      # Base template with responsive CSS
@@ -280,6 +298,26 @@ This provides type checking for blinkpy in any Python project without conflicts.
 - Detailed error logging
 
 ## Development
+
+### Code Architecture
+
+The project has undergone a comprehensive **Phase 2 reorganization** to improve maintainability and separation of concerns:
+
+#### Services Directory Reorganization
+- **Cache services consolidated**: Merged `cache_management.py` functionality into `cache_service.py`
+- **Utils service split**: Divided `utils_service.py` into specialized modules:
+  - `device_service.py`: Device data formatting and utilities
+  - `debug_service.py`: System debugging and diagnostics
+- **Connection service extracted**: Moved `BlinkConnection` class to dedicated `blink_connection.py` module
+- **Authentication clarity**: Renamed functions for clear distinction:
+  - `is_session_authenticated()`: Web session authentication
+  - `is_blink_authenticated()`: Blink API authentication
+
+#### Benefits of Reorganization
+- **Better separation of concerns**: Each service has a focused responsibility
+- **Improved testability**: Smaller, more focused modules are easier to test
+- **Enhanced maintainability**: Clear module boundaries reduce coupling
+- **Type safety improvements**: Better type checking with focused imports
 
 ### Code Quality
 - **Type hints**: Complete type safety with protocols
@@ -415,15 +453,6 @@ python run_tests.py --no-warnings     # Suppress warnings
 - **Advanced Tests**: Video processing, streaming, and complex operations
 
 For detailed testing documentation, see [`tests/README.md`](tests/README.md).
-
-## Development
-
-### Code Quality
-- **Type hints**: Complete type safety with protocols
-- **Documentation**: Comprehensive docstrings and comments
-- **Error handling**: Consistent patterns with context managers
-- **Security**: Input validation and XSS prevention
-- **Architecture**: Clean separation of concerns with dedicated classes
 
 ### Development Tools
 ```bash

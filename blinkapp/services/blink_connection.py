@@ -1,4 +1,19 @@
-"""Blink connection service for managing async operations."""
+"""Blink connection service for managing async operations.
+
+This module provides a dedicated thread and event loop for handling all
+Blink API operations asynchronously, ensuring thread safety and proper
+resource management for the Flask application.
+
+Key components:
+- BlinkConnection: Main connection manager with dedicated thread
+- Async operation execution with timeout handling
+- Stream management for live video feeds
+- Proper cleanup and shutdown procedures
+
+The connection runs in its own thread to avoid blocking the Flask
+request-response cycle while maintaining a persistent connection
+to the Blink API servers.
+"""
 
 import asyncio
 import concurrent.futures
@@ -23,19 +38,34 @@ __all__ = [
 
 
 class BlinkConnection:
-    """Manages a single Blink connection with dedicated thread."""
+    """Manages a single Blink connection with dedicated thread and event loop.
+
+    This class provides thread-safe access to Blink API operations by running
+    all async operations in a dedicated background thread. This prevents
+    blocking the Flask application while maintaining persistent connections.
+
+    Features:
+    - Dedicated asyncio event loop in separate thread
+    - Timeout handling for all operations
+    - Stream management for live video feeds
+    - Proper resource cleanup on shutdown
+    """
 
     def __init__(self, timeout: int | None = None) -> None:
-        """Initialize Blink connection."""
+        """Initialize Blink connection manager.
+
+        Args:
+            timeout: Operation timeout in seconds (uses config default if None)
+        """
         super().__init__()
         self.timeout: int = (
             timeout if timeout is not None else Config.BLINK_CONNECTION_TIMEOUT
         )
         self.thread: threading.Thread | None = None
         self.loop: asyncio.AbstractEventLoop | None = None
-        self.blink: Any = None
+        self.blink: Any = None  # Blink instance from blinkpy library
         self._started: bool = False
-        self._active_streams: dict[str, Any] = {}
+        self._active_streams: dict[str, Any] = {}  # Track active video streams
 
     def start(self) -> None:
         """Start Blink thread and event loop."""

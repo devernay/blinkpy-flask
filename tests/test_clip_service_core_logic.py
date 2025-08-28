@@ -18,33 +18,31 @@ class TestClipServiceCoreLogic:
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_no_blink_instance(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with no blink instance."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
-        success, error, filepath = _download_cloud_clip_core(
+        filepath, error = _download_cloud_clip_core(
             self.clip_id, None, self.mock_cache_dir
         )
 
-        assert not success
-        assert error == "No blink instance"
         assert filepath is None
+        assert error is not None
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_cached_file_exists(
         self, mock_cache: Mock
     ) -> None:
         """Test _download_cloud_clip_core with existing cached file."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_filepath = Mock()
         mock_filepath.exists.return_value = True
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance
 
-        success, error, filepath = _download_cloud_clip_core(
+        filepath, error = _download_cloud_clip_core(
             self.clip_id, self.mock_blink, self.mock_cache_dir
         )
 
-        assert success
         assert error == ""
         assert filepath == mock_filepath
 
@@ -53,7 +51,7 @@ class TestClipServiceCoreLogic:
         self, mock_cache: Mock
     ) -> None:
         """Test _download_cloud_clip_core with OSError on cached file check."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_filepath = Mock()
         mock_filepath.exists.side_effect = OSError("File access error")
@@ -66,18 +64,17 @@ class TestClipServiceCoreLogic:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            success, error, filepath = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core(
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
-        assert not success
         assert error == "Clip not found"
         assert filepath is None
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_clip_not_found(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core when clip not found in metadata."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
         self.mock_blink.videos = {"all": []}
@@ -86,11 +83,10 @@ class TestClipServiceCoreLogic:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            success, error, filepath = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core(
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
-        assert not success
         assert error == "Clip not found"
         assert filepath is None
 
@@ -101,7 +97,7 @@ class TestClipServiceCoreLogic:
         self, mock_session, mock_executor, mock_cache
     ):
         """Test _download_cloud_clip_core with no media URL."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
         clip_info = {
@@ -117,13 +113,12 @@ class TestClipServiceCoreLogic:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                success, error, filepath = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core(
                     self.clip_id, self.mock_blink, self.mock_cache_dir
                 )
 
-        assert not success
         # Check for the actual error message from Config.ErrorMessages.CLIP_NO_MEDIA_URL
-        assert (
+        assert error is not None and (
             "video clip is not available" in error.lower()
             or "no media url" in error.lower()
         )
@@ -131,7 +126,7 @@ class TestClipServiceCoreLogic:
 
     def test_get_blink_instance(self) -> None:
         """Test _get_blink_instance function."""
-        from blinkapp.services.clip_service import _get_blink_instance
+        from blinkapp.services.clip_download import _get_blink_instance
 
         with patch("blinkapp.services.blink_service.blink", "mock_blink"):
             result = _get_blink_instance()
@@ -139,7 +134,7 @@ class TestClipServiceCoreLogic:
 
     def test_get_clips_cache_dir(self) -> None:
         """Test _get_clips_cache_dir function."""
-        from blinkapp.services.clip_service import _get_clips_cache_dir
+        from blinkapp.services.clip_download import _get_clips_cache_dir
 
         with patch("blinkapp.CLIPS_CACHE_DIR", "/test/cache"):
             result = _get_clips_cache_dir()

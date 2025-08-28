@@ -1,7 +1,5 @@
 """Simple tests for cache service functions."""
 
-from unittest.mock import Mock
-
 from blinkapp.services.cache_service import (
     ensure_cache_directory,
     validate_cache_directory,
@@ -17,8 +15,6 @@ def test_validate_cache_directory() -> None:
 
 def test_ensure_cache_directory() -> None:
     """Test cache directory creation."""
-    mock_validator = Mock(return_value=True)
-
-    # Should not create directory if validator returns True
-    ensure_cache_directory("/test", validator=mock_validator)
-    mock_validator.assert_called_once_with("/test")
+    # Should create directory and return path
+    result = ensure_cache_directory("/test")
+    assert result == "/test"

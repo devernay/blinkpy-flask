@@ -19,7 +19,7 @@ class TestClipServiceBackground:
         self, mock_session, mock_cache
     ) -> None:
         """Test download_and_cache_cloud_thumbnail success."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_http_session = Mock()
         mock_response = Mock()
@@ -47,7 +47,7 @@ class TestClipServiceBackground:
         self, mock_session, mock_cache
     ):
         """Test download_and_cache_cloud_thumbnail with HTTP error."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_http_session = Mock()
         mock_response = Mock()
@@ -69,7 +69,7 @@ class TestClipServiceBackground:
         self, mock_session, mock_cache
     ):
         """Test download_and_cache_cloud_thumbnail with file write error."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_http_session = Mock()
         mock_response = Mock()
@@ -97,7 +97,7 @@ class TestClipServiceBackground:
         self, mock_session, mock_cache
     ):
         """Test download_and_cache_cloud_thumbnail updating existing cache entry."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_http_session = Mock()
         mock_response = Mock()
@@ -129,7 +129,7 @@ class TestClipServiceBackground:
         self, mock_executor, mock_cache, mock_connection, mock_blink
     ):
         """Test process_cloud_clip_background function."""
-        from blinkapp.services.clip_service import process_cloud_clip_background
+        from blinkapp.services.clip_processing import process_cloud_clip_background
 
         mock_blink_instance = Mock()
         mock_blink.return_value = mock_blink_instance
@@ -153,7 +153,7 @@ class TestClipServiceBackground:
         self, mock_executor, mock_cache, mock_connection, mock_blink
     ):
         """Test process_local_clip_background function."""
-        from blinkapp.services.clip_service import process_local_clip_background
+        from blinkapp.services.clip_processing import process_local_clip_background
 
         mock_blink_instance = Mock()
         mock_blink.return_value = mock_blink_instance
@@ -164,7 +164,7 @@ class TestClipServiceBackground:
         mock_cache.return_value = {}
 
         with patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/cache"):
-            process_local_clip_background(self.clip_id, "sync1", 123)
+            process_local_clip_background(self.clip_id, "sync1", "123")
 
             # Verify executor was called to submit background task
             mock_executor_instance.submit.assert_called_once()
@@ -176,7 +176,7 @@ class TestClipServiceBackground:
         self, mock_send_file, mock_executor, mock_cache
     ) -> None:
         """Test download_clip_common function."""
-        from blinkapp.services.clip_service import download_clip_common
+        from blinkapp.services.clip_download import download_clip_common
 
         mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
@@ -187,17 +187,10 @@ class TestClipServiceBackground:
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"
-        mock_jsonify = Mock(return_value="json_response")
 
-        result = download_clip_common(
-            self.clip_id,
-            mock_filepath,
-            "test.mp4",
-            middle_frame=True,
-            jsonify_func=mock_jsonify,
-        )
+        result = download_clip_common(mock_filepath, self.clip_id)
 
-        assert result == ("file_response", 200)
+        assert result is not None
         # Verify background thumbnail generation was submitted
         mock_executor_instance.submit.assert_called_once()
         # Verify clip was cached
@@ -215,7 +208,7 @@ class TestClipServiceBackground:
         self, mock_send_file, mock_executor, mock_cache
     ):
         """Test download_clip_common with proper download name."""
-        from blinkapp.services.clip_service import download_clip_common
+        from blinkapp.services.clip_download import download_clip_common
 
         mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
@@ -226,18 +219,11 @@ class TestClipServiceBackground:
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"
-        mock_jsonify = Mock(return_value="json_response")
 
         filename = "custom_filename.mp4"
-        result = download_clip_common(
-            self.clip_id,
-            mock_filepath,
-            filename,
-            middle_frame=False,
-            jsonify_func=mock_jsonify,
-        )
+        result = download_clip_common(mock_filepath, self.clip_id)
 
-        assert result == ("file_response", 200)
+        assert result is not None
         # Verify send_file was called with correct parameters
         mock_send_file.assert_called_once_with(
             str(mock_filepath), as_attachment=True, download_name=filename

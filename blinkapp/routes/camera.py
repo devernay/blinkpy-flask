@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["setup_camera_routes"]
+
 
 def setup_camera_routes(app: "Flask") -> None:
     """Register camera routes with the Flask app."""

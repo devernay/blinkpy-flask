@@ -461,11 +461,11 @@ class TestBasicOperations(BaseTestCase):
         result = is_stream_active(camera_id)
         self.assertIsInstance(result, bool)
 
-    def test_auth_service_is_authenticated(self) -> None:
-        """Test auth_service is_authenticated function."""
-        from blinkapp.services.auth_service import is_authenticated
+    def test_auth_service_is_blink_authenticated(self) -> None:
+        """Test auth_service is_blink_authenticated function."""
+        from blinkapp.services.auth_service import is_blink_authenticated
 
-        result = is_authenticated()
+        result = is_blink_authenticated()
         self.assertIsInstance(result, bool)
 
 

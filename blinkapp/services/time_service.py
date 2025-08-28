@@ -1,4 +1,18 @@
-"""Time operations with dependency injection for better testability."""
+"""Time operations with dependency injection for better testability.
+
+This module provides time-related utilities with injectable time providers
+to enable deterministic testing and consistent time handling across the
+application.
+
+Key features:
+- Timestamp generation with configurable providers
+- Time difference calculations
+- Testable time operations via dependency injection
+- Consistent datetime handling with timezone awareness
+
+All functions support optional time providers for testing scenarios
+where deterministic time values are required.
+"""
 
 from collections.abc import Callable
 from datetime import datetime

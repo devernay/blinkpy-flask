@@ -9,20 +9,20 @@ from test_base import FlaskTestCase
 class TestAuthService(FlaskTestCase):
     """Test auth_service.py (currently 18% coverage)."""
 
-    def test_is_authenticated_false(self) -> None:
-        """Test is_authenticated when not authenticated."""
-        from blinkapp.services.auth_service import is_authenticated
+    def test_is_blink_authenticated_false(self) -> None:
+        """Test is_blink_authenticated when not authenticated."""
+        from blinkapp.services.auth_service import is_blink_authenticated
 
-        result = is_authenticated()
+        result = is_blink_authenticated()
         self.assertFalse(result)
 
     @patch("blinkapp.services.blink_service.blink")
-    def test_is_authenticated_true(self, mock_blink: Mock) -> None:
-        """Test is_authenticated when authenticated."""
-        from blinkapp.services.auth_service import is_authenticated
+    def test_is_blink_authenticated_true(self, mock_blink: Mock) -> None:
+        """Test is_blink_authenticated when authenticated."""
+        from blinkapp.services.auth_service import is_blink_authenticated
 
         mock_blink.available = True
-        result = is_authenticated()
+        result = is_blink_authenticated()
         self.assertTrue(result)
 
 

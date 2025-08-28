@@ -173,6 +173,7 @@ class Config:
         THUMBNAIL_FETCH_FAILED = "We couldn't update the camera image right now. Please try again in a moment."
 
         # System errors
+        BLINK_NOT_AVAILABLE = "Your Blink system is not available right now. Please check your internet connection and try again."
         SYSTEM_NOT_FOUND = (
             "We couldn't find that Blink system. Please check your account settings."
         )

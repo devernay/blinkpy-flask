@@ -34,6 +34,8 @@ if TYPE_CHECKING:
 
     from blinkapp.models.types import FlaskResponse, JsonDict
 
+from blinkapp.services.camera_service import require_camera
+
 logger = logging.getLogger(__name__)
 
 
@@ -173,7 +175,8 @@ def setup_thumbnail_routes(app: Flask) -> None:
 
         camera, error_response = require_camera(camera_id)
         if error_response is not None:
-            return error_response
+            error_dict, status_code = error_response
+            return error_dict
 
         assert camera is not None
         with error_context("refresh camera thumbnail", CameraError):
@@ -312,17 +315,3 @@ def setup_thumbnail_routes(app: Flask) -> None:
             )
         else:
             raise ValidationError(Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND, 404)
-
-
-def require_camera(camera_id: CameraId) -> tuple[object | None, JsonDict | None]:
-    """Helper function to get camera or return error response."""
-    from blinkapp.models.responses import create_api_response
-    from blinkapp.services.camera_service import find_camera_by_id
-
-    camera = find_camera_by_id(camera_id)
-    if camera is None:
-        response, _ = create_api_response(
-            success=False, error=Config.ErrorMessages.CAMERA_NOT_FOUND, status_code=404
-        )
-        return None, response
-    return camera, None

@@ -51,7 +51,7 @@ class TestCameraRoutesFinal(unittest.TestCase):
 
         # Mock all required decorators to pass through
         with patch(
-            "blinkapp.utils.decorators.api_route_with_validation"
+            "blinkapp.utils.route_decorators.api_route_with_validation"
         ) as mock_decorator:
             with patch(
                 "blinkapp.utils.decorators.ensure_blink_available"

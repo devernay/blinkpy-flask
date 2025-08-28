@@ -7,8 +7,6 @@ cache initialization, management, and cleanup operations.
 from __future__ import annotations
 
 __all__ = [
-    "validate_cache_directory",
-    "ensure_cache_directory",
     "initialize_caches",
     "ensure_clips_cache_initialized",
     "ensure_thumbnail_cache_initialized",
@@ -17,9 +15,13 @@ __all__ = [
     "load_thumbnail_cache",
     "initialize_cache_paths",
     "clear_all_caches",
+    "clear_thumbnail_cache_files",
+    "clear_clips_cache_files",
     "load_clips_cache",
     "thumbnail_cache",
     "clips_cache",
+    "ensure_cache_directory",
+    "validate_cache_directory",
 ]
 
 import logging
@@ -29,24 +31,6 @@ from blinkpy.camera import BlinkCamera
 
 if TYPE_CHECKING:
     from blinkapp.models.cache import ClipsCache, ThumbnailCache
-
-
-def validate_cache_directory(cache_dir: str) -> bool:
-    """Validate cache directory - pure function."""
-    from pathlib import Path
-
-    return Path(cache_dir).exists() or Path(cache_dir).parent.exists()
-
-
-def ensure_cache_directory(cache_dir: str, validator=None) -> None:
-    """Ensure cache directory with injectable validator."""
-    if validator is None:
-        validator = validate_cache_directory
-
-    from pathlib import Path
-
-    if not validator(cache_dir):
-        Path(cache_dir).mkdir(parents=True, exist_ok=True)
 
 
 __all__ = [
@@ -389,3 +373,58 @@ def load_clips_cache() -> None:
                 clips_cache_instance.add_clip(clip_id, clip_data)
         except Exception as e:
             logger.debug(f"Error processing cached clip {filename}: {e}")
+
+
+def clear_thumbnail_cache_files() -> None:
+    """Clear thumbnail cache files only."""
+    import shutil
+    from pathlib import Path
+
+    import blinkapp
+
+    if blinkapp.THUMBNAIL_CACHE_DIR:
+        cache_path = Path(blinkapp.THUMBNAIL_CACHE_DIR)
+        if cache_path.exists():
+            shutil.rmtree(cache_path)
+            cache_path.mkdir(parents=True, exist_ok=True)
+
+
+def clear_clips_cache_files() -> None:
+    """Clear clips cache files only."""
+    import shutil
+    from pathlib import Path
+
+    import blinkapp
+
+    if blinkapp.CLIPS_CACHE_DIR:
+        cache_path = Path(blinkapp.CLIPS_CACHE_DIR)
+        if cache_path.exists():
+            shutil.rmtree(cache_path)
+            cache_path.mkdir(parents=True, exist_ok=True)
+
+
+def ensure_cache_directory(cache_dir: str) -> str:
+    """Ensure cache directory exists and return its path."""
+    from pathlib import Path
+
+    path = Path(cache_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    return str(path)
+
+
+def validate_cache_directory(cache_dir: str) -> bool:
+    """Validate that cache directory is accessible."""
+    from pathlib import Path
+
+    try:
+        path = Path(cache_dir)
+        if not path.exists():
+            return False
+
+        # Test write access
+        test_file = path / ".test_write"
+        test_file.touch()
+        test_file.unlink()
+        return True
+    except (OSError, PermissionError):
+        return False

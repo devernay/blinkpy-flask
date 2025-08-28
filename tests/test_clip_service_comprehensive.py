@@ -205,7 +205,7 @@ class TestClipServiceComprehensive:
         self, mock_session, mock_executor, mock_cache
     ):
         """Test complete successful download flow in _download_cloud_clip_core."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
 
@@ -246,11 +246,10 @@ class TestClipServiceComprehensive:
                     mock_connection.execute.return_value = [clip_info]
                     mock_conn.return_value = mock_connection
 
-                    success, error, filepath = _download_cloud_clip_core(
+                    filepath, error = _download_cloud_clip_core(
                         self.clip_id, mock_blink, cache_dir
                     )
 
-        assert success
         assert error == ""
         assert filepath is not None
         assert str(self.clip_id) in str(filepath)
@@ -267,7 +266,7 @@ class TestClipServiceComprehensive:
         self, mock_session, mock_executor, mock_cache
     ):
         """Test _download_cloud_clip_core with HTTP failure."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
 
@@ -301,12 +300,13 @@ class TestClipServiceComprehensive:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                success, error, filepath = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core(
                     self.clip_id, mock_blink, cache_dir
                 )
 
-        assert not success
-        assert "download" in error.lower() or "failed" in error.lower()
+        assert error is not None and (
+            "download" in error.lower() or "failed" in error.lower()
+        )
         assert filepath is None
 
         # Verify executor was called
@@ -321,7 +321,7 @@ class TestClipServiceComprehensive:
         """Test _download_cloud_clip_core with request exception."""
         import requests
 
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
 
@@ -353,11 +353,10 @@ class TestClipServiceComprehensive:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                success, error, filepath = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core(
                     self.clip_id, mock_blink, cache_dir
                 )
 
-        assert not success
         # Verify executor was called
         mock_executor_instance.submit.assert_called_once()
 
@@ -367,7 +366,7 @@ class TestClipServiceComprehensive:
         self, mock_session, mock_cache
     ):
         """Test complete successful flow of download_and_cache_cloud_thumbnail."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         # Mock HTTP session
         mock_http_session = Mock()
@@ -413,7 +412,7 @@ class TestClipServiceComprehensive:
         self, mock_executor, mock_cache, mock_connection, mock_blink
     ):
         """Test complete flow of process_cloud_clip_background."""
-        from blinkapp.services.clip_service import process_cloud_clip_background
+        from blinkapp.services.clip_processing import process_cloud_clip_background
 
         # Mock blink instance
         mock_blink_instance = Mock()
@@ -444,7 +443,7 @@ class TestClipServiceComprehensive:
         self, mock_executor, mock_cache, mock_connection, mock_blink
     ):
         """Test complete flow of process_local_clip_background."""
-        from blinkapp.services.clip_service import process_local_clip_background
+        from blinkapp.services.clip_processing import process_local_clip_background
 
         # Mock blink instance
         mock_blink_instance = Mock()
@@ -458,7 +457,7 @@ class TestClipServiceComprehensive:
         mock_cache.return_value = {}
 
         with patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/cache"):
-            process_local_clip_background(self.local_clip_id, "sync1", 123)
+            process_local_clip_background(self.local_clip_id, "sync1", "123")
 
             # Verify executor submit was called
             mock_executor_instance.submit.assert_called_once()

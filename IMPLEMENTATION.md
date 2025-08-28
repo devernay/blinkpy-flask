@@ -726,10 +726,54 @@ run ruff check, pyright, and pytest (full test suites), and fix all issues. Do n
 
 are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
 
-Is seconds_since_now_from_datetime in the right file? It doesn't seem to be a parser.
+# Cleanup after reorganization
 
-format_timestamp should be named more explicitly. It's not just "formatting a timestamp", it's returning a string that says how long ago the timestamp was.
+After each modificiation of the code, do the following tests:
+- [x] All imports updated (including in tests)
+- [x] All mocks and patches updated in tests
+- [x] Symbols explicitly exported using `__all__` in every module
+- [X] `ruff check` and `pyright` pass with no errors or warnings on all code (including tests)
+- [x] Tests pass (full test suite, not just core tests)
+- [x] Strong typing: use type hints everywhere (including tests), reduce usage of `Any` or `object`
+- [x] Avoid functions that have multiple behaviors depending on the parameter type. It is allowed to use `<type> | None` but not `<type1> | <type2>` with different processing logics for type1 and type2
+- [x] All calls to blinkpy should be launched in the blink thread using blink_connection.execute(blink....)
+- [x] No circular imports
+- [x] Functions moved to correct modules
+- [x] Route registration works
+- [x] Application starts successfully
 
-Is format_timestamp_as_time_ago in the right file? Isn't it a formatter?
+Automatically retry until everything is done. Do not stop midway. Be self-critical, verify and understand what you are doing. Do not be polite with yourself or with me. Humans (including me) make errors, and you make errors too, be careful. Take your time.
 
-Is there duplicate functionalities between format_time_duration, format_time_duration and format_timestamp_as_time_ago?
+Do not forget that there is a lot of Blink API documentation and sample usages (in tests) in blinkpy-source. Use it as often as possible, re-read the whole code if necessary to refresh your memory.
+
+Do not forget to compact your context before it overflows.
+
+## High priority
+
+- Implement proper local clip access in download_local_clip using blinkpy LocalStorageMediaItem
+
+- `generate_clip_thumbnail` should be renamed to `generate_local_clip_thumbnail` and take a ClipId as parameter. It should only extract the thumbnail from the clip (middle frame) on local storage clips. The thumbnail for the cloud storage clips can be fetched via the Blink API (see `download_and_cache_cloud_thumbnail`). `generate_local_clip_thumbnail` should raise an exception if ClipId is a cloud storage clip. Verify that `generate_local_clip_thumbnail` is not called on cloud storage clips.
+
+- all functions that take a clip or camera as parameter should use a ClipId or CameraId parameter, not a str.
+
+- Fix all pyright issues, fix all tests (full test suite), run ruff check and ruff format, then `git commit`
+
+- Update all docstrings, README.md, and add comments to the code where it's not self-explanatory.
+
+## Normal priority
+
+- Where do the thresholds for voltage values in format_battery_level come from? Did you get these from blinkpy-source code or tests? Or did you get these from somewhere else?
+
+- Check in blinkpy-source if temperatures in the Blink API are supposed to be in Celsius or Fahrenheit (also look at the docume,ntation and tests from blinkpy-source). Update the code and tests for the app accordingly.
+
+- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works.
+
+- Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations in blinkpy-source. This file must truly reflect how the API works.
+
+- Add significantly more comments to the tests, explaining what we are testing, why we are testing it, and how the test works.
+
+- Are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
+
+# Lower priority
+
+- Run test coverage and add new tests to expand the coverage. Focus first on modules that have the highest numbered of uncovered statements.

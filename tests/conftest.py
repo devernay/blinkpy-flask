@@ -3,7 +3,7 @@
 
 import os
 
-from test_utils import disable_strict_patching, enable_strict_patching
+from .test_utils import disable_strict_patching, enable_strict_patching
 
 
 def pytest_configure(config):

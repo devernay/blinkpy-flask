@@ -1,4 +1,19 @@
-"""Debug service for Blink Camera Flask application."""
+"""Debug service for Blink Camera Flask application.
+
+This module provides debugging and diagnostic utilities for troubleshooting
+Blink system connectivity, authentication, and data retrieval issues.
+
+Key functions:
+- System information dumping for diagnostics
+- Credential file validation
+- Cloud video enumeration
+- Comprehensive logging of system state
+
+Used primarily for:
+- CLI debugging with --dump-system flag
+- Troubleshooting authentication issues
+- Verifying system connectivity and data access
+"""
 
 import logging
 from pathlib import Path
@@ -14,7 +29,16 @@ __all__ = [
 
 
 def dump_blink_system_info() -> None:
-    """Dump comprehensive Blink system information."""
+    """Dump comprehensive Blink system information for debugging.
+
+    Outputs detailed system state including:
+    - Account information and availability status
+    - Network configurations and device counts
+    - Camera details and capabilities
+    - System homescreen data
+
+    Used for troubleshooting connectivity and authentication issues.
+    """
     import json
 
     from blinkapp import logger

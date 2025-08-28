@@ -1,0 +1,286 @@
+"""Clip download service for Blink Camera Flask application.
+
+This module handles downloading clips from both cloud and local storage,
+including common download functionality and content retrieval.
+"""
+
+from __future__ import annotations
+
+__all__ = [
+    "download_cloud_clip",
+    "download_local_clip",
+    "download_clip_common",
+    "_get_blink_instance",
+    "_get_clips_cache_dir",
+    "_download_cloud_clip_core",
+]
+
+import logging
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import requests
+from flask import send_file
+from flask.typing import (
+    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
+)
+
+if TYPE_CHECKING:
+    from blinkapp.models.ids import ClipId
+
+from blinkapp.config import Config
+from blinkapp.models.responses import create_api_response
+
+logger = logging.getLogger(__name__)
+
+
+def _get_blink_instance():
+    """Get Blink instance - extracted for testability."""
+    from blinkapp.services.blink_service import blink
+
+    return blink
+
+
+def _get_clips_cache_dir():
+    """Get clips cache directory - extracted for testability."""
+    from blinkapp import CLIPS_CACHE_DIR
+
+    return CLIPS_CACHE_DIR
+
+
+def _download_cloud_clip_core(
+    clip_id: ClipId,
+    blink_instance,
+    clips_cache_dir: Path,
+) -> tuple[Path | None, str | None]:
+    """Core cloud clip download logic - extracted for testability."""
+    try:
+        # Get clip URL from Blink
+        clip_url = blink_instance.get_clip_url(clip_id)
+        if not clip_url:
+            return None, f"Could not get download URL for clip {clip_id}"
+
+        # Download clip content
+        response = requests.get(clip_url, timeout=Config.HTTP_TIMEOUT)
+        response.raise_for_status()
+
+        # Save to cache
+        clip_filename = f"{clip_id}.mp4"
+        clip_path = clips_cache_dir / clip_filename
+
+        with open(clip_path, "wb") as f:
+            f.write(response.content)
+
+        logger.info(f"Downloaded cloud clip {clip_id} to {clip_path}")
+        return clip_path, None
+
+    except Exception as e:
+        error_msg = f"Error downloading cloud clip {clip_id}: {e}"
+        logger.error(error_msg)
+        return None, error_msg
+
+
+def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
+    """Download a cloud clip and return it as a file response."""
+    try:
+        blink_instance = _get_blink_instance()
+        if not blink_instance or not blink_instance.available:
+            return create_api_response(
+                success=False,
+                error=Config.ErrorMessages.BLINK_NOT_AVAILABLE,
+                status_code=503,
+            )
+
+        clips_cache_dir = Path(_get_clips_cache_dir())
+        clips_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Check if already cached
+        clip_filename = f"{clip_id}.mp4"
+        clip_path = clips_cache_dir / clip_filename
+
+        if not clip_path.exists():
+            clip_path, error = _download_cloud_clip_core(
+                clip_id, blink_instance, clips_cache_dir
+            )
+            if error or clip_path is None:
+                return create_api_response(
+                    success=False,
+                    error=error or "Failed to download cloud clip",
+                    status_code=500,
+                )
+
+        return download_clip_common(clip_path, clip_id)
+
+    except Exception as e:
+        logger.error(f"Error in download_cloud_clip: {e}")
+        return create_api_response(
+            success=False,
+            error=f"Failed to download cloud clip: {e}",
+            status_code=500,
+        )
+
+
+def download_local_clip(
+    clip_id: ClipId, sync_name: str | None = None, item_id: str | None = None
+) -> ResponseReturnValue:
+    """Download a local clip using blinkpy LocalStorageMediaItem API."""
+    try:
+        blink_instance = _get_blink_instance()
+        if not blink_instance or not blink_instance.available:
+            return create_api_response(
+                success=False,
+                error=Config.ErrorMessages.BLINK_NOT_AVAILABLE,
+                status_code=503,
+            )
+
+        # Parse local clip ID to get sync module and item ID
+        if sync_name is None or item_id is None:
+            sync_name, item_id_str = clip_id.get_local_parts()
+        else:
+            item_id_str = item_id
+
+        # Get sync module
+        sync_dict = blink_instance.sync
+        if sync_name not in sync_dict:
+            return create_api_response(
+                success=False,
+                error=f"Sync module '{sync_name}' not found",
+                status_code=404,
+            )
+
+        sync_module = sync_dict[sync_name]
+        if not sync_module.local_storage:
+            return create_api_response(
+                success=False,
+                error="Local storage not available",
+                status_code=503,
+            )
+
+        # Find the LocalStorageMediaItem in the manifest
+        manifest = sync_module._local_storage["manifest"]
+        local_item = None
+        for item in manifest:
+            if str(item.id) == item_id_str:
+                local_item = item
+                break
+
+        if local_item is None:
+            return create_api_response(
+                success=False,
+                error=f"Local clip item '{item_id_str}' not found",
+                status_code=404,
+            )
+
+        # Check if clip is already cached
+        clips_cache_dir = Path(_get_clips_cache_dir())
+        cache_filename = f"local_{sync_name}_{item_id_str}_{local_item.name}_{local_item.created_at.strftime('%Y%m%d_%H%M%S')}.mp4"
+        cached_filepath = clips_cache_dir / cache_filename
+
+        if cached_filepath.exists():
+            # Return cached file
+            return send_file(
+                cached_filepath,
+                as_attachment=True,
+                download_name=f"clip_{clip_id}.mp4",
+                mimetype="video/mp4",
+            )
+
+        # Download the clip using LocalStorageMediaItem API
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
+        blink_connection = ensure_blink_connection_initialized()
+
+        async def download_local_clip_async() -> tuple[Path | None, str]:
+            """Download local clip asynchronously."""
+            try:
+                # Prepare the clip for download (uploads to Blink cloud temporarily)
+                prepare_result = await local_item.prepare_download(blink_instance)
+                if not prepare_result:
+                    return None, "Failed to prepare local clip for download"
+
+                # Download the clip to cache
+                download_success = await local_item.download_video(
+                    blink_instance, str(cached_filepath)
+                )
+                if not download_success:
+                    return None, "Failed to download local clip"
+
+                return cached_filepath, ""
+            except Exception as e:
+                return None, f"Error downloading local clip: {e}"
+
+        # Execute the async download
+        filepath, error = blink_connection.execute(download_local_clip_async())
+
+        if error:
+            logger.error(f"Error downloading local clip {clip_id}: {error}")
+            return create_api_response(
+                success=False,
+                error=error,
+                status_code=500,
+            )
+
+        if filepath and filepath.exists():
+            return send_file(
+                filepath,
+                as_attachment=True,
+                download_name=f"clip_{clip_id}.mp4",
+                mimetype="video/mp4",
+            )
+        else:
+            return create_api_response(
+                success=False,
+                error="Downloaded file not found",
+                status_code=500,
+            )
+
+    except Exception as e:
+        logger.error(f"Error in download_local_clip: {e}")
+        return create_api_response(
+            success=False,
+            error="Internal server error",
+            status_code=500,
+        )
+        return create_api_response(
+            success=False,
+            error=f"Failed to download local clip: {e}",
+            status_code=500,
+        )
+
+
+def download_clip_common(clip_path: Path, clip_id: ClipId) -> ResponseReturnValue:
+    """Common clip download functionality for both cloud and local clips."""
+    from flask import send_file
+
+    try:
+        if not clip_path.exists():
+            return create_api_response(
+                success=False,
+                error=f"Clip file not found: {clip_path}",
+                status_code=404,
+            )
+
+        # Return the file
+        return send_file(
+            clip_path,
+            as_attachment=True,
+            download_name=f"clip_{clip_id}.mp4",
+            mimetype="video/mp4",
+        )
+
+    except Exception as e:
+        logger.error(f"Error serving clip file {clip_path}: {e}")
+        return create_api_response(
+            success=False,
+            error=f"Failed to serve clip file: {e}",
+            status_code=500,
+        )
+
+
+def _download_clip_content_testable(
+    url: str, timeout: int = Config.HTTP_TIMEOUT
+) -> bytes:
+    """Download clip content from URL - testable version."""
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    return response.content

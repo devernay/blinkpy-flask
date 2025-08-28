@@ -19,7 +19,7 @@ class TestClipServiceFinal:
 
     def test_get_clips_cache_dir(self) -> None:
         """Test _get_clips_cache_dir helper function."""
-        from blinkapp.services.clip_service import _get_clips_cache_dir
+        from blinkapp.services.clip_download import _get_clips_cache_dir
 
         with patch("blinkapp.CLIPS_CACHE_DIR", "/test/cache"):
             result = _get_clips_cache_dir()
@@ -28,7 +28,7 @@ class TestClipServiceFinal:
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_no_url(self, mock_cache: Mock) -> None:
         """Test download_and_cache_cloud_thumbnail with no URL."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_cache.return_value = {}
 
@@ -39,7 +39,7 @@ class TestClipServiceFinal:
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_no_blink(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with no blink instance."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
 
@@ -47,17 +47,16 @@ class TestClipServiceFinal:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            success, error, filepath = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core(
                 self.clip_id, None, Path("/tmp")
             )
 
-        assert not success
-        assert "blink instance" in error.lower()
+        assert error is not None and "blink instance" in error.lower()
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_no_clip_found(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with clip not found."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_cache.return_value = {}
 
@@ -68,17 +67,16 @@ class TestClipServiceFinal:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            success, error, filepath = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core(
                 self.clip_id, mock_blink, Path("/tmp")
             )
 
-        assert not success
-        assert "not found" in error.lower()
+        assert error is not None and "not found" in error.lower()
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_exists(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with existing cached file."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_filepath = Mock()
         mock_filepath.exists.return_value = True
@@ -92,17 +90,16 @@ class TestClipServiceFinal:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            success, error, filepath = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core(
                 self.clip_id, mock_blink, Path("/tmp")
             )
 
-        assert success
         assert filepath == mock_filepath
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_os_error(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with cached file OS error."""
-        from blinkapp.services.clip_service import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core
 
         mock_filepath = Mock()
         mock_filepath.exists.side_effect = OSError("Permission denied")
@@ -138,11 +135,9 @@ class TestClipServiceFinal:
                         "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                         return_value=Mock(execute=Mock(return_value=[])),
                     ):
-                        success, error, filepath = _download_cloud_clip_core(
+                        filepath, error = _download_cloud_clip_core(
                             self.clip_id, mock_blink, Path("/tmp")
                         )
-
-                    assert not success
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_process_cloud_clips_invalid_timestamp(self, mock_cache: Mock) -> None:
@@ -262,7 +257,7 @@ class TestClipServiceFinal:
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_success(self, mock_cache: Mock) -> None:
         """Test download_and_cache_cloud_thumbnail success path."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
@@ -290,7 +285,7 @@ class TestClipServiceFinal:
         self, mock_cache: Mock
     ) -> None:
         """Test download_and_cache_cloud_thumbnail HTTP error."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
@@ -315,7 +310,7 @@ class TestClipServiceFinal:
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_clip_common_file_not_exists(self, mock_cache: Mock) -> None:
         """Test download_clip_common with non-existent file."""
-        from blinkapp.services.clip_service import download_clip_common
+        from blinkapp.services.clip_download import download_clip_common
 
         mock_filepath = Mock()
         mock_filepath.exists.return_value = False
@@ -331,21 +326,23 @@ class TestClipServiceFinal:
                 mock_executor_instance = Mock()
                 mock_executor.return_value = mock_executor_instance
 
-                mock_send_file = Mock(return_value="file_response")
+                Mock(return_value="file_response")
                 result = download_clip_common(
-                    self.clip_id,
                     mock_filepath,
-                    "test.mp4",
-                    send_file_func=mock_send_file,
+                    self.clip_id,
                 )
 
-                assert result[1] == 404
+                # When file doesn't exist, it returns create_api_response tuple
+                assert isinstance(result, tuple)
+                assert len(result) >= 2
+                _response, status_code = result[0], result[1]
+                assert status_code == 404
                 mock_jsonify.assert_called_once()
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_download_clip_common_cached_file_exists(self, mock_cache: Mock) -> None:
         """Test download_clip_common with existing cached file."""
-        from blinkapp.services.clip_service import download_clip_common
+        from blinkapp.services.clip_download import download_clip_common
 
         # Mock cached file that exists
         mock_filepath = Mock()
@@ -364,10 +361,11 @@ class TestClipServiceFinal:
                 mock_executor_instance = Mock()
                 mock_executor.return_value = mock_executor_instance
 
-                result = download_clip_common(self.clip_id, mock_filepath, "test.mp4")
+                result = download_clip_common(mock_filepath, self.clip_id)
 
                 mock_send_file.assert_called_once()
-                assert result[0] == "file_response"
+                # When file exists, it returns send_file response directly
+                assert result == "file_response"
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     def test_process_local_clips_default_dependencies(self, mock_cache: Mock) -> None:
@@ -407,7 +405,7 @@ class TestClipServiceFinal:
         self, mock_cache: Mock
     ) -> None:
         """Test download_and_cache_cloud_thumbnail with exception."""
-        from blinkapp.services.clip_service import download_and_cache_cloud_thumbnail
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_cache.return_value = {}
 

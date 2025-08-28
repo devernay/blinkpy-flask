@@ -1,4 +1,19 @@
-"""Decorators and utility functions for the Blink Camera Flask application."""
+"""Decorators and utility functions for the Blink Camera Flask application.
+
+This module provides reusable decorators and context managers for common
+patterns throughout the application, including error handling, validation,
+and resource management.
+
+Key components:
+- Error context management with logging and exception handling
+- Safe execution wrappers with fallback behavior
+- Blink availability checking decorators
+- API route validation and response formatting
+- Resource cleanup and error recovery patterns
+
+These utilities promote consistent error handling and reduce code duplication
+across the application while maintaining clean separation of concerns.
+"""
 
 import functools
 import logging
@@ -21,7 +36,6 @@ __all__ = [
     "safe_execute",
     "ensure_blink_available",
     "check_blink_availability",
-    "api_route_with_validation",
 ]
 
 
@@ -140,12 +154,3 @@ def check_blink_availability() -> ApiResponse | None:
             status_code=401,
         )
     return None
-
-
-def api_route_with_validation(*args, **kwargs):
-    """Placeholder decorator for API route validation."""
-
-    def decorator(func):
-        return func
-
-    return decorator

@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
     from blinkapp.models.types import JsonDict
 
+__all__ = ["setup_config_routes"]
+
 
 def setup_config_routes(app: Flask) -> None:
     """Register configuration routes with the Flask app."""

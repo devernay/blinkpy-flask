@@ -5,7 +5,7 @@ import unittest
 
 from blinkapp.services.auth_service import (
     create_auth_config,
-    is_authenticated,
+    is_blink_authenticated,
     validate_credentials,
 )
 
@@ -13,9 +13,9 @@ from blinkapp.services.auth_service import (
 class TestAuthServiceExpansion(unittest.TestCase):
     """Test uncovered auth service functions with highest missed lines."""
 
-    def test_is_authenticated_basic(self) -> None:
-        """Test is_authenticated basic functionality."""
-        result = is_authenticated()
+    def test_is_blink_authenticated_basic(self) -> None:
+        """Test is_blink_authenticated basic functionality."""
+        result = is_blink_authenticated()
 
         # Should return a boolean
         self.assertIsInstance(result, bool)

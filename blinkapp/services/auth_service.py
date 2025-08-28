@@ -7,10 +7,14 @@ Blink system initialization, 2FA verification, and credential management.
 from __future__ import annotations
 
 __all__ = [
-    "is_authenticated",
+    "is_blink_authenticated",
     "initialize_blink",
     "verify_2fa_and_save",
     "load_saved_blink",
+    "validate_credentials",
+    "is_valid_email_format",
+    "extract_username_domain",
+    "create_auth_config",
 ]
 
 import logging
@@ -26,14 +30,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def is_authenticated(blink_instance=None) -> bool:
-    """Check if user is currently authenticated with Blink.
+def is_blink_authenticated(blink_instance=None) -> bool:
+    """Check if user is currently authenticated with Blink API.
 
     Args:
         blink_instance: Optional blink instance for testing
 
     Returns:
-        True if authenticated and startup complete, False otherwise
+        True if authenticated with Blink API and startup complete, False otherwise
     """
     if blink_instance is None:
         from blinkapp.services.blink_service import blink
@@ -51,16 +55,39 @@ def extract_username_domain(username: str) -> str:
 
 
 def is_valid_email_format(email: str) -> bool:
-    """Check if email has valid format - pure function."""
-    if not email or "@" not in email:
+    """Validate email format - pure function."""
+    if not email or not isinstance(email, str):
         return False
+
+    # Basic email validation
+    if "@" not in email:
+        return False
+
     parts = email.split("@")
-    return len(parts) == 2 and parts[0] != "" and parts[1] != "" and "." in parts[1]
+    if len(parts) != 2:
+        return False
+
+    local, domain = parts
+    if not local or not domain:
+        return False
+
+    # Check for basic domain format
+    if "." not in domain:
+        return False
+
+    return True
 
 
 def validate_credentials(username: str, password: str) -> bool:
-    """Validate credential format - pure function."""
-    return bool(username and password and "@" in username)
+    """Validate credentials format - pure function."""
+    if not username or not password:
+        return False
+
+    if not isinstance(username, str) or not isinstance(password, str):
+        return False
+
+    # Basic validation - non-empty strings
+    return len(username.strip()) > 0 and len(password.strip()) > 0
 
 
 def create_auth_config(username: str, password: str) -> dict[str, str]:

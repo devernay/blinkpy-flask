@@ -60,11 +60,11 @@ class TestStreamServiceExpansion(unittest.TestCase):
 
         result = parse_tcp_url(tcp_url)
 
-        self.assertIsInstance(result, dict)
-        self.assertIn("host", result)
-        self.assertIn("port", result)
-        self.assertEqual(result["host"], "127.0.0.1")
-        self.assertEqual(result["port"], "8080")  # Port is returned as string
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        host, port = result
+        self.assertEqual(host, "127.0.0.1")
+        self.assertEqual(port, 8080)  # Port is returned as int
 
     def test_generate_hls_url_basic(self) -> None:
         """Test generate_hls_url basic functionality."""

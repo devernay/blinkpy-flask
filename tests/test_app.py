@@ -2526,22 +2526,25 @@ class TestVideoProcessingOperations(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_existing_file(self) -> None:
+    def test_generate_local_clip_thumbnail_existing_file(self) -> None:
         """Test thumbnail generation when file already exists."""
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=True):
-            result = generate_clip_thumbnail(
-                Path("test_clip.mp4"), "test_clip.mp4", middle_frame=True
+            result = generate_local_clip_thumbnail(
+                ClipId.from_local("sync1", 123),
+                Path("test_clip.mp4"),
+                Path("test_clip_thumb.jpg"),
             )
 
             # Should return existing thumbnail path
             self.assertIsNotNone(result)
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_ffmpeg_success(self) -> None:
+    def test_generate_local_clip_thumbnail_ffmpeg_success(self) -> None:
         """Test successful thumbnail generation with ffmpeg."""
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -2551,25 +2554,30 @@ class TestVideoProcessingOperations(BaseTestCase):
                     Mock(returncode=0),  # ffmpeg extraction
                 ]
 
-                generate_clip_thumbnail(
-                    Path("test_clip.mp4"), "test_clip.mp4", middle_frame=True
+                generate_local_clip_thumbnail(
+                    ClipId.from_local("sync1", 123),
+                    Path("test_clip.mp4"),
+                    Path("test_clip_thumb.jpg"),
                 )
 
                 # Should attempt ffmpeg processing
                 self.assertEqual(mock_run.call_count, 2)
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_ffmpeg_error(self) -> None:
+    def test_generate_local_clip_thumbnail_ffmpeg_error(self) -> None:
         """Test thumbnail generation with ffmpeg error."""
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
                 mock_run.side_effect = Exception("ffmpeg not found")
 
                 with patch("blinkapp.logger") as mock_logger:
-                    result = generate_clip_thumbnail(
-                        Path("test_clip.mp4"), "test_clip.mp4"
+                    result = generate_local_clip_thumbnail(
+                        ClipId.from_local("sync1", 123),
+                        Path("test_clip.mp4"),
+                        Path("test_clip_thumb.jpg"),
                     )
 
                     # Should handle ffmpeg errors gracefully
@@ -2577,16 +2585,19 @@ class TestVideoProcessingOperations(BaseTestCase):
                     mock_logger.error.assert_called()
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
-    def test_generate_clip_thumbnail_first_frame(self) -> None:
+    def test_generate_local_clip_thumbnail_first_frame(self) -> None:
         """Test thumbnail generation for first frame."""
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = Mock(returncode=0)
 
-                generate_clip_thumbnail(
-                    Path("test_clip.mp4"), "test_clip.mp4", middle_frame=False
+                generate_local_clip_thumbnail(
+                    ClipId.from_local("sync1", 123),
+                    Path("test_clip.mp4"),
+                    Path("test_clip_thumb.jpg"),
                 )
 
                 # Should call ffmpeg for first frame
@@ -3304,7 +3315,7 @@ class TestAdvancedClipOperations(BaseTestCase):
 
             with patch("pathlib.Path.exists", return_value=True):
                 with patch(
-                    "blinkapp.services.clip_service.process_cloud_clip_background"
+                    "blinkapp.services.clip_processing.process_cloud_clip_background"
                 ) as mock_process:
                     response = self.client.post("/api/clips/test_clip/thumbnail")
                     self.assertEqual(response.status_code, 200)
@@ -3323,7 +3334,7 @@ class TestAdvancedClipOperations(BaseTestCase):
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch(
-                "blinkapp.services.thumbnail_service.generate_clip_thumbnail",
+                "blinkapp.services.thumbnail_service.generate_local_clip_thumbnail",
                 return_value=None,
             ):
                 response = self.client.post("/api/clips/test_clip/thumbnail")
@@ -4890,7 +4901,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         """Test thumbnail generation for middle frame with ffmpeg."""
         from pathlib import Path
 
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -4906,8 +4917,10 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                 mock_run.side_effect = [mock_duration_result, mock_extract_result]
 
                 video_path = Path("test_clip.mp4")
-                result = generate_clip_thumbnail(
-                    video_path, "test_clip.mp4", middle_frame=True
+                result = generate_local_clip_thumbnail(
+                    ClipId.from_local("sync1", 123),
+                    video_path,
+                    Path("test_clip_thumb.jpg"),
                 )
 
                 # Should call ffprobe for duration, then ffmpeg for extraction
@@ -4919,7 +4932,8 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         """Test thumbnail generation for first frame."""
         from pathlib import Path
 
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -4928,8 +4942,10 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                 mock_run.return_value = mock_result
 
                 video_path = Path("test_clip.mp4")
-                result = generate_clip_thumbnail(
-                    video_path, "test_clip.mp4", middle_frame=False
+                result = generate_local_clip_thumbnail(
+                    ClipId.from_local("sync1", 123),
+                    video_path,
+                    Path("test_clip_thumb.jpg"),
                 )
 
                 # Should call ffmpeg once for first frame
@@ -4942,7 +4958,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         import subprocess
         from pathlib import Path
 
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch(
@@ -4950,8 +4966,10 @@ class TestVideoProcessingAdvanced(BaseTestCase):
             ):
                 with patch("blinkapp.logger") as mock_logger:
                     video_path = Path("test_clip.mp4")
-                    result = generate_clip_thumbnail(
-                        video_path, "test_clip.mp4", middle_frame=True
+                    result = generate_local_clip_thumbnail(
+                        ClipId.from_local("sync1", 123),
+                        video_path,
+                        Path("test_clip_thumb.jpg"),
                     )
 
                     # Should handle timeout gracefully
@@ -4964,7 +4982,8 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         import subprocess
         from pathlib import Path
 
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch(
@@ -4972,7 +4991,11 @@ class TestVideoProcessingAdvanced(BaseTestCase):
             ):
                 with patch("blinkapp.logger") as mock_logger:
                     video_path = Path("test_clip.mp4")
-                    result = generate_clip_thumbnail(video_path, "test_clip.mp4")
+                    result = generate_local_clip_thumbnail(
+                        ClipId.from_local("sync1", 123),
+                        video_path,
+                        Path("test_clip_thumb.jpg"),
+                    )
 
                     # Should handle ffmpeg failure gracefully
                     self.assertIsNone(result)
@@ -4983,7 +5006,7 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         """Test thumbnail generation with invalid duration from ffprobe."""
         from pathlib import Path
 
-        from blinkapp.services.thumbnail_service import generate_clip_thumbnail
+        from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists", return_value=False):
             with patch("subprocess.run") as mock_run:
@@ -4995,8 +5018,10 @@ class TestVideoProcessingAdvanced(BaseTestCase):
 
                 with patch("blinkapp.logger") as mock_logger:
                     video_path = Path("test_clip.mp4")
-                    result = generate_clip_thumbnail(
-                        video_path, "test_clip.mp4", middle_frame=True
+                    result = generate_local_clip_thumbnail(
+                        ClipId.from_local("sync1", 123),
+                        video_path,
+                        Path("test_clip_thumb.jpg"),
                     )
 
                     # Should handle invalid duration gracefully
@@ -5838,7 +5863,7 @@ class TestTemplateRoutesFixed(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.routes.auth.is_authenticated")
+    @patch("blinkapp.routes.auth.is_session_authenticated")
     @patch("flask.render_template")
     def test_index_template_rendering(self, mock_render: Mock, mock_auth: Mock) -> None:
         """Test index template rendering."""
@@ -5877,7 +5902,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.routes.auth.is_authenticated")
+    @patch("blinkapp.routes.auth.is_session_authenticated")
     def test_index_route(self, mock_auth: Mock) -> None:
         """Test index route functionality."""
         mock_auth.return_value = False
@@ -5885,7 +5910,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         # Should redirect to login when not authenticated
         self.assertEqual(response.status_code, 302)
 
-    @patch("blinkapp.routes.auth.is_authenticated")
+    @patch("blinkapp.routes.auth.is_session_authenticated")
     def test_auth_route(self, mock_auth: Mock) -> None:
         """Test auth route functionality."""
         mock_auth.return_value = False

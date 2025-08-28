@@ -10,7 +10,6 @@ from __future__ import annotations
 __all__ = [
     "startup",
     "cleanup_resources",
-    "load_clips_cache",
     "dump_cloud_videos",
     "cleanup_blink_session",
 ]
@@ -18,6 +17,8 @@ __all__ = [
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from blinkapp.services.debug_service import dump_cloud_videos
 
 if TYPE_CHECKING:
     pass
@@ -105,7 +106,10 @@ def startup() -> None:
         )
 
         # Restore cached thumbnails from previous sessions
-        from blinkapp.services.cache_service import load_thumbnail_cache
+        from blinkapp.services.cache_service import (
+            load_clips_cache,
+            load_thumbnail_cache,
+        )
 
         load_thumbnail_cache()
 
@@ -137,123 +141,6 @@ def startup() -> None:
             logger.info("Credentials preserved - log out if error persists")
     except Exception as e:
         logger.warning(f"Could not initialize Blink system on startup: {e}")
-
-
-def load_clips_cache() -> None:
-    """Load clips cache directory and populate memory cache.
-
-    Parses cached clip files with ClipId_camera_date.mp4 format,
-    validates against Blink system, and removes invalid files.
-    Thread-safe operation.
-    """
-    from blinkapp import CLIPS_CACHE_DIR
-    from blinkapp.config import Config
-    from blinkapp.models.ids import ClipId
-    from blinkapp.services.blink_service import blink, blink_connection
-
-    assert CLIPS_CACHE_DIR is not None
-    cache_dir = Path(CLIPS_CACHE_DIR)
-    if not cache_dir.exists():
-        logger.warning(f"Clips cache directory does not exist: {cache_dir}")
-        return
-
-    # Ensure clips cache is initialized
-    from blinkapp.services.cache_service import ensure_clips_cache_initialized
-
-    clips_cache_instance = ensure_clips_cache_initialized()
-
-    try:
-        files_to_remove: list[Path] = []
-
-        for video_file in cache_dir.glob("*.mp4"):
-            try:
-                filename = video_file.name
-                # Parse filename format: clipid_camera_date.mp4
-                parts = filename.replace(".mp4", "").split("_", 1)
-                if len(parts) < 2:
-                    logger.debug(f"Invalid filename format: {filename}")
-                    files_to_remove.append(video_file)
-                    continue
-
-                clip_id_str = parts[0]
-                try:
-                    clip_id = ClipId(clip_id_str)
-                except ValueError:
-                    logger.debug(f"Invalid clip ID in filename: {filename}")
-                    files_to_remove.append(video_file)
-                    continue
-
-                # Check corresponding thumbnail
-                thumbnail_name = filename.replace(".mp4", ".jpg")
-                thumbnail_path = cache_dir / thumbnail_name
-
-                # Validate clip exists in Blink system
-                if blink and blink.available:
-                    clip_valid = False
-                    try:
-                        if clip_id.is_local():
-                            # Validate local clip - if local storage is available and ready, trust it
-                            sync_name, _ = clip_id.get_local_parts()
-                            sync_dict = blink.sync
-                            if sync_name in sync_dict:
-                                sync_module = sync_dict[sync_name]
-                                local_storage: bool = sync_module.local_storage
-                                manifest_ready: bool = (
-                                    sync_module.local_storage_manifest_ready
-                                )
-                                # If local storage is active and manifest is ready, assume clip is valid
-                                clip_valid = local_storage and manifest_ready
-                        else:
-                            # Validate cloud clip (simplified check)
-                            assert blink_connection is not None
-                            videos_metadata = blink_connection.execute(
-                                blink.get_videos_metadata(
-                                    stop=Config.MAX_VIDEOS_METADATA
-                                )
-                            )
-                            for video in videos_metadata:
-                                if str(video.get("id")) == str(clip_id):
-                                    clip_valid = True
-                                    break
-                    except Exception as e:
-                        logger.debug(f"Error validating clip {clip_id}: {e}")
-
-                    if not clip_valid:
-                        logger.debug(
-                            f"Clip {clip_id} no longer exists, removing cached files"
-                        )
-                        files_to_remove.append(video_file)
-                        if thumbnail_path.exists():
-                            files_to_remove.append(thumbnail_path)
-                        continue
-
-                # Add to cache
-                clips_cache_instance[clip_id] = {
-                    "filepath": video_file,
-                    "thumbnail": thumbnail_path if thumbnail_path.exists() else None,
-                }
-                logger.debug(f"Loaded cached clip {clip_id}")
-
-            except Exception as e:
-                logger.debug(f"Could not process cached clip {video_file}: {e}")
-                files_to_remove.append(video_file)
-
-        # Remove invalid files in background
-        def remove_files(files_list: list[Path]) -> None:
-            for file_path in files_list:
-                try:
-                    file_path.unlink()
-                    logger.debug(f"Removed invalid cached file: {file_path.name}")
-                except (OSError, PermissionError) as e:
-                    logger.warning(f"Could not remove file {file_path}: {e}")
-
-        if files_to_remove:
-            from blinkapp.services.connection_service import ensure_executor_initialized
-
-            ensure_executor_initialized().submit(remove_files, files_to_remove)
-
-    except (OSError, PermissionError) as e:
-        logger.error(f"Error scanning clips cache: {e}")
 
 
 def cleanup_resources() -> None:
@@ -350,8 +237,4 @@ async def cleanup_blink_session() -> None:
             logger.debug(f"Error closing Blink session: {e}")
 
 
-def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
-    """Dump cloud videos information."""
-    logger.info("=== CLOUD VIDEOS ===")
-    for video in videos:
-        logger.info(f"Video: {video}")
+# Function is imported at top of file

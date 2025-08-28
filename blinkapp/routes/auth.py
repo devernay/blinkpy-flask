@@ -31,11 +31,11 @@ from blinkapp.utils.route_decorators import simple_success_response
 from blinkapp.utils.validators import validate_string_input
 
 
-def is_authenticated() -> bool:
-    """Check if user is authenticated.
+def is_session_authenticated() -> bool:
+    """Check if user has an authenticated web session.
 
     Returns:
-        True if user is authenticated, False otherwise
+        True if user has an authenticated session, False otherwise
     """
     return "authenticated" in session
 

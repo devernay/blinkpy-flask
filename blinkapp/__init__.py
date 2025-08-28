@@ -86,13 +86,15 @@ from blinkapp.services.blink_validators import require_sync_module
 from blinkapp.services.cache_service import (
     clear_all_caches,
     initialize_cache_paths,
+    load_clips_cache,
+)
+from blinkapp.services.debug_service import (
+    dump_cloud_videos,
 )
 
 # Application lifecycle
 from blinkapp.services.lifecycle_service import (
     cleanup_resources,
-    dump_cloud_videos,
-    load_clips_cache,
     startup,
 )
 

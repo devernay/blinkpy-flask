@@ -10,30 +10,30 @@ __all__ = [
     "initialize_stream_manager",
     "create_stream_manager",
     "ensure_stream_manager_initialized",
-    "parse_tcp_url",
-    "generate_hls_url",
-    "validate_camera_id",
-    "validate_tcp_url",
     "start_camera_stream",
     "stop_camera_stream",
     "is_stream_active",
     "get_hls_file",
-    "StreamConfig",
     "HLSStream",
+    "HLSStreamConfig",
     "StreamManager",
     "stream_manager",
+    "generate_hls_url",
+    "parse_tcp_url",
+    "validate_camera_id",
+    "validate_tcp_url",
 ]
 
 import logging
 import subprocess
-import tempfile
 import threading
-import time
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from blinkapp.config import Config
+from blinkapp.services.hls_service import (
+    HLSStream,
+    HLSStreamConfig,
+)
 
 __all__ = [
     "initialize_stream_manager",
@@ -42,8 +42,8 @@ __all__ = [
     "stop_camera_stream",
     "is_stream_active",
     "get_hls_file",
-    "StreamConfig",
     "HLSStream",
+    "HLSStreamConfig",
     "StreamManager",
 ]
 
@@ -61,7 +61,7 @@ def initialize_stream_manager(manager_factory=None) -> None:
     """Initialize the global stream manager instance with injectable factory."""
     global stream_manager
     from blinkapp import Config
-    from blinkapp.services.stream_service import StreamConfig, StreamManager
+    from blinkapp.services.stream_service import HLSStreamConfig, StreamManager
 
     if manager_factory is None:
 
@@ -70,7 +70,7 @@ def initialize_stream_manager(manager_factory=None) -> None:
 
         manager_factory = default_factory
 
-    stream_config = StreamConfig(
+    stream_config = HLSStreamConfig(
         segment_time=Config.HLS_SEGMENT_TIME,
         list_size=Config.HLS_LIST_SIZE,
         timeout=Config.FFMPEG_TIMEOUT,
@@ -106,38 +106,6 @@ def ensure_stream_manager_initialized(manager_factory=None):
             "Stream manager not initialized. Call initialize_blink() first."
         )
     return stream_manager
-
-
-def parse_tcp_url(tcp_url: str) -> dict[str, str]:
-    """Parse TCP URL components - pure function."""
-    if not tcp_url:
-        return {}
-
-    try:
-        if "://" in tcp_url:
-            protocol, rest = tcp_url.split("://", 1)
-            if ":" in rest:
-                host, port = rest.split(":", 1)
-                return {"protocol": protocol, "host": host, "port": port}
-            return {"protocol": protocol, "host": rest, "port": ""}
-        return {}
-    except (ValueError, AttributeError):
-        return {}
-
-
-def generate_hls_url(camera_id: str, base_url: str = "http://localhost:8080") -> str:
-    """Generate HLS URL for camera - pure function."""
-    return f"{base_url}/hls/{camera_id}/playlist.m3u8"
-
-
-def validate_camera_id(camera_id: str) -> bool:
-    """Validate camera ID format - pure function."""
-    return bool(camera_id and len(camera_id.strip()) > 0)
-
-
-def validate_tcp_url(tcp_url: str) -> bool:
-    """Validate TCP URL format - pure function."""
-    return bool(tcp_url and tcp_url.startswith(("tcp://", "http://")))
 
 
 def start_camera_stream(
@@ -235,238 +203,38 @@ This module specifically handles MPEG-TS streams from Blink's init_livestream() 
 # Add to exports
 __all__.extend(
     [
-        "StreamConfig",
+        "HLSStreamConfig",
         "HLSStream",
         "StreamManager",
     ]
 )
 
 
-@dataclass
-class StreamConfig:
-    """Configuration for HLS stream transcoding from Blink TCP streams."""
-
-    segment_time: int | None = None  # HLS segment duration in seconds
-    list_size: int | None = None  # Number of segments in playlist
-    timeout: int | None = None  # Process timeout
-    idle_timeout: int | None = None  # Stream idle timeout
-
-    def __post_init__(self) -> None:
-        """Set default values from Config if not provided."""
-        if self.segment_time is None:
-            self.segment_time = Config.HLS_SEGMENT_TIME
-        if self.list_size is None:
-            self.list_size = Config.HLS_LIST_SIZE
-        if self.timeout is None:
-            self.timeout = Config.FFMPEG_TIMEOUT
-        if self.idle_timeout is None:
-            self.idle_timeout = Config.STREAM_IDLE_TIMEOUT
-
-
-def _create_ffmpeg_process(
-    cmd: list[str], process_factory=None
-) -> subprocess.Popen | None:
-    """Create FFmpeg process with injectable factory."""
-    if process_factory is None:
-        process_factory = subprocess.Popen
-
-    try:
-        return process_factory(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-
-
-def _build_ffmpeg_command(tcp_url: str, output_path: Path, config) -> list[str]:
-    """Build FFmpeg command for TCP to HLS transcoding."""
-    return [
-        "ffmpeg",
-        "-i",
-        tcp_url,
-        "-c",
-        "copy",
-        "-f",
-        "hls",
-        "-hls_time",
-        str(config.segment_time),
-        "-hls_list_size",
-        str(config.list_size),
-        "-hls_flags",
-        "delete_segments",
-        str(output_path),
-    ]
-
-
-class HLSStream:
-    """Manages a single HLS stream from TCP source."""
-
-    def __init__(self, camera_id: str, tcp_url: str, config: StreamConfig):
-        """Initialize HLS stream.
-
-        Args:
-            camera_id: Unique identifier for the camera
-            tcp_url: TCP stream URL from Blink camera
-            config: Stream configuration
-        """
-        self.camera_id = camera_id
-        self.tcp_url = tcp_url
-        self.config = config
-        self.process: subprocess.Popen[bytes] | None = None
-        self.temp_dir: tempfile.TemporaryDirectory[str] | None = None
-        self.last_access = time.time()
-        self.lock = threading.Lock()
-        self._active = False
-
-    def start(self) -> tuple[str | None, str | None]:
-        """Start HLS stream transcoding.
-
-        Returns:
-            Tuple of (hls_url, error_message)
-        """
-        with self.lock:
-            if self._active:
-                return self.get_hls_url(), None
-
-            try:
-                # Create temporary directory for HLS files
-                self.temp_dir = tempfile.TemporaryDirectory(
-                    prefix=f"hls_{self.camera_id}_"
-                )
-                output_path = Path(self.temp_dir.name) / "stream.m3u8"
-
-                # FFmpeg command for TCP to HLS transcoding
-                cmd = _build_ffmpeg_command(self.tcp_url, output_path, self.config)
-
-                # Start FFmpeg process
-                self.process = _create_ffmpeg_process(cmd)
-                if self.process is None:
-                    return None, "Failed to create FFmpeg process"
-
-                # Wait a moment for stream to start
-                time.sleep(2)
-
-                if self.process.poll() is not None:
-                    # Process already terminated
-                    _, stderr = self.process.communicate()
-                    error_msg = (
-                        stderr.decode() if stderr else "FFmpeg process terminated"
-                    )
-                    return None, f"Stream failed to start: {error_msg}"
-
-                self._active = True
-                self.last_access = time.time()
-                return self.get_hls_url(), None
-
-            except Exception as e:
-                self.cleanup()
-                return None, f"Failed to start stream: {str(e)}"
-
-    def stop(self) -> None:
-        """Stop HLS stream and cleanup resources."""
-        with self.lock:
-            self._active = False
-            self.cleanup()
-
-    def cleanup(self) -> None:
-        """Clean up stream resources."""
-        if self.process:
-            try:
-                self.process.terminate()
-                self.process.wait(timeout=5)
-            except (subprocess.TimeoutExpired, OSError):
-                try:
-                    self.process.kill()
-                    self.process.wait(timeout=2)
-                except (subprocess.TimeoutExpired, OSError):
-                    pass
-            self.process = None
-
-        if self.temp_dir:
-            try:
-                self.temp_dir.cleanup()
-            except OSError:
-                pass
-            self.temp_dir = None
-
-    def is_active(self) -> bool:
-        """Check if stream is active."""
-        with self.lock:
-            if not self._active or not self.process:
-                return False
-
-            # Check if process is still running
-            if self.process.poll() is not None:
-                self._active = False
-                return False
-
-            # Check idle timeout
-            idle_timeout = self.config.idle_timeout
-            if (
-                idle_timeout is not None
-                and time.time() - self.last_access > idle_timeout
-            ):
-                self.stop()
-                return False
-
-            return True
-
-    def get_hls_url(self) -> str | None:
-        """Get HLS stream URL."""
-        if not self.temp_dir:
-            return None
-        return f"/api/cameras/{self.camera_id}/hls/stream.m3u8"
-
-    def get_file(self, filename: str) -> tuple[bytes | None, str | None]:
-        """Get HLS file content.
-
-        Args:
-            filename: HLS filename to retrieve
-
-        Returns:
-            Tuple of (file_content, content_type)
-        """
-        with self.lock:
-            if not self.temp_dir or not self._active:
-                return None, None
-
-            try:
-                file_path = Path(self.temp_dir.name) / filename
-                if not file_path.exists():
-                    return None, None
-
-                self.last_access = time.time()
-
-                with open(file_path, "rb") as f:
-                    content = f.read()
-
-                # Determine content type
-                if filename.endswith(".m3u8"):
-                    content_type = "application/vnd.apple.mpegurl"
-                elif filename.endswith(".ts"):
-                    content_type = "video/mp2t"
-                else:
-                    content_type = "application/octet-stream"
-
-                return content, content_type
-
-            except OSError:
-                return None, None
-
-
 class StreamManager:
-    """Manages multiple HLS streams from Blink cameras."""
+    """Manages multiple HLS streams from Blink cameras.
 
-    def __init__(self, config: StreamConfig | None = None):
+    This class coordinates the creation, management, and cleanup of HLS streams
+    that transcode MPEG-TS data from Blink camera TCP streams into web-compatible
+    HLS format using FFmpeg.
+
+    Features:
+    - Thread-safe stream management with locking
+    - Automatic cleanup of inactive streams
+    - Stream status tracking and monitoring
+    - Error handling and recovery
+
+    Each stream runs in its own process via FFmpeg, converting the raw MPEG-TS
+    stream from Blink's TCP proxy into segmented HLS files that can be played
+    in web browsers.
+    """
+
+    def __init__(self, config: HLSStreamConfig | None = None):
         """Initialize stream manager.
 
         Args:
             config: Default stream configuration
         """
-        self.config = config or StreamConfig()
+        self.config = config or HLSStreamConfig()
         self.streams: dict[str, HLSStream] = {}
         self.lock = threading.Lock()
 
@@ -596,3 +364,40 @@ def _build_ffmpeg_command_testable(
         "delete_segments",
         str(output_path),
     ]
+
+
+def generate_hls_url(camera_id: str, filename: str) -> str:
+    """Generate HLS URL for camera stream."""
+    return f"/api/cameras/{camera_id}/streams/{filename}"
+
+
+def parse_tcp_url(tcp_url: str) -> tuple[str, int]:
+    """Parse TCP URL to extract host and port."""
+    if not tcp_url.startswith("tcp://"):
+        raise ValueError("Invalid TCP URL format")
+
+    url_part = tcp_url[6:]  # Remove "tcp://"
+    if ":" not in url_part:
+        raise ValueError("TCP URL must include port")
+
+    host, port_str = url_part.split(":", 1)
+    try:
+        port = int(port_str)
+    except ValueError as e:
+        raise ValueError("Invalid port number") from e
+
+    return host, port
+
+
+def validate_camera_id(camera_id: str) -> bool:
+    """Validate camera ID format."""
+    return isinstance(camera_id, str) and len(camera_id) > 0
+
+
+def validate_tcp_url(tcp_url: str) -> bool:
+    """Validate TCP URL format."""
+    try:
+        parse_tcp_url(tcp_url)
+        return True
+    except ValueError:
+        return False

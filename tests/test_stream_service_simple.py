@@ -35,10 +35,11 @@ class TestStreamServiceSimple(unittest.TestCase):
         result = parse_tcp_url("tcp://192.168.1.100:8080")
 
         # Should parse URL components
-        self.assertIn("host", result)
-        self.assertIn("port", result)
-        self.assertEqual(result["host"], "192.168.1.100")
-        self.assertEqual(result["port"], "8080")
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        host, port = result
+        self.assertEqual(host, "192.168.1.100")
+        self.assertEqual(port, 8080)
 
     def test_parse_tcp_url_invalid_url(self) -> None:
         """Test parse_tcp_url with invalid URL - exception handling."""
@@ -49,7 +50,7 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_generate_hls_url_default_base(self) -> None:
         """Test generate_hls_url with default base URL - line 105."""
-        result = generate_hls_url("camera123")
+        result = generate_hls_url("camera123", "playlist.m3u8")
 
         # Should use default base URL
         self.assertEqual(result, "http://localhost:8080/hls/camera123/playlist.m3u8")
