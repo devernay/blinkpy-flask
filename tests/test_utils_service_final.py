@@ -7,7 +7,6 @@ from blinkpy.camera import BlinkCamera
 
 from blinkapp.services.device_service import (
     create_device_data,
-    format_battery_level,
     format_device_temperature,
 )
 
@@ -19,21 +18,6 @@ class TestUtilsServiceFinal(unittest.TestCase):
         """Test format_device_temperature basic functionality."""
         result = format_device_temperature(68.5)
         self.assertEqual(result, "68.5°F")
-
-    def test_format_battery_level_good(self) -> None:
-        """Test format_battery_level with good level."""
-        result = format_battery_level(125)
-        self.assertEqual(result, "Good")
-
-    def test_format_battery_level_fair(self) -> None:
-        """Test format_battery_level with fair level."""
-        result = format_battery_level(115)
-        self.assertEqual(result, "Fair")
-
-    def test_format_battery_level_low(self) -> None:
-        """Test format_battery_level with low level."""
-        result = format_battery_level(105)
-        self.assertEqual(result, "Low")
 
     def test_create_device_data_exception_handling(self) -> None:
         """Test create_device_data with exception in timestamp calculation."""

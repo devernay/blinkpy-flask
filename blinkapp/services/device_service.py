@@ -1,14 +1,17 @@
 """Device service for Blink Camera Flask application.
 
 This module provides utilities for processing and formatting device data from
-Blink cameras, including temperature readings, battery levels, and device
+Blink cameras, including temperature readings, battery status, and device
 information aggregation.
 
 Key functions:
 - Device data creation and formatting
 - Temperature conversion and display
-- Battery level assessment from voltage readings
 - Safe data extraction with fallback values
+
+Battery Handling:
+Uses camera.battery which returns battery state strings (e.g., "ok", "low")
+directly from the Blink API as the preferred approach.
 """
 
 from __future__ import annotations
@@ -23,7 +26,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["create_device_data", "format_device_temperature", "format_battery_level"]
+__all__ = ["create_device_data", "format_device_temperature"]
 
 
 def format_device_temperature(temperature) -> str:
@@ -50,39 +53,6 @@ def format_device_temperature(temperature) -> str:
     try:
         temp_val = float(temperature)
         return f"{temp_val}°F"
-    except (ValueError, TypeError):
-        return "N/A"
-
-
-def format_battery_level(voltage) -> str:
-    """Format battery level based on voltage reading.
-
-    Converts voltage readings to user-friendly battery status indicators.
-    Uses standard lithium battery voltage thresholds for Blink cameras.
-
-    Voltage values are in 100ths of volts (e.g., 163 = 1.63V).
-    Thresholds based on typical lithium battery discharge curves:
-    - Good: >150 (>1.50V) - Full to good charge
-    - Fair: 140-150 (1.40-1.50V) - Moderate charge
-    - Low: <140 (<1.40V) - Needs replacement
-
-    Args:
-        voltage: Battery voltage reading in 100ths of volts (numeric or None)
-
-    Returns:
-        Battery status: "Good", "Fair", "Low", or "N/A"
-    """
-    if voltage is None:
-        return "N/A"
-    try:
-        volt_val = float(voltage)
-        # Lithium battery voltage thresholds (values in 100ths of volts)
-        if volt_val > 150:  # >1.50V
-            return "Good"
-        elif volt_val > 140:  # 1.40-1.50V
-            return "Fair"
-        else:  # <1.40V
-            return "Low"
     except (ValueError, TypeError):
         return "N/A"
 
