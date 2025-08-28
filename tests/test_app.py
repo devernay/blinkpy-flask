@@ -1394,10 +1394,8 @@ class TestClipProcessing(BaseTestCase):
         }
         mock_blink.videos = {"all": [mock_clip]}
 
-        # Mock connection to raise BlinkError for non-existent clip
-        from blinkapp.services.connection_service import BlinkError
-
-        mock_connection.execute.side_effect = BlinkError("Clip not found")
+        # Mock get_clip_url to return None (clip not found)
+        mock_blink.get_clip_url.return_value = None
 
         response = self.client.get("/api/clips/nonexistent/download")
         self.assertEqual(response.status_code, 404)  # "Clip not found" triggers 404
@@ -2026,6 +2024,9 @@ class TestClipDownloadOperations(BaseTestCase):
 
         mock_blink.get_videos_metadata.return_value = [mock_clip]
 
+        # Mock get_clip_url to return a valid URL
+        mock_blink.get_clip_url.return_value = "https://example.com/clip.mp4"
+
         # Mock the connection returned by ensure_blink_connection_initialized
         mock_connection = Mock()
         mock_connection.execute.return_value = [mock_clip]
@@ -2035,25 +2036,21 @@ class TestClipDownloadOperations(BaseTestCase):
         with patch("pathlib.Path.exists") as mock_exists:  # Mock file existence
             # First call (cache check) returns False, second call (after download) returns True
             mock_exists.side_effect = [False, True]
-            with patch(
-                "blinkapp.services.connection_service.ensure_http_session_initialized"
-            ) as mock_session:
+            with patch("requests.get") as mock_requests_get:
                 mock_response = Mock()
                 mock_response.status_code = 200
                 mock_response.content = b"fake_video_data"
-                mock_session.return_value.get.return_value = mock_response
+                mock_requests_get.return_value = mock_response
 
                 with (
-                    patch("pathlib.Path.write_bytes") as mock_write,
+                    patch("builtins.open", mock_open()) as mock_file,
                     patch("pathlib.Path.mkdir"),
-                    patch("pathlib.Path.parent", create=True),
                 ):
                     response = self.client.get("/api/clips/123456/download")
 
-                    # Should attempt to download and cache
-                    self.assertEqual(response.status_code, 500)
-                    if response.status_code == 200:
-                        mock_write.assert_called()
+                    # Should successfully download and cache
+                    self.assertEqual(response.status_code, 200)
+                    mock_file.assert_called()
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")

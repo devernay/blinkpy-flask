@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
-from flask import send_file
+from flask import jsonify, send_file
 from flask.typing import (
     ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
 )
@@ -103,21 +103,37 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
                 clip_id, blink_instance, clips_cache_dir
             )
             if error or clip_path is None:
-                return create_api_response(
+                # Determine appropriate status code based on error message
+                status_code = 500  # Default to server error
+                if error and (
+                    "not found" in error.lower()
+                    or "clip not found" in error.lower()
+                    or "could not get download url" in error.lower()
+                ):
+                    status_code = 404
+                elif error and (
+                    "invalid url" in error.lower()
+                    or "no scheme supplied" in error.lower()
+                ):
+                    status_code = 404  # Treat URL errors as not found
+
+                response_dict, _ = create_api_response(
                     success=False,
                     error=error or "Failed to download cloud clip",
-                    status_code=500,
+                    status_code=status_code,
                 )
+                return jsonify(response_dict), status_code
 
         return download_clip_common(clip_path, clip_id)
 
     except Exception as e:
         logger.error(f"Error in download_cloud_clip: {e}")
-        return create_api_response(
+        response_dict, status_code = create_api_response(
             success=False,
             error=f"Failed to download cloud clip: {e}",
             status_code=500,
         )
+        return jsonify(response_dict), status_code
 
 
 def download_local_clip(
