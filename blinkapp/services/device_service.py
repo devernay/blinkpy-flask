@@ -74,9 +74,13 @@ def create_device_data(
     Returns:
         Dictionary containing:
         - Basic info: id, name, type, status
-        - Hardware: battery_level, temperature, signal_strength
+        - Hardware: battery, temperature, temperature_calibrated, wifi_strength
         - Metadata: last_updated, thumbnail_age
         - Capabilities: enabled status, motion detection
+
+    Note:
+        temperature_calibrated provides more accurate readings from dedicated sensor endpoint,
+        falls back to regular temperature if calibrated value unavailable
     """
     from datetime import UTC, datetime
 
@@ -107,5 +111,6 @@ def create_device_data(
         "motion_enabled": camera.motion_enabled,
         "battery": camera.battery,
         "temperature": camera.temperature,
+        "temperature_calibrated": camera.temperature_calibrated,
         "wifi_strength": camera.wifi_strength,
     }

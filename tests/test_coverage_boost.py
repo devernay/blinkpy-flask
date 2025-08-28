@@ -427,13 +427,12 @@ class TestBasicOperations(BaseTestCase):
         # Mock camera object
         mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
-        mock_camera.id = "123"
-        mock_camera.armed = True
+        mock_camera.camera_id = "test_camera_boost"  # Use camera_id, not id
         mock_camera.motion_enabled = True
         mock_camera.temperature = 72
-        mock_camera.battery_voltage = 110
-        mock_camera.battery_state = "ok"
-        mock_camera.wifi_strength = -50
+        mock_camera.temperature_calibrated = 72.1
+        mock_camera.battery = "ok"  # Use battery, not battery_state
+        mock_camera.wifi_strength = 4  # Use 0-5 scale, not negative dBm
         mock_camera.last_record = {"created_at": "2023-01-01T00:00:00Z"}
 
         cache_key = CameraId("test_camera")
@@ -445,6 +444,7 @@ class TestBasicOperations(BaseTestCase):
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Test Camera")
+        self.assertEqual(result["id"], "test_camera_boost")
 
     def test_stream_service_initialize_stream_manager(self) -> None:
         """Test stream_service initialize_stream_manager function."""

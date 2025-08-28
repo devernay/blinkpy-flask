@@ -399,5 +399,5 @@ def validate_tcp_url(tcp_url: str) -> bool:
     try:
         parse_tcp_url(tcp_url)
         return True
-    except ValueError:
+    except (ValueError, AttributeError):
         return False

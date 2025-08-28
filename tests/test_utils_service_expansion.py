@@ -19,12 +19,12 @@ class TestUtilsServiceExpansion(unittest.TestCase):
 
         mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
+        mock_camera.camera_id = "test_camera_basic"
         mock_camera.temperature = 72
-        mock_camera.battery_voltage = 120
-        mock_camera.battery_state = "ok"
+        mock_camera.temperature_calibrated = 72.3
+        mock_camera.battery = "ok"  # Use battery property, not battery_state
         mock_camera.motion_enabled = True
-        mock_camera.motion_detected = False
-        mock_camera.wifi_strength = -50
+        mock_camera.wifi_strength = 4  # Use 0-5 scale, not negative dBm
         mock_camera.last_record = {"created_at": "2025-01-01T00:00:00Z"}
         cache_key = CameraId("12345")
 
@@ -33,6 +33,8 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Test Camera")
+        self.assertEqual(result["id"], "test_camera_basic")
+        self.assertEqual(result["temperature"], 72)
 
     def test_create_device_data_minimal(self) -> None:
         """Test create_device_data with minimal camera data."""
@@ -40,11 +42,11 @@ class TestUtilsServiceExpansion(unittest.TestCase):
 
         mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Minimal Camera"
+        mock_camera.camera_id = "test_camera_minimal"
         mock_camera.temperature = None
-        mock_camera.battery_voltage = None
-        mock_camera.battery_state = None
+        mock_camera.temperature_calibrated = None
+        mock_camera.battery = None
         mock_camera.motion_enabled = False
-        mock_camera.motion_detected = False
         mock_camera.wifi_strength = None
         mock_camera.last_record = None
         cache_key = CameraId("67890")
@@ -54,6 +56,8 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Minimal Camera")
+        self.assertEqual(result["id"], "test_camera_minimal")
+        self.assertIsNone(result["temperature"])
 
     def test_dump_blink_system_info_basic(self) -> None:
         """Test dump_blink_system_info basic functionality."""

@@ -19,17 +19,17 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_parse_tcp_url_empty_string(self) -> None:
         """Test parse_tcp_url with empty string - line 88."""
-        result = parse_tcp_url("")
+        # Should raise ValueError for empty string
+        with self.assertRaises(ValueError) as context:
+            parse_tcp_url("")
 
-        # Should return empty dict for empty string
-        self.assertEqual(result, {})
+        self.assertIn("Invalid TCP URL format", str(context.exception))
 
     def test_parse_tcp_url_none(self) -> None:
         """Test parse_tcp_url with None - line 88."""
-        result = parse_tcp_url(None)  # type: ignore[arg-type]
-
-        # Should return empty dict for None
-        self.assertEqual(result, {})
+        # Should raise AttributeError for None input
+        with self.assertRaises(AttributeError):
+            parse_tcp_url(None)  # type: ignore[arg-type]
 
     def test_parse_tcp_url_valid_url(self) -> None:
         """Test parse_tcp_url with valid URL - lines 90-100."""
@@ -44,24 +44,25 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_parse_tcp_url_invalid_url(self) -> None:
         """Test parse_tcp_url with invalid URL - exception handling."""
-        result = parse_tcp_url("invalid_url")
+        # Should raise ValueError for invalid URL format
+        with self.assertRaises(ValueError) as context:
+            parse_tcp_url("invalid_url")
 
-        # Should return empty dict for invalid URL
-        self.assertEqual(result, {})
+        self.assertIn("Invalid TCP URL format", str(context.exception))
 
     def test_generate_hls_url_default_base(self) -> None:
         """Test generate_hls_url with default base URL - line 105."""
         result = generate_hls_url("camera123", "playlist.m3u8")
 
-        # Should use default base URL
-        self.assertEqual(result, "http://localhost:8080/hls/camera123/playlist.m3u8")
+        # Should return relative API URL
+        self.assertEqual(result, "/api/cameras/camera123/streams/playlist.m3u8")
 
     def test_generate_hls_url_custom_base(self) -> None:
-        """Test generate_hls_url with custom base URL - line 105."""
-        result = generate_hls_url("camera456", "http://example.com:9000")
+        """Test generate_hls_url with custom filename - line 105."""
+        result = generate_hls_url("camera456", "custom_stream.m3u8")
 
-        # Should use custom base URL
-        self.assertEqual(result, "http://example.com:9000/hls/camera456/playlist.m3u8")
+        # Should return relative API URL with custom filename
+        self.assertEqual(result, "/api/cameras/camera456/streams/custom_stream.m3u8")
 
     def test_validate_camera_id_valid(self) -> None:
         """Test validate_camera_id with valid ID - line 110."""
@@ -78,11 +79,11 @@ class TestStreamServiceSimple(unittest.TestCase):
         self.assertTrue(result)
 
     def test_validate_tcp_url_valid_http(self) -> None:
-        """Test validate_tcp_url with valid HTTP URL - line 115."""
+        """Test validate_tcp_url with HTTP URL - should be invalid."""
         result = validate_tcp_url("http://192.168.1.100:8080")
 
-        # Should return True for valid HTTP URL
-        self.assertTrue(result)
+        # Should return False for HTTP URL (not TCP)
+        self.assertFalse(result)
 
     def test_validate_tcp_url_invalid(self) -> None:
         """Test validate_tcp_url with invalid URL - line 115."""
