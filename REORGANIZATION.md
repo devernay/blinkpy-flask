@@ -278,6 +278,7 @@ After each phase:
 - [x] Tests pass (full test suite, not just core tests)
 - [x] Strong typing: use type hints everywhere (including tests), reduce usage of `Any` or `object`
 - [x] Avoid functions that have multiple behaviors depending on the parameter type. It is allowed to use `<type> | None` but not `<type1> | <type2>` with different processing logics for type1 and type2
+- [x] All calls to blinkpy should be launched in the blink thread using blink_connection.execute(blink....)
 - [x] No circular imports
 - [x] Functions moved to correct modules
 - [x] Route registration works
