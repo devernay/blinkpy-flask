@@ -182,6 +182,7 @@ def setup_thumbnail_routes(app: Flask) -> None:
         with error_context("refresh camera thumbnail", CameraError):
             # Remove camera thumbnail from cache in background
             def remove_thumbnail_cache() -> None:
+                """Remove cached thumbnail file and cache entry."""
                 cached_info = thumbnail_cache.get(camera_id)
                 if cached_info is not None:
                     # Remove cached file
