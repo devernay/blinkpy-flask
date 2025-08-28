@@ -11,15 +11,19 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from blinkpy.camera import BlinkCamera
+
+from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
+
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
-from test_base import BaseTestCase
-
 import blinkapp
 from blinkapp import Config
 from blinkapp.models.ids import BaseId, CameraId, ClipId
+
+from .test_base import BaseTestCase
 
 
 class TestBaseIdNotImplementedMethods(BaseTestCase):
@@ -229,25 +233,30 @@ class TestGlobalVariableAccess(BaseTestCase):
     def test_cache_instance_access(self) -> None:
         """Test cache instance access."""
         # Mock the cache instances directly since they're imported globals
-        mock_thumbnail_cache = Mock()
-        mock_clips_cache = Mock()
+        mock_camera_thumbnail_cache = Mock(spec=CameraThumbnailCache)
+        mock_clips_cache = Mock(spec=ClipsCache)
 
         with patch(
-            "blinkapp.services.cache_service.thumbnail_cache", mock_thumbnail_cache
+            "blinkapp.services.cache_service.camera_thumbnail_cache",
+            mock_camera_thumbnail_cache,
         ):
             with patch("blinkapp.services.cache_service.clips_cache", mock_clips_cache):
                 # Test that ensure functions work correctly
                 from blinkapp.services.cache_service import (
+                    ensure_camera_thumbnail_cache_initialized,
                     ensure_clips_cache_initialized,
-                    ensure_thumbnail_cache_initialized,
                 )
 
-                thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
+                camera_thumbnail_cache_instance = (
+                    ensure_camera_thumbnail_cache_initialized()
+                )
                 clips_cache_instance = ensure_clips_cache_initialized()
 
-                self.assertIsNotNone(thumbnail_cache_instance)
+                self.assertIsNotNone(camera_thumbnail_cache_instance)
                 self.assertIsNotNone(clips_cache_instance)
-                self.assertEqual(thumbnail_cache_instance, mock_thumbnail_cache)
+                self.assertEqual(
+                    camera_thumbnail_cache_instance, mock_camera_thumbnail_cache
+                )
                 self.assertEqual(clips_cache_instance, mock_clips_cache)
 
     def test_blink_connection_access(self) -> None:
@@ -299,7 +308,7 @@ class TestErrorHandlingPaths(BaseTestCase):
     def test_attribute_error_handling(self) -> None:
         """Test AttributeError handling patterns."""
         # Test accessing non-existent attributes
-        mock_obj = Mock()
+        mock_obj = Mock(spec=object)
 
         # This should not raise AttributeError due to Mock
         result = getattr(mock_obj, "nonexistent_attr", "default")
@@ -416,7 +425,7 @@ class TestBasicOperations(BaseTestCase):
         from blinkapp.services.device_service import create_device_data
 
         # Mock camera object
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.id = "123"
         mock_camera.armed = True

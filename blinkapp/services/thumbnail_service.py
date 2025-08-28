@@ -9,7 +9,7 @@ from __future__ import annotations
 __all__ = [
     "generate_local_clip_thumbnail",
     "notify_thumbnail_ready",
-    "get_thumbnail_cache_stats",
+    "get_camera_thumbnail_cache_stats",
 ]
 
 import logging
@@ -143,20 +143,22 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
     logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
-def get_thumbnail_cache_stats() -> dict[str, Any]:
+def get_camera_thumbnail_cache_stats() -> dict[str, Any]:
     """Get thumbnail cache statistics.
 
     Returns:
         Dictionary with cache statistics
     """
-    from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+    from blinkapp.services.cache_service import (
+        ensure_camera_thumbnail_cache_initialized,
+    )
 
     try:
-        thumbnail_cache = ensure_thumbnail_cache_initialized()
+        camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
         return {
-            "size": len(thumbnail_cache),
-            "max_size": getattr(thumbnail_cache, "max_size", "unknown"),
-            "hit_rate": getattr(thumbnail_cache, "hit_rate", "unknown"),
+            "size": len(camera_thumbnail_cache),
+            "max_size": getattr(camera_thumbnail_cache, "max_size", "unknown"),
+            "hit_rate": getattr(camera_thumbnail_cache, "hit_rate", "unknown"),
         }
     except Exception as e:
         logger.error(f"Failed to get thumbnail cache stats: {e}")

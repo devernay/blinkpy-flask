@@ -8,16 +8,19 @@ import os
 import sys
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from typing import Any, cast
+from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
+
+from requests import Response
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
 from cachetools import LRUCache
-from test_base import BaseTestCase, mock_execute_with_coroutine_cleanup
 
 from blinkapp import (
     Config,
@@ -25,6 +28,8 @@ from blinkapp import (
     initialize_cache_paths,
 )
 from blinkapp.models.ids import CameraId, ClipId
+
+from .test_base import BaseTestCase, mock_execute_with_coroutine_cleanup
 
 
 class TestLoggingSetup(BaseTestCase):
@@ -37,9 +42,9 @@ class TestLoggingSetup(BaseTestCase):
         self, mock_stream: Mock, mock_file: Mock, mock_logger: Mock
     ) -> None:
         """Test setup_logging function."""
-        mock_logger_instance = Mock()
+        mock_logger_instance = Mock(spec=object)
         mock_logger.return_value = mock_logger_instance
-        mock_file_handler = Mock()
+        mock_file_handler = Mock(spec=Path)
         mock_file.return_value = mock_file_handler
 
         from blinkapp import initialize_cache_paths, setup_logging
@@ -72,18 +77,18 @@ class TestBlinkInitialization(BaseTestCase):
         mock_blink: Mock,
         mock_session: Mock,
         mock_connection: Mock,
-    ):
+    ) -> None:
         """Test successful Blink initialization."""
         # Setup mocks
-        mock_session_instance = Mock()
+        mock_session_instance = Mock(spec=object)
         mock_session.return_value = mock_session_instance
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.key_required = False
         mock_blink_instance.start = AsyncMock()
         mock_blink.return_value = mock_blink_instance
 
-        mock_auth_instance = Mock()
+        mock_auth_instance = Mock(spec=object)
         mock_auth.return_value = mock_auth_instance
 
         from blinkapp.services.auth_service import initialize_blink
@@ -105,13 +110,13 @@ class TestBlinkInitialization(BaseTestCase):
         mock_blink: Mock,
         mock_session: Mock,
         mock_connection: Mock,
-    ):
+    ) -> None:
         """Test Blink initialization with 2FA required."""
         # Setup mocks
-        mock_session_instance = Mock()
+        mock_session_instance = Mock(spec=object)
         mock_session.return_value = mock_session_instance
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.key_required = True
         mock_blink_instance.start = AsyncMock()
         mock_blink.return_value = mock_blink_instance
@@ -131,26 +136,26 @@ class TestBlinkInitialization(BaseTestCase):
             self.assertTrue(True)
 
 
-class TestThumbnailCacheUpdate(BaseTestCase):
+class TestCameraThumbnailCacheUpdate(BaseTestCase):
     """Test thumbnail cache update mechanism - lines 939-992."""
 
     def setUp(self) -> None:
         """Set up test environment."""
-        self.mock_camera: Mock = Mock()
+        self.mock_camera: Mock = Mock(spec=object)
         self.mock_camera.name = "Test Camera"
         self.mock_camera.thumbnail = "http://example.com/thumb.jpg"
 
-    @patch("blinkapp.services.cache_service.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
     @patch("blinkapp.services.blink_service.blink_connection")
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
-    def test_update_camera_thumbnail_cache(
+    def test_update_camera_camera_thumbnail_cache(
         self, mock_executor: Mock, mock_connection: Mock, mock_cache: Mock
-    ):
+    ) -> None:
         """Test camera thumbnail cache update."""
         # Setup mocks
         mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
-        mock_response = Mock()
+        mock_response = Mock(spec=Response)
         mock_response.status = 200
         mock_response.read = Mock(return_value=b"image_data")
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
@@ -170,7 +175,7 @@ class TestThumbnailCacheUpdate(BaseTestCase):
         except (ImportError, AttributeError):
             self.assertTrue(True)
 
-    @patch("blinkapp.services.cache_service.thumbnail_cache")
+    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.unlink")
     def test_thumbnail_file_cleanup(
@@ -275,7 +280,7 @@ class TestCacheDirectoryOperations(BaseTestCase):
     @patch("concurrent.futures.ThreadPoolExecutor")
     def test_parallel_cache_clearing(self, mock_executor: Mock) -> None:
         """Test parallel execution of cache clearing."""
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value.__enter__.return_value = mock_executor_instance
 
         # Test parallel execution pattern
@@ -346,8 +351,8 @@ class TestCachePathInitialization(BaseTestCase):
     def test_initialize_cache_paths_with_config(self, mock_path: Mock) -> None:
         """Test cache path initialization with app config."""
         # Setup mock path that supports / operator
-        mock_path_instance = Mock()
-        mock_path_instance.__truediv__ = Mock(return_value=Mock())
+        mock_path_instance = Mock(spec=Path)
+        mock_path_instance.__truediv__ = Mock(return_value=Mock(spec=Path))
         mock_path_instance.__str__ = Mock(return_value="/test/cache")
         mock_path.return_value = mock_path_instance
 
@@ -408,9 +413,9 @@ class TestAPIResponseCreation(BaseTestCase):
         # Should have ISO format timestamp
         timestamp = response["timestamp"]
         self.assertIsInstance(timestamp, str)
-        # Cast to str since we just asserted it's a string
-        timestamp_str = cast(str, timestamp)
-        self.assertIn("T", timestamp_str)  # ISO format contains T
+        # Type assertion for pyright - we know it's a string after assertIsInstance
+        assert isinstance(timestamp, str)
+        self.assertIn("T", timestamp)  # ISO format contains T
 
 
 class TestLRUCacheAdvanced(BaseTestCase):

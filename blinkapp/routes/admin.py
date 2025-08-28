@@ -37,16 +37,16 @@ def register_admin_routes(app: Flask) -> None:
 
     @app.route("/api/cache/thumbnails", methods=["DELETE"])
     @simple_success_response("Thumbnail cache cleared")
-    def clear_thumbnail_cache() -> JsonDict:
+    def clear_camera_thumbnail_cache() -> JsonDict:
         """Clear thumbnail cache only.
 
         Returns:
             JSON response with success status
         """
-        from blinkapp.services.cache_service import clear_thumbnail_cache_files
+        from blinkapp.services.cache_service import clear_camera_thumbnail_cache_files
         from blinkapp.services.connection_service import ensure_executor_initialized
 
-        ensure_executor_initialized().submit(clear_thumbnail_cache_files)
+        ensure_executor_initialized().submit(clear_camera_thumbnail_cache_files)
         return {}
 
     @app.route("/api/cache/clips", methods=["DELETE"])

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Advanced tests for services/stream_service.py - targeting more missed lines."""
 
+import multiprocessing
 import unittest
 from unittest.mock import Mock, patch
 
@@ -64,7 +65,7 @@ class TestStreamServiceAdvanced(unittest.TestCase):
     @patch("blinkapp.services.stream_service.create_stream_manager")
     def test_ensure_stream_manager_with_factory(self, mock_factory: Mock) -> None:
         """Test ensure_stream_manager_initialized with factory."""
-        mock_manager = Mock()
+        mock_manager = Mock(spec=multiprocessing.Manager)
         mock_factory.return_value = mock_manager
 
         # Should not raise exception

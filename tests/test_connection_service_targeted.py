@@ -1,6 +1,9 @@
 """Targeted tests for connection_service.py to improve coverage."""
 
 import unittest
+from asyncio import AbstractEventLoop
+from concurrent.futures import Future
+from io import IOBase
 from unittest.mock import Mock, patch
 
 from blinkapp.services.blink_connection import BlinkConnection
@@ -18,7 +21,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
         connection = BlinkConnection()
 
         # Mock stream that raises error on stop
-        mock_stream = Mock()
+        mock_stream = Mock(spec=IOBase)
         mock_stream.stop.side_effect = RuntimeError("Stream error")
         connection._active_streams = {"stream1": mock_stream}
 
@@ -33,8 +36,8 @@ class TestConnectionServiceTargeted(unittest.TestCase):
     def test_blink_connection_shutdown_timeout_error(self) -> None:
         """Test BlinkConnection shutdown with timeout - lines 233-240."""
         connection = BlinkConnection()
-        connection.blink = Mock()
-        connection.loop = Mock()
+        connection.blink = Mock(spec=object)
+        connection.loop = Mock(spec=AbstractEventLoop)
         connection.loop.is_running.return_value = True
 
         with (
@@ -42,7 +45,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
             patch("blinkapp.services.blink_connection.logger") as mock_logger,
         ):
             # Mock future that times out
-            mock_future = Mock()
+            mock_future = Mock(spec=Future)
             mock_future.result.side_effect = TimeoutError("Timeout")
             mock_run_coro.return_value = mock_future
 
@@ -54,8 +57,8 @@ class TestConnectionServiceTargeted(unittest.TestCase):
     def test_blink_connection_shutdown_runtime_error(self) -> None:
         """Test BlinkConnection shutdown with runtime error - lines 233-240."""
         connection = BlinkConnection()
-        connection.blink = Mock()
-        connection.loop = Mock()
+        connection.blink = Mock(spec=object)
+        connection.loop = Mock(spec=AbstractEventLoop)
         connection.loop.is_running.return_value = True
 
         with (
@@ -63,7 +66,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
             patch("blinkapp.services.blink_connection.logger") as mock_logger,
         ):
             # Mock future that raises runtime error
-            mock_future = Mock()
+            mock_future = Mock(spec=Future)
             mock_future.result.side_effect = RuntimeError("Runtime error")
             mock_run_coro.return_value = mock_future
 
@@ -75,8 +78,8 @@ class TestConnectionServiceTargeted(unittest.TestCase):
     def test_blink_connection_shutdown_os_error(self) -> None:
         """Test BlinkConnection shutdown with OS error - lines 233-240."""
         connection = BlinkConnection()
-        connection.blink = Mock()
-        connection.loop = Mock()
+        connection.blink = Mock(spec=object)
+        connection.loop = Mock(spec=AbstractEventLoop)
         connection.loop.is_running.return_value = True
 
         with (
@@ -84,7 +87,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
             patch("blinkapp.services.blink_connection.logger") as mock_logger,
         ):
             # Mock future that raises OS error
-            mock_future = Mock()
+            mock_future = Mock(spec=Future)
             mock_future.result.side_effect = OSError("OS error")
             mock_run_coro.return_value = mock_future
 

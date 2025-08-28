@@ -273,6 +273,8 @@ rm -rf blinkapp/types/
 After each phase:
 - [x] All imports updated (including in tests)
 - [x] All mocks and patches updated in tests
+- [x] Mocks should be created with "Mock(spec=...)" when possible
+- [x] For the spec parameter of Mock, use just the type name, not the full path, and add proper imports. For example, use Mock(spec=CameraThumbnailCache), not Mock(spec=blinkapp.models.cache.CameraThumbnailCache)
 - [x] Symbols explicitly exported using `__all__` in every module
 - [X] `ruff check` and `pyright` pass with no errors or warnings on all code (including tests)
 - [x] Tests pass (full test suite, not just core tests)

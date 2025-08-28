@@ -3,7 +3,9 @@
 
 from unittest.mock import Mock, patch
 
-from test_base import FlaskTestCase
+from blinkpy.sync_module import BlinkSyncModule
+
+from .test_base import FlaskTestCase
 
 
 class TestAuthService(FlaskTestCase):
@@ -100,14 +102,16 @@ class TestCacheService(FlaskTestCase):
         """Test initialize_caches function."""
         from blinkapp.services.cache_service import initialize_caches
 
-        config = {"thumbnail_cache_size": 10, "clips_cache_size": 10}
+        config = {"camera_thumbnail_cache_size": 10, "clips_cache_size": 10}
         initialize_caches(config)
 
-    def test_ensure_thumbnail_cache_initialized(self) -> None:
-        """Test ensure_thumbnail_cache_initialized function."""
-        from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+    def test_ensure_camera_thumbnail_cache_initialized(self) -> None:
+        """Test ensure_camera_thumbnail_cache_initialized function."""
+        from blinkapp.services.cache_service import (
+            ensure_camera_thumbnail_cache_initialized,
+        )
 
-        result = ensure_thumbnail_cache_initialized()
+        result = ensure_camera_thumbnail_cache_initialized()
         self.assertIsNotNone(result)
 
 
@@ -223,7 +227,7 @@ class TestSystemService(FlaskTestCase):
         """Test get_systems with mock data."""
         from blinkapp.services.system_service import get_systems
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.network_id = 12345
         mock_sync.arm = False
         mock_sync.online = True

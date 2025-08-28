@@ -44,12 +44,12 @@ class Config:
     # Memory cache sizes (number of items before LRU eviction)
     CLIPS_CACHE_SIZE = 100  # Maximum downloaded clips in cache
     CLIPS_METADATA_CACHE_SIZE = 1000  # Maximum clips metadata entries in cache
-    THUMBNAIL_CACHE_SIZE = 100  # Maximum thumbnail entries in cache
+    THUMBNAIL_CACHE_SIZE = 100  # Maximum camera thumbnail entries in cache
 
     # Cache file and directory names (relative to cache directory)
     CREDENTIALS_FILENAME = "blink.json"  # Encrypted credentials file
     SETTINGS_FILENAME = "settings.json"  # User settings persistence file
-    THUMBNAILS_SUBDIR = "thumbnails"  # Thumbnail cache subdirectory
+    THUMBNAILS_SUBDIR = "thumbnails"  # Camera thumbnail cache subdirectory
     CLIPS_SUBDIR = "clips"  # Downloaded clips cache subdirectory
 
     # ========================================================================
@@ -95,7 +95,7 @@ class Config:
     # Background Processing and Polling
     # ========================================================================
     THUMBNAIL_POLL_INTERVAL = 2  # Thumbnail polling interval in seconds
-    THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max polling attempts for thumbnail updates
+    THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max polling attempts for camera updates
     CLIP_THUMBNAIL_POLL_MAX_ATTEMPTS = 15  # Max attempts for clip thumbnail polling
     CACHE_CLEAR_TIMEOUT = 30  # Cache clearing operation timeout (seconds)
     FUTURE_RESULT_TIMEOUT = 2  # Future result timeout in seconds

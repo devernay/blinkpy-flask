@@ -69,7 +69,9 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     from blinkapp.models.ids import CameraId
     from blinkapp.routes.thumbnails import update_camera_thumbnail
     from blinkapp.services.blink_validators import require_sync_module
-    from blinkapp.services.cache_service import ensure_thumbnail_cache_initialized
+    from blinkapp.services.cache_service import (
+        ensure_camera_thumbnail_cache_initialized,
+    )
     from blinkapp.services.device_service import create_device_data
     from blinkapp.utils.errors import ValidationError
     from blinkapp.utils.parsers import extract_thumbnail_timestamp
@@ -95,7 +97,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     )
 
     # Add cameras - refresh thumbnails in Blink thread
-    thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
+    camera_thumbnail_cache_instance = ensure_camera_thumbnail_cache_initialized()
     for _, camera in sync_module.cameras.items():
         if not isinstance(camera, BlinkCamera):
             continue
@@ -109,7 +111,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
 
         cache_key = CameraId(camera.camera_id)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
-        cached_entry = thumbnail_cache_instance.get(cache_key)
+        cached_entry = camera_thumbnail_cache_instance.get(cache_key)
         cached_ts = cached_entry.get("timestamp", 0) if cached_entry else 0
 
         # Update thumbnail if needed

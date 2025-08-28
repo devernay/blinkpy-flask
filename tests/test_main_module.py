@@ -122,7 +122,7 @@ class TestAppExecution:
     @patch("blinkapp.services.debug_service.handle_dump_system")
     def test_run_app_dump_system(self, mock_dump: Mock) -> None:
         """Test run_app with dump_system flag."""
-        args = Mock()
+        args = Mock(spec=object)
         args.dump_system = True
 
         run_app(args)
@@ -132,7 +132,7 @@ class TestAppExecution:
     @patch("blinkapp.app.run")
     def test_run_app_normal(self, mock_run: Mock) -> None:
         """Test normal app execution."""
-        args = Mock()
+        args = Mock(spec=object)
         args.dump_system = False
         args.cache = "/tmp/test"
         args.host = "127.0.0.1"
@@ -146,7 +146,7 @@ class TestAppExecution:
     @patch("blinkapp.app.run")
     def test_run_app_no_cache_override(self, mock_run: Mock) -> None:
         """Test app execution without cache override."""
-        args = Mock()
+        args = Mock(spec=object)
         args.dump_system = False
         args.cache = None
         args.host = "0.0.0.0"

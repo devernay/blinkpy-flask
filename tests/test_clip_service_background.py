@@ -1,7 +1,10 @@
 """Tests for background processing functions in clip_service.py."""
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import Mock, mock_open, patch
+
+from requests import Response, Session
 
 from blinkapp.models.ids import ClipId
 
@@ -21,8 +24,8 @@ class TestClipServiceBackground:
         """Test download_and_cache_cloud_thumbnail success."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.content = b"thumbnail_data"
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
@@ -45,12 +48,12 @@ class TestClipServiceBackground:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_and_cache_cloud_thumbnail_http_error(
         self, mock_session, mock_cache
-    ):
+    ) -> None:
         """Test download_and_cache_cloud_thumbnail with HTTP error."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.raise_for_status.side_effect = Exception("HTTP Error")
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
@@ -67,12 +70,12 @@ class TestClipServiceBackground:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_and_cache_cloud_thumbnail_file_write_error(
         self, mock_session, mock_cache
-    ):
+    ) -> None:
         """Test download_and_cache_cloud_thumbnail with file write error."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.content = b"thumbnail_data"
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
@@ -95,18 +98,22 @@ class TestClipServiceBackground:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_and_cache_cloud_thumbnail_update_existing_cache(
         self, mock_session, mock_cache
-    ):
+    ) -> None:
         """Test download_and_cache_cloud_thumbnail updating existing cache entry."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.content = b"thumbnail_data"
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
 
         # Existing cache entry
-        existing_entry = {"filepath": Path("/tmp/existing.mp4")}
+        from blinkapp.models.cache import ClipCacheEntry
+
+        existing_entry = ClipCacheEntry(
+            filepath=Path("/tmp/existing.mp4"), media_url="", created_at=""
+        )
         mock_cache_instance = {self.clip_id: existing_entry}
         mock_cache.return_value = mock_cache_instance
 
@@ -127,14 +134,14 @@ class TestClipServiceBackground:
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_cloud_clip_background(
         self, mock_executor, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_cloud_clip_background function."""
         from blinkapp.services.clip_processing import process_cloud_clip_background
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink.return_value = mock_blink_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_cache.return_value = {}
@@ -151,14 +158,14 @@ class TestClipServiceBackground:
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_local_clip_background(
         self, mock_executor, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clip_background function."""
         from blinkapp.services.clip_processing import process_local_clip_background
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink.return_value = mock_blink_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_cache.return_value = {}
@@ -183,7 +190,7 @@ class TestClipServiceBackground:
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"
@@ -206,7 +213,7 @@ class TestClipServiceBackground:
     @patch("flask.send_file")
     def test_download_clip_common_with_download_name(
         self, mock_send_file, mock_executor, mock_cache
-    ):
+    ) -> None:
         """Test download_clip_common with proper download name."""
         from blinkapp.services.clip_download import download_clip_common
 
@@ -215,7 +222,7 @@ class TestClipServiceBackground:
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"

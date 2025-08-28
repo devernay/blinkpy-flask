@@ -4,8 +4,12 @@ Final comprehensive tests to achieve 75% coverage for clip_service.py.
 Targets remaining uncovered lines with working, minimal tests.
 """
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import Mock, patch
+
+from blinkpy.sync_module import BlinkSyncModule
+from requests import Response
 
 from blinkapp.models.ids import ClipId
 
@@ -60,7 +64,7 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        mock_blink = Mock()
+        mock_blink = Mock(spec=object)
         mock_blink.videos = {"all": []}  # No clips
 
         with patch(
@@ -78,13 +82,13 @@ class TestClipServiceFinal:
         """Test _download_cloud_clip_core with existing cached file."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
 
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance
 
-        mock_blink = Mock()
+        mock_blink = Mock(spec=object)
 
         with patch(
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
@@ -101,7 +105,7 @@ class TestClipServiceFinal:
         """Test _download_cloud_clip_core with cached file OS error."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.side_effect = OSError("Permission denied")
 
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
@@ -114,7 +118,7 @@ class TestClipServiceFinal:
             "media": "http://example.com/video.mp4",
         }
 
-        mock_blink = Mock()
+        mock_blink = Mock(spec=object)
         mock_blink.videos = {"all": [clip_info]}
 
         # Should continue to download since cached file check failed
@@ -125,9 +129,9 @@ class TestClipServiceFinal:
                 with patch(
                     "blinkapp.services.connection_service.ensure_executor_initialized"
                 ) as mock_executor:
-                    mock_future = Mock()
+                    mock_future = Mock(spec=Future)
                     mock_future.result.return_value = False
-                    mock_executor_instance = Mock()
+                    mock_executor_instance = Mock(spec=ThreadPoolExecutor)
                     mock_executor_instance.submit.return_value = mock_future
                     mock_executor.return_value = mock_executor_instance
 
@@ -171,13 +175,13 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = False
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
 
-        mock_connection = Mock()
+        mock_connection = Mock(spec=object)
 
         with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             mock_format.return_value = []
@@ -196,14 +200,14 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = False
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
 
-        mock_connection = Mock()
+        mock_connection = Mock(spec=object)
 
         with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             mock_format.return_value = []
@@ -223,10 +227,10 @@ class TestClipServiceFinal:
         mock_cache.return_value = {}
 
         # Mock item that will cause an exception
-        mock_item = Mock()
+        mock_item = Mock(spec=dict)
         mock_item.created_at = "invalid_date"  # This will cause an error
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = True
         mock_sync._local_storage = {
@@ -235,11 +239,11 @@ class TestClipServiceFinal:
         }
         mock_sync.refresh.return_value = None
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
 
-        mock_connection = Mock()
-        mock_connection.execute = Mock()
+        mock_connection = Mock(spec=object)
+        mock_connection.execute = Mock(spec=callable)
 
         with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:
             with patch("blinkapp.services.clip_service.logger") as mock_logger:
@@ -263,8 +267,8 @@ class TestClipServiceFinal:
         mock_cache.return_value = mock_cache_instance
 
         # Mock session and response
-        mock_session = Mock()
-        mock_response = Mock()
+        mock_session = Mock(spec=object)
+        mock_response = Mock(spec=Response)
         mock_response.status_code = 200
         mock_response.content = b"thumbnail_data"
         mock_session.get.return_value = mock_response
@@ -291,8 +295,8 @@ class TestClipServiceFinal:
         mock_cache.return_value = mock_cache_instance
 
         # Mock session with error response
-        mock_session = Mock()
-        mock_response = Mock()
+        mock_session = Mock(spec=object)
+        mock_response = Mock(spec=Response)
         mock_response.status_code = 404
         mock_response.raise_for_status.side_effect = Exception("HTTP 404")
         mock_session.get.return_value = mock_response
@@ -312,7 +316,7 @@ class TestClipServiceFinal:
         """Test download_clip_common with non-existent file."""
         from blinkapp.services.clip_download import download_clip_common
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = False
 
         mock_cache.return_value = {}
@@ -323,7 +327,7 @@ class TestClipServiceFinal:
             with patch(
                 "blinkapp.services.connection_service.ensure_executor_initialized"
             ) as mock_executor:
-                mock_executor_instance = Mock()
+                mock_executor_instance = Mock(spec=ThreadPoolExecutor)
                 mock_executor.return_value = mock_executor_instance
 
                 Mock(return_value="file_response")
@@ -345,7 +349,7 @@ class TestClipServiceFinal:
         from blinkapp.services.clip_download import download_clip_common
 
         # Mock cached file that exists
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
         mock_filepath.name = "test.mp4"
 
@@ -358,7 +362,7 @@ class TestClipServiceFinal:
             with patch(
                 "blinkapp.services.connection_service.ensure_executor_initialized"
             ) as mock_executor:
-                mock_executor_instance = Mock()
+                mock_executor_instance = Mock(spec=ThreadPoolExecutor)
                 mock_executor.return_value = mock_executor_instance
 
                 result = download_clip_common(mock_filepath, self.clip_id)
@@ -410,7 +414,7 @@ class TestClipServiceFinal:
         mock_cache.return_value = {}
 
         # Mock session that raises exception
-        mock_session = Mock()
+        mock_session = Mock(spec=object)
         mock_session.get.side_effect = Exception("Network error")
 
         with patch(

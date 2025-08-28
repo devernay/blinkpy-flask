@@ -91,9 +91,10 @@ def setup_clips_routes(app: Flask) -> None:
             JSON response indicating processing has started
         """
         from blinkapp.services.clip_processing import (
-            process_cloud_clip_background,
+            process_cloud_clip_thumbnail_only,
             process_local_clip_background,
         )
+        from blinkapp.services.connection_service import ensure_executor_initialized
         from blinkapp.utils.parsers import parse_clip_id
 
         try:
@@ -106,11 +107,16 @@ def setup_clips_routes(app: Flask) -> None:
 
         clip_id = ClipId(clip_id_parsed)
 
+        # Submit background processing
+        executor = ensure_executor_initialized()
+
         if clip_id.is_local():
             sync_name, item_id = clip_id.get_local_parts()
-            process_local_clip_background(clip_id, sync_name, str(item_id))
+            executor.submit(
+                process_local_clip_background, clip_id, sync_name, str(item_id)
+            )
         else:
-            process_cloud_clip_background(clip_id)
+            executor.submit(process_cloud_clip_thumbnail_only, clip_id)
 
         return {}  # Decorator will handle the success response
 
@@ -131,16 +137,30 @@ def setup_clips_routes(app: Flask) -> None:
             download_cloud_clip,
             download_local_clip,
         )
+        from blinkapp.services.clip_processing import (
+            process_cloud_clip_background,
+            process_local_clip_background,
+        )
 
         logger.debug(
             f"Attempting to download clip with ID: {clip_id} (is_local: {clip_id.is_local()})"
         )
+
+        # Trigger background processing for thumbnail generation
         if clip_id.is_local():
             sync_name, item_id = clip_id.get_local_parts()
             logger.debug(f"Local clip - sync_name: {sync_name}, item_id: {item_id}")
+
+            # Trigger background thumbnail generation
+            process_local_clip_background(clip_id, sync_name, str(item_id))
+
             return download_local_clip(clip_id, sync_name, str(item_id))
         else:
             logger.debug(f"Cloud clip - ID: {clip_id}")
+
+            # Trigger background processing for cloud clips too
+            process_cloud_clip_background(clip_id)
+
             return download_cloud_clip(clip_id)
 
     @app.route("/api/clips/<clip_id_str>/thumbnail")

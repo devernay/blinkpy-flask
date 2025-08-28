@@ -1,5 +1,7 @@
 """Test coverage boost for stream_service.py missed lines."""
 
+import multiprocessing
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -87,7 +89,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         # Set up existing manager
         import blinkapp.services.stream_service
 
-        mock_manager = Mock()
+        mock_manager = Mock(spec=multiprocessing.Manager)
         blinkapp.services.stream_service.stream_manager = mock_manager
 
         result = ensure_stream_manager_initialized()
@@ -117,7 +119,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         config = HLSStreamConfig(segment_time=4, list_size=5)
         stream = HLSStream("test_camera", "tcp://localhost:8080", config)
 
-        mock_process = Mock()
+        mock_process = Mock(spec=subprocess.Popen)
         mock_process.poll.return_value = None  # Process running
         stream.process = mock_process
         stream._active = True
@@ -131,7 +133,7 @@ class TestStreamServiceBoost(unittest.TestCase):
         config = HLSStreamConfig(segment_time=4, list_size=5)
         stream = HLSStream("test_camera", "tcp://localhost:8080", config)
 
-        mock_process = Mock()
+        mock_process = Mock(spec=subprocess.Popen)
         mock_process.poll.return_value = 1  # Process exited
         stream.process = mock_process
         stream._active = True

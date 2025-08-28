@@ -53,7 +53,7 @@ def ensure_blink_initialized() -> Any:
     return blink
 
 
-def ensure_blink_connection_initialized() -> Any:
+def ensure_blink_connection_initialized() -> BlinkConnection:
     """Ensure blink_connection is initialized.
 
     Returns:

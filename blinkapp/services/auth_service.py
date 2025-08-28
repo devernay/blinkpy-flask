@@ -21,6 +21,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from aiohttp import ClientSession
+
 from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
 
@@ -86,6 +88,10 @@ def validate_credentials(username: str, password: str) -> bool:
     if not isinstance(username, str) or not isinstance(password, str):
         return False
 
+    # Validate email format for username
+    if not is_valid_email_format(username):
+        return False
+
     # Basic validation - non-empty strings
     return len(username.strip()) > 0 and len(password.strip()) > 0
 
@@ -95,7 +101,7 @@ def create_auth_config(username: str, password: str) -> dict[str, str]:
     return {"username": username, "password": password}
 
 
-def _create_blink_session(session_factory=None):
+def _create_blink_session(session_factory=None) -> ClientSession:
     """Create Blink session with injectable factory."""
     if session_factory is None:
         from aiohttp import ClientSession

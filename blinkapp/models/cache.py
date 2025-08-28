@@ -49,6 +49,18 @@ class ClipCacheEntry(ClipCacheEntryRequired, total=False):
     created_at: str
 
 
+class CameraThumbnailCacheEntry(TypedDict):
+    """Structure for camera thumbnail cache entries.
+
+    This represents the actual data stored for each cached camera thumbnail,
+    containing the timestamp when the thumbnail was cached and the filename
+    of the cached thumbnail file.
+    """
+
+    timestamp: int  # Unix timestamp when thumbnail was cached
+    filename: str  # Filename of the cached thumbnail file
+
+
 # Generic type variables for key and value types
 K = TypeVar("K")  # Key type
 V = TypeVar("V")  # Value type
@@ -59,8 +71,11 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "ThreadSafeCache",
     "ThreadSafeLRUCache",
-    "ThumbnailCache",
+    "CameraThumbnailCache",
     "ClipsCache",
+    "ClipData",
+    "ClipCacheEntry",
+    "CameraThumbnailCacheEntry",
 ]
 
 
@@ -124,7 +139,7 @@ class ThreadSafeLRUCache[K, V](ThreadSafeCache[K, V], LRUCache[K, V]):
         super().__init__(maxsize, **kwargs)
 
 
-class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
+class CameraThumbnailCache(ThreadSafeLRUCache[CameraId, CameraThumbnailCacheEntry]):
     """Specialized cache for camera thumbnails with timestamp tracking.
 
     Extends ThreadSafeCache with thumbnail-specific functionality including
@@ -185,11 +200,10 @@ class ThumbnailCache(ThreadSafeLRUCache[CameraId, dict[str, Any]]):
             thumbnail_data: Raw thumbnail image data
             metadata: Optional metadata to store with thumbnail
         """
-        cache_entry: dict[str, Any] = {
-            "data": thumbnail_data,
-            "timestamp": time.time(),
-            "metadata": metadata or {},
-        }
+        cache_entry = CameraThumbnailCacheEntry(
+            timestamp=int(time.time()),
+            filename="",  # Will be set by the actual cache logic
+        )
         self[camera_id] = cache_entry
 
 

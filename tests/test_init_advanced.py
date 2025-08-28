@@ -2,6 +2,7 @@
 """Advanced tests for __init__.py - targeting more missed lines."""
 
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from blinkapp import (
@@ -27,8 +28,8 @@ class TestInitAdvanced(unittest.TestCase):
     @patch("blinkapp.logging")
     def test_setup_logging_with_mock(self, mock_logging: Mock) -> None:
         """Test setup_logging with mocked logging."""
-        mock_logging.basicConfig = Mock()
-        mock_logging.getLogger = Mock()
+        mock_logging.basicConfig = Mock(spec=callable)
+        mock_logging.getLogger = Mock(spec=callable)
 
         # Should not raise exception
         try:
@@ -40,9 +41,9 @@ class TestInitAdvanced(unittest.TestCase):
     @patch("blinkapp.Path")
     def test_initialize_cache_paths_with_mock(self, mock_path: Mock) -> None:
         """Test initialize_cache_paths with mocked Path."""
-        mock_path_instance = Mock()
+        mock_path_instance = Mock(spec=Path)
         mock_path.return_value = mock_path_instance
-        mock_path_instance.mkdir = Mock()
+        mock_path_instance.mkdir = Mock(spec=callable)
 
         # Should not raise exception
         try:

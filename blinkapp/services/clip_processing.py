@@ -10,6 +10,7 @@ __all__ = [
     "process_cloud_clip_background",
     "process_local_clip_background",
     "download_and_cache_cloud_thumbnail",
+    "process_cloud_clip_thumbnail_only",
 ]
 
 import logging
@@ -45,16 +46,23 @@ def _get_clips_cache_dir():
 def process_cloud_clip_background(clip_id: ClipId) -> None:
     """Process a cloud clip in the background.
 
-    Downloads the clip and generates a thumbnail for faster access.
+    Checks if thumbnail is cached first. If not, downloads the clip and generates thumbnail.
     This runs in a background thread to avoid blocking the main request.
     """
     try:
+        # Check if thumbnail is already cached
+        clips_cache_dir = Path(_get_clips_cache_dir())
+        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+
+        if thumbnail_path.exists():
+            logger.debug(f"Thumbnail already cached for clip {clip_id}")
+            return
+
         blink_instance = _get_blink_instance()
         if not blink_instance or not blink_instance.available:
             logger.warning(f"Blink not available for processing clip {clip_id}")
             return
 
-        clips_cache_dir = Path(_get_clips_cache_dir())
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download clip if not cached
@@ -88,40 +96,13 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                 logger.error(f"Error downloading cloud clip {clip_id}: {e}")
                 return
 
-        # Download thumbnail from Blink API for cloud clips
-        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
-        if not thumbnail_path.exists():
-            try:
-                # Get thumbnail URL from cache (set during clip listing)
-                clips_cache = ensure_clips_cache_initialized()
-                cached_clip = clips_cache.get(clip_id)
-
-                if cached_clip and cached_clip.get("cloud_thumbnail_url"):
-                    thumbnail_url = cached_clip.get("cloud_thumbnail_url")
-                    if thumbnail_url:  # Additional check for type safety
-                        downloaded_thumbnail = download_and_cache_cloud_thumbnail(
-                            clip_id, thumbnail_url
-                        )
-                        if downloaded_thumbnail:
-                            logger.info(
-                                f"Downloaded thumbnail for cloud clip {clip_id}"
-                            )
-                        else:
-                            logger.warning(
-                                f"Failed to download thumbnail for cloud clip {clip_id}"
-                            )
-                    else:
-                        logger.warning(f"Empty thumbnail URL for cloud clip {clip_id}")
-                else:
-                    logger.warning(f"No thumbnail URL found for cloud clip {clip_id}")
-            except Exception as e:
-                logger.error(
-                    f"Error downloading thumbnail for cloud clip {clip_id}: {e}"
-                )
+        # Handle thumbnail using existing function
+        process_cloud_clip_thumbnail_only(clip_id)
 
         # Update cache entry
         try:
             clips_cache = ensure_clips_cache_initialized()
+            thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
             clips_cache[clip_id] = ClipCacheEntry(
                 filepath=clip_path,
                 thumbnail=thumbnail_path if thumbnail_path.exists() else None,
@@ -138,10 +119,18 @@ def process_local_clip_background(
 ) -> None:
     """Process a local clip in the background.
 
-    Retrieves the clip from local storage and generates a thumbnail.
+    Checks if thumbnail is cached first. If not, downloads the clip and generates thumbnail.
     This runs in a background thread to avoid blocking the main request.
     """
     try:
+        # Check if thumbnail is already cached
+        clips_cache_dir = Path(_get_clips_cache_dir())
+        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+
+        if thumbnail_path.exists():
+            logger.debug(f"Thumbnail already cached for local clip {clip_id}")
+            return
+
         blink_instance = _get_blink_instance()
         if not blink_instance or not blink_instance.available:
             logger.warning(f"Blink not available for processing local clip {clip_id}")
@@ -158,7 +147,6 @@ def process_local_clip_background(
             logger.warning(f"Local storage not available for clip {clip_id}")
             return
 
-        clips_cache_dir = Path(_get_clips_cache_dir())
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download clip if not cached
@@ -220,7 +208,20 @@ def download_and_cache_cloud_thumbnail(
 
     Downloads the thumbnail from the provided URL and saves it to the cache.
     Returns the path to the cached thumbnail or None if download failed.
+
+    Args:
+        clip_id: Clip identifier (must be a cloud clip)
+        thumbnail_url: URL to download thumbnail from
+
+    Raises:
+        ValueError: If clip_id is not a cloud clip
     """
+    # Verify this is a cloud clip - raise exception if not
+    if clip_id.is_local():
+        raise ValueError(
+            f"download_and_cache_cloud_thumbnail called on local clip {clip_id}. Use generate_local_clip_thumbnail instead."
+        )
+
     try:
         clips_cache_dir = Path(_get_clips_cache_dir())
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
@@ -247,3 +248,51 @@ def download_and_cache_cloud_thumbnail(
     except Exception as e:
         logger.error(f"Error in download_and_cache_cloud_thumbnail for {clip_id}: {e}")
         return None
+
+
+def process_cloud_clip_thumbnail_only(clip_id: ClipId) -> None:
+    """Process a cloud clip thumbnail only in the background.
+
+    Checks if thumbnail is cached first. If not, downloads thumbnail from Blink server.
+    This runs in a background thread to avoid blocking the main request.
+    """
+    try:
+        # Check if thumbnail is already cached
+        clips_cache_dir = Path(_get_clips_cache_dir())
+        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+
+        if thumbnail_path.exists():
+            logger.debug(f"Thumbnail already cached for clip {clip_id}")
+            return
+
+        clips_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Download thumbnail from Blink API for cloud clips
+        try:
+            # Get thumbnail URL from cache (set during clip listing)
+            clips_cache = ensure_clips_cache_initialized()
+            cached_clip = clips_cache.get(clip_id)
+
+            if cached_clip and cached_clip.get("cloud_thumbnail_url"):
+                thumbnail_url = cached_clip.get("cloud_thumbnail_url")
+                if thumbnail_url:  # Additional check for type safety
+                    downloaded_thumbnail = download_and_cache_cloud_thumbnail(
+                        clip_id, thumbnail_url
+                    )
+                    if downloaded_thumbnail:
+                        logger.info(f"Downloaded thumbnail for cloud clip {clip_id}")
+                    else:
+                        logger.warning(
+                            f"Failed to download thumbnail for cloud clip {clip_id}"
+                        )
+                else:
+                    logger.warning(f"Empty thumbnail URL for cloud clip {clip_id}")
+            else:
+                logger.debug(
+                    f"No thumbnail URL found for cloud clip {clip_id} - skipping thumbnail download"
+                )
+        except Exception as e:
+            logger.error(f"Error downloading thumbnail for cloud clip {clip_id}: {e}")
+
+    except Exception as e:
+        logger.error(f"Error processing cloud clip {clip_id}: {e}")

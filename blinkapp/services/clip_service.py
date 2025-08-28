@@ -16,6 +16,7 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from blinkapp.models.types import ClipDayGroup
 from blinkapp.utils.formatters import format_clips_by_day
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 def process_cloud_clips(
     videos_metadata: list[dict[str, object]],
-) -> list[dict[str, object]]:
+) -> list[ClipDayGroup]:
     """Process cloud storage clips into day-grouped format.
 
     Takes raw video metadata from the Blink API and organizes it into
@@ -146,7 +147,7 @@ def process_cloud_clips(
 
 def process_local_clips(
     blink_instance=None, blink_connection_instance=None
-) -> list[dict[str, object]]:
+) -> list[ClipDayGroup]:
     """Process local storage clips into day-grouped format.
 
     Retrieves clips from USB storage connected to Blink sync modules.

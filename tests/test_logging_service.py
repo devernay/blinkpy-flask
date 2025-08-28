@@ -16,7 +16,7 @@ class TestLoggingService(unittest.TestCase):
 
     def test_log_error_with_logger(self) -> None:
         """Test log error with custom logger."""
-        mock_logger = Mock()
+        mock_logger = Mock(spec=object)
         log_error("test error", mock_logger)
         mock_logger.assert_called_once_with("test error")
 
@@ -28,7 +28,7 @@ class TestLoggingService(unittest.TestCase):
 
     def test_log_warning_with_logger(self) -> None:
         """Test log warning with custom logger."""
-        mock_logger = Mock()
+        mock_logger = Mock(spec=object)
         log_warning("test warning", mock_logger)
         mock_logger.assert_called_once_with("test warning")
 
@@ -40,7 +40,7 @@ class TestLoggingService(unittest.TestCase):
 
     def test_log_info_with_logger(self) -> None:
         """Test log info with custom logger."""
-        mock_logger = Mock()
+        mock_logger = Mock(spec=object)
         log_info("test info", mock_logger)
         mock_logger.assert_called_once_with("test info")
 
@@ -52,7 +52,7 @@ class TestLoggingService(unittest.TestCase):
 
     def test_log_debug_with_logger(self) -> None:
         """Test log debug with custom logger."""
-        mock_logger = Mock()
+        mock_logger = Mock(spec=object)
         log_debug("test debug", mock_logger)
         mock_logger.assert_called_once_with("test debug")
 

@@ -58,7 +58,7 @@ def ensure_executor_initialized() -> ThreadPoolExecutor:
     return executor
 
 
-def ensure_http_session_initialized():
+def ensure_http_session_initialized() -> requests.Session:
     """Ensure HTTP session is initialized.
 
     Returns:

@@ -79,14 +79,14 @@ def initialize_stream_manager(manager_factory=None) -> None:
     stream_manager = manager_factory(stream_config)
 
 
-def create_stream_manager(**kwargs):
+def create_stream_manager(**kwargs) -> StreamManager:
     """Factory function for stream manager - easily mockable."""
     from blinkapp.services.stream_manager import StreamManager
 
     return StreamManager(**kwargs)
 
 
-def ensure_stream_manager_initialized(manager_factory=None):
+def ensure_stream_manager_initialized(manager_factory=None) -> StreamManager:
     """Ensure stream manager is initialized.
 
     Args:

@@ -17,14 +17,14 @@ class TestFileService(unittest.TestCase):
 
     def test_write_file_safely_success(self) -> None:
         """Test successful file write."""
-        mock_writer = Mock()
+        mock_writer = Mock(spec=object)
         result = write_file_safely(Path("/test"), b"data", mock_writer)
         self.assertTrue(result)
         mock_writer.assert_called_once_with(Path("/test"), b"data")
 
     def test_write_file_safely_default_writer(self) -> None:
         """Test write with default writer."""
-        mock_path = Mock()
+        mock_path = Mock(spec=Path)
         result = write_file_safely(mock_path, b"data")
         self.assertTrue(result)
         mock_path.write_bytes.assert_called_once_with(b"data")
@@ -44,7 +44,7 @@ class TestFileService(unittest.TestCase):
 
     def test_read_file_safely_default_reader(self) -> None:
         """Test read with default reader."""
-        mock_path = Mock()
+        mock_path = Mock(spec=Path)
         mock_path.read_bytes.return_value = b"data"
         result = read_file_safely(mock_path)
         self.assertEqual(result, b"data")
@@ -71,7 +71,7 @@ class TestFileService(unittest.TestCase):
 
     def test_check_file_exists_default_checker(self) -> None:
         """Test check with default checker."""
-        mock_path = Mock()
+        mock_path = Mock(spec=Path)
         mock_path.exists.return_value = True
         result = check_file_exists(mock_path)
         self.assertTrue(result)
@@ -79,14 +79,14 @@ class TestFileService(unittest.TestCase):
 
     def test_create_directory_safely_success(self) -> None:
         """Test successful directory creation."""
-        mock_creator = Mock()
+        mock_creator = Mock(spec=object)
         result = create_directory_safely(Path("/test"), mock_creator)
         self.assertTrue(result)
         mock_creator.assert_called_once_with(Path("/test"))
 
     def test_create_directory_safely_default_creator(self) -> None:
         """Test create with default creator."""
-        mock_path = Mock()
+        mock_path = Mock(spec=Path)
         result = create_directory_safely(mock_path)
         self.assertTrue(result)
         mock_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)

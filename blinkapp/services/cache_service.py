@@ -9,16 +9,16 @@ from __future__ import annotations
 __all__ = [
     "initialize_caches",
     "ensure_clips_cache_initialized",
-    "ensure_thumbnail_cache_initialized",
+    "ensure_camera_thumbnail_cache_initialized",
     "ensure_cache_paths_initialized",
     "get_cache_stats",
-    "load_thumbnail_cache",
+    "load_camera_thumbnail_cache",
     "initialize_cache_paths",
     "clear_all_caches",
-    "clear_thumbnail_cache_files",
+    "clear_camera_thumbnail_cache_files",
     "clear_clips_cache_files",
     "load_clips_cache",
-    "thumbnail_cache",
+    "camera_thumbnail_cache",
     "clips_cache",
     "ensure_cache_directory",
     "validate_cache_directory",
@@ -30,25 +30,25 @@ from typing import TYPE_CHECKING, Any
 from blinkpy.camera import BlinkCamera
 
 if TYPE_CHECKING:
-    from blinkapp.models.cache import ClipsCache, ThumbnailCache
+    from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
 
 __all__ = [
     "initialize_caches",
     "ensure_clips_cache_initialized",
-    "ensure_thumbnail_cache_initialized",
+    "ensure_camera_thumbnail_cache_initialized",
     "ensure_cache_paths_initialized",
-    "load_thumbnail_cache",
+    "load_camera_thumbnail_cache",
     "get_cache_stats",
     "clips_cache",
-    "thumbnail_cache",
+    "camera_thumbnail_cache",
 ]
 
 logger = logging.getLogger(__name__)
 
 # Global cache instances
 clips_cache: ClipsCache | None = None
-thumbnail_cache: ThumbnailCache | None = None
+camera_thumbnail_cache: CameraThumbnailCache | None = None
 
 
 def initialize_caches(config: dict[str, Any]) -> None:
@@ -57,16 +57,18 @@ def initialize_caches(config: dict[str, Any]) -> None:
     Args:
         config: Configuration dictionary with cache settings
     """
-    global thumbnail_cache, clips_cache
-    from blinkapp.models.cache import ClipsCache, ThumbnailCache
+    global camera_thumbnail_cache, clips_cache
+    from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
-    thumbnail_cache = ThumbnailCache(maxsize=config.get("thumbnail_cache_size", 100))
+    camera_thumbnail_cache = CameraThumbnailCache(
+        maxsize=config.get("camera_thumbnail_cache_size", 100)
+    )
     clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
 
     logger.info("Cache instances initialized successfully")
 
 
-def ensure_clips_cache_initialized():
+def ensure_clips_cache_initialized() -> ClipsCache:
     """Ensure clips cache is initialized.
 
     Returns:
@@ -82,20 +84,20 @@ def ensure_clips_cache_initialized():
     return clips_cache
 
 
-def ensure_thumbnail_cache_initialized():
+def ensure_camera_thumbnail_cache_initialized() -> CameraThumbnailCache:
     """Ensure thumbnail cache is initialized.
 
     Returns:
         Initialized thumbnail cache instance
 
     Raises:
-        RuntimeError: If thumbnail_cache hasn't been initialized
+        RuntimeError: If camera_thumbnail_cache hasn't been initialized
     """
-    if thumbnail_cache is None:
+    if camera_thumbnail_cache is None:
         raise RuntimeError(
             "Thumbnail cache not initialized. Call initialize_caches() first."
         )
-    return thumbnail_cache
+    return camera_thumbnail_cache
 
 
 def ensure_cache_paths_initialized() -> None:
@@ -129,9 +131,9 @@ def get_cache_stats() -> dict[str, dict[str, int | float]]:
     """
     stats = {}
 
-    thumbnail_cache = ensure_thumbnail_cache_initialized()
-    if thumbnail_cache:
-        stats["thumbnail_cache"] = thumbnail_cache.get_stats()
+    camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
+    if camera_thumbnail_cache:
+        stats["camera_thumbnail_cache"] = camera_thumbnail_cache.get_stats()
 
     clips_cache = ensure_clips_cache_initialized()
     if clips_cache:
@@ -140,7 +142,7 @@ def get_cache_stats() -> dict[str, dict[str, int | float]]:
     return stats
 
 
-def load_thumbnail_cache() -> None:
+def load_camera_thumbnail_cache() -> None:
     """Load and validate thumbnail cache from disk.
 
     Scans thumbnail cache directory for existing files and populates
@@ -175,7 +177,7 @@ def load_thumbnail_cache() -> None:
     from blinkapp.services.blink_service import blink
 
     # Ensure thumbnail cache is initialized
-    thumbnail_cache = ensure_thumbnail_cache_initialized()
+    camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
 
     assert blinkapp.THUMBNAIL_CACHE_DIR is not None
     cache_dir = Path(blinkapp.THUMBNAIL_CACHE_DIR)
@@ -239,10 +241,12 @@ def load_thumbnail_cache() -> None:
             # Keep the newest, mark others for removal
             if thumbnails:
                 newest_ts, newest_filename, _ = thumbnails[0]
-                thumbnail_cache[CameraId(camera_id)] = {
-                    "timestamp": newest_ts,
-                    "filename": newest_filename,
-                }
+                from blinkapp.models.cache import CameraThumbnailCacheEntry
+
+                camera_thumbnail_cache[CameraId(camera_id)] = CameraThumbnailCacheEntry(
+                    timestamp=newest_ts,
+                    filename=newest_filename,
+                )
                 logger.debug(
                     f"Loaded cached thumbnail for camera {camera_id} with timestamp {newest_ts}"
                 )
@@ -312,10 +316,10 @@ def clear_all_caches() -> dict[str, Any]:
     import blinkapp
     from blinkapp.services.connection_service import ensure_executor_initialized
 
-    thumbnail_cache_instance = ensure_thumbnail_cache_initialized()
+    camera_thumbnail_cache_instance = ensure_camera_thumbnail_cache_initialized()
     clips_cache_instance = ensure_clips_cache_initialized()
 
-    thumbnail_cache_instance.clear()
+    camera_thumbnail_cache_instance.clear()
     clips_cache_instance.clear()
 
     def clear_file_cache(cache_dir: str, cache_name: str) -> None:
@@ -375,7 +379,7 @@ def load_clips_cache() -> None:
             logger.debug(f"Error processing cached clip {filename}: {e}")
 
 
-def clear_thumbnail_cache_files() -> None:
+def clear_camera_thumbnail_cache_files() -> None:
     """Clear thumbnail cache files only."""
     import shutil
     from pathlib import Path

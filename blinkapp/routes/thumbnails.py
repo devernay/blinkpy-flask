@@ -9,7 +9,7 @@ from __future__ import annotations
 
 __all__ = [
     "update_camera_thumbnail",
-    "setup_thumbnail_routes",
+    "setup_camera_thumbnail_routes",
     "require_camera",
     "logger",
 ]
@@ -59,7 +59,7 @@ def update_camera_thumbnail(
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
     from blinkapp.services.cache_service import (
         ensure_cache_paths_initialized,
-        ensure_thumbnail_cache_initialized,
+        ensure_camera_thumbnail_cache_initialized,
     )
     from blinkapp.services.connection_service import ensure_executor_initialized
 
@@ -67,7 +67,7 @@ def update_camera_thumbnail(
     ensure_cache_paths_initialized()
     blink_connection = ensure_blink_connection_initialized()
     executor = ensure_executor_initialized()
-    thumbnail_cache = ensure_thumbnail_cache_initialized()
+    camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
 
     # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
     assert THUMBNAIL_CACHE_DIR is not None
@@ -83,7 +83,7 @@ def update_camera_thumbnail(
     def update_thumbnail() -> None:
         """Background task to download and cache new thumbnail."""
         # Double-check timestamp to prevent race condition with concurrent requests
-        current_entry = thumbnail_cache.get(cache_key)
+        current_entry = camera_thumbnail_cache.get(cache_key)
         current_cached_ts = (
             int(current_entry.get("timestamp", 0)) if current_entry else 0
         )
@@ -92,7 +92,7 @@ def update_camera_thumbnail(
             return
 
         # Clean up old cached file to prevent disk space accumulation
-        old_entry = thumbnail_cache.get(cache_key)
+        old_entry = camera_thumbnail_cache.get(cache_key)
         if old_entry is not None:
             old_filename = old_entry.get("filename")
             if old_filename is not None:
@@ -105,7 +105,7 @@ def update_camera_thumbnail(
                 except OSError as e:
                     logger.debug(f"Could not remove old thumbnail: {e}")
 
-        thumbnail_response = blink_connection.execute(camera.thumbnail)
+        thumbnail_response = blink_connection.execute(camera.get_thumbnail())
         if (
             thumbnail_response is not None
             and thumbnail_response.status == Config.HTTP_STATUS_OK
@@ -119,10 +119,12 @@ def update_camera_thumbnail(
             try:
                 filepath.write_bytes(image_data)
                 # Update cache info atomically
-                thumbnail_cache[cache_key] = {
-                    "timestamp": current_ts,
-                    "filename": filename,
-                }
+                from blinkapp.models.cache import CameraThumbnailCacheEntry
+
+                camera_thumbnail_cache[cache_key] = CameraThumbnailCacheEntry(
+                    timestamp=current_ts,
+                    filename=filename,
+                )
                 logger.debug(
                     f"Cached thumbnail for {camera.name} with timestamp {current_ts}"
                 )
@@ -134,7 +136,7 @@ def update_camera_thumbnail(
     executor.submit(update_thumbnail)
 
 
-def setup_thumbnail_routes(app: Flask) -> None:
+def setup_camera_thumbnail_routes(app: Flask) -> None:
     """Register thumbnail routes with the Flask app."""
 
     @app.route("/api/cameras/<camera_id_str>/thumbnail", methods=["DELETE"])
@@ -142,7 +144,7 @@ def setup_thumbnail_routes(app: Flask) -> None:
     @api_route_with_validation(
         "clear camera thumbnail cache", validate_params={"camera_id_str": CameraId}
     )
-    def clear_camera_thumbnail_cache(camera_id: CameraId) -> JsonDict:
+    def clear_camera_camera_thumbnail_cache(camera_id: CameraId) -> JsonDict:
         """Clear camera thumbnail cache and refresh.
 
         Args:
@@ -160,14 +162,14 @@ def setup_thumbnail_routes(app: Flask) -> None:
         )
         from blinkapp.services.cache_service import (
             ensure_cache_paths_initialized,
-            ensure_thumbnail_cache_initialized,
+            ensure_camera_thumbnail_cache_initialized,
         )
         from blinkapp.services.connection_service import ensure_executor_initialized
 
         ensure_cache_paths_initialized()
         blink_connection = ensure_blink_connection_initialized()
         executor = ensure_executor_initialized()
-        thumbnail_cache = ensure_thumbnail_cache_initialized()
+        camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
         ensure_cache_paths_initialized()
 
         # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
@@ -181,9 +183,9 @@ def setup_thumbnail_routes(app: Flask) -> None:
         assert camera is not None
         with error_context("refresh camera thumbnail", CameraError):
             # Remove camera thumbnail from cache in background
-            def remove_thumbnail_cache() -> None:
+            def remove_camera_thumbnail_cache() -> None:
                 """Remove cached thumbnail file and cache entry."""
-                cached_info = thumbnail_cache.get(camera_id)
+                cached_info = camera_thumbnail_cache.get(camera_id)
                 if cached_info is not None:
                     # Remove cached file
                     if "filename" in cached_info:
@@ -197,9 +199,9 @@ def setup_thumbnail_routes(app: Flask) -> None:
                         except OSError as e:
                             logger.debug(f"Could not remove cached thumbnail: {e}")
                     # Remove from cache
-                    thumbnail_cache.pop(camera_id, {})
+                    camera_thumbnail_cache.pop(camera_id, {})
 
-            executor.submit(remove_thumbnail_cache)
+            executor.submit(remove_camera_thumbnail_cache)
 
             # Trigger thumbnail update
             blink_connection.execute(camera.snap_picture())  # type: ignore[attr-defined]
@@ -253,12 +255,12 @@ def setup_thumbnail_routes(app: Flask) -> None:
         )
         from blinkapp.services.cache_service import (
             ensure_cache_paths_initialized,
-            ensure_thumbnail_cache_initialized,
+            ensure_camera_thumbnail_cache_initialized,
         )
 
         ensure_cache_paths_initialized()
         blink_connection = ensure_blink_connection_initialized()
-        thumbnail_cache = ensure_thumbnail_cache_initialized()
+        camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
 
         # THUMBNAIL_CACHE_DIR is guaranteed to be not None after ensure_cache_paths_initialized()
         assert THUMBNAIL_CACHE_DIR is not None
@@ -276,7 +278,7 @@ def setup_thumbnail_routes(app: Flask) -> None:
             raise ValidationError(Config.ErrorMessages.CAMERA_THUMBNAIL_NOT_FOUND, 404)
 
         # Check cache first
-        cached_info = thumbnail_cache.get(camera_id)
+        cached_info = camera_thumbnail_cache.get(camera_id)
         current_ts = extract_thumbnail_timestamp(camera.thumbnail)
         cached_ts = 0  # Default value
 
@@ -303,7 +305,7 @@ def setup_thumbnail_routes(app: Flask) -> None:
         update_camera_thumbnail(camera, camera_id, current_ts, cached_ts)
 
         # Fetch from Blink API
-        thumbnail_response = blink_connection.execute(camera.thumbnail)
+        thumbnail_response = blink_connection.execute(camera.get_thumbnail())
         if (
             thumbnail_response is not None
             and thumbnail_response.status == Config.HTTP_STATUS_OK

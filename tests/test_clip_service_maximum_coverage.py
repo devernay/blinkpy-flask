@@ -1,8 +1,12 @@
 """Maximum coverage tests for clip_service.py - targeting 75% coverage."""
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, mock_open, patch
+
+from blinkpy.sync_module import BlinkSyncModule
+from requests import Response, Session
 
 from blinkapp.models.ids import ClipId
 
@@ -13,7 +17,7 @@ class TestClipServiceMaximumCoverage:
     def setup_method(self) -> None:
         """Set up test fixtures."""
         self.clip_id = ClipId("123456")
-        self.mock_blink = Mock()
+        self.mock_blink = Mock(spec=object)
         self.mock_cache_dir = Path("/tmp/test_cache")
 
     @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
@@ -35,7 +39,7 @@ class TestClipServiceMaximumCoverage:
         """Test _download_cloud_clip_core with existing cached file."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance
@@ -54,7 +58,7 @@ class TestClipServiceMaximumCoverage:
         """Test _download_cloud_clip_core with OSError on cached file check."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.side_effect = OSError("File access error")
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance
@@ -96,7 +100,7 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_no_media_url(
         self, mock_session, mock_executor, mock_cache
-    ):
+    ) -> None:
         """Test _download_cloud_clip_core with no media URL."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
@@ -126,7 +130,7 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_http_error(
         self, mock_session, mock_executor, mock_cache
-    ):
+    ) -> None:
         """Test _download_cloud_clip_core with HTTP error."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
@@ -140,16 +144,16 @@ class TestClipServiceMaximumCoverage:
         self.mock_blink.videos = {"all": [clip_info]}
 
         # Mock HTTP session with error
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.status_code = 500
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
 
         # Mock executor
-        mock_future = Mock()
+        mock_future = Mock(spec=Future)
         mock_future.result.return_value = False
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor_instance.submit.return_value = mock_future
         mock_executor.return_value = mock_executor_instance
 
@@ -170,7 +174,7 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_timeout_error(
         self, mock_session, mock_executor, mock_cache
-    ):
+    ) -> None:
         """Test _download_cloud_clip_core with timeout error."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
@@ -184,9 +188,9 @@ class TestClipServiceMaximumCoverage:
         self.mock_blink.videos = {"all": [clip_info]}
 
         # Mock executor with timeout
-        mock_future = Mock()
+        mock_future = Mock(spec=Future)
         mock_future.result.side_effect = Exception("Timeout")
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor_instance.submit.return_value = mock_future
         mock_executor.return_value = mock_executor_instance
 
@@ -207,7 +211,7 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_success(
         self, mock_session, mock_executor, mock_cache
-    ):
+    ) -> None:
         """Test _download_cloud_clip_core successful download."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
 
@@ -221,17 +225,17 @@ class TestClipServiceMaximumCoverage:
         self.mock_blink.videos = {"all": [clip_info]}
 
         # Mock HTTP session with success
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.status_code = 200
         mock_response.content = b"video_data"
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
 
         # Mock executor
-        mock_future = Mock()
+        mock_future = Mock(spec=Future)
         mock_future.result.return_value = True
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor_instance.submit.return_value = mock_future
         mock_executor.return_value = mock_executor_instance
 
@@ -255,7 +259,7 @@ class TestClipServiceMaximumCoverage:
     @patch("flask.jsonify")
     def test_download_cloud_clip_error_response(
         self, mock_jsonify, mock_create_response, mock_core, mock_cache_dir, mock_blink
-    ):
+    ) -> None:
         """Test download_cloud_clip error response."""
         from blinkapp.services.clip_download import download_cloud_clip
 
@@ -287,18 +291,18 @@ class TestClipServiceMaximumCoverage:
         mock_core,
         mock_cache_dir,
         mock_blink,
-    ):
+    ) -> None:
         """Test download_cloud_clip success response."""
         from blinkapp.services.clip_download import download_cloud_clip
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.name = "test.mp4"
         mock_filepath.exists.return_value = True
         mock_blink.return_value = self.mock_blink
         mock_cache_dir.return_value = self.mock_cache_dir
         mock_core.return_value = (True, "", mock_filepath)
         mock_cache_init.return_value = {}
-        mock_executor.return_value = Mock()
+        mock_executor.return_value = Mock(spec=ThreadPoolExecutor)
         mock_send_file.return_value = "file_response"
 
         download_cloud_clip(self.clip_id)
@@ -386,7 +390,7 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_no_blink(
         self, mock_format, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with no blink instance."""
         from blinkapp.services.clip_service import process_local_clips
 
@@ -402,18 +406,18 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.clip_service.format_clips_by_day")
     def test_process_local_clips_with_data(
         self, mock_format, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with valid data."""
         from blinkapp.services.clip_service import process_local_clips
 
         # Mock sync module with local storage
-        mock_item = Mock()
+        mock_item = Mock(spec=dict)
         mock_item.created_at = datetime(2023, 1, 1, 12, 0, 0)
         mock_item.id = 123
         mock_item.name = "Test Camera"
         mock_item.url.return_value = "http://example.com/local_video.mp4"
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = True
         mock_sync._local_storage = {
@@ -434,11 +438,11 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_sync_error(
         self, mock_format, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with sync module error."""
         from blinkapp.services.clip_service import process_local_clips
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.refresh.side_effect = Exception("Sync error")
 
         mock_blink.sync = {"sync1": mock_sync}
@@ -456,8 +460,8 @@ class TestClipServiceMaximumCoverage:
         """Test download_and_cache_cloud_thumbnail success."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
-        mock_http_session = Mock()
-        mock_response = Mock()
+        mock_http_session = Mock(spec=Session)
+        mock_response = Mock(spec=Response)
         mock_response.content = b"thumbnail_data"
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
@@ -500,14 +504,14 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_cloud_clip_background(
         self, mock_executor, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_cloud_clip_background function."""
         from blinkapp.services.clip_processing import process_cloud_clip_background
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink.return_value = mock_blink_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_cache.return_value = {}
@@ -523,14 +527,14 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_local_clip_background(
         self, mock_executor, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clip_background function."""
         from blinkapp.services.clip_processing import process_local_clip_background
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink.return_value = mock_blink_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_cache.return_value = {}
@@ -549,12 +553,12 @@ class TestClipServiceMaximumCoverage:
         """Test download_clip_common function."""
         from blinkapp.services.clip_download import download_clip_common
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
 
-        mock_executor_instance = Mock()
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
         mock_executor.return_value = mock_executor_instance
 
         mock_send_file.return_value = "file_response"
@@ -577,11 +581,11 @@ class TestClipServiceMaximumCoverage:
         mock_cache,
         mock_connection,
         mock_blink,
-    ):
+    ) -> None:
         """Test download_local_clip with sync module not found."""
         from blinkapp.services.clip_download import download_local_clip
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {}
         mock_blink.return_value = mock_blink_instance
 
@@ -606,14 +610,14 @@ class TestClipServiceMaximumCoverage:
         mock_cache,
         mock_connection,
         mock_blink,
-    ):
+    ) -> None:
         """Test download_local_clip with no local storage."""
         from blinkapp.services.clip_download import download_local_clip
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = False
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink.return_value = mock_blink_instance
 
@@ -638,16 +642,16 @@ class TestClipServiceMaximumCoverage:
         mock_cache,
         mock_connection,
         mock_blink,
-    ):
+    ) -> None:
         """Test download_local_clip with item not found."""
         from blinkapp.services.clip_download import download_local_clip
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = True
         mock_sync._local_storage = {"manifest": []}
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink.return_value = mock_blink_instance
 
@@ -672,11 +676,11 @@ class TestClipServiceMaximumCoverage:
         mock_cache,
         mock_connection,
         mock_blink,
-    ):
+    ) -> None:
         """Test download_local_clip with cached file success."""
         from blinkapp.services.clip_download import download_local_clip
 
-        mock_filepath = Mock()
+        mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance

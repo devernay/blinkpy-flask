@@ -3,6 +3,8 @@
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+from blinkpy.sync_module import BlinkSyncModule
+
 from blinkapp.models.ids import ClipId
 
 
@@ -103,7 +105,7 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_no_blink(
         self, mock_format, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with no blink instance."""
         from blinkapp.services.clip_service import process_local_clips
 
@@ -119,18 +121,18 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.services.clip_service.format_clips_by_day")
     def test_process_local_clips_with_data(
         self, mock_format, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with valid data."""
         from blinkapp.services.clip_service import process_local_clips
 
         # Mock sync module with local storage
-        mock_item = Mock()
+        mock_item = Mock(spec=dict)
         mock_item.created_at = datetime(2023, 1, 1, 12, 0, 0)
         mock_item.id = 123
         mock_item.name = "Test Camera"
         mock_item.url.return_value = "http://example.com/local_video.mp4"
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = True
         mock_sync._local_storage = {
@@ -138,7 +140,7 @@ class TestClipProcessingFunctions:
             "last_manifest_id": "manifest_123",
         }
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink.return_value = mock_blink_instance
 
@@ -154,11 +156,11 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.services.clip_service.format_clips_by_day")
     def test_process_local_clips_sync_error(
         self, mock_format, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with sync module error."""
         from blinkapp.services.clip_service import process_local_clips
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.refresh.side_effect = Exception("Sync error")
 
         mock_blink.sync = {"sync1": mock_sync}
@@ -176,14 +178,14 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_no_local_storage(
         self, mock_format, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with sync module that has no local storage."""
         from blinkapp.services.clip_service import process_local_clips
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = False
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink.return_value = mock_blink_instance
 
@@ -199,15 +201,15 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_local_clips_manifest_not_ready(
         self, mock_format, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with manifest not ready."""
         from blinkapp.services.clip_service import process_local_clips
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = False
 
-        mock_blink_instance = Mock()
+        mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink.return_value = mock_blink_instance
 
@@ -223,17 +225,17 @@ class TestClipProcessingFunctions:
     @patch("blinkapp.services.clip_service.format_clips_by_day")
     def test_process_local_clips_invalid_item(
         self, mock_format, mock_cache, mock_connection, mock_blink
-    ):
+    ) -> None:
         """Test process_local_clips with invalid item in manifest."""
         from blinkapp.services.clip_service import process_local_clips
 
         # Mock item that will cause an exception
-        mock_item = Mock()
+        mock_item = Mock(spec=dict)
         mock_item.created_at.strftime.side_effect = AttributeError("Invalid date")
         mock_item.id = "test_id"
         mock_item.name = "test_camera"
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.local_storage = True
         mock_sync.local_storage_manifest_ready = True
         mock_sync._local_storage = {

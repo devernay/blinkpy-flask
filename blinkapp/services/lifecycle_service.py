@@ -100,18 +100,18 @@ def startup() -> None:
 
         initialize_caches(
             {
-                "thumbnail_cache_size": Config.THUMBNAIL_CACHE_SIZE,
+                "camera_thumbnail_cache_size": Config.THUMBNAIL_CACHE_SIZE,
                 "clips_cache_size": Config.CLIPS_CACHE_SIZE,
             }
         )
 
         # Restore cached thumbnails from previous sessions
         from blinkapp.services.cache_service import (
+            load_camera_thumbnail_cache,
             load_clips_cache,
-            load_thumbnail_cache,
         )
 
-        load_thumbnail_cache()
+        load_camera_thumbnail_cache()
 
         # Restore cached clips metadata from previous sessions
         load_clips_cache()

@@ -8,6 +8,8 @@ formats, including time formatting and data organization.
 import logging
 from datetime import UTC, datetime
 
+from blinkapp.models.types import ClipData, ClipDayGroup
+
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -17,13 +19,13 @@ __all__ = [
 ]
 
 
-def format_clips_by_day(clips: list[dict[str, object]]) -> list[dict[str, object]]:
+def format_clips_by_day(clips: list[ClipData]) -> list[ClipDayGroup]:
     """Format clips grouped by day."""
     if not clips:
         return []
 
     # Group clips by date
-    days: dict[str, dict[str, object]] = {}
+    days: dict[str, ClipDayGroup] = {}
     for clip in clips:
         try:
             if "created_at" in clip:

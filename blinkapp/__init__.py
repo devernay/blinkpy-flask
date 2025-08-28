@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     pass
 
 # Authentication and session management
-# Caching system for thumbnails, clips, and metadata
+# Caching system for camera thumbnails, clips, and metadata
 
 # ID validation and type safety
 # Type definitions for better code clarity
@@ -79,7 +79,7 @@ from blinkapp.routes.streaming import setup_streaming_routes
 from blinkapp.routes.system import setup_system_routes
 
 # Thumbnail routes
-from blinkapp.routes.thumbnails import setup_thumbnail_routes
+from blinkapp.routes.thumbnails import setup_camera_thumbnail_routes
 from blinkapp.services.blink_validators import require_sync_module
 
 # Cache management
@@ -167,8 +167,8 @@ setup_auth_routes(app)
 # Set up camera routes
 setup_camera_routes(app)
 
-# Set up thumbnail routes
-setup_thumbnail_routes(app)
+# Set up camera thumbnail routes
+setup_camera_thumbnail_routes(app)
 
 # Set up streaming routes
 setup_streaming_routes(app)

@@ -4,23 +4,26 @@
 import time
 import unittest
 
-from blinkapp.models.cache import ThumbnailCache
+from blinkapp.models.cache import CameraThumbnailCache
 from blinkapp.models.ids import CameraId
 
 
-class TestThumbnailCacheExpansion(unittest.TestCase):
-    """Test uncovered ThumbnailCache methods."""
+class TestCameraThumbnailCacheExpansion(unittest.TestCase):
+    """Test uncovered CameraThumbnailCache methods."""
 
     def setUp(self) -> None:
         """Set up test cache."""
-        self.cache = ThumbnailCache(maxsize=5)
+        self.cache = CameraThumbnailCache(maxsize=5)
         self.camera_id = CameraId(12345)
 
     def test_get_thumbnail_timestamp_exists(self) -> None:
         """Test getting timestamp for existing thumbnail."""
-        timestamp = time.time()
-        # Use the correct method name
-        self.cache[self.camera_id] = {"data": b"test_data", "timestamp": timestamp}
+        timestamp = int(time.time())
+        from blinkapp.models.cache import CameraThumbnailCacheEntry
+
+        self.cache[self.camera_id] = CameraThumbnailCacheEntry(
+            timestamp=timestamp, filename="test.jpg"
+        )
 
         result = self.cache.get_thumbnail_timestamp(self.camera_id)
         self.assertEqual(result, timestamp)
@@ -32,38 +35,42 @@ class TestThumbnailCacheExpansion(unittest.TestCase):
 
     def test_get_thumbnail_timestamp_no_timestamp(self) -> None:
         """Test getting timestamp when thumbnail has no timestamp."""
-        self.cache[self.camera_id] = {"data": b"test_data"}
-
-        result = self.cache.get_thumbnail_timestamp(self.camera_id)
+        # This test is no longer valid since timestamp is required
+        # Test with missing cache entry instead
+        result = self.cache.get_thumbnail_timestamp(CameraId(99999))
         self.assertIsNone(result)
 
     def test_is_thumbnail_fresh_true(self) -> None:
         """Test thumbnail freshness check - fresh thumbnail."""
-        current_time = time.time()
-        self.cache[self.camera_id] = {
-            "data": b"test_data",
-            "timestamp": current_time - 100,  # 100 seconds ago
-        }
+        current_time = int(time.time())
+        from blinkapp.models.cache import CameraThumbnailCacheEntry
+
+        self.cache[self.camera_id] = CameraThumbnailCacheEntry(
+            timestamp=current_time - 100,  # 100 seconds ago
+            filename="test.jpg",
+        )
 
         result = self.cache.is_thumbnail_fresh(self.camera_id, max_age_seconds=300)
         self.assertTrue(result)
 
     def test_is_thumbnail_fresh_false(self) -> None:
         """Test thumbnail freshness check - stale thumbnail."""
-        current_time = time.time()
-        self.cache[self.camera_id] = {
-            "data": b"test_data",
-            "timestamp": current_time - 400,  # 400 seconds ago
-        }
+        current_time = int(time.time())
+        from blinkapp.models.cache import CameraThumbnailCacheEntry
+
+        self.cache[self.camera_id] = CameraThumbnailCacheEntry(
+            timestamp=current_time - 400,  # 400 seconds ago
+            filename="test.jpg",
+        )
 
         result = self.cache.is_thumbnail_fresh(self.camera_id, max_age_seconds=300)
         self.assertFalse(result)
 
     def test_is_thumbnail_fresh_no_timestamp(self) -> None:
         """Test thumbnail freshness check - no timestamp."""
-        self.cache[self.camera_id] = {"data": b"test_data"}
-
-        result = self.cache.is_thumbnail_fresh(self.camera_id)
+        # This test is no longer valid since timestamp is required
+        # Test with missing cache entry instead
+        result = self.cache.is_thumbnail_fresh(CameraId(99999))
         self.assertFalse(result)
 
     def test_update_thumbnail_basic(self) -> None:
@@ -75,8 +82,8 @@ class TestThumbnailCacheExpansion(unittest.TestCase):
         result = self.cache.get(self.camera_id)
         self.assertIsNotNone(result)
         if result:  # Type guard for pyright
-            self.assertEqual(result["data"], thumbnail_data)
             self.assertIn("timestamp", result)
+            self.assertIn("filename", result)
 
     def test_update_thumbnail_with_metadata(self) -> None:
         """Test updating thumbnail with metadata."""
@@ -88,6 +95,5 @@ class TestThumbnailCacheExpansion(unittest.TestCase):
         result = self.cache.get(self.camera_id)
         self.assertIsNotNone(result)
         if result:  # Type guard for pyright
-            self.assertEqual(result["data"], thumbnail_data)
-            # Metadata should be merged into the cache entry
             self.assertIn("timestamp", result)
+            self.assertIn("filename", result)

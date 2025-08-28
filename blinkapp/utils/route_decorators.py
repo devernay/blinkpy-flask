@@ -8,7 +8,7 @@ including error handling, response formatting, and validation.
 import functools
 import logging
 from collections.abc import Callable
-from typing import Any, Protocol
+from typing import Protocol
 
 from flask import Response, jsonify, request
 from flask.wrappers import Request
@@ -42,12 +42,19 @@ __all__ = [
 class CacheProtocol(Protocol):
     """Protocol for cache-like objects."""
 
-    def get(self, key: CacheKey, default: Any = None) -> Any: ...
-    def __setitem__(self, key: CacheKey, value: Any) -> None: ...
+    def get(self, key: CacheKey, default: object = None) -> object: ...
+    def __setitem__(self, key: CacheKey, value: object) -> None: ...
+
+
+def _get_template_operation_name(
+    func: Callable[..., TemplateResult], operation_name: str | None = None
+) -> str:
+    """Get operation name for template functions."""
+    return operation_name or func.__name__.replace("_", " ").title()
 
 
 def _get_operation_name(
-    func: Callable[..., Any], operation_name: str | None = None
+    func: Callable[..., object], operation_name: str | None = None
 ) -> str:
     """Get operation name for logging and error messages."""
     return operation_name or func.__name__.replace("_", " ")
@@ -59,12 +66,25 @@ def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
     from blinkapp import create_api_response
 
     # If the function already returns a Flask response, pass it through
-    if isinstance(result, Response) or (
+    if isinstance(result, Response):
+        return result
+
+    # Handle tuples with Response objects (e.g., jsonify(dict), status_code)
+    if (
         isinstance(result, tuple)
         and len(result) >= 2
         and isinstance(result[0], Response)
     ):
         return result
+
+    # Handle tuples from create_api_response (dict, status_code)
+    if (
+        isinstance(result, tuple)
+        and len(result) >= 2
+        and isinstance(result[0], dict)
+        and isinstance(result[1], int)
+    ):
+        return jsonify(result[0]), result[1]
 
     # Otherwise, wrap in standard API response
     if isinstance(result, dict):
@@ -98,7 +118,7 @@ def _validate_json_payload(
     from blinkapp import Config, create_api_response
 
     assert isinstance(request, Request)
-    data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+    data: dict[str, object] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
     if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(
             success=False,
@@ -122,7 +142,7 @@ def _validate_json_payload(
 
 
 def _validate_parameters(
-    kwargs: dict[str, Any], validate_params: dict[str, ValidationFunction]
+    kwargs: dict[str, object], validate_params: dict[str, ValidationFunction]
 ) -> ErrorResponse | None:
     """Validate URL parameters and return error response or None on success.
 
@@ -203,9 +223,9 @@ def _create_base_decorator(
         skip_response_formatting: If True, return result directly (for file responses)
     """
 
-    def decorator(func: Callable[..., Any]) -> DecoratedRouteFunction:
+    def decorator(func: Callable[..., object]) -> DecoratedRouteFunction:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> FlaskResponse:
+        def wrapper(*args: object, **kwargs: object) -> FlaskResponse:
             op_name = _get_operation_name(func, operation_name)
 
             try:
@@ -249,8 +269,9 @@ def _create_base_decorator(
                 # Handle response formatting
                 if skip_response_formatting:
                     # For file responses and method dispatch, the function should return FlaskResponse
-                    # Cast to FlaskResponse as this is the expected contract for these decorators
-                    return result
+                    # Type assertion: when skip_response_formatting=True, result must be FlaskResponse
+                    assert isinstance(result, Response | tuple)
+                    return result  # type: ignore[return-value]
                 else:
                     return _handle_response_formatting(result)
 
@@ -264,8 +285,8 @@ def _create_base_decorator(
 
 def _get_cache_key(
     cache_key_func: Callable[..., CacheKey] | None = None,
-    args: tuple[Any, ...] | None = None,
-    kwargs: dict[str, Any] | None = None,
+    args: tuple[object, ...] | None = None,
+    kwargs: dict[str, object] | None = None,
 ) -> CacheKey:
     """Generate cache key from function arguments."""
     if cache_key_func is not None:
@@ -274,7 +295,7 @@ def _get_cache_key(
         return str(args[0]) if args is not None else "default"
 
 
-def _create_cached_response(cached_result: Any) -> FlaskResponse:
+def _create_cached_response(cached_result: object) -> FlaskResponse:
     """Create response for cached data."""
     # Import here to avoid circular import
     from blinkapp import create_api_response
@@ -292,7 +313,7 @@ def _create_success_message_response(message: str) -> FlaskResponse:
     return jsonify(response), status_code
 
 
-def _is_error_response(result: Any) -> bool:
+def _is_error_response(result: object) -> bool:
     """Check if result is an error response (Response object or tuple)."""
     return isinstance(result, Response | tuple)
 
@@ -505,17 +526,17 @@ def template_route_with_validation(
 
     def decorator(func: Callable[..., TemplateResult]) -> Callable[..., TemplateResult]:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> TemplateResult:
+        def wrapper(*args: object, **kwargs: object) -> TemplateResult:
             from flask import render_template, request
 
             from blinkapp.utils.validators import validate_string_input
 
-            operation = _get_operation_name(func, operation_name)
+            operation = _get_template_operation_name(func, operation_name)
 
             try:
                 # Validate form data if POST request and validation enabled
                 if request.method == "POST" and validate_form and form_fields:
-                    validated_data: dict[str, Any] = {}
+                    validated_data: dict[str, object] = {}
                     for field_name, (max_length, display_name) in form_fields.items():
                         field_value = request.form.get(field_name, "")
                         try:

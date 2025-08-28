@@ -5,6 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
+from blinkpy.camera import BlinkCamera
+
 from blinkapp.services.debug_service import check_credentials_file_exists
 from blinkapp.services.device_service import create_device_data
 
@@ -26,7 +28,7 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
         """Test create_device_data with timestamp parameters."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.temperature = 75
         mock_camera.battery_voltage = 115
@@ -49,7 +51,7 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
         """Test create_device_data with edge case values."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Edge Case Camera"
         mock_camera.temperature = 0
         mock_camera.battery_voltage = 110  # Boundary value

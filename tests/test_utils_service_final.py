@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import Mock
 
+from blinkpy.camera import BlinkCamera
+
 from blinkapp.services.device_service import (
     create_device_data,
     format_battery_level,
@@ -35,7 +37,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
 
     def test_create_device_data_exception_handling(self) -> None:
         """Test create_device_data with exception in timestamp calculation."""
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.updated_at = "invalid-timestamp"  # Will cause ValueError
         mock_camera.last_record = {"created_at": "2025-01-15T10:30:00+00:00"}
@@ -48,7 +50,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
 
     def test_create_device_data_no_last_record(self) -> None:
         """Test create_device_data with no last_record."""
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.updated_at = "invalid-timestamp"
         mock_camera.last_record = None
@@ -61,7 +63,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
 
     def test_create_device_data_last_record_fallback(self) -> None:
         """Test create_device_data fallback to last_record timestamp."""
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.updated_at = "invalid-timestamp"
         mock_camera.last_record = {"updated_at": "2025-01-15T10:30:00+00:00"}
@@ -73,7 +75,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
 
     def test_create_device_data_last_record_time_key(self) -> None:
         """Test create_device_data with 'time' key in last_record."""
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.updated_at = "invalid-timestamp"
         mock_camera.last_record = {"time": "2025-01-15T10:30:00+00:00"}

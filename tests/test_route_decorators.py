@@ -8,11 +8,14 @@ in Flask route handlers.
 
 import json
 import sys
-from typing import cast
+from logging import Logger
 from unittest.mock import MagicMock, Mock, patch
 
-from flask import Flask, Response
-from test_base import BaseTestCase
+from flask import Flask
+
+from blinkapp.models.types import FlaskResponse
+
+from .test_base import BaseTestCase
 
 
 class TestRouteDecorators(BaseTestCase):
@@ -40,7 +43,7 @@ class TestRouteDecorators(BaseTestCase):
 
     def _setup_mock_blinkapp(self):
         """Setup mock blinkapp module for testing."""
-        mock_blinkapp = MagicMock()
+        mock_blinkapp = MagicMock(spec=Flask)
 
         # Use real Config class instead of duplicating it
         from blinkapp.config import Config
@@ -63,17 +66,22 @@ class TestRouteDecorators(BaseTestCase):
 
         mock_blinkapp.create_api_response = create_api_response
         mock_blinkapp.handle_api_error = handle_api_error
-        mock_blinkapp.logger = Mock()
+        mock_blinkapp.logger = Mock(spec=Logger)
 
         sys.modules["blinkapp"] = mock_blinkapp
         return mock_blinkapp
 
-    def _parse_response(self, response: object) -> tuple[dict, int]:
+    def _parse_response(self, response: FlaskResponse) -> tuple[dict, int]:
         """Helper to parse response tuple and extract JSON data."""
-        response_tuple = cast(tuple[object, int], response)
-        response_obj = cast(Response, response_tuple[0])
+        if isinstance(response, tuple):
+            if len(response) == 2:
+                response_obj, status_code = response
+            else:  # len(response) == 3
+                response_obj, status_code, _ = response
+        else:
+            response_obj = response
+            status_code = response.status_code
         json_response = json.loads(response_obj.data)
-        status_code = response_tuple[1]
         return json_response, status_code
 
     def test_api_route_success(self) -> None:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Simple tests for stream_service.py pure functions - targeting missed lines."""
 
+import multiprocessing
 import unittest
 from unittest.mock import Mock, patch
 
@@ -108,8 +109,8 @@ class TestStreamServiceSimple(unittest.TestCase):
         """Test ensure_stream_manager_initialized when no manager exists - lines 75-82."""
         # Mock the global stream_manager to be None
         with patch("blinkapp.services.stream_service.stream_manager", None):
-            mock_factory = Mock()
-            mock_manager = Mock()
+            mock_factory = Mock(spec=object)
+            mock_manager = Mock(spec=multiprocessing.Manager)
             mock_factory.return_value = mock_manager
 
             # Should raise RuntimeError when no manager exists
@@ -121,13 +122,13 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_ensure_stream_manager_initialized_existing_manager(self) -> None:
         """Test ensure_stream_manager_initialized when manager exists - line 73."""
-        mock_existing_manager = Mock()
+        mock_existing_manager = Mock(spec=object)
 
         # Mock the global stream_manager to exist
         with patch(
             "blinkapp.services.stream_service.stream_manager", mock_existing_manager
         ):
-            mock_factory = Mock()
+            mock_factory = Mock(spec=object)
 
             result = ensure_stream_manager_initialized(mock_factory)
 

@@ -728,9 +728,15 @@ are there any duplicate tests? if yes, compare individual tests and keep the one
 
 # Cleanup after reorganization
 
-After each modificiation of the code, do the following tests:
+Execute modifications from the "Cleanup after reorganization" section of `IMPLEMENTATION.md`. Start with High priority items, then Normal priority, and finally Lower priority. Read carefully the instructions at the beginning of the section.
+
+Before starting, and after each modificiation of the code, do the following tests:
 - [x] All imports updated (including in tests)
 - [x] All mocks and patches updated in tests
+- [x] Mocks should be created with "Mock(spec=...)" when possible
+- [x] Do your best to not use generic types like Any or object
+- [x] Do not use cast
+- [x] For the spec parameter of Mock, use just the type name, not the full path, and add proper imports. For example, use Mock(spec=CameraThumbnailCache), not Mock(spec=blinkapp.models.cache.CameraThumbnailCache)
 - [x] Symbols explicitly exported using `__all__` in every module
 - [X] `ruff check` and `pyright` pass with no errors or warnings on all code (including tests)
 - [x] Tests pass (full test suite, not just core tests)
@@ -744,23 +750,19 @@ After each modificiation of the code, do the following tests:
 
 Automatically retry until everything is done. Do not stop midway. Be self-critical, verify and understand what you are doing. Do not be polite with yourself or with me. Humans (including me) make errors, and you make errors too, be careful. Take your time.
 
-Do not forget that there is a lot of Blink API documentation and sample usages (in tests) in blinkpy-source. Use it as often as possible, re-read the whole code if necessary to refresh your memory.
+Do not forget that there is a lot of Blink API and blinkpy API documentation and sample usages (in tests) in blinkpy-source. Use it as often as possible, re-read the whole code if necessary to refresh your memory.
 
 Do not forget to compact your context before it overflows.
 
 ## High priority
-
-- Implement proper local clip access in download_local_clip using blinkpy LocalStorageMediaItem
-
-- `generate_clip_thumbnail` should be renamed to `generate_local_clip_thumbnail` and take a ClipId as parameter. It should only extract the thumbnail from the clip (middle frame) on local storage clips. The thumbnail for the cloud storage clips can be fetched via the Blink API (see `download_and_cache_cloud_thumbnail`). `generate_local_clip_thumbnail` should raise an exception if ClipId is a cloud storage clip. Verify that `generate_local_clip_thumbnail` is not called on cloud storage clips.
-
-- all functions that take a clip or camera as parameter should use a ClipId or CameraId parameter, not a str.
 
 - Fix all pyright issues, fix all tests (full test suite), run ruff check and ruff format, then `git commit`
 
 - Update all docstrings, README.md, and add comments to the code where it's not self-explanatory.
 
 ## Normal priority
+
+- fix get_session_transaction to return an actual type. I know that "Iterator[SessionMixin]" doesn't work because client.session_transaction() returns a context manager, not an iterator. Find the right return type.
 
 - Where do the thresholds for voltage values in format_battery_level come from? Did you get these from blinkpy-source code or tests? Or did you get these from somewhere else?
 

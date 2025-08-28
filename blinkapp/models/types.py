@@ -7,7 +7,7 @@ defining them locally in individual modules.
 """
 
 from collections.abc import Callable
-from typing import Any, ParamSpec, TypeVar
+from typing import ParamSpec, TypedDict, TypeVar
 
 from flask import Response
 from flask.typing import (
@@ -18,10 +18,31 @@ from flask.typing import (
 P = ParamSpec("P")
 T = TypeVar("T")
 
+
+# Clip data structures
+class ClipData(TypedDict):
+    """Structure for clip data."""
+
+    id: str
+    created_at: str
+    device_name: str
+    thumbnail: str
+    media: str
+
+
+class ClipDayGroup(TypedDict):
+    """Structure for clips grouped by day."""
+
+    date: str
+    clips: list[ClipData]
+
+
 # Explicitly define what this module exports
 __all__ = [
     "P",
     "T",
+    "ClipData",
+    "ClipDayGroup",
     "JsonDict",
     "AuthJsonDict",
     "ApiResponse",
@@ -45,7 +66,7 @@ ApiResponse = tuple[JsonDict, int]  # Standard API response (data, status_code)
 ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 
 # Flask response types - use Flask's own types
-FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, Any]]
+FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, str]]
 FlaskRouteResponse = ResponseReturnValue  # pyright: ignore[reportUnknownVariableType]
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
@@ -55,7 +76,7 @@ DecoratedRouteFunction = Callable[
     ..., FlaskResponse
 ]  # What decorated route functions return
 DecoratorFunction = Callable[
-    [Callable[..., Any]], DecoratedRouteFunction
+    [Callable[..., object]], DecoratedRouteFunction
 ]  # Decorator type
 
 # Cache and utility types
@@ -63,4 +84,4 @@ CacheKey = str  # Cache key identifier
 ValidationFunction = Callable[[str], object]  # Input validation function type
 
 # Auth-specific types
-AuthJsonDict = dict[str, Any]  # Auth module JSON dict
+AuthJsonDict = dict[str, str | int | bool]  # Auth module JSON dict

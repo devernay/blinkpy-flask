@@ -1,6 +1,6 @@
 """Simple tests to improve coverage without complex mocking."""
 
-from test_base import BaseTestCase
+from .test_base import BaseTestCase
 
 
 class TestSimpleCoverage(BaseTestCase):

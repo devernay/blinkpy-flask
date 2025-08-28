@@ -12,8 +12,13 @@ import os
 import sys
 import unittest
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any, TypeVar
 from unittest.mock import MagicMock, Mock
+
+from blinkpy.camera import BlinkCamera
+from blinkpy.sync_module import BlinkSyncModule
+
+from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -74,7 +79,7 @@ def initialize_for_testing() -> None:
     try:
         from blinkapp.services.cache_service import initialize_caches
 
-        initialize_caches({"thumbnail_cache_size": 10, "clips_cache_size": 10})
+        initialize_caches({"camera_thumbnail_cache_size": 10, "clips_cache_size": 10})
     except Exception:
         import blinkapp.services.cache_service as cache_service
 
@@ -82,17 +87,20 @@ def initialize_for_testing() -> None:
             not hasattr(cache_service, "clips_cache")
             or cache_service.clips_cache is None
         ):
-            cache_service.clips_cache = MagicMock()
+            cache_service.clips_cache = MagicMock(spec=ClipsCache)
         if (
-            not hasattr(cache_service, "thumbnail_cache")
-            or cache_service.thumbnail_cache is None
+            not hasattr(cache_service, "camera_thumbnail_cache")
+            or cache_service.camera_thumbnail_cache is None
         ):
-            cache_service.thumbnail_cache = MagicMock()
+            cache_service.camera_thumbnail_cache = MagicMock(spec=CameraThumbnailCache)
 
 
 def setup_test_globals() -> None:
     """Function to call in setUp methods to initialize globals."""
     initialize_for_testing()
+
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def with_app_initialized[F: Callable[..., Any]](func: F) -> F:
@@ -101,9 +109,9 @@ def with_app_initialized[F: Callable[..., Any]](func: F) -> F:
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         initialize_for_testing()
-        return cast(Any, func)(*args, **kwargs)
+        return func(*args, **kwargs)
 
-    return cast(F, wrapper)
+    return wrapper  # type: ignore[return-value]
 
 
 class BaseTestCase(unittest.TestCase):
@@ -156,7 +164,7 @@ class FlaskTestCase(BaseTestCase):
         """Helper to set up mock Blink objects with common configuration."""
         from unittest.mock import Mock
 
-        mock_blink = Mock()
+        mock_blink = Mock(spec=object)
         mock_blink.available = available
 
         if sync_data:
@@ -166,7 +174,7 @@ class FlaskTestCase(BaseTestCase):
 
         if cameras:
             for sync_name, camera_list in cameras.items():
-                mock_sync = Mock()
+                mock_sync = Mock(spec=BlinkSyncModule)
                 mock_sync.cameras = {
                     f"camera{i}": cam for i, cam in enumerate(camera_list)
                 }
@@ -266,10 +274,10 @@ class FlaskTestCase(BaseTestCase):
         """Create a mock camera with common attributes."""
         from unittest.mock import Mock
 
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.camera_id = camera_id
         mock_camera.name = name
-        mock_camera.snap_picture = Mock()
+        mock_camera.snap_picture = Mock(spec=callable)
         return mock_camera
 
     def create_mock_sync(
@@ -278,7 +286,7 @@ class FlaskTestCase(BaseTestCase):
         """Create a mock sync module with common attributes."""
         from unittest.mock import Mock
 
-        mock_sync = Mock()
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.network_id = network_id
         mock_sync.arm = armed
         mock_sync.online = online

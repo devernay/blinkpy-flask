@@ -4,6 +4,8 @@
 import unittest
 from unittest.mock import Mock
 
+from blinkpy.camera import BlinkCamera
+
 from blinkapp.services.debug_service import dump_blink_system_info, handle_dump_system
 from blinkapp.services.device_service import create_device_data
 
@@ -15,7 +17,7 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         """Test create_device_data with mock camera."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Test Camera"
         mock_camera.temperature = 72
         mock_camera.battery_voltage = 120
@@ -36,7 +38,7 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         """Test create_device_data with minimal camera data."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock()
+        mock_camera = Mock(spec=BlinkCamera)
         mock_camera.name = "Minimal Camera"
         mock_camera.temperature = None
         mock_camera.battery_voltage = None

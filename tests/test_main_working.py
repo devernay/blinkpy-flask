@@ -19,7 +19,7 @@ def test_create_argument_parser_defaults() -> None:
 
 def test_run_app_dump_system() -> None:
     """Test run_app with dump system option."""
-    args = Mock()
+    args = Mock(spec=object)
     args.dump_system = True
 
     with patch("blinkapp.services.debug_service.handle_dump_system") as mock_dump:
@@ -29,7 +29,7 @@ def test_run_app_dump_system() -> None:
 
 def test_run_app_normal() -> None:
     """Test run_app normal execution."""
-    args = Mock()
+    args = Mock(spec=object)
     args.dump_system = False
     args.cache = "/test"
 
@@ -37,7 +37,7 @@ def test_run_app_normal() -> None:
         patch("blinkapp.__main__.app") as mock_app,
         patch("blinkapp.__main__.startup") as mock_startup,
     ):
-        mock_app.run = Mock()
+        mock_app.run = Mock(spec=callable)
 
         run_app(args)
 
@@ -47,7 +47,7 @@ def test_run_app_normal() -> None:
 def test_configure_logging_levels() -> None:
     """Test logging configuration."""
     with patch("logging.getLogger") as mock_get_logger:
-        mock_logger = Mock()
+        mock_logger = Mock(spec=object)
         mock_get_logger.return_value = mock_logger
 
         configure_logging("DEBUG")

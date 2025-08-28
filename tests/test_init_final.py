@@ -2,6 +2,7 @@
 """Final tests for __init__.py - targeting more missed lines."""
 
 import unittest
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from blinkapp import (
@@ -29,9 +30,9 @@ class TestInitFinal(unittest.TestCase):
     @patch("blinkapp.Path")
     def test_initialize_cache_paths_basic(self, mock_path: Mock) -> None:
         """Test initialize_cache_paths basic functionality."""
-        mock_path_instance = Mock()
+        mock_path_instance = Mock(spec=Path)
         mock_path.return_value = mock_path_instance
-        mock_path_instance.mkdir = Mock()
+        mock_path_instance.mkdir = Mock(spec=callable)
         mock_path_instance.exists.return_value = False
 
         try:
