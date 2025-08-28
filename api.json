@@ -1,28 +1,160 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.1",
   "info": {
     "title": "Blink Flask Web Interface API",
-    "description": "RESTful API for managing Blink camera systems with live streaming, clip management, and settings",
+    "description": "Professional-grade RESTful API for comprehensive Blink camera system management including live streaming, clip management, thumbnail generation, and user settings. Provides 20+ endpoints for programmatic access to multi-system Blink deployments with thread-safe operations and intelligent caching.",
     "version": "2.0.0",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
-    }
+    },
+    "contact": {
+      "name": "Blink Flask Web Interface",
+      "url": "https://github.com/your-repo/blinkpy-flask"
+    },
+    "termsOfService": "https://github.com/your-repo/blinkpy-flask/blob/main/LICENSE"
   },
   "servers": [
     {
+      "url": "http://localhost:5001",
+      "description": "Local development server (default port 5001)"
+    },
+    {
       "url": "http://localhost:5000",
-      "description": "Local development server"
+      "description": "Alternative local server port"
     }
   ],
+  "security": [
+    {
+      "sessionAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "sessionAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session",
+        "description": "Flask session-based authentication using secure cookies"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "required": ["success", "timestamp"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indicates if the operation was successful"
+          },
+          "data": {
+            "description": "Response data (varies by endpoint)"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if success is false"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the response"
+          }
+        }
+      },
+      "BlinkSystem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique system identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable system name"
+          },
+          "armed": {
+            "type": "boolean",
+            "description": "Current armed status of the system"
+          },
+          "cameras": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlinkCamera"
+            }
+          }
+        }
+      },
+      "BlinkCamera": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique camera identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Camera display name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["camera"],
+            "description": "Device type identifier"
+          },
+          "battery": {
+            "type": "string",
+            "description": "Battery status string (e.g., 'ok', 'low')",
+            "examples": ["ok", "low", "critical"]
+          },
+          "temperature": {
+            "type": "string",
+            "description": "Temperature reading in Fahrenheit with units",
+            "examples": ["72.5°F", "N/A"]
+          },
+          "wifi_strength": {
+            "type": "integer",
+            "description": "WiFi signal strength (0-5 scale)",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "motion_enabled": {
+            "type": "boolean",
+            "description": "Motion detection enabled status"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Relative URL to camera thumbnail",
+            "format": "uri-reference"
+          },
+          "last_updated": {
+            "type": "string",
+            "description": "Human-readable time since last update",
+            "examples": ["2 minutes ago", "1 hour ago"]
+          }
+        }
+      }
+    }
+  },
   "paths": {
     "/": {
       "get": {
-        "summary": "Main page",
-        "description": "Redirect to login if not authenticated, otherwise show main interface",
+        "summary": "Main application interface",
+        "description": "Serves the main web interface. Redirects to login page if user is not authenticated, otherwise displays the main dashboard with camera thumbnails, system controls, and navigation.",
+        "operationId": "getMainPage",
+        "tags": ["Web Interface"],
         "responses": {
           "200": {
-            "description": "Main interface or login redirect"
+            "description": "Main interface HTML page or redirect to login",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "HTML content for the main interface"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Redirect to login page if not authenticated"
           }
         }
       }
@@ -30,25 +162,86 @@
     "/api/systems": {
       "get": {
         "summary": "List all Blink systems",
-        "description": "Get list of available Blink sync modules and their network information",
+        "description": "Retrieves a comprehensive list of all available Blink sync modules and their network information. Each system includes network ID, name, armed status, and associated cameras.",
+        "operationId": "listSystems",
+        "tags": ["System Management"],
         "responses": {
           "200": {
-            "description": "List of systems",
+            "description": "Successfully retrieved list of Blink systems",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {"type": "boolean"},
-                    "systems": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "network_id": {"type": "string"},
-                          "name": {"type": "string"},
-                          "armed": {"type": "boolean"},
-                          "status": {"type": "string"}
+                  "allOf": [
+                    {"$ref": "#/components/schemas/ApiResponse"},
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "systems": {
+                              "type": "array",
+                              "items": {"$ref": "#/components/schemas/BlinkSystem"},
+                              "description": "Array of Blink system objects"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "multipleSystemsExample": {
+                    "summary": "Multiple Blink systems response",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "systems": [
+                          {
+                            "network_id": "12345",
+                            "name": "Home System",
+                            "armed": true,
+                            "status": "online"
+                          },
+                          {
+                            "network_id": "67890",
+                            "name": "Office System",
+                            "armed": false,
+                            "status": "online"
+                          }
+                        ]
+                      },
+                      "timestamp": "2025-01-27T10:30:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required - user not logged in",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"},
+                "example": {
+                  "success": false,
+                  "error": "Authentication required",
+                  "timestamp": "2025-01-27T10:30:00Z"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error - failed to retrieve systems",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/ApiResponse"}
+              }
+            }
+          }
+        }
+      }
+    },
                         }
                       }
                     },
