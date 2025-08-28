@@ -238,7 +238,7 @@ The live streaming functionality should include advanced stream management:
 - add motion_enabled button to each camera in Home view
 - Add camera properties
   - temperature (celcius or f)
-  - battery voltage
+  - battery voltage (may be None if wired)
   - wifi_strength (may be None)
   - sync_signal_strength (may be None)
 - Continuous live view using a strategy similar to blinkbridge https://github.com/roger-/blinkbridge

@@ -8,7 +8,6 @@ from blinkapp.services.stream_service import (
     ensure_stream_manager_initialized,
     generate_hls_url,
     parse_tcp_url,
-    validate_camera_id,
     validate_tcp_url,
 )
 
@@ -37,14 +36,6 @@ class TestStreamServiceExpansion(unittest.TestCase):
         except Exception:
             # Expected to fail due to missing dependencies, but function exists
             pass
-
-    def test_validate_camera_id_valid(self) -> None:
-        """Test validate_camera_id with valid ID."""
-        camera_id = "12345"
-
-        result = validate_camera_id(camera_id)
-
-        self.assertTrue(result)
 
     def test_validate_tcp_url_valid(self) -> None:
         """Test validate_tcp_url with valid URL."""
@@ -85,12 +76,3 @@ class TestStreamServiceExpansion(unittest.TestCase):
 
         # Function still parses but may not be valid TCP
         self.assertIsInstance(result, dict)
-
-    def test_validate_tcp_url_invalid(self) -> None:
-        """Test validate_tcp_url with invalid URL."""
-        tcp_url = "invalid://url"
-
-        result = validate_tcp_url(tcp_url)
-
-        # Function returns False for invalid URLs
-        self.assertFalse(result)

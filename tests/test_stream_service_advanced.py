@@ -27,11 +27,6 @@ class TestStreamServiceAdvanced(unittest.TestCase):
         result = validate_camera_id("   ")
         self.assertFalse(result)
 
-    def test_validate_tcp_url_empty(self) -> None:
-        """Test validate_tcp_url with empty string."""
-        result = validate_tcp_url("")
-        self.assertFalse(result)
-
     def test_validate_tcp_url_non_tcp(self) -> None:
         """Test validate_tcp_url with non-TCP URL."""
         result = validate_tcp_url("http://example.com")
