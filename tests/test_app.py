@@ -4754,7 +4754,9 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         mock_camera = create_mock_camera("12345", name="Test Camera")
 
         # Create async mock for init_livestream
-        mock_stream = Mock(spec=IOBase)
+        from blinkpy.livestream import BlinkLiveStream
+
+        mock_stream = Mock(spec=BlinkLiveStream)
         mock_stream.url = "tcp://localhost:8080"
         mock_stream.start = Mock(spec=callable)
         mock_stream.feed = Mock(spec=callable)

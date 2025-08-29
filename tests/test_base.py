@@ -104,6 +104,18 @@ def create_mock_blink_instance(
         ]
 
     mock_blink.get_videos_metadata = mock_get_videos_metadata
+
+    # Create async mock for do_http_get
+    async def mock_do_http_get(url: str) -> Mock:
+        mock_response = Mock()
+
+        async def mock_read() -> bytes:
+            return b"video_content"
+
+        mock_response.read = mock_read
+        return mock_response
+
+    mock_blink.do_http_get = mock_do_http_get
     mock_blink.sync = sync_data or {}
     mock_blink.networks = networks or {}
     mock_blink.cameras = cameras or {}

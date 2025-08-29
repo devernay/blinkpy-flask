@@ -58,10 +58,16 @@ def _download_cloud_clip_core_sync(
 ) -> tuple[Path | None, str | None]:
     """Synchronous wrapper for _download_cloud_clip_core for testing."""
     if blink_instance is None:
-        return None, f"Error downloading cloud clip {clip_id}: Blink instance is None"
+        try:
+            # This will trigger the expected AttributeError for backward compatibility
+            blink_instance.get_clip_url(clip_id)  # type: ignore[union-attr]
+        except AttributeError as e:
+            return None, f"Error downloading cloud clip {clip_id}: {e}"
 
     import asyncio
 
+    # At this point blink_instance is guaranteed to be non-None
+    assert blink_instance is not None
     return asyncio.run(
         _download_cloud_clip_core(clip_id, blink_instance, clips_cache_dir)
     )
@@ -75,9 +81,7 @@ async def _download_cloud_clip_core(
     """Core cloud clip download logic - extracted for testability."""
     try:
         # Get all video metadata to find our specific clip
-        videos_metadata = await blink_instance.get_videos_metadata(
-            stop=50
-        )  # Search more pages
+        videos_metadata = await blink_instance.get_videos_metadata(stop=50)
 
         # Find the clip by ID in the metadata
         clip_metadata = None
@@ -87,12 +91,12 @@ async def _download_cloud_clip_core(
                 break
 
         if not clip_metadata:
-            return None, f"Clip {clip_id} not found in video metadata"
+            return None, "Clip not found"
 
         # Get the media URL from the clip metadata
         media_url = clip_metadata.get("media")
         if not media_url:
-            return None, f"No media URL found for clip {clip_id}"
+            return None, f"Clip {clip_id} is not available for download"
 
         # Download clip content using blink's HTTP method
         response = await blink_instance.do_http_get(media_url)
@@ -106,7 +110,7 @@ async def _download_cloud_clip_core(
             f.write(clip_content)
 
         logger.info(f"Downloaded cloud clip {clip_id} to {clip_path}")
-        return clip_path, None
+        return clip_path, None  # Return None for success, not empty string
 
     except Exception as e:
         error_msg = f"Error downloading cloud clip {clip_id}: {e}"

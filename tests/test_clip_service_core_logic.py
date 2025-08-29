@@ -1,7 +1,8 @@
 """Core logic tests for clip_service.py - targeting maximum coverage without Flask context issues."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from typing import Any
+from unittest.mock import AsyncMock, Mock, patch
 
 from test_base import create_mock_blink_instance
 
@@ -39,24 +40,29 @@ class TestClipServiceCoreLogic:
         """Test _download_cloud_clip_core_sync successful download."""
         from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
-        # Mock successful HTTP response
-        mock_response = Mock()
-        mock_response.content = b"fake video content"
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
+        # Add do_http_get method for successful HTTP download
+        async def mock_do_http_get(url: str) -> Mock:
+            mock_response = Mock()
+            mock_response.read = AsyncMock(return_value=b"fake video content")
+            return mock_response
+
+        self.mock_blink.do_http_get = mock_do_http_get
 
         # Mock cache directory
         with (
             patch("pathlib.Path.mkdir"),
-            patch("pathlib.Path.write_bytes") as mock_write,
+            patch("builtins.open", create=True) as mock_open,
         ):
+            mock_file = Mock()
+            mock_open.return_value.__enter__.return_value = mock_file
+
             filepath, error = _download_cloud_clip_core_sync(
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
             assert error is None
             assert filepath is not None
-            mock_write.assert_called_once_with(b"fake video content")
+            mock_file.write.assert_called_once_with(b"fake video content")
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_sync_cached_file_os_error(
@@ -70,6 +76,13 @@ class TestClipServiceCoreLogic:
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance
 
+        # Override get_videos_metadata to return empty list
+        async def mock_get_videos_metadata_empty(
+            stop: int = 25,
+        ) -> list[dict[str, Any]]:
+            return []
+
+        self.mock_blink.get_videos_metadata = mock_get_videos_metadata_empty
         self.mock_blink.videos = {"all": []}
 
         with patch(
@@ -80,7 +93,7 @@ class TestClipServiceCoreLogic:
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
-        assert error == "Clip not found"
+        assert error == "Clip 123456 not found in video metadata"
         assert filepath is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
@@ -91,6 +104,14 @@ class TestClipServiceCoreLogic:
         from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
+
+        # Override get_videos_metadata to return empty list
+        async def mock_get_videos_metadata_empty(
+            stop: int = 25,
+        ) -> list[dict[str, Any]]:
+            return []
+
+        self.mock_blink.get_videos_metadata = mock_get_videos_metadata_empty
         self.mock_blink.videos = {"all": []}
 
         with patch(
@@ -120,6 +141,14 @@ class TestClipServiceCoreLogic:
             "device_name": "test_camera",
             "media": None,
         }
+
+        # Override get_videos_metadata to return clip with no media URL
+        async def mock_get_videos_metadata_no_media(
+            stop: int = 25,
+        ) -> list[dict[str, Any]]:
+            return [clip_info]
+
+        self.mock_blink.get_videos_metadata = mock_get_videos_metadata_no_media
         self.mock_blink.videos = {"all": [clip_info]}
 
         with patch("pathlib.Path.exists", return_value=False):

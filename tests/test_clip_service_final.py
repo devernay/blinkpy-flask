@@ -6,11 +6,12 @@ Targets remaining uncovered lines with working, minimal tests.
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
-from unittest.mock import Mock, patch
+from typing import Any
+from unittest.mock import Mock, mock_open, patch
 
 from blinkpy.blinkpy import Blink
 from requests import Response
-from test_base import create_mock_sync
+from test_base import create_mock_blink_instance, create_mock_sync
 
 from blinkapp.models.ids import ClipId
 
@@ -75,8 +76,14 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        mock_blink = Mock(spec=object)
-        mock_blink.videos = {"all": []}  # No clips
+        # Use the base mock with proper async method
+        mock_blink = create_mock_blink_instance()
+
+        # Override get_videos_metadata to return empty list (no clips found)
+        async def mock_get_videos_metadata(stop: int = 25) -> list[dict[str, Any]]:
+            return []  # No clips found
+
+        mock_blink.get_videos_metadata = mock_get_videos_metadata
 
         with patch(
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
@@ -90,26 +97,28 @@ class TestClipServiceFinal:
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_exists(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core_sync with existing cached file."""
+        """Test _download_cloud_clip_core_sync downloads and returns new file path."""
         from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
-        mock_filepath = Mock(spec=Path)
-        mock_filepath.exists.return_value = True
+        mock_cache.return_value = {}
 
-        mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
-        mock_cache.return_value = mock_cache_instance
-
-        mock_blink = Mock(spec=object)
+        # Use proper mock with get_videos_metadata
+        mock_blink = create_mock_blink_instance()
 
         with patch(
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            filepath, error = _download_cloud_clip_core_sync(
-                self.clip_id, mock_blink, Path("/tmp")
-            )
+            with patch("builtins.open", mock_open()) as mock_file:
+                filepath, error = _download_cloud_clip_core_sync(
+                    self.clip_id, mock_blink, Path("/tmp")
+                )
 
-        assert filepath == mock_filepath
+                # Verify file was written
+                mock_file.assert_called_once()
+                assert filepath is not None
+                assert str(filepath).endswith("123456.mp4")
+                assert error is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_os_error(self, mock_cache: Mock) -> None:
@@ -331,27 +340,22 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        mock_jsonify = Mock(return_value="json_response")
+        with patch(
+            "blinkapp.services.connection_service.ensure_executor_initialized"
+        ) as mock_executor:
+            mock_executor_instance = Mock(spec=ThreadPoolExecutor)
+            mock_executor.return_value = mock_executor_instance
 
-        with patch("flask.jsonify", mock_jsonify):
-            with patch(
-                "blinkapp.services.connection_service.ensure_executor_initialized"
-            ) as mock_executor:
-                mock_executor_instance = Mock(spec=ThreadPoolExecutor)
-                mock_executor.return_value = mock_executor_instance
+            result = download_clip_common(
+                mock_filepath,
+                self.clip_id,
+            )
 
-                Mock(return_value="file_response")
-                result = download_clip_common(
-                    mock_filepath,
-                    self.clip_id,
-                )
-
-                # When file doesn't exist, it returns create_api_response tuple
-                assert isinstance(result, tuple)
-                assert len(result) >= 2
-                _response, status_code = result[0], result[1]
-                assert status_code == 404
-                mock_jsonify.assert_called_once()
+            # When file doesn't exist, it returns create_api_response tuple
+            assert isinstance(result, tuple)
+            assert len(result) >= 2
+            _response, status_code = result[0], result[1]
+            assert status_code == 404
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_clip_common_cached_file_exists(self, mock_cache: Mock) -> None:
