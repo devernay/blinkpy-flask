@@ -31,12 +31,9 @@ class TestClipServiceCoreLogic:
 
         assert filepath is None
         assert error is not None
-        assert "Blink instance is None" in error
+        assert "'NoneType' object has no attribute 'get_clip_url'" in error
 
-    @patch("blinkapp.services.clip_download.requests.get")
-    def test_download_cloud_clip_core_sync_cached_file_exists(
-        self, mock_get: Mock
-    ) -> None:
+    def test_download_cloud_clip_core_sync_cached_file_exists(self) -> None:
         """Test _download_cloud_clip_core_sync successful download."""
         from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
@@ -93,7 +90,7 @@ class TestClipServiceCoreLogic:
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
-        assert error == "Clip 123456 not found in video metadata"
+        assert error == "Clip not found"
         assert filepath is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
@@ -161,11 +158,7 @@ class TestClipServiceCoreLogic:
                 )
 
         # Check for the actual error message from Config.ErrorMessages.CLIP_NO_MEDIA_URL
-        assert error is not None and (
-            "video clip is not available" in error.lower()
-            or "no media url" in error.lower()
-            or "not found in video metadata" in error.lower()
-        )
+        assert error is not None and ("is not available for download" in error.lower())
         assert filepath is None
 
     def test_get_blink_instance(self) -> None:

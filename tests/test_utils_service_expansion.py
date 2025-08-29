@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Targeted tests for services/utils_service.py - covering highest missed lines."""
+"""Targeted tests for services/device_service.py and debug_service.py - covering highest missed lines."""
 
 import unittest
 from unittest.mock import Mock
@@ -10,8 +10,8 @@ from blinkapp.services.debug_service import dump_blink_system_info, handle_dump_
 from blinkapp.services.device_service import create_device_data
 
 
-class TestUtilsServiceExpansion(unittest.TestCase):
-    """Test uncovered utils service functions with highest missed lines."""
+class TestDeviceServiceExpansion(unittest.TestCase):
+    """Test uncovered device service functions with highest missed lines."""
 
     def test_create_device_data_basic(self) -> None:
         """Test create_device_data with mock camera."""

@@ -1,4 +1,4 @@
-"""Test coverage boost for utils_service.py missed lines.
+"""Test coverage boost for device_service.py missed lines.
 
 This test file specifically targets code paths that were missed by other test files
 to improve overall test coverage. Each test focuses on edge cases, error conditions,

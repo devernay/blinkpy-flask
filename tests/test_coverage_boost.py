@@ -421,8 +421,8 @@ class TestBasicOperations(BaseTestCase):
         converted = datetime.fromtimestamp(timestamp)
         self.assertIsInstance(converted, datetime)
 
-    def test_utils_service_create_device_data(self) -> None:
-        """Test utils_service create_device_data function."""
+    def test_device_service_create_device_data(self) -> None:
+        """Test device_service create_device_data function."""
         from blinkapp.services.device_service import create_device_data
 
         # Mock camera object

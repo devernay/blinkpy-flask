@@ -20,7 +20,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import requests
 from flask import jsonify, send_file
 from flask.typing import (
     ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
@@ -292,11 +291,6 @@ def download_local_clip(
         logger.error(f"Error in download_local_clip: {e}")
         return create_api_response(
             success=False,
-            error="Internal server error",
-            status_code=500,
-        )
-        return create_api_response(
-            success=False,
             error=f"Failed to download local clip: {e}",
             status_code=500,
         )
@@ -304,8 +298,6 @@ def download_local_clip(
 
 def download_clip_common(clip_path: Path, clip_id: ClipId) -> ResponseReturnValue:
     """Common clip download functionality for both cloud and local clips."""
-    from flask import send_file
-
     try:
         if not clip_path.exists():
             return create_api_response(
@@ -329,12 +321,3 @@ def download_clip_common(clip_path: Path, clip_id: ClipId) -> ResponseReturnValu
             error=f"Failed to serve clip file: {e}",
             status_code=500,
         )
-
-
-def _download_clip_content_testable(
-    url: str, timeout: int = Config.HTTP_TIMEOUT
-) -> bytes:
-    """Download clip content from URL - testable version."""
-    response = requests.get(url, timeout=timeout)
-    response.raise_for_status()
-    return response.content

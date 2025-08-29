@@ -25,9 +25,7 @@ __all__ = [
 ]
 
 import logging
-import subprocess
 import threading
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from blinkapp.services.hls_service import (
@@ -200,16 +198,6 @@ This module specifically handles MPEG-TS streams from Blink's init_livestream() 
 """
 
 
-# Add to exports
-__all__.extend(
-    [
-        "HLSStreamConfig",
-        "HLSStream",
-        "StreamManager",
-    ]
-)
-
-
 class StreamManager:
     """Manages multiple HLS streams from Blink cameras.
 
@@ -324,46 +312,6 @@ class StreamManager:
 
 # Testability improvement functions - these provide injectable dependencies
 # for better unit testing without changing existing functionality
-
-
-def _create_ffmpeg_process_testable(
-    cmd: list[str], process_factory: type[subprocess.Popen] | None = None
-) -> subprocess.Popen | None:
-    """Create FFmpeg process with injectable factory for testing."""
-    if process_factory is None:
-        process_factory = subprocess.Popen
-
-    try:
-        return process_factory(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.DEVNULL,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-
-
-def _build_ffmpeg_command_testable(
-    tcp_url: str, output_path: Path, config: HLSStreamConfig
-) -> list[str]:
-    """Build FFmpeg command for TCP to HLS transcoding - testable version."""
-    return [
-        "ffmpeg",
-        "-i",
-        tcp_url,
-        "-c",
-        "copy",
-        "-f",
-        "hls",
-        "-hls_time",
-        str(config.segment_time),
-        "-hls_list_size",
-        str(config.list_size),
-        "-hls_flags",
-        "delete_segments",
-        str(output_path),
-    ]
 
 
 def generate_hls_url(camera_id: str, filename: str) -> str:

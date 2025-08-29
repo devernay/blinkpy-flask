@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Advanced tests for services/utils_service.py - targeting more missed lines."""
+"""Advanced tests for services/device_service.py and debug_service.py - targeting more missed lines."""
 
 import unittest
 from pathlib import Path
@@ -10,8 +10,8 @@ from blinkapp.services.debug_service import check_credentials_file_exists
 from blinkapp.services.device_service import create_device_data
 
 
-class TestUtilsServiceAdvanced(unittest.TestCase):
-    """Test advanced utils service functions with highest missed lines."""
+class TestDeviceServiceAdvanced(unittest.TestCase):
+    """Test advanced device service functions with highest missed lines."""
 
     def test_check_credentials_file_exists_basic(self) -> None:
         """Test check_credentials_file_exists basic functionality."""

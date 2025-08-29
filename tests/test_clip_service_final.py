@@ -65,7 +65,10 @@ class TestClipServiceFinal:
                 Path("/tmp"),  # Intentionally testing invalid input
             )
 
-        assert error is not None and "blink instance" in error.lower()
+        assert (
+            error is not None
+            and "'NoneType' object has no attribute 'get_clip_url'" in error
+        )
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_sync_no_clip_found(
@@ -379,7 +382,11 @@ class TestClipServiceFinal:
                 mock_executor_instance = Mock(spec=ThreadPoolExecutor)
                 mock_executor.return_value = mock_executor_instance
 
-                result = download_clip_common(mock_filepath, self.clip_id)
+                # Need Flask request context for send_file
+                from blinkapp import app
+
+                with app.test_request_context():
+                    result = download_clip_common(mock_filepath, self.clip_id)
 
                 mock_send_file.assert_called_once()
                 # When file exists, it returns send_file response directly

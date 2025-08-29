@@ -22,6 +22,7 @@ __all__ = [
     "ensure_executor_initialized",
     "ensure_http_session_initialized",
     "executor",  # Global executor instance used in tests
+    "BlinkError",
 ]
 
 logger = logging.getLogger(__name__)
@@ -94,14 +95,6 @@ Usage:
     result = connection.execute(some_async_operation())
     connection.shutdown()
 """
-
-
-# Add to exports
-__all__.extend(
-    [
-        "BlinkError",
-    ]
-)
 
 
 class BlinkError(Exception):

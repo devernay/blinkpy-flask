@@ -33,8 +33,8 @@ class TestClipServiceBackground:
             "blinkapp.services.clip_processing.requests.get", return_value=mock_response
         ):
             with patch(
-                "blinkapp.services.clip_processing._get_clips_cache_dir",
-                return_value="/tmp/cache",
+                "blinkapp.CLIPS_CACHE_DIR",
+                "/tmp/cache",
             ):
                 with patch("pathlib.Path.mkdir"):
                     with patch(
@@ -61,8 +61,8 @@ class TestClipServiceBackground:
             "blinkapp.services.clip_processing.requests.get", return_value=mock_response
         ):
             with patch(
-                "blinkapp.services.clip_processing._get_clips_cache_dir",
-                return_value="/tmp/cache",
+                "blinkapp.CLIPS_CACHE_DIR",
+                "/tmp/cache",
             ):
                 with patch("pathlib.Path.mkdir"):
                     with patch("pathlib.Path.exists", return_value=False):
@@ -94,7 +94,7 @@ class TestClipServiceBackground:
             "blinkapp.services.clip_processing.requests.get", return_value=mock_response
         ):
             with patch(
-                "blinkapp.services.clip_processing._get_clips_cache_dir",
+                "blinkapp.CLIPS_CACHE_DIR",
                 return_value="/tmp/cache",
             ):
                 with patch("pathlib.Path.mkdir"):
@@ -134,7 +134,7 @@ class TestClipServiceBackground:
             "blinkapp.services.clip_processing.requests.get", return_value=mock_response
         ):
             with patch(
-                "blinkapp.services.clip_processing._get_clips_cache_dir",
+                "blinkapp.CLIPS_CACHE_DIR",
                 return_value="/tmp/cache",
             ):
                 with patch("pathlib.Path.mkdir"):
@@ -179,7 +179,7 @@ class TestClipServiceBackground:
         mock_cache.return_value = mock_cache_instance
 
         with patch(
-            "blinkapp.services.clip_processing._get_clips_cache_dir",
+            "blinkapp.CLIPS_CACHE_DIR",
             return_value="/tmp/cache",
         ):
             with patch(
@@ -237,7 +237,7 @@ class TestClipServiceBackground:
         mock_cache.return_value = {}
 
         with patch(
-            "blinkapp.services.clip_processing._get_clips_cache_dir",
+            "blinkapp.CLIPS_CACHE_DIR",
             return_value="/tmp/cache",
         ):
             with patch(
@@ -286,7 +286,11 @@ class TestClipServiceBackground:
 
         mock_send_file.return_value = "file_response"
 
-        result = download_clip_common(mock_filepath, self.clip_id)
+        # Need Flask request context for send_file
+        from blinkapp import app
+
+        with app.test_request_context():
+            result = download_clip_common(mock_filepath, self.clip_id)
 
         assert result is not None
         # Verify send_file was called with correct parameters
@@ -316,7 +320,11 @@ class TestClipServiceBackground:
 
         mock_send_file.return_value = "file_response"
 
-        result = download_clip_common(mock_filepath, self.clip_id)
+        # Need Flask request context for send_file
+        from blinkapp import app
+
+        with app.test_request_context():
+            result = download_clip_common(mock_filepath, self.clip_id)
 
         assert result is not None
         # Verify send_file was called with correct parameters
