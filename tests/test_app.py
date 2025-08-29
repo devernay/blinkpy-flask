@@ -5218,9 +5218,8 @@ class TestComplexErrorScenarios(BaseTestCase):
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
         """Test recovery from cascading failures."""
-        # Mock cascading failures with proper structure
-        mock_camera.camera_id = "12345"
-        mock_sync = create_mock_sync(cameras={})
+        mock_camera = create_mock_camera(camera_id="12345")
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
 
@@ -5976,13 +5975,14 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
             from blinkapp.models.ids import CameraId
             from blinkapp.services.device_service import create_device_data
 
-            # Create a mock camera
-            mock_camera.name = "Test Camera"
-            mock_camera.id = 12345
-            mock_camera.enabled = True
-            mock_camera.battery_voltage = 110
-            mock_camera.temperature = 20
-            mock_camera.wifi_strength = -50
+            mock_camera = create_mock_camera(
+                camera_id=12345,
+                name="Test Camera",
+                enabled=True,
+                battery_voltage=110,
+                temperature=20,
+                wifi_strength=-50
+            )
 
             cache_key = CameraId("12345")
             result = create_device_data(mock_camera, cache_key, 1234567890, 1234567880)
