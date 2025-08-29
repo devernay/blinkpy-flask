@@ -1299,10 +1299,6 @@ class TestThumbnailManagement(FlaskTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_timestamp_success(self, mock_blink: Mock) -> None:
         """Test get_camera_thumbnail_timestamp endpoint."""
-        mock_camera = create_mock_camera(
-            camera_id=12345, thumbnail="https://example.com/thumb.jpg?ts=1234567890"
-        )
-
         # Mock sync structure
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"sync1": mock_sync}
@@ -1961,10 +1957,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_with_cache_miss(self, mock_blink: Mock) -> None:
         """Test camera thumbnail endpoint with cache miss."""
-        mock_camera = create_mock_camera(
-            camera_id=12345, thumbnail="https://example.com/thumb.jpg?ts=1234567890"
-        )
-
         # Mock sync structure
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"sync1": mock_sync}
@@ -2384,9 +2376,6 @@ class TestStreamingAndLiveView(BaseTestCase):
         # Mock blink to be available
         mock_blink.available = True
 
-        # Mock camera
-        mock_camera.name = "Test Camera"
-
         # Mock sync module structure
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"test_sync": mock_sync}
@@ -2405,8 +2394,6 @@ class TestStreamingAndLiveView(BaseTestCase):
             if response.status_code == 200:
                 data = json.loads(response.data)
                 self.assertTrue(data["success"])
-
-            mock_camera = create_mock_camera(camera_id=12345)
 
     @patch("blinkapp.services.blink_service.blink")
     def test_get_liveview_stream_manager_error(self, mock_blink: Mock) -> None:
@@ -2644,9 +2631,6 @@ class TestCacheLoadingOperations(BaseTestCase):
         with patch("blinkapp.services.blink_service.blink") as mock_blink:
             mock_blink.available = True
 
-            # Mock camera
-            mock_camera.camera_id = "12345"
-
             mock_sync = create_mock_sync(cameras={})
             mock_blink.sync = {"sync1": mock_sync}
 
@@ -2676,8 +2660,6 @@ class TestCacheLoadingOperations(BaseTestCase):
 
                                     # Should populate cache with thumbnail data
                                     self.assertGreater(len(mock_cache), 0)
-
-            mock_camera = create_mock_camera(camera_id=12345)
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_load_clips_cache_success(self) -> None:
@@ -2914,9 +2896,6 @@ class TestPerformanceOptimizations(BaseTestCase):
             # Mock blink to be available
             mock_blink.available = True
 
-            # Mock camera structure
-            mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1000"
-
             # Mock sync structure
             mock_sync = create_mock_sync(cameras={})
             mock_blink.sync = {"sync1": mock_sync}
@@ -2925,8 +2904,6 @@ class TestPerformanceOptimizations(BaseTestCase):
 
             # Should use cached version (newer timestamp)
             self.assertEqual(response.status_code, 500)
-
-            mock_camera = create_mock_camera(camera_id=12345)
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
@@ -3140,7 +3117,7 @@ class TestLiveStreamOperations(BaseTestCase):
         # Mock blink to be available
         mock_blink.available = True
 
-        # Mock camera
+        mock_camera = create_mock_camera(camera_id=12345)
         mock_camera.init_livestream = Mock(spec=callable)
 
         # Mock sync module structure
