@@ -4752,19 +4752,23 @@ class TestAdvancedStreamingOperations(BaseTestCase):
     ) -> None:
         """Test complete livestream initialization workflow."""
         mock_camera = create_mock_camera("12345", name="Test Camera")
-        mock_camera.init_livestream = Mock(spec=callable)
+
+        # Create async mock for init_livestream
+        mock_stream = Mock(spec=IOBase)
+        mock_stream.url = "tcp://localhost:8080"
+        mock_stream.start = Mock(spec=callable)
+        mock_stream.feed = Mock(spec=callable)
+
+        async def mock_init_livestream() -> Mock:
+            return mock_stream
+
+        mock_camera.init_livestream = mock_init_livestream
 
         mock_sync = create_mock_sync(cameras={"12345": mock_camera})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.cameras = {12345: mock_camera}  # Add camera to blink.cameras
         mock_blink.available = True
-
-        # Mock stream object with all required methods
-        mock_stream = Mock(spec=IOBase)
-        mock_stream.url = "tcp://localhost:8080"
-        mock_stream.start = Mock(spec=callable)
-        mock_stream.feed = Mock(spec=callable)
 
         mock_connection.execute = mock_execute_with_coroutine_cleanup(
             return_value=mock_stream

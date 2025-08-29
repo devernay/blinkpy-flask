@@ -90,7 +90,20 @@ def create_mock_blink_instance(
     mock_blink = Mock(spec=Blink)
     mock_blink.available = available
     mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
-    mock_blink.get_videos_metadata = Mock(return_value=[])
+
+    # Create async mock for get_videos_metadata
+    async def mock_get_videos_metadata(stop: int = 25) -> list[dict[str, Any]]:
+        # Return metadata that includes the test clip ID
+        return [
+            {
+                "id": "123456",
+                "media": "http://example.com/video.mp4",
+                "thumbnail": "http://example.com/thumb.jpg",
+                "created_at": "2023-01-01T00:00:00Z",
+            }
+        ]
+
+    mock_blink.get_videos_metadata = mock_get_videos_metadata
     mock_blink.sync = sync_data or {}
     mock_blink.networks = networks or {}
     mock_blink.cameras = cameras or {}
