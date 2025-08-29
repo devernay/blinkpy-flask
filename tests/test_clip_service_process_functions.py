@@ -35,13 +35,14 @@ class TestClipProcessingFunctions:
         mock_cache.return_value = {}
         mock_format.return_value = [{"date": "January 01, 2023", "clips": []}]
 
-        videos_metadata: list[dict[str, object]] = [
+        videos_metadata: list[dict[str, str | int | bool | None]] = [
             {
                 "id": "123456",
                 "created_at": "2023-01-01T12:00:00Z",
                 "device_name": "Test Camera",
                 "thumbnail": "http://example.com/thumb.jpg",
                 "media": "http://example.com/video.mp4",
+                "deleted": False,
             }
         ]
 
@@ -68,7 +69,7 @@ class TestClipProcessingFunctions:
         mock_cache.return_value = {}
         mock_format.return_value = []
 
-        videos_metadata: list[dict[str, object]] = [
+        videos_metadata: list[dict[str, str | int | bool | None]] = [
             {
                 "id": "123456",
                 "created_at": "invalid_timestamp",
@@ -93,13 +94,14 @@ class TestClipProcessingFunctions:
         mock_cache.return_value = mock_cache_instance
         mock_format.return_value = []
 
-        videos_metadata: list[dict[str, object]] = [
+        videos_metadata: list[dict[str, str | int | bool | None]] = [
             {
                 "id": "123456",
                 "created_at": "2023-01-01T12:00:00Z",
                 "device_name": "Test Camera",
                 "thumbnail": "http://example.com/thumb.jpg",
                 "media": "http://example.com/video.mp4",
+                "deleted": False,
             }
         ]
 

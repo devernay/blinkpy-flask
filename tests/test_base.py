@@ -12,7 +12,7 @@ import os
 import sys
 import unittest
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, ParamSpec, TypeVar
 from unittest.mock import MagicMock, Mock
 
 from blinkpy.blinkpy import Blink
@@ -90,6 +90,7 @@ def create_mock_blink_instance(
     mock_blink = Mock(spec=Blink)
     mock_blink.available = available
     mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
+    mock_blink.get_videos_metadata = Mock(return_value=[])
     mock_blink.sync = sync_data or {}
     mock_blink.networks = networks or {}
     mock_blink.cameras = cameras or {}
@@ -303,18 +304,18 @@ def setup_test_globals() -> None:
     initialize_for_testing()
 
 
-F = TypeVar("F", bound=Callable[..., Any])
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
-def with_app_initialized[F: Callable[..., Any]](func: F) -> F:
+def with_app_initialized(func: Callable[P, T]) -> Callable[P, T]:  # noqa: UP047
     """Decorator to ensure app globals are initialized for testing."""
 
     @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         initialize_for_testing()
         return func(*args, **kwargs)
 
-    # Return type is preserved by functools.wraps
     return wrapper
 
 

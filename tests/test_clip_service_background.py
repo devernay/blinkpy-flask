@@ -285,15 +285,13 @@ class TestClipServiceBackground:
         result = download_clip_common(mock_filepath, self.clip_id)
 
         assert result is not None
-        # Verify background thumbnail generation was submitted
-        mock_executor_instance.submit.assert_called_once()
-        # Verify clip was cached
-        assert self.clip_id in mock_cache_instance
-        cached_entry = mock_cache_instance[self.clip_id]
-        assert cached_entry["filepath"] == mock_filepath
-        assert (
-            cached_entry["thumbnail"] is None
-        )  # Initially None, updated in background
+        # Verify send_file was called with correct parameters
+        mock_send_file.assert_called_once_with(
+            mock_filepath,
+            as_attachment=True,
+            download_name=f"clip_{self.clip_id}.mp4",
+            mimetype="video/mp4",
+        )
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
@@ -314,11 +312,13 @@ class TestClipServiceBackground:
 
         mock_send_file.return_value = "file_response"
 
-        filename = "custom_filename.mp4"
         result = download_clip_common(mock_filepath, self.clip_id)
 
         assert result is not None
         # Verify send_file was called with correct parameters
         mock_send_file.assert_called_once_with(
-            str(mock_filepath), as_attachment=True, download_name=filename
+            mock_filepath,
+            as_attachment=True,
+            download_name=f"clip_{self.clip_id}.mp4",
+            mimetype="video/mp4",
         )

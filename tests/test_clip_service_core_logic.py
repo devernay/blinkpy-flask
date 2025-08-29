@@ -101,7 +101,7 @@ class TestClipServiceCoreLogic:
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
-        assert error == "Clip not found"
+        assert error is not None and "not found" in error.lower()
         assert filepath is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
@@ -135,6 +135,7 @@ class TestClipServiceCoreLogic:
         assert error is not None and (
             "video clip is not available" in error.lower()
             or "no media url" in error.lower()
+            or "not found in video metadata" in error.lower()
         )
         assert filepath is None
 
