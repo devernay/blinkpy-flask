@@ -308,9 +308,12 @@ class TestClipServiceFinal:
         mock_response.status_code = 404
         mock_response.raise_for_status.side_effect = Exception("HTTP 404")
 
-        with patch(
-            "blinkapp.services.clip_processing.requests.get",
-            return_value=mock_response,
+        with (
+            patch(
+                "blinkapp.services.clip_processing.requests.get",
+                return_value=mock_response,
+            ),
+            patch("pathlib.Path.exists", return_value=False),
         ):
             result = download_and_cache_cloud_thumbnail(
                 self.clip_id, "http://example.com/thumb.jpg"
@@ -420,9 +423,12 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        with patch(
-            "blinkapp.services.clip_processing.requests.get",
-            side_effect=Exception("Network error"),
+        with (
+            patch(
+                "blinkapp.services.clip_processing.requests.get",
+                side_effect=Exception("Network error"),
+            ),
+            patch("pathlib.Path.exists", return_value=False),
         ):
             result = download_and_cache_cloud_thumbnail(
                 self.clip_id, "http://example.com/thumb.jpg"
