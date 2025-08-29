@@ -3860,10 +3860,8 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         """Test loading thumbnail cache with valid files."""
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
-        # Mock blink system with cameras
-        mock_camera.camera_id = "12345"  # Use string to match filename parsing
-
-        mock_sync = create_mock_sync(cameras={})
+        mock_camera = create_mock_camera(camera_id="12345")
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
         mock_blink.available = True
         mock_blink.sync = {"sync1": mock_sync}
@@ -3897,9 +3895,9 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
         # Mock blink system with valid cameras
+        mock_camera = create_mock_camera(camera_id="12345")
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink.available = True
-        mock_sync = create_mock_sync(cameras={})
-        mock_camera.camera_id = "12345"  # Valid camera ID
         mock_blink.sync = {"sync1": mock_sync}
 
         # Mock old thumbnail files with invalid camera IDs
@@ -4159,11 +4157,13 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_camera_thumbnail_cache_hit_optimization(self, mock_blink: Mock) -> None:
         """Test thumbnail cache hit optimization."""
-        # Mock camera with older thumbnail than cache
-        mock_camera.name = "Test Camera"
-        mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1000"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            name="Test Camera",
+            thumbnail="https://example.com/thumb.jpg?ts=1000"
+        )
 
-        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
@@ -4345,16 +4345,18 @@ class TestIntegrationScenarios(BaseTestCase):
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
         """Test complete camera workflow from system list to thumbnail."""
-        # Mock complete system setup
-        mock_camera.name = "Test Camera"
-        mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1000"
-        mock_camera.battery_voltage = 110
-        mock_camera.temperature = 72
-        mock_camera.wifi_strength = -45
-        mock_camera.motion_enabled = True
-        mock_camera.armed = True
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            name="Test Camera",
+            thumbnail="https://example.com/thumb.jpg?ts=1000",
+            battery_voltage=110,
+            temperature=72,
+            wifi_strength=-45,
+            motion_enabled=True,
+            armed=True
+        )
 
-        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_sync.network_id = 12345
         mock_sync.online = True
         mock_sync.sync_id = 54321
@@ -4564,7 +4566,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        mock_camera.name = "Test Camera"
+        mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
 
         cache_key = CameraId(12345)
 
@@ -4611,8 +4613,11 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        mock_camera.name = "Test Camera"
-        mock_camera.thumbnail = "https://example.com/thumb.jpg"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            name="Test Camera",
+            thumbnail="https://example.com/thumb.jpg"
+        )
 
         cache_key = CameraId(12345)
 
@@ -4711,11 +4716,10 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         self, mock_stream_manager, mock_connection, mock_blink
     ) -> None:
         """Test complete livestream initialization workflow."""
-        # Mock camera and sync structure
-        mock_camera.name = "Test Camera"
+        mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
         mock_camera.init_livestream = Mock(spec=callable)
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.cameras = {12345: mock_camera}  # Add camera to blink.cameras
@@ -4778,10 +4782,9 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         self, mock_stream_manager, mock_connection, mock_blink
     ) -> None:
         """Test livestream with HLS transcoding error."""
-        # Mock camera and sync structure
-        mock_camera.name = "Test Camera"
+        mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
 
-        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
@@ -4818,10 +4821,9 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         self, mock_connection, mock_blink
     ) -> None:
         """Test livestream when async initialization fails."""
-        # Mock camera and sync structure
-        mock_camera.name = "Test Camera"
+        mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
 
-        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
@@ -4850,6 +4852,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
         """Test livestream when stream manager is not available."""
+        mock_camera = create_mock_camera(camera_id=12345)
         mock_blink.cameras = {12345: mock_camera}
 
         mock_stream = Mock(spec=IOBase)
