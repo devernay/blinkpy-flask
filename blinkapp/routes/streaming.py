@@ -19,6 +19,9 @@ from typing import TYPE_CHECKING
 
 from flask import send_file
 
+if TYPE_CHECKING:
+    pass
+
 from blinkapp.config import Config
 from blinkapp.models.ids import CameraId
 from blinkapp.models.types import JsonDict
@@ -187,8 +190,15 @@ def _init_camera_stream(
 
         connection = ensure_blink_connection_initialized()
 
+        # Type assertion for camera - we know it's a BlinkCamera
+        from blinkpy.camera import BlinkCamera
+
+        if not isinstance(camera, BlinkCamera):
+            logger.error(f"Invalid camera type for {camera_id}")
+            return None, None
+
         # Initialize livestream on camera to get TCP stream
-        camera_stream_result = connection.execute(camera.init_livestream)
+        camera_stream_result = connection.execute(camera.init_livestream())
         if camera_stream_result is None:
             logger.error(f"Failed to initialize livestream for camera {camera_id}")
             return None, None
@@ -203,7 +213,7 @@ def _init_camera_stream(
         camera_stream = camera_stream_result
 
         # Start the camera stream
-        connection.execute(camera_stream.start)
+        connection.execute(camera_stream.start())
         tcp_url = camera_stream.url
 
         # Initialize stream manager

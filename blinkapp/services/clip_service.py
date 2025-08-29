@@ -16,8 +16,17 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
+from blinkapp.config import Config
+from blinkapp.models.cache import ClipCacheEntry
+from blinkapp.models.ids import ClipId
 from blinkapp.models.types import ClipDayGroup
+from blinkapp.services.cache_service import ensure_clips_cache_initialized
 from blinkapp.utils.formatters import format_clips_by_day
+
+if TYPE_CHECKING:
+    from blinkpy.blinkpy import Blink
+
+    from blinkapp.services.blink_connection import BlinkConnection
 
 
 class VideoMetadata(TypedDict):
@@ -32,17 +41,6 @@ class VideoMetadata(TypedDict):
     size: NotRequired[int | None]
     thumbnail: NotRequired[str | None]
 
-
-if TYPE_CHECKING:
-    from blinkpy.blinkpy import Blink
-
-    from blinkapp.models.ids import ClipId
-    from blinkapp.services.blink_connection import BlinkConnection
-
-from blinkapp.config import Config
-from blinkapp.models.cache import ClipCacheEntry
-from blinkapp.models.ids import ClipId
-from blinkapp.services.cache_service import ensure_clips_cache_initialized
 
 logger = logging.getLogger(__name__)
 

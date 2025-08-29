@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def update_camera_thumbnail(
-    camera: BlinkCamera, cache_key: CameraId, current_ts: int, cached_ts: int
+    camera: BlinkCamera, current_ts: int, cached_ts: int
 ) -> None:
     """Update camera thumbnail in background if needed.
 
@@ -50,7 +50,6 @@ def update_camera_thumbnail(
 
     Args:
         camera: Camera object from blinkpy library
-        cache_key: Validated camera ID for cache operations
         current_ts: Current thumbnail timestamp from camera API
         cached_ts: Previously cached thumbnail timestamp
     """
@@ -82,6 +81,14 @@ def update_camera_thumbnail(
 
     def update_thumbnail() -> None:
         """Background task to download and cache new thumbnail."""
+        # Get camera ID safely
+        camera_id_str = camera.camera_id
+        if camera_id_str is None:
+            logger.error(f"Camera {camera.name} has no camera_id")
+            return
+
+        cache_key = CameraId(camera_id_str)
+
         # Double-check timestamp to prevent race condition with concurrent requests
         current_entry = camera_thumbnail_cache.get(cache_key)
         current_cached_ts = (
@@ -304,7 +311,7 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
                         logger.debug(f"Could not read cached thumbnail: {e}")
 
         # Update cache in background if needed
-        update_camera_thumbnail(camera, camera_id, current_ts, cached_ts)
+        update_camera_thumbnail(camera, current_ts, cached_ts)
 
         # Fetch from Blink API
         thumbnail_response = blink_connection.execute(camera.get_thumbnail())

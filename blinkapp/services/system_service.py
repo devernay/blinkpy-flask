@@ -115,7 +115,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
         cached_ts = cached_entry.get("timestamp", 0) if cached_entry else 0
 
         # Update thumbnail if needed
-        update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
+        update_camera_thumbnail(camera, current_ts, cached_ts)
 
         # Create device data
         device_data = create_device_data(camera, current_ts, cached_ts)

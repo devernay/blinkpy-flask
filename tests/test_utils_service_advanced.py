@@ -25,7 +25,6 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
 
     def test_create_device_data_with_timestamps(self) -> None:
         """Test create_device_data with timestamp parameters."""
-        from blinkapp.models.ids import CameraId
 
         mock_camera = create_mock_camera(
             camera_id="test_camera_timestamps",
@@ -49,7 +48,6 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
 
     def test_create_device_data_edge_cases(self) -> None:
         """Test create_device_data with edge case values."""
-        from blinkapp.models.ids import CameraId
 
         mock_camera = create_mock_camera(
             camera_id="test_camera_edge",

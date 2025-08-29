@@ -15,7 +15,6 @@ class TestUtilsServiceExpansion(unittest.TestCase):
 
     def test_create_device_data_basic(self) -> None:
         """Test create_device_data with mock camera."""
-        from blinkapp.models.ids import CameraId
 
         mock_camera = create_mock_camera(
             camera_id="test_camera_basic",
@@ -37,7 +36,6 @@ class TestUtilsServiceExpansion(unittest.TestCase):
 
     def test_create_device_data_minimal(self) -> None:
         """Test create_device_data with minimal camera data."""
-        from blinkapp.models.ids import CameraId
 
         mock_camera = create_mock_camera(
             camera_id="test_camera_minimal",

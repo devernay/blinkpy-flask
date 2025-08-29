@@ -1600,7 +1600,6 @@ class TestConfigurationEdgeCases(BaseTestCase):
 
     def test_create_device_data_function(self) -> None:
         """Test create_device_data utility function."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.services.device_service import create_device_data
 
         mock_camera = create_mock_camera(
@@ -1841,7 +1840,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         self, mock_logger, mock_executor, mock_cache
     ) -> None:
         """Test thumbnail update with race condition handling."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
@@ -1880,9 +1878,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
                             "Should not be called due to race condition"
                         )
 
-                        update_camera_thumbnail(
-                            mock_camera, cache_key, current_ts, cached_ts
-                        )
+                        update_camera_thumbnail(mock_camera, current_ts, cached_ts)
 
         # Should have submitted background task
         mock_executor.submit.assert_called_once()
@@ -1897,7 +1893,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         self, mock_exists, mock_unlink, mock_cache
     ) -> None:
         """Test thumbnail cache file cleanup operations."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -1905,7 +1900,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
             name="Test Camera",
             thumbnail="https://example.com/new_thumb.jpg",
         )
-
 
         # Mock old cached entry
         mock_cache.get.side_effect = [
@@ -1952,7 +1946,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
                             b"fake_image_data",
                         ]
 
-                        update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
+                        update_camera_thumbnail(mock_camera, 2000, 1000)
 
                 # Should have cleaned up old file
                 mock_unlink.assert_called()
@@ -3672,7 +3666,6 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
         self, mock_connection, mock_executor, mock_cache
     ) -> None:
         """Test concurrent thumbnail update handling."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -3680,7 +3673,6 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
             name="Test Camera",
             thumbnail="https://example.com/thumb.jpg",
         )
-
 
         # Simulate concurrent updates with race condition
         call_count = 0
@@ -3723,7 +3715,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
                             b"image_data",
                         ]
 
-                        update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
+                        update_camera_thumbnail(mock_camera, 2000, 1000)
 
                         # Should handle race condition properly
                         self.assertEqual(call_count, 2)
@@ -4496,7 +4488,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_complete_workflow(self) -> None:
         """Test complete thumbnail update workflow with file operations."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -4504,7 +4495,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
             name="Test Camera",
             thumbnail="https://example.com/new_thumb.jpg",
         )
-
 
         # Mock file operations
         with patch("pathlib.Path.exists", return_value=True):
@@ -4535,9 +4525,11 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                                 )
 
                                 mock_cache = {}
-                                mock_cache[cache_key] = CameraThumbnailCacheEntry(
-                                    timestamp=1000,
-                                    filename="old_thumb.jpg",
+                                mock_cache[CameraId(mock_camera.camera_id)] = (
+                                    CameraThumbnailCacheEntry(
+                                        timestamp=1000,
+                                        filename="old_thumb.jpg",
+                                    )
                                 )
                                 mock_ensure_cache.return_value = mock_cache
 
@@ -4560,9 +4552,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                                 ]
 
                                 # Test the update mechanism
-                                update_camera_thumbnail(
-                                    mock_camera, cache_key, 2000, 1000
-                                )
+                                update_camera_thumbnail(mock_camera, 2000, 1000)
 
                                 # Should have executed background task
                     mock_executor.submit.assert_called_once()
@@ -4572,11 +4562,9 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_race_condition_skip(self) -> None:
         """Test thumbnail update skips when race condition detected."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
-
 
         with patch("blinkapp.services.cache_service.ensure_cache_paths_initialized"):
             with patch(
@@ -4598,15 +4586,15 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                     # Set up race condition: current_ts (2000) <= current_cached_ts (2500)
                     from blinkapp.models.cache import CameraThumbnailCacheEntry
 
-                    mock_cache[cache_key] = CameraThumbnailCacheEntry(
-                        timestamp=2500, filename="test.jpg"
+                    mock_cache[CameraId(mock_camera.camera_id)] = (
+                        CameraThumbnailCacheEntry(timestamp=2500, filename="test.jpg")
                     )  # Already updated by another thread
                     mock_ensure_cache.return_value = mock_cache
 
                     with patch(
                         "blinkapp.routes.thumbnails.logger"
                     ) as mock_logger:  # Patch thumbnails.logger not camera.logger
-                        update_camera_thumbnail(mock_camera, cache_key, 2000, 1000)
+                        update_camera_thumbnail(mock_camera, 2000, 1000)
 
                         # Should log the skip due to race condition
                         mock_logger.debug.assert_called_with(
@@ -4618,7 +4606,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_file_cleanup_error(self) -> None:
         """Test thumbnail update handles file cleanup errors."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -4626,7 +4613,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
             name="Test Camera",
             thumbnail="https://example.com/thumb.jpg",
         )
-
 
         # Mock file cleanup error
         with patch("pathlib.Path.exists", return_value=True):
@@ -4658,9 +4644,11 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                                     )
 
                                     mock_cache = {}
-                                    mock_cache[cache_key] = CameraThumbnailCacheEntry(
-                                        timestamp=1000,
-                                        filename="old_thumb.jpg",
+                                    mock_cache[CameraId(mock_camera.camera_id)] = (
+                                        CameraThumbnailCacheEntry(
+                                            timestamp=1000,
+                                            filename="old_thumb.jpg",
+                                        )
                                     )
                                     mock_ensure_cache.return_value = mock_cache
 
@@ -4681,9 +4669,7 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                                     with patch(
                                         "blinkapp.routes.thumbnails.logger"
                                     ) as mock_logger:  # Patch thumbnails.logger
-                                        update_camera_thumbnail(
-                                            mock_camera, cache_key, 2000, 1000
-                                        )
+                                        update_camera_thumbnail(mock_camera, 2000, 1000)
 
                                         # Should log the cleanup error
                                         mock_logger.debug.assert_called_with(
@@ -5979,7 +5965,6 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
 
         # Test device data creation
         try:
-            from blinkapp.models.ids import CameraId
             from blinkapp.services.device_service import create_device_data
 
             mock_camera = create_mock_camera(

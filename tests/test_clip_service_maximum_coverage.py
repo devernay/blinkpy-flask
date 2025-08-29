@@ -10,6 +10,7 @@ from test_base import (
     create_mock_blink_instance,
     create_mock_clip_item,
     create_mock_sync,
+    create_video_metadata,
 )
 
 from blinkapp.models.ids import ClipId
@@ -35,6 +36,7 @@ class TestClipServiceMaximumCoverage:
             self.clip_id, None, self.mock_cache_dir
         )
 
+        assert error is not None
         assert "Error downloading cloud clip 123456" in error
         assert "'NoneType' object has no attribute 'get_clip_url'" in error
         assert filepath is None
@@ -425,7 +427,6 @@ class TestClipServiceMaximumCoverage:
             created_at=datetime(2023, 1, 1, 12, 0, 0),
             name="Test Camera",
             url="http://example.com/local_video.mp4",
-            use_local_storage_spec=True,
         )
 
         mock_sync = create_mock_sync(

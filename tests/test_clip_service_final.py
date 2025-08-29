@@ -8,7 +8,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from blinkpy import Blink
+from blinkpy.blinkpy import Blink
 from requests import Response
 from test_base import create_mock_sync
 

@@ -22,9 +22,9 @@ class TestClipServiceCoreLogic:
         self, mock_cache: Mock
     ) -> None:
         """Test _download_cloud_clip_core_sync with no blink instance."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core_sync_sync
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
-        filepath, error = _download_cloud_clip_core_sync_sync(
+        filepath, error = _download_cloud_clip_core_sync(
             self.clip_id, None, self.mock_cache_dir
         )
 
