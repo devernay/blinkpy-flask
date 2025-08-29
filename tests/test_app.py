@@ -1303,7 +1303,7 @@ class TestThumbnailManagement(FlaskTestCase):
             camera_id=12345,
             thumbnail="https://example.com/thumb.jpg?ts=1234567890"
         )
-        
+
         # Mock sync structure with camera
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink.sync = {"sync1": mock_sync}
@@ -1966,7 +1966,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
             camera_id=12345,
             thumbnail="https://example.com/thumb.jpg?ts=1234567890"
         )
-        
+
         # Mock sync structure with camera
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink.sync = {"sync1": mock_sync}
