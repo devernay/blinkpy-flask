@@ -231,7 +231,7 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
             if camera is None:
                 raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
 
-            thumbnail_url = getattr(camera, "thumbnail", None)
+            thumbnail_url = camera.thumbnail
             timestamp = (
                 extract_thumbnail_timestamp(thumbnail_url) if thumbnail_url else None
             )

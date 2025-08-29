@@ -287,9 +287,7 @@ def initialize_cache_paths() -> None:
     try:
         from flask import current_app
 
-        cache_dir_config = getattr(
-            current_app.config, "CACHE_DIR", Config.DEFAULT_CACHE_DIR
-        )
+        cache_dir_config = current_app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR)
     except RuntimeError:
         cache_dir_config = Config.DEFAULT_CACHE_DIR
 

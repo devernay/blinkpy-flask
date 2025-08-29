@@ -58,6 +58,10 @@ def _download_cloud_clip_core(
     """Core cloud clip download logic - extracted for testability."""
     try:
         # Get clip URL from Blink
+        # Note: get_clip_url method may not exist in all blinkpy versions
+        if not hasattr(blink_instance, 'get_clip_url'):
+            return None, f"Blink instance does not support clip URL retrieval for clip {clip_id}"
+        
         clip_url = blink_instance.get_clip_url(clip_id)
         if not clip_url:
             return None, f"Could not get download URL for clip {clip_id}"
