@@ -1299,8 +1299,13 @@ class TestThumbnailManagement(FlaskTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_timestamp_success(self, mock_blink: Mock) -> None:
         """Test get_camera_thumbnail_timestamp endpoint."""
-        # Mock sync structure
-        mock_sync = create_mock_sync(cameras={})
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            thumbnail="https://example.com/thumb.jpg?ts=1234567890"
+        )
+        
+        # Mock sync structure with camera
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
 
@@ -1318,7 +1323,7 @@ class TestThumbnailManagement(FlaskTestCase):
     ) -> None:
         """Test refresh_camera_thumbnail endpoint."""
         # Use helpers to create mock objects
-        mock_sync = self.create_mock_sync(cameras={})
+        mock_sync = self.create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
@@ -1957,8 +1962,13 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_with_cache_miss(self, mock_blink: Mock) -> None:
         """Test camera thumbnail endpoint with cache miss."""
-        # Mock sync structure
-        mock_sync = create_mock_sync(cameras={})
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            thumbnail="https://example.com/thumb.jpg?ts=1234567890"
+        )
+        
+        # Mock sync structure with camera
+        mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
 
@@ -2402,7 +2412,7 @@ class TestStreamingAndLiveView(BaseTestCase):
         mock_blink.available = True
 
         # Mock sync module structure
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_blink.sync = {"test_sync": mock_sync}
 
         with patch(
@@ -3159,7 +3169,7 @@ class TestLiveStreamOperations(BaseTestCase):
     ) -> None:
         """Test live view when stream initialization fails."""
         # Set up proper sync structure for find_camera_by_id
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_blink.sync = {"test_sync": mock_sync}
         mock_blink.available = True
 
@@ -3186,7 +3196,7 @@ class TestLiveStreamOperations(BaseTestCase):
         mock_blink.available = True
 
         # Mock sync module structure
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_blink.sync = {"test_sync": mock_sync}
 
         # Mock successful stream initialization
@@ -3476,7 +3486,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         """
         mock_blink.available = True
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_blink.sync = {"sync1": mock_sync}
 
         # Mock stale cache entry with older timestamp (1000 < 2000)
@@ -3515,7 +3525,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         mock_camera = create_mock_camera(camera_id=12345)
         mock_camera.snap_picture.side_effect = Exception("Camera error")
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_blink.sync = {"sync1": mock_sync}
 
         with patch(
@@ -3537,12 +3547,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         """Test thumbnail timestamp extraction with invalid URL."""
         mock_blink.available = True
 
-        mock_camera = create_mock_camera(
-            camera_id=12345,
-            thumbnail="invalid_url_without_timestamp"
-        )
-
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_blink.sync = {"sync1": mock_sync}
 
         response = self.client.get("/api/cameras/12345/thumbnail?timestamp=true")
@@ -3580,11 +3585,6 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
 
         mock_blink.available = True
 
-        mock_camera = create_mock_camera(
-            camera_id=12345,
-            thumbnail="https://example.com/thumb.jpg"
-        )
-
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"sync1": mock_sync}
 
@@ -3615,7 +3615,7 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
                 mock_blink.available = True
 
                 # Mock camera with proper sync structure
-                mock_sync = create_mock_sync(cameras={})
+                mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
                 mock_blink.sync = {"test_sync": mock_sync}
 
                 response = self.client.post("/api/cameras/12345/streams")
@@ -4163,7 +4163,7 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
         mock_camera.name = "Test Camera"
         mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1000"
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
@@ -4354,7 +4354,7 @@ class TestIntegrationScenarios(BaseTestCase):
         mock_camera.motion_enabled = True
         mock_camera.armed = True
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
         mock_sync.network_id = 12345
         mock_sync.online = True
         mock_sync.sync_id = 54321
@@ -4781,7 +4781,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         # Mock camera and sync structure
         mock_camera.name = "Test Camera"
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
@@ -4821,7 +4821,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         # Mock camera and sync structure
         mock_camera.name = "Test Camera"
 
-        mock_sync = create_mock_sync(cameras={})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
