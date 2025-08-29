@@ -411,7 +411,7 @@ class TestFlaskApp(FlaskTestCase):
     def test_api_systems_success(self, mock_connection: Mock, mock_blink: Mock) -> None:
         """Test successful systems API call."""
         # Use helper to create mock objects
-        mock_sync = self.create_mock_sync(network_id=12345, armed=False, online=True)
+        mock_sync = create_mock_sync(network_id=12345, armed=False, online=True)
         mock_blink.available = True
         mock_blink.sync = {"Test System": mock_sync}
 
@@ -1323,7 +1323,7 @@ class TestThumbnailManagement(FlaskTestCase):
     ) -> None:
         """Test refresh_camera_thumbnail endpoint."""
         # Use helpers to create mock objects
-        mock_sync = self.create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
+        mock_sync = create_mock_sync(cameras={"Test Camera": create_mock_camera(camera_id=12345)})
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True

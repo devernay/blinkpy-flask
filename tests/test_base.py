@@ -39,6 +39,9 @@ def create_mock_camera(
     last_record: Any = None,
     updated_at: str | None = None,
     temperature_calibrated: float | None = None,
+    battery_voltage: int | None = None,
+    armed: bool | None = None,
+    enabled: bool | None = None,
 ) -> Mock:
     """Create a mock camera with common attributes."""
     from unittest.mock import Mock
@@ -59,6 +62,15 @@ def create_mock_camera(
     mock_camera.thumbnail = thumbnail
     mock_camera.last_record = last_record
     mock_camera.updated_at = updated_at
+    
+    # Optional attributes
+    if battery_voltage is not None:
+        mock_camera.battery_voltage = battery_voltage
+    if armed is not None:
+        mock_camera.armed = armed
+    if enabled is not None:
+        mock_camera.enabled = enabled
+        
     return mock_camera
 
 
