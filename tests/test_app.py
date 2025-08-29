@@ -3476,9 +3476,6 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         """
         mock_blink.available = True
 
-        # Mock camera with newer thumbnail (timestamp 2000)
-        mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=2000"
-
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"sync1": mock_sync}
 
@@ -3515,6 +3512,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         """Test refresh camera thumbnail when snap_picture fails."""
         mock_blink.available = True
 
+        mock_camera = create_mock_camera(camera_id=12345)
         mock_camera.snap_picture.side_effect = Exception("Camera error")
 
         mock_sync = create_mock_sync(cameras={})
@@ -3539,7 +3537,10 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         """Test thumbnail timestamp extraction with invalid URL."""
         mock_blink.available = True
 
-        mock_camera.thumbnail = "invalid_url_without_timestamp"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            thumbnail="invalid_url_without_timestamp"
+        )
 
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"sync1": mock_sync}
@@ -3579,8 +3580,10 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
 
         mock_blink.available = True
 
-        # Mock camera structure
-        mock_camera.thumbnail = "https://example.com/thumb.jpg"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            thumbnail="https://example.com/thumb.jpg"
+        )
 
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"sync1": mock_sync}
