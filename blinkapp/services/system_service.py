@@ -118,7 +118,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
         update_camera_thumbnail(camera, cache_key, current_ts, cached_ts)
 
         # Create device data
-        device_data = create_device_data(camera, cache_key, current_ts, cached_ts)
+        device_data = create_device_data(camera, current_ts, cached_ts)
         logger.debug(f"Camera device data for {camera.name}: {device_data}")
         devices.append(device_data)
 

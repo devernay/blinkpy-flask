@@ -36,9 +36,11 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_parse_tcp_url_none(self) -> None:
         """Test parse_tcp_url with None - line 88."""
+        from typing import cast
+
         # Should raise AttributeError for None input
         with self.assertRaises(AttributeError):
-            parse_tcp_url(None)  # type: ignore[arg-type]
+            parse_tcp_url(cast(str, None))  # Intentionally testing invalid input
 
     def test_parse_tcp_url_valid_url(self) -> None:
         """Test parse_tcp_url with valid URL - lines 90-100."""
@@ -110,7 +112,11 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_validate_tcp_url_none(self) -> None:
         """Test validate_tcp_url with None - line 115."""
-        result = validate_tcp_url(None)  # type: ignore[arg-type]
+        from typing import cast
+
+        result = validate_tcp_url(
+            cast(str, None)
+        )  # Intentionally testing invalid input
 
         # Should return False for None
         self.assertFalse(result)

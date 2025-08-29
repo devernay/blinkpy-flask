@@ -33,21 +33,21 @@ class TestClipServiceComprehensive:
         mock_format.return_value = [{"date": "January 01, 2023", "clips": []}]
 
         # Test with valid video metadata
-        videos_metadata: list[dict[str, object]] = [
-            {
-                "id": "123456",
-                "created_at": "2023-01-01T12:00:00Z",
-                "device_name": "Test Camera",
-                "thumbnail": "http://example.com/thumb.jpg",
-                "media": "http://example.com/video.mp4",
-            },
-            {
-                "id": "789012",
-                "created_at": "2023-01-01T14:00:00Z",
-                "device_name": "Test Camera 2",
-                "thumbnail": None,  # Test None thumbnail
-                "media": None,  # Test None media
-            },
+        from tests.test_base import create_video_metadata
+
+        videos_metadata = [
+            create_video_metadata(
+                clip_id="123456",
+                created_at="2023-01-01T12:00:00Z",
+                device_name="Test Camera",
+            ),
+            create_video_metadata(
+                clip_id="789012",
+                created_at="2023-01-01T14:00:00Z",
+                device_name="Test Camera 2",
+                thumbnail=None,
+                size=None,
+            ),
         ]
 
         process_cloud_clips(videos_metadata)
@@ -80,14 +80,14 @@ class TestClipServiceComprehensive:
         mock_cache.return_value = mock_cache_instance
         mock_format.return_value = []
 
-        videos_metadata: list[dict[str, object]] = [
-            {
-                "id": "123456",
-                "created_at": "2023-01-01T12:00:00Z",
-                "device_name": "Test Camera",
-                "thumbnail": "http://example.com/new_thumb.jpg",
-                "media": "http://example.com/new_video.mp4",
-            }
+        videos_metadata = [
+            create_video_metadata(
+                clip_id="123456",
+                created_at="2023-01-01T12:00:00Z",
+                device_name="Test Camera",
+                media="http://example.com/new_video.mp4",
+                thumbnail="http://example.com/new_thumb.jpg",
+            )
         ]
 
         process_cloud_clips(videos_metadata)
@@ -111,8 +111,14 @@ class TestClipServiceComprehensive:
         mock_format.return_value = []
 
         # Invalid video metadata that will cause exceptions
-        videos_metadata: list[dict[str, object]] = [
-            {"id": "123456", "created_at": "invalid_date"},  # Invalid timestamp
+        videos_metadata = [
+            {
+                "id": "123456",
+                "created_at": "invalid_date",
+                "device_name": "",
+                "deleted": False,
+                "media": "",
+            },  # Invalid timestamp
             {"invalid": "data"},  # Missing required fields
         ]
 
@@ -212,11 +218,11 @@ class TestClipServiceComprehensive:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_complete_success_flow(
+    def test_download_cloud_clip_core_sync_complete_success_flow(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test complete successful download flow in _download_cloud_clip_core."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test complete successful download flow in _download_cloud_clip_core_sync."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
 
@@ -257,7 +263,7 @@ class TestClipServiceComprehensive:
                     mock_connection.execute = AsyncMock(return_value=[clip_info])
                     mock_conn.return_value = mock_connection
 
-                    filepath, error = _download_cloud_clip_core(
+                    filepath, error = _download_cloud_clip_core_sync(
                         self.clip_id, mock_blink, cache_dir
                     )
 
@@ -273,11 +279,11 @@ class TestClipServiceComprehensive:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_http_failure(
+    def test_download_cloud_clip_core_sync_http_failure(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test _download_cloud_clip_core with HTTP failure."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with HTTP failure."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
 
@@ -311,7 +317,7 @@ class TestClipServiceComprehensive:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                filepath, error = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core_sync(
                     self.clip_id, mock_blink, cache_dir
                 )
 
@@ -326,13 +332,13 @@ class TestClipServiceComprehensive:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_request_exception(
+    def test_download_cloud_clip_core_sync_request_exception(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test _download_cloud_clip_core with request exception."""
+        """Test _download_cloud_clip_core_sync with request exception."""
         import requests
 
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
 
@@ -364,7 +370,7 @@ class TestClipServiceComprehensive:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                filepath, error = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core_sync(
                     self.clip_id, mock_blink, cache_dir
                 )
 

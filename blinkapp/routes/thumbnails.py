@@ -204,7 +204,9 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
             executor.submit(remove_camera_thumbnail_cache)
 
             # Trigger thumbnail update
-            blink_connection.execute(camera.snap_picture())  # type: ignore[attr-defined]
+            snap_result = blink_connection.execute(camera.snap_picture())
+            if snap_result is None:
+                logger.warning(f"snap_picture() returned None for camera {camera_id}")
 
             return {"success": True, "message": "Camera thumbnail refresh initiated"}
 

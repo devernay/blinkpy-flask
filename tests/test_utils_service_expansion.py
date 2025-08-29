@@ -26,9 +26,8 @@ class TestUtilsServiceExpansion(unittest.TestCase):
             wifi_strength=4,
             last_record={"created_at": "2025-01-01T00:00:00Z"},
         )
-        cache_key = CameraId("12345")
 
-        result = create_device_data(mock_camera, cache_key)
+        result = create_device_data(mock_camera)
 
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)
@@ -49,9 +48,8 @@ class TestUtilsServiceExpansion(unittest.TestCase):
             wifi_strength=None,
             last_record=None,
         )
-        cache_key = CameraId("67890")
 
-        result = create_device_data(mock_camera, cache_key)
+        result = create_device_data(mock_camera)
 
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)

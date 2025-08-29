@@ -37,11 +37,10 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
             wifi_strength=3,
             last_record={"created_at": "2025-01-01T00:00:00Z"},
         )
-        cache_key = CameraId("12345")
         current_ts = 1640995200  # 2022-01-01 00:00:00
         cached_ts = 1640991600  # 2021-12-31 23:00:00
 
-        result = create_device_data(mock_camera, cache_key, current_ts, cached_ts)
+        result = create_device_data(mock_camera, current_ts, cached_ts)
 
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)
@@ -62,9 +61,8 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
             wifi_strength=0,
             last_record={"created_at": "invalid-date"},
         )
-        cache_key = CameraId("edge_case")
 
-        result = create_device_data(mock_camera, cache_key)
+        result = create_device_data(mock_camera)
 
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)

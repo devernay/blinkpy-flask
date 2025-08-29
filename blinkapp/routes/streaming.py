@@ -188,14 +188,23 @@ def _init_camera_stream(
         connection = ensure_blink_connection_initialized()
 
         # Initialize livestream on camera to get TCP stream
-        camera_stream = connection.execute(camera.init_livestream)  # type: ignore[attr-defined]
-        if camera_stream is None:
+        camera_stream_result = connection.execute(camera.init_livestream)
+        if camera_stream_result is None:
             logger.error(f"Failed to initialize livestream for camera {camera_id}")
             return None, None
 
+        # Type assertion: we know init_livestream returns BlinkLiveStream
+        from blinkpy.livestream import BlinkLiveStream
+
+        if not isinstance(camera_stream_result, BlinkLiveStream):
+            logger.error(f"Unexpected stream type: {type(camera_stream_result)}")
+            return None, None
+
+        camera_stream = camera_stream_result
+
         # Start the camera stream
-        connection.execute(camera_stream.start)  # type: ignore[attr-defined]
-        tcp_url = camera_stream.url  # type: ignore[attr-defined]
+        connection.execute(camera_stream.start)
+        tcp_url = camera_stream.url
 
         # Initialize stream manager
         stream_manager = StreamManager()

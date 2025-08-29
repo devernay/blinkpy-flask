@@ -270,8 +270,14 @@ def _create_base_decorator(
                 if skip_response_formatting:
                     # For file responses and method dispatch, the function should return FlaskResponse
                     # Type assertion: when skip_response_formatting=True, result must be FlaskResponse
-                    assert isinstance(result, Response | tuple)
-                    return result  # type: ignore[return-value]
+                    if isinstance(result, Response | tuple):
+                        return result
+                    else:
+                        # This should not happen with proper usage, but handle gracefully
+                        logger.warning(
+                            f"Expected FlaskResponse but got {type(result)} in {op_name}"
+                        )
+                        return _handle_response_formatting(result)
                 else:
                     return _handle_response_formatting(result)
 

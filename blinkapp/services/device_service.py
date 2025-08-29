@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
 
-    from blinkapp.models.ids import CameraId
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ def format_device_temperature(temperature: float | int | None) -> str:
 
 
 def create_device_data(
-    camera: BlinkCamera, cache_key: CameraId, current_ts: int = 0, cached_ts: int = 0
+    camera: BlinkCamera, current_ts: int = 0, cached_ts: int = 0
 ) -> dict[str, object]:
     """Create comprehensive device data dictionary for a Blink camera.
 
@@ -67,7 +66,6 @@ def create_device_data(
 
     Args:
         camera: Blink camera instance with device attributes
-        cache_key: Unique identifier for the camera
         current_ts: Current timestamp for thumbnail freshness (default: 0)
         cached_ts: Cached thumbnail timestamp (default: 0)
 

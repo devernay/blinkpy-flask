@@ -9,6 +9,22 @@ from .camera import BlinkCamera
 if TYPE_CHECKING:
     from .blinkpy import Blink
 
+class LocalStorageMediaItem:
+    """Local storage media item for Blink systems."""
+
+    id: int
+    name: str
+    size: int
+    created_at: str
+    updated_at: str
+    thumbnail: str | None
+
+    def __init__(self, data: dict[str, Any]) -> None: ...
+    def url(self) -> str: ...
+
+    @property
+    def attributes(self) -> dict[str, Any]: ...
+
 class BlinkSyncModule:
     """Sync module class for Blink systems."""
 

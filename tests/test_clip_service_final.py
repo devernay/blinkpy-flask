@@ -8,6 +8,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from blinkpy import Blink
 from requests import Response
 from test_base import create_mock_sync
 
@@ -36,14 +37,18 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        result = download_and_cache_cloud_thumbnail(self.clip_id, None)  # type: ignore[arg-type]
+        from typing import cast
+
+        result = download_and_cache_cloud_thumbnail(
+            self.clip_id, cast(str, None)
+        )  # Intentionally testing invalid input
 
         assert result is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_no_blink(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core with no blink instance."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+    def test_download_cloud_clip_core_sync_no_blink(self, mock_cache: Mock) -> None:
+        """Test _download_cloud_clip_core_sync with no blink instance."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
 
@@ -51,16 +56,22 @@ class TestClipServiceFinal:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            filepath, error = _download_cloud_clip_core(
-                self.clip_id, None, Path("/tmp")
+            from typing import cast
+
+            filepath, error = _download_cloud_clip_core_sync(
+                self.clip_id,
+                cast(Blink, None),
+                Path("/tmp"),  # Intentionally testing invalid input
             )
 
         assert error is not None and "blink instance" in error.lower()
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_no_clip_found(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core with clip not found."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+    def test_download_cloud_clip_core_sync_no_clip_found(
+        self, mock_cache: Mock
+    ) -> None:
+        """Test _download_cloud_clip_core_sync with clip not found."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
 
@@ -71,7 +82,7 @@ class TestClipServiceFinal:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            filepath, error = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core_sync(
                 self.clip_id, mock_blink, Path("/tmp")
             )
 
@@ -79,8 +90,8 @@ class TestClipServiceFinal:
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_exists(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core with existing cached file."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with existing cached file."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
@@ -94,7 +105,7 @@ class TestClipServiceFinal:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            filepath, error = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core_sync(
                 self.clip_id, mock_blink, Path("/tmp")
             )
 
@@ -102,8 +113,8 @@ class TestClipServiceFinal:
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_os_error(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core with cached file OS error."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with cached file OS error."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_filepath = Mock(spec=Path)
         mock_filepath.exists.side_effect = OSError("Permission denied")
@@ -139,7 +150,7 @@ class TestClipServiceFinal:
                         "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                         return_value=Mock(execute=Mock(return_value=[])),
                     ):
-                        filepath, error = _download_cloud_clip_core(
+                        filepath, error = _download_cloud_clip_core_sync(
                             self.clip_id, mock_blink, Path("/tmp")
                         )
 
@@ -150,14 +161,14 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        videos_metadata: list[dict[str, object]] = [
-            {
-                "id": "123456",
-                "created_at": "invalid_timestamp",
-                "device_name": "Test Camera",
-                "thumbnail": "http://example.com/thumb.jpg",
-                "media": "http://example.com/video.mp4",
-            }
+        from tests.test_base import create_video_metadata
+
+        videos_metadata = [
+            create_video_metadata(
+                clip_id="123456",
+                created_at="invalid_timestamp",
+                device_name="Test Camera",
+            )
         ]
 
         with patch("blinkapp.utils.formatters.format_clips_by_day") as mock_format:

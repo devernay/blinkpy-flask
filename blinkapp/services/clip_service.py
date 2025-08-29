@@ -14,10 +14,24 @@ __all__ = [
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 from blinkapp.models.types import ClipDayGroup
 from blinkapp.utils.formatters import format_clips_by_day
+
+
+class VideoMetadata(TypedDict):
+    """Type definition for video metadata from blinkpy."""
+
+    id: str | int
+    created_at: str
+    device_name: str
+    deleted: bool
+    media: str
+    # Additional optional fields that may be present
+    size: NotRequired[int | None]
+    thumbnail: NotRequired[str | None]
+
 
 if TYPE_CHECKING:
     from blinkpy.blinkpy import Blink
@@ -34,8 +48,9 @@ logger = logging.getLogger(__name__)
 
 
 def process_cloud_clips(
-    videos_metadata: list[dict[str, str | bool | None]],
+    videos_metadata: list[dict[str, str | int | bool | None]],
 ) -> list[ClipDayGroup]:
+    """Process cloud clips from video metadata."""
     """Process cloud storage clips into day-grouped format.
 
     Takes raw video metadata from the Blink API and organizes it into

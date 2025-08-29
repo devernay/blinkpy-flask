@@ -13,6 +13,7 @@ __all__ = [
     "_get_blink_instance",
     "_get_clips_cache_dir",
     "_download_cloud_clip_core",
+    "_download_cloud_clip_core_sync",
 ]
 
 import logging
@@ -50,6 +51,22 @@ def _get_clips_cache_dir() -> str:
     return CLIPS_CACHE_DIR
 
 
+def _download_cloud_clip_core_sync(
+    clip_id: ClipId,
+    blink_instance: Blink | None,
+    clips_cache_dir: Path,
+) -> tuple[Path | None, str | None]:
+    """Synchronous wrapper for _download_cloud_clip_core for testing."""
+    if blink_instance is None:
+        return None, f"Error downloading cloud clip {clip_id}: Blink instance is None"
+
+    import asyncio
+
+    return asyncio.run(
+        _download_cloud_clip_core(clip_id, blink_instance, clips_cache_dir)
+    )
+
+
 async def _download_cloud_clip_core(
     clip_id: ClipId,
     blink_instance: Blink,
@@ -58,18 +75,20 @@ async def _download_cloud_clip_core(
     """Core cloud clip download logic - extracted for testability."""
     try:
         # Get all video metadata to find our specific clip
-        videos_metadata = await blink_instance.get_videos_metadata(stop=50)  # Search more pages
-        
+        videos_metadata = await blink_instance.get_videos_metadata(
+            stop=50
+        )  # Search more pages
+
         # Find the clip by ID in the metadata
         clip_metadata = None
         for item in videos_metadata:
             if str(item.get("id")) == str(clip_id):
                 clip_metadata = item
                 break
-        
+
         if not clip_metadata:
             return None, f"Clip {clip_id} not found in video metadata"
-        
+
         # Get the media URL from the clip metadata
         media_url = clip_metadata.get("media")
         if not media_url:
@@ -114,10 +133,9 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
         clip_path = clips_cache_dir / clip_filename
 
         if not clip_path.exists():
-            import asyncio
-            clip_path, error = asyncio.run(_download_cloud_clip_core(
+            clip_path, error = _download_cloud_clip_core_sync(
                 clip_id, blink_instance, clips_cache_dir
-            ))
+            )
             if error or clip_path is None:
                 # Determine appropriate status code based on error message
                 status_code = 500  # Default to server error

@@ -52,7 +52,7 @@ def setup_camera_routes(app: "Flask") -> None:
 
             cameras = []
             for camera_id, camera in blink.cameras.items():
-                camera_data = create_device_data(camera, camera_id)
+                camera_data = create_device_data(camera)
                 cameras.append(camera_data)
 
             return {"cameras": cameras}
@@ -79,7 +79,7 @@ def setup_camera_routes(app: "Flask") -> None:
             raise ValidationError(Config.ErrorMessages.CAMERA_NOT_FOUND, 404)
 
         with error_context("get camera details", CameraError):
-            camera_data = create_device_data(camera, camera_id)
+            camera_data = create_device_data(camera)
             return {"camera": camera_data}
 
     @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])

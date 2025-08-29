@@ -25,11 +25,13 @@ class TestClipServiceMaximumCoverage:
         self.mock_cache_dir = Path("/tmp/test_cache")
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_no_blink_instance(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core with no blink instance."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+    def test_download_cloud_clip_core_sync_no_blink_instance(
+        self, mock_cache: Mock
+    ) -> None:
+        """Test _download_cloud_clip_core_sync with no blink instance."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
-        filepath, error = _download_cloud_clip_core(
+        filepath, error = _download_cloud_clip_core_sync(
             self.clip_id, None, self.mock_cache_dir
         )
 
@@ -38,18 +40,18 @@ class TestClipServiceMaximumCoverage:
         assert filepath is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_cached_file_exists(
+    def test_download_cloud_clip_core_sync_cached_file_exists(
         self, mock_cache: Mock
     ) -> None:
-        """Test _download_cloud_clip_core with existing cached file."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with existing cached file."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_filepath = Mock(spec=Path)
         mock_filepath.exists.return_value = True
         mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
         mock_cache.return_value = mock_cache_instance
 
-        filepath, error = _download_cloud_clip_core(
+        filepath, error = _download_cloud_clip_core_sync(
             self.clip_id, self.mock_blink, self.mock_cache_dir
         )
 
@@ -57,11 +59,11 @@ class TestClipServiceMaximumCoverage:
         assert filepath == mock_filepath
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_cached_file_os_error(
+    def test_download_cloud_clip_core_sync_cached_file_os_error(
         self, mock_cache: Mock
     ) -> None:
-        """Test _download_cloud_clip_core with OSError on cached file check."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with OSError on cached file check."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_filepath = Mock(spec=Path)
         mock_filepath.exists.side_effect = OSError("File access error")
@@ -74,7 +76,7 @@ class TestClipServiceMaximumCoverage:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            filepath, error = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core_sync(
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
@@ -82,9 +84,11 @@ class TestClipServiceMaximumCoverage:
         assert filepath is None
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_clip_not_found(self, mock_cache: Mock) -> None:
-        """Test _download_cloud_clip_core when clip not found in metadata."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+    def test_download_cloud_clip_core_sync_clip_not_found(
+        self, mock_cache: Mock
+    ) -> None:
+        """Test _download_cloud_clip_core_sync when clip not found in metadata."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
         self.mock_blink.videos = {"all": []}
@@ -93,7 +97,7 @@ class TestClipServiceMaximumCoverage:
             "blinkapp.services.blink_service.ensure_blink_connection_initialized",
             return_value=Mock(execute=Mock(return_value=[])),
         ):
-            filepath, error = _download_cloud_clip_core(
+            filepath, error = _download_cloud_clip_core_sync(
                 self.clip_id, self.mock_blink, self.mock_cache_dir
             )
 
@@ -103,11 +107,11 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_no_media_url(
+    def test_download_cloud_clip_core_sync_no_media_url(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test _download_cloud_clip_core with no media URL."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with no media URL."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
         clip_info = {
@@ -123,7 +127,7 @@ class TestClipServiceMaximumCoverage:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                filepath, error = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core_sync(
                     self.clip_id, self.mock_blink, self.mock_cache_dir
                 )
 
@@ -133,11 +137,11 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_http_error(
+    def test_download_cloud_clip_core_sync_http_error(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test _download_cloud_clip_core with HTTP error."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with HTTP error."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
         clip_info = {
@@ -167,7 +171,7 @@ class TestClipServiceMaximumCoverage:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                filepath, error = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core_sync(
                     self.clip_id, self.mock_blink, self.mock_cache_dir
                 )
 
@@ -177,11 +181,11 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_timeout_error(
+    def test_download_cloud_clip_core_sync_timeout_error(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test _download_cloud_clip_core with timeout error."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync with timeout error."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
         clip_info = {
@@ -204,7 +208,7 @@ class TestClipServiceMaximumCoverage:
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                 return_value=Mock(execute=Mock(return_value=[clip_info])),
             ):
-                filepath, error = _download_cloud_clip_core(
+                filepath, error = _download_cloud_clip_core_sync(
                     self.clip_id, self.mock_blink, self.mock_cache_dir
                 )
 
@@ -214,11 +218,11 @@ class TestClipServiceMaximumCoverage:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
-    def test_download_cloud_clip_core_success(
+    def test_download_cloud_clip_core_sync_success(
         self, mock_session, mock_executor, mock_cache
     ) -> None:
-        """Test _download_cloud_clip_core successful download."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core
+        """Test _download_cloud_clip_core_sync successful download."""
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
 
         mock_cache.return_value = {}
         clip_info = {
@@ -250,7 +254,7 @@ class TestClipServiceMaximumCoverage:
                     "blinkapp.services.blink_service.ensure_blink_connection_initialized",
                     return_value=Mock(execute=Mock(return_value=[clip_info])),
                 ):
-                    filepath, error = _download_cloud_clip_core(
+                    filepath, error = _download_cloud_clip_core_sync(
                         self.clip_id, self.mock_blink, self.mock_cache_dir
                     )
 
@@ -259,7 +263,7 @@ class TestClipServiceMaximumCoverage:
 
     @patch("blinkapp.services.clip_download._get_blink_instance")
     @patch("blinkapp.services.clip_download._get_clips_cache_dir")
-    @patch("blinkapp.services.clip_download._download_cloud_clip_core")
+    @patch("blinkapp.services.clip_download._download_cloud_clip_core_sync")
     @patch("blinkapp.models.responses.create_api_response")
     @patch("flask.jsonify")
     def test_download_cloud_clip_error_response(
@@ -284,7 +288,7 @@ class TestClipServiceMaximumCoverage:
 
     @patch("blinkapp.services.clip_service._get_blink_instance")
     @patch("blinkapp.services.clip_service._get_clips_cache_dir")
-    @patch("blinkapp.services.clip_download._download_cloud_clip_core")
+    @patch("blinkapp.services.clip_download._download_cloud_clip_core_sync")
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("flask.send_file")
@@ -353,14 +357,14 @@ class TestClipServiceMaximumCoverage:
         mock_cache.return_value = {}
         mock_format.return_value = [{"date": "January 01, 2023", "clips": []}]
 
-        videos_metadata: list[dict[str, object]] = [
-            {
-                "id": "123456",
-                "created_at": "2023-01-01T12:00:00Z",
-                "device_name": "Test Camera",
-                "thumbnail": "http://example.com/thumb.jpg",
-                "media": "http://example.com/video.mp4",
-            }
+        from tests.test_base import create_video_metadata
+
+        videos_metadata = [
+            create_video_metadata(
+                clip_id="123456",
+                created_at="2023-01-01T12:00:00Z",
+                device_name="Test Camera",
+            )
         ]
 
         result = process_cloud_clips(videos_metadata)
@@ -378,12 +382,12 @@ class TestClipServiceMaximumCoverage:
         mock_cache.return_value = {}
         mock_format.return_value = []
 
-        videos_metadata: list[dict[str, object]] = [
-            {
-                "id": "123456",
-                "created_at": "invalid_timestamp",
-                "device_name": "Test Camera",
-            }
+        videos_metadata = [
+            create_video_metadata(
+                clip_id="123456",
+                created_at="invalid_timestamp",
+                device_name="Test Camera",
+            )
         ]
 
         with patch("blinkapp.services.clip_service.logger") as mock_logger:

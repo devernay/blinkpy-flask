@@ -423,7 +423,6 @@ class TestBasicOperations(BaseTestCase):
 
     def test_utils_service_create_device_data(self) -> None:
         """Test utils_service create_device_data function."""
-        from blinkapp.models.ids import CameraId
         from blinkapp.services.device_service import create_device_data
 
         # Mock camera object
@@ -437,11 +436,10 @@ class TestBasicOperations(BaseTestCase):
             last_record={"created_at": "2023-01-01T00:00:00Z"},
         )
 
-        cache_key = CameraId("test_camera")
         current_ts = 1640995200  # 2022-01-01 00:00:00
         cached_ts = 1640991600  # 2021-12-31 23:00:00
 
-        result = create_device_data(mock_camera, cache_key, current_ts, cached_ts)
+        result = create_device_data(mock_camera, current_ts, cached_ts)
 
         self.assertIsInstance(result, dict)
         self.assertIn("name", result)

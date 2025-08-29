@@ -32,7 +32,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
             last_record={"created_at": "2025-01-15T10:30:00+00:00"},
         )
 
-        result = create_device_data(mock_camera, "test_cache_key")  # type: ignore[arg-type]
+        result = create_device_data(mock_camera)
 
         # Should handle exception gracefully
         self.assertIsInstance(result, dict)
@@ -56,7 +56,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
             last_record=None,
         )
 
-        result = create_device_data(mock_camera, "test_cache_key")  # type: ignore[arg-type]
+        result = create_device_data(mock_camera)
 
         # Should handle missing last_record gracefully
         self.assertIsInstance(result, dict)
@@ -82,7 +82,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
             last_record={"updated_at": "2025-01-15T10:30:00+00:00"},
         )
 
-        result = create_device_data(mock_camera, "test_cache_key")  # type: ignore[arg-type]
+        result = create_device_data(mock_camera)
 
         self.assertIsInstance(result, dict)
         self.assertEqual(result["id"], "test_camera_789")
@@ -104,7 +104,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
             last_record={"time": "2025-01-15T10:30:00+00:00"},
         )
 
-        result = create_device_data(mock_camera, "test_cache_key")  # type: ignore[arg-type]
+        result = create_device_data(mock_camera)
 
         self.assertIsInstance(result, dict)
         self.assertEqual(result["id"], "test_camera_101")

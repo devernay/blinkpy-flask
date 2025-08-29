@@ -1607,11 +1607,10 @@ class TestConfigurationEdgeCases(BaseTestCase):
             camera_id=12345, battery_voltage=110, armed=True
         )
 
-        cache_key = CameraId(12345)
         current_ts = 1234567890
         cached_ts = 1234567800
 
-        device_data = create_device_data(mock_camera, cache_key, current_ts, cached_ts)
+        device_data = create_device_data(mock_camera, current_ts, cached_ts)
 
         # Should return properly formatted device data
         self.assertIsInstance(device_data, dict)
@@ -1847,7 +1846,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
 
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
 
-        cache_key = CameraId(12345)
         current_ts = 2000
         cached_ts = 1000  # Current is newer, should trigger update
 
@@ -1908,7 +1906,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
             thumbnail="https://example.com/new_thumb.jpg",
         )
 
-        cache_key = CameraId(12345)
 
         # Mock old cached entry
         mock_cache.get.side_effect = [
@@ -3684,7 +3681,6 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
             thumbnail="https://example.com/thumb.jpg",
         )
 
-        cache_key = CameraId(12345)
 
         # Simulate concurrent updates with race condition
         call_count = 0
@@ -4509,7 +4505,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
             thumbnail="https://example.com/new_thumb.jpg",
         )
 
-        cache_key = CameraId(12345)
 
         # Mock file operations
         with patch("pathlib.Path.exists", return_value=True):
@@ -4582,7 +4577,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
 
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
 
-        cache_key = CameraId(12345)
 
         with patch("blinkapp.services.cache_service.ensure_cache_paths_initialized"):
             with patch(
@@ -4633,7 +4627,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
             thumbnail="https://example.com/thumb.jpg",
         )
 
-        cache_key = CameraId(12345)
 
         # Mock file cleanup error
         with patch("pathlib.Path.exists", return_value=True):
@@ -5998,8 +5991,7 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
                 wifi_strength=-50,
             )
 
-            cache_key = CameraId("12345")
-            result = create_device_data(mock_camera, cache_key, 1234567890, 1234567880)
+            result = create_device_data(mock_camera, 1234567890, 1234567880)
             self.assertIsInstance(result, dict)
         except (ImportError, AttributeError, ValueError):
             # Function may not exist or have different signature, test passes

@@ -51,7 +51,11 @@ class TestAuthServicePure(unittest.TestCase):
 
     def test_is_valid_email_format_none(self) -> None:
         """Test is_valid_email_format with None - line 55."""
-        result = is_valid_email_format(None)  # type: ignore[arg-type]
+        from typing import cast
+
+        result = is_valid_email_format(
+            cast(str, None)
+        )  # Intentionally testing invalid input
 
         # Should return False for None
         self.assertFalse(result)

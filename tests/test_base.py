@@ -314,7 +314,8 @@ def with_app_initialized[F: Callable[..., Any]](func: F) -> F:
         initialize_for_testing()
         return func(*args, **kwargs)
 
-    return wrapper  # type: ignore[return-value]
+    # Return type is preserved by functools.wraps
+    return wrapper
 
 
 class BaseTestCase(unittest.TestCase):
@@ -529,3 +530,24 @@ def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
         return return_value
 
     return Mock(side_effect=mock_execute)
+
+
+def create_video_metadata(
+    clip_id: str = "123456",
+    created_at: str = "2023-01-01T12:00:00Z",
+    device_name: str = "Test Camera",
+    deleted: bool = False,
+    media: str = "http://example.com/video.mp4",
+    thumbnail: str | None = "http://example.com/thumb.jpg",
+    size: int | None = 1024,
+) -> dict[str, str | int | bool | None]:
+    """Create properly typed video metadata for tests."""
+    return {
+        "id": clip_id,
+        "created_at": created_at,
+        "device_name": device_name,
+        "deleted": deleted,
+        "media": media,
+        "thumbnail": thumbnail,
+        "size": size,
+    }
