@@ -224,6 +224,11 @@ def download_and_cache_cloud_thumbnail(
             f"download_and_cache_cloud_thumbnail called on local clip {clip_id}. Use generate_local_clip_thumbnail instead."
         )
 
+    # Validate thumbnail URL
+    if not thumbnail_url:
+        logger.error(f"No thumbnail URL provided for clip {clip_id}")
+        return None
+
     try:
         clips_cache_dir = Path(_get_clips_cache_dir())
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
