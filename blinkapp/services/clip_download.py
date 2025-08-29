@@ -50,32 +50,41 @@ def _get_clips_cache_dir() -> str:
     return CLIPS_CACHE_DIR
 
 
-def _download_cloud_clip_core(
+async def _download_cloud_clip_core(
     clip_id: ClipId,
     blink_instance: Blink,
     clips_cache_dir: Path,
 ) -> tuple[Path | None, str | None]:
     """Core cloud clip download logic - extracted for testability."""
     try:
-        # Get clip URL from Blink
-        # Note: get_clip_url method may not exist in all blinkpy versions
-        if not hasattr(blink_instance, 'get_clip_url'):
-            return None, f"Blink instance does not support clip URL retrieval for clip {clip_id}"
+        # Get all video metadata to find our specific clip
+        videos_metadata = await blink_instance.get_videos_metadata(stop=50)  # Search more pages
         
-        clip_url = blink_instance.get_clip_url(clip_id)
-        if not clip_url:
-            return None, f"Could not get download URL for clip {clip_id}"
+        # Find the clip by ID in the metadata
+        clip_metadata = None
+        for item in videos_metadata:
+            if str(item.get("id")) == str(clip_id):
+                clip_metadata = item
+                break
+        
+        if not clip_metadata:
+            return None, f"Clip {clip_id} not found in video metadata"
+        
+        # Get the media URL from the clip metadata
+        media_url = clip_metadata.get("media")
+        if not media_url:
+            return None, f"No media URL found for clip {clip_id}"
 
-        # Download clip content
-        response = requests.get(clip_url, timeout=Config.HTTP_TIMEOUT)
-        response.raise_for_status()
+        # Download clip content using blink's HTTP method
+        response = await blink_instance.do_http_get(media_url)
+        clip_content = await response.read()
 
         # Save to cache
         clip_filename = f"{clip_id}.mp4"
         clip_path = clips_cache_dir / clip_filename
 
         with open(clip_path, "wb") as f:
-            f.write(response.content)
+            f.write(clip_content)
 
         logger.info(f"Downloaded cloud clip {clip_id} to {clip_path}")
         return clip_path, None
@@ -105,9 +114,10 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
         clip_path = clips_cache_dir / clip_filename
 
         if not clip_path.exists():
-            clip_path, error = _download_cloud_clip_core(
+            import asyncio
+            clip_path, error = asyncio.run(_download_cloud_clip_core(
                 clip_id, blink_instance, clips_cache_dir
-            )
+            ))
             if error or clip_path is None:
                 # Determine appropriate status code based on error message
                 status_code = 500  # Default to server error
