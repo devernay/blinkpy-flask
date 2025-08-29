@@ -1299,6 +1299,7 @@ class TestThumbnailManagement(FlaskTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_timestamp_success(self, mock_blink: Mock) -> None:
         """Test get_camera_thumbnail_timestamp endpoint."""
+        mock_camera = create_mock_camera(camera_id=12345)
         # Mock camera with thumbnail
         mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1234567890"
 
@@ -1600,9 +1601,9 @@ class TestConfigurationEdgeCases(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.services.device_service import create_device_data
 
-        # Mock camera object
-        mock_camera.battery_voltage = 110
-        mock_camera.armed = True
+        mock_camera = create_mock_camera(
+            camera_id=12345, battery_voltage=110, armed=True
+        )
 
         cache_key = CameraId(12345)
         current_ts = 1234567890
@@ -1627,6 +1628,7 @@ class TestStreamingOperations(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_liveview_success(self, mock_blink: Mock) -> None:
         """Test successful live view request."""
+        mock_camera = create_mock_camera(camera_id=12345)
         # Mock camera with live view capability
         mock_blink.cameras = {12345: mock_camera}
 
@@ -1841,8 +1843,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        # Mock camera
-        mock_camera.name = "Test Camera"
+        mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
 
         cache_key = CameraId(12345)
         current_ts = 2000
@@ -1899,9 +1900,11 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        # Mock camera
-        mock_camera.name = "Test Camera"
-        mock_camera.thumbnail = "https://example.com/new_thumb.jpg"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            name="Test Camera",
+            thumbnail="https://example.com/new_thumb.jpg",
+        )
 
         cache_key = CameraId(12345)
 
@@ -1958,8 +1961,9 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_with_cache_miss(self, mock_blink: Mock) -> None:
         """Test camera thumbnail endpoint with cache miss."""
-        # Mock camera
-        mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1234567890"
+        mock_camera = create_mock_camera(
+            camera_id=12345, thumbnail="https://example.com/thumb.jpg?ts=1234567890"
+        )
 
         # Mock sync structure
         mock_sync = create_mock_sync(cameras={})
@@ -2402,12 +2406,13 @@ class TestStreamingAndLiveView(BaseTestCase):
                 data = json.loads(response.data)
                 self.assertTrue(data["success"])
 
+            mock_camera = create_mock_camera(camera_id=12345)
+
     @patch("blinkapp.services.blink_service.blink")
     def test_get_liveview_stream_manager_error(self, mock_blink: Mock) -> None:
         """Test live view with stream manager error."""
         # Mock blink to be available
         mock_blink.available = True
-
 
         # Mock sync module structure
         mock_sync = create_mock_sync(cameras={})
@@ -2672,6 +2677,8 @@ class TestCacheLoadingOperations(BaseTestCase):
                                     # Should populate cache with thumbnail data
                                     self.assertGreater(len(mock_cache), 0)
 
+            mock_camera = create_mock_camera(camera_id=12345)
+
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_load_clips_cache_success(self) -> None:
         """Test successful clips cache loading."""
@@ -2918,6 +2925,8 @@ class TestPerformanceOptimizations(BaseTestCase):
 
             # Should use cached version (newer timestamp)
             self.assertEqual(response.status_code, 500)
+
+            mock_camera = create_mock_camera(camera_id=12345)
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
@@ -3199,7 +3208,6 @@ class TestLiveStreamOperations(BaseTestCase):
         # Mock blink to be available
         mock_blink.available = True
 
-
         # Mock sync module structure
         mock_sync = create_mock_sync(cameras={})
         mock_blink.sync = {"test_sync": mock_sync}
@@ -3369,21 +3377,19 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Create multiple mock cameras with different states
         cameras = {}
         for i in range(3):
-            mock_camera.name = f"Camera {i}"
-            mock_camera.camera_id = 10000 + i
-            mock_camera.battery_voltage = 100 + i * 5
-            mock_camera.temperature = 70 + i * 2
-            mock_camera.wifi_strength = -40 - i * 5
-            mock_camera.motion_enabled = i % 2 == 0
-            mock_camera.armed = i % 2 == 1
-            mock_camera.thumbnail = (
-                f"https://example.com/thumb{i}.jpg?ts={1000 + i * 100}"
+            mock_camera = create_mock_camera(
+                camera_id=10000 + i,
+                name=f"Camera {i}",
+                battery_voltage=100 + i * 5,
+                temperature=70 + i * 2,
+                wifi_strength=-40 - i * 5,
+                motion_enabled=i % 2 == 0,
+                armed=i % 2 == 1,
+                thumbnail=f"https://example.com/thumb{i}.jpg?ts={1000 + i * 100}",
+                battery=f"OK ({100 + i * 5}%)",
+                last_record=None,
             )
-            # Set attributes that will be serialized to JSON
-            mock_camera.battery = f"OK ({100 + i * 5}%)"
-            mock_camera.temperature = 70 + i * 2
-            mock_camera.wifi_strength = -40 - i * 5
-            mock_camera.last_record = None
+
             cameras[f"Camera {i}"] = mock_camera
 
         # Mock sync module structure
@@ -3547,6 +3553,8 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
             # Should handle camera errors gracefully
             self.assertEqual(response.status_code, 500)
 
+            mock_camera = create_mock_camera(camera_id=12345)
+
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_timestamp_with_invalid_url(
         self, mock_blink: Mock
@@ -3676,9 +3684,11 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        # Mock camera
-        mock_camera.name = "Test Camera"
-        mock_camera.thumbnail = "https://example.com/thumb.jpg"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            name="Test Camera",
+            thumbnail="https://example.com/thumb.jpg",
+        )
 
         cache_key = CameraId(12345)
 
@@ -4195,6 +4205,8 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
                 # Should use cached version without update
                 self.assertEqual(response.status_code, 500)
 
+            mock_camera = create_mock_camera(camera_id=12345)
+
     def test_concurrent_request_handling(self) -> None:
         """Test handling of concurrent requests."""
         import threading
@@ -4495,9 +4507,11 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
         from blinkapp.models.ids import CameraId
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        # Mock camera
-        mock_camera.name = "Test Camera"
-        mock_camera.thumbnail = "https://example.com/new_thumb.jpg"
+        mock_camera = create_mock_camera(
+            camera_id=12345,
+            name="Test Camera",
+            thumbnail="https://example.com/new_thumb.jpg",
+        )
 
         cache_key = CameraId(12345)
 
@@ -4609,6 +4623,8 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                             "Thumbnail already updated for Test Camera, skipping"
                         )
 
+            mock_camera = create_mock_camera(camera_id=12345)
+
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_file_cleanup_error(self) -> None:
         """Test thumbnail update handles file cleanup errors."""
@@ -4681,6 +4697,8 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                                         mock_logger.debug.assert_called_with(
                                             "Could not remove old thumbnail: Permission denied"
                                         )
+
+            mock_camera = create_mock_camera(camera_id=12345)
 
 
 class TestAdvancedStreamingOperations(BaseTestCase):
@@ -5990,6 +6008,8 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
             # Function may not exist or have different signature, test passes
             pass
             self.assertTrue(True)
+
+            mock_camera = create_mock_camera(camera_id=12345)
 
     @patch("builtins.open", side_effect=FileNotFoundError)
     def test_settings_with_none_file(self, mock_open: Mock) -> None:
