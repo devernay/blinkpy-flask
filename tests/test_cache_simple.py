@@ -15,6 +15,13 @@ def test_validate_cache_directory() -> None:
 
 def test_ensure_cache_directory() -> None:
     """Test cache directory creation."""
-    # Should create directory and return path
-    result = ensure_cache_directory("/test")
-    assert result == "/test"
+    import os
+    import tempfile
+
+    # Use a temporary directory that we can actually write to
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_path = os.path.join(temp_dir, "test_cache")
+        result = ensure_cache_directory(test_path)
+        assert result == test_path
+        assert os.path.exists(test_path)
+        assert os.path.isdir(test_path)

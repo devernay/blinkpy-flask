@@ -3,9 +3,8 @@
 
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
 
-from blinkpy.camera import BlinkCamera
+from test_base import create_mock_camera
 
 from blinkapp.services.debug_service import check_credentials_file_exists
 from blinkapp.services.device_service import create_device_data
@@ -28,15 +27,16 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
         """Test create_device_data with timestamp parameters."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock(spec=BlinkCamera)
-        mock_camera.name = "Test Camera"
-        mock_camera.camera_id = "test_camera_timestamps"
-        mock_camera.temperature = 75
-        mock_camera.temperature_calibrated = 75.1
-        mock_camera.battery = "ok"
-        mock_camera.motion_enabled = True
-        mock_camera.wifi_strength = 3
-        mock_camera.last_record = {"created_at": "2025-01-01T00:00:00Z"}
+        mock_camera = create_mock_camera(
+            camera_id="test_camera_timestamps",
+            name="Test Camera",
+            temperature=75,
+            temperature_calibrated=75.1,
+            battery="ok",
+            motion_enabled=True,
+            wifi_strength=3,
+            last_record={"created_at": "2025-01-01T00:00:00Z"},
+        )
         cache_key = CameraId("12345")
         current_ts = 1640995200  # 2022-01-01 00:00:00
         cached_ts = 1640991600  # 2021-12-31 23:00:00
@@ -52,17 +52,16 @@ class TestUtilsServiceAdvanced(unittest.TestCase):
         """Test create_device_data with edge case values."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock(spec=BlinkCamera)
-        mock_camera.name = "Edge Case Camera"
-        mock_camera.camera_id = "test_camera_edge"
-        mock_camera.temperature = 0
-        mock_camera.temperature_calibrated = (
-            0.2  # Slightly different calibrated reading
+        mock_camera = create_mock_camera(
+            camera_id="test_camera_edge",
+            name="Edge Case Camera",
+            temperature=0,
+            temperature_calibrated=0.2,
+            battery="low",
+            motion_enabled=False,
+            wifi_strength=0,
+            last_record={"created_at": "invalid-date"},
         )
-        mock_camera.battery = "low"
-        mock_camera.motion_enabled = False
-        mock_camera.wifi_strength = 0  # Minimum value
-        mock_camera.last_record = {"created_at": "invalid-date"}
         cache_key = CameraId("edge_case")
 
         result = create_device_data(mock_camera, cache_key)

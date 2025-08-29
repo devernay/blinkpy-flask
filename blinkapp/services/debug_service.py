@@ -15,6 +15,7 @@ Used primarily for:
 - Verifying system connectivity and data access
 """
 
+import collections.abc
 import logging
 from pathlib import Path
 
@@ -80,7 +81,9 @@ def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
         logger.info(f"Video: {video}")
 
 
-def handle_dump_system(credentials_checker=None) -> None:
+def handle_dump_system(
+    credentials_checker: collections.abc.Callable[[Path], bool] | None = None,
+) -> None:
     """Handle dump-system command line option."""
     if credentials_checker is None:
         credentials_checker = check_credentials_file_exists

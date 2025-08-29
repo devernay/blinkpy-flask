@@ -35,14 +35,17 @@ class TestStreamServiceAdvanced(unittest.TestCase):
 
     def test_parse_tcp_url_empty(self) -> None:
         """Test parse_tcp_url with empty string."""
-        result = parse_tcp_url("")
-        # Function returns dict even for empty string
-        self.assertIsInstance(result, dict)
+        # Function should raise ValueError for empty string
+        with self.assertRaises(ValueError) as context:
+            parse_tcp_url("")
+        self.assertIn("Invalid TCP URL format", str(context.exception))
 
     def test_parse_tcp_url_malformed(self) -> None:
         """Test parse_tcp_url with malformed URL."""
-        result = parse_tcp_url("not-a-url")
-        self.assertIsInstance(result, dict)
+        # Function should raise ValueError for malformed URL
+        with self.assertRaises(ValueError) as context:
+            parse_tcp_url("not-a-url")
+        self.assertIn("Invalid TCP URL format", str(context.exception))
 
     def test_generate_hls_url_empty_filename(self) -> None:
         """Test generate_hls_url with empty filename."""

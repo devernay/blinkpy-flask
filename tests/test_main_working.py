@@ -1,5 +1,7 @@
 """Working tests for __main__.py to reach 70% coverage."""
 
+import argparse
+import logging
 from unittest.mock import Mock, patch
 
 from blinkapp.__main__ import (
@@ -19,7 +21,7 @@ def test_create_argument_parser_defaults() -> None:
 
 def test_run_app_dump_system() -> None:
     """Test run_app with dump system option."""
-    args = Mock(spec=object)
+    args = Mock(spec=argparse.Namespace)
     args.dump_system = True
 
     with patch("blinkapp.services.debug_service.handle_dump_system") as mock_dump:
@@ -29,9 +31,12 @@ def test_run_app_dump_system() -> None:
 
 def test_run_app_normal() -> None:
     """Test run_app normal execution."""
-    args = Mock(spec=object)
+    args = Mock(spec=argparse.Namespace)
     args.dump_system = False
     args.cache = "/test"
+    args.host = "127.0.0.1"
+    args.port = 5001
+    args.debug = False
 
     with (
         patch("blinkapp.__main__.app") as mock_app,
@@ -47,7 +52,7 @@ def test_run_app_normal() -> None:
 def test_configure_logging_levels() -> None:
     """Test logging configuration."""
     with patch("logging.getLogger") as mock_get_logger:
-        mock_logger = Mock(spec=object)
+        mock_logger = Mock(spec=logging.Logger)
         mock_get_logger.return_value = mock_logger
 
         configure_logging("DEBUG")

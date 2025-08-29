@@ -4,7 +4,8 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from blinkapp.models.cache import CameraThumbnailCache
+from test_base import create_mock_camera_cache
+
 from blinkapp.services.thumbnail_service import get_camera_thumbnail_cache_stats
 
 
@@ -16,10 +17,7 @@ class TestThumbnailServiceFinal(unittest.TestCase):
         self, mock_ensure_cache: Mock
     ) -> None:
         """Test get_camera_thumbnail_cache_stats successful execution."""
-        mock_cache = Mock(spec=CameraThumbnailCache)
-        mock_cache.__len__ = Mock(return_value=10)
-        mock_cache.max_size = 100
-        mock_cache.hit_rate = 0.85
+        mock_cache = create_mock_camera_cache(size=10, max_size=100, hit_rate=0.85)
         mock_ensure_cache.return_value = mock_cache
 
         result = get_camera_thumbnail_cache_stats()
@@ -47,10 +45,7 @@ class TestThumbnailServiceFinal(unittest.TestCase):
         self, mock_ensure_cache: Mock
     ) -> None:
         """Test get_camera_thumbnail_cache_stats with missing cache attributes."""
-        mock_cache = Mock(spec=CameraThumbnailCache)
-        mock_cache.__len__ = Mock(return_value=5)
-        # Don't set max_size or hit_rate attributes
-        del mock_cache.max_size
+        mock_cache = create_mock_camera_cache(size=5, max_size=None, hit_rate=None)
         del mock_cache.hit_rate
         mock_ensure_cache.return_value = mock_cache
 

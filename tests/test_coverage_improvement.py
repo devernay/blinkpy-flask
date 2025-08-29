@@ -3,7 +3,7 @@
 
 from unittest.mock import Mock, patch
 
-from blinkpy.sync_module import BlinkSyncModule
+from test_base import create_mock_sync
 
 from .test_base import FlaskTestCase
 
@@ -227,7 +227,7 @@ class TestSystemService(FlaskTestCase):
         """Test get_systems with mock data."""
         from blinkapp.services.system_service import get_systems
 
-        mock_sync = Mock(spec=BlinkSyncModule)
+        mock_sync = create_mock_sync()
         mock_sync.network_id = 12345
         mock_sync.arm = False
         mock_sync.online = True

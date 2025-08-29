@@ -27,7 +27,8 @@ from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
 
 if TYPE_CHECKING:
-    pass
+    from blinkpy.auth import Auth
+    from blinkpy.blinkpy import Blink
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +102,9 @@ def create_auth_config(username: str, password: str) -> dict[str, str]:
     return {"username": username, "password": password}
 
 
-def _create_blink_session(session_factory=None) -> ClientSession:
+def _create_blink_session(
+    session_factory: type[ClientSession] | None = None,
+) -> ClientSession:
     """Create Blink session with injectable factory."""
     if session_factory is None:
         from aiohttp import ClientSession
@@ -111,7 +114,12 @@ def _create_blink_session(session_factory=None) -> ClientSession:
     return session_factory()
 
 
-def _create_auth_object(username: str, password: str, session_obj, auth_factory=None):
+def _create_auth_object(
+    username: str,
+    password: str,
+    session_obj: ClientSession,
+    auth_factory: type[Auth] | None = None,
+) -> Auth:
     """Create auth object with injectable factory."""
     if auth_factory is None:
         from blinkpy.auth import Auth
@@ -125,7 +133,9 @@ def _create_auth_object(username: str, password: str, session_obj, auth_factory=
     )
 
 
-def _create_blink_instance(session_obj, blink_factory=None):
+def _create_blink_instance(
+    session_obj: ClientSession, blink_factory: type[Blink] | None = None
+) -> Blink:
     """Create Blink instance with injectable factory."""
     if blink_factory is None:
         from blinkpy.blinkpy import Blink
@@ -336,7 +346,9 @@ async def load_saved_blink() -> bool:
 # for better unit testing without changing existing functionality
 
 
-def _create_blink_session_testable(session_factory=None):
+def _create_blink_session_testable(
+    session_factory: type[ClientSession] | None = None,
+) -> ClientSession:
     """Create Blink session with injectable factory for testing."""
     if session_factory is None:
         from aiohttp import ClientSession
@@ -347,8 +359,11 @@ def _create_blink_session_testable(session_factory=None):
 
 
 def _create_auth_object_testable(
-    username: str, password: str, session_obj, auth_factory=None
-):
+    username: str,
+    password: str,
+    session_obj: ClientSession,
+    auth_factory: type[Auth] | None = None,
+) -> Auth:
     """Create auth object with injectable factory for testing."""
     if auth_factory is None:
         from blinkpy.auth import Auth
@@ -362,7 +377,9 @@ def _create_auth_object_testable(
     )
 
 
-def _create_blink_instance_testable(session_obj, blink_factory=None):
+def _create_blink_instance_testable(
+    session_obj: ClientSession, blink_factory: type[Blink] | None = None
+) -> Blink:
     """Create Blink instance with injectable factory for testing."""
     if blink_factory is None:
         from blinkpy.blinkpy import Blink

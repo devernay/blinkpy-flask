@@ -72,7 +72,8 @@ class TestStreamServiceExpansion(unittest.TestCase):
         """Test parse_tcp_url with invalid URL."""
         tcp_url = "invalid://url"
 
-        result = parse_tcp_url(tcp_url)
+        # Function should raise ValueError for non-TCP URL
+        with self.assertRaises(ValueError) as context:
+            parse_tcp_url(tcp_url)
 
-        # Function still parses but may not be valid TCP
-        self.assertIsInstance(result, dict)
+        self.assertIn("Invalid TCP URL format", str(context.exception))

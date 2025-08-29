@@ -4,7 +4,7 @@
 import unittest
 from unittest.mock import Mock
 
-from blinkpy.camera import BlinkCamera
+from test_base import create_mock_camera
 
 from blinkapp.services.debug_service import dump_blink_system_info, handle_dump_system
 from blinkapp.services.device_service import create_device_data
@@ -17,15 +17,15 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         """Test create_device_data with mock camera."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock(spec=BlinkCamera)
-        mock_camera.name = "Test Camera"
-        mock_camera.camera_id = "test_camera_basic"
-        mock_camera.temperature = 72
-        mock_camera.temperature_calibrated = 72.3
-        mock_camera.battery = "ok"  # Use battery property, not battery_state
-        mock_camera.motion_enabled = True
-        mock_camera.wifi_strength = 4  # Use 0-5 scale, not negative dBm
-        mock_camera.last_record = {"created_at": "2025-01-01T00:00:00Z"}
+        mock_camera = create_mock_camera(
+            camera_id="test_camera_basic",
+            name="Test Camera",
+            temperature=72,
+            battery="ok",
+            motion_enabled=True,
+            wifi_strength=4,
+            last_record={"created_at": "2025-01-01T00:00:00Z"},
+        )
         cache_key = CameraId("12345")
 
         result = create_device_data(mock_camera, cache_key)
@@ -40,15 +40,15 @@ class TestUtilsServiceExpansion(unittest.TestCase):
         """Test create_device_data with minimal camera data."""
         from blinkapp.models.ids import CameraId
 
-        mock_camera = Mock(spec=BlinkCamera)
-        mock_camera.name = "Minimal Camera"
-        mock_camera.camera_id = "test_camera_minimal"
-        mock_camera.temperature = None
-        mock_camera.temperature_calibrated = None
-        mock_camera.battery = None
-        mock_camera.motion_enabled = False
-        mock_camera.wifi_strength = None
-        mock_camera.last_record = None
+        mock_camera = create_mock_camera(
+            camera_id="test_camera_minimal",
+            name="Minimal Camera",
+            temperature=None,
+            battery=None,
+            motion_enabled=False,
+            wifi_strength=None,
+            last_record=None,
+        )
         cache_key = CameraId("67890")
 
         result = create_device_data(mock_camera, cache_key)

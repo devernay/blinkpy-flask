@@ -3,12 +3,13 @@
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import AsyncMock, Mock, mock_open, patch
 
-from blinkpy.sync_module import BlinkSyncModule
 from requests import Response, Session
+from test_base import create_mock_blink_instance, create_mock_sync
 
 from blinkapp.models.ids import ClipId
+from blinkapp.services.blink_connection import BlinkConnection
 
 
 class TestClipServiceComprehensive:
@@ -19,7 +20,7 @@ class TestClipServiceComprehensive:
         self.clip_id = ClipId("123456")
         self.local_clip_id = ClipId.from_local("sync1", 123)
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.clip_service.format_clips_by_day")
     def test_process_cloud_clips_complete_flow(
         self, mock_format: Mock, mock_cache: Mock
@@ -62,7 +63,7 @@ class TestClipServiceComprehensive:
         assert "2023-01-01" in call_args
         assert call_args["2023-01-01"]["date"] == "January 01, 2023"
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_with_existing_cache_entry(
         self, mock_format, mock_cache
@@ -98,7 +99,7 @@ class TestClipServiceComprehensive:
             == "http://example.com/new_thumb.jpg"
         )
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_exception_handling(
         self, mock_format, mock_cache
@@ -130,27 +131,30 @@ class TestClipServiceComprehensive:
         mock_item.created_at = datetime(2023, 1, 1, 12, 0, 0)
         mock_item.id = 123
         mock_item.name = "Test Camera"
-        mock_item.url.return_value = "http://example.com/local_video.mp4"
+        mock_item.url = "http://example.com/local_video.mp4"
 
         # Mock sync module with proper refresh method
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.local_storage = True
-        mock_sync.local_storage_manifest_ready = True
+        mock_sync = create_mock_sync(
+            local_storage=True, local_storage_manifest_ready=True
+        )
         mock_sync._local_storage = {
             "manifest": [mock_item],
             "last_manifest_id": "manifest_123",
         }
         mock_sync.refresh.return_value = None  # Ensure refresh returns something
 
-        mock_blink_instance = Mock(spec=object)
+        mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.sync = {"sync1": mock_sync}
+        mock_blink_instance.get_clip_url = Mock(
+            return_value="http://example.com/video.mp4"
+        )
 
         # Mock blink_connection with execute method
-        mock_connection = Mock(spec=object)
-        mock_connection.execute = Mock(return_value=None)
+        mock_connection = Mock(spec=BlinkConnection)
+        mock_connection.execute = AsyncMock(return_value=None)
 
         with patch(
-            "blinkapp.services.clip_service.ensure_clips_cache_initialized"
+            "blinkapp.services.cache_service.ensure_clips_cache_initialized"
         ) as mock_cache:
             with patch(
                 "blinkapp.services.clip_service.format_clips_by_day"
@@ -179,15 +183,14 @@ class TestClipServiceComprehensive:
         from blinkapp.services.clip_service import process_local_clips
 
         # Mock sync that raises exception on refresh
-        mock_sync = Mock(spec=BlinkSyncModule)
+        mock_sync = create_mock_sync()
         mock_sync.refresh.side_effect = Exception("Sync error")
 
-        mock_blink_instance = Mock(spec=object)
-        mock_blink_instance.sync = {"sync1": mock_sync}
+        mock_blink_instance = create_mock_blink_instance(sync_data={"sync1": mock_sync})
 
         # Mock blink_connection with execute method
-        mock_connection = Mock(spec=object)
-        mock_connection.execute = Mock(return_value=None)
+        mock_connection = Mock(spec=BlinkConnection)
+        mock_connection.execute = AsyncMock(return_value=None)
 
         with patch("blinkapp.services.clip_service.format_clips_by_day") as mock_format:
             with patch("blinkapp.services.clip_service.logger") as mock_logger:
@@ -206,7 +209,7 @@ class TestClipServiceComprehensive:
                 # format_clips_by_day should still be called with empty dict
                 mock_format.assert_called_once()
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_complete_success_flow(
@@ -218,7 +221,7 @@ class TestClipServiceComprehensive:
         mock_cache.return_value = {}
 
         # Mock blink instance with video metadata
-        mock_blink = Mock(spec=object)
+        mock_blink = create_mock_blink_instance()
         clip_info = {
             "id": "123456",
             "created_at": "2023-01-01T12:00:00Z",
@@ -250,8 +253,8 @@ class TestClipServiceComprehensive:
                     "blinkapp.services.blink_service.ensure_blink_connection_initialized"
                 ) as mock_conn:
                     # Mock the connection to return proper video metadata
-                    mock_connection = Mock(spec=object)
-                    mock_connection.execute.return_value = [clip_info]
+                    mock_connection = Mock(spec=BlinkConnection)
+                    mock_connection.execute = AsyncMock(return_value=[clip_info])
                     mock_conn.return_value = mock_connection
 
                     filepath, error = _download_cloud_clip_core(
@@ -267,7 +270,7 @@ class TestClipServiceComprehensive:
         # The actual write_bytes call happens inside the executor function
         # We can't easily test it without executing the function
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_http_failure(
@@ -278,7 +281,7 @@ class TestClipServiceComprehensive:
 
         mock_cache.return_value = {}
 
-        mock_blink = Mock(spec=object)
+        mock_blink = create_mock_blink_instance()
         clip_info = {
             "id": "123456",
             "created_at": "2023-01-01T12:00:00Z",
@@ -320,7 +323,7 @@ class TestClipServiceComprehensive:
         # Verify executor was called
         mock_executor_instance.submit.assert_called_once()
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_cloud_clip_core_request_exception(
@@ -368,7 +371,7 @@ class TestClipServiceComprehensive:
         # Verify executor was called
         mock_executor_instance.submit.assert_called_once()
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_http_session_initialized")
     def test_download_and_cache_cloud_thumbnail_complete_success(
         self, mock_session, mock_cache
@@ -418,7 +421,7 @@ class TestClipServiceComprehensive:
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_cloud_clip_background_complete_flow(
         self, mock_executor, mock_cache, mock_connection, mock_blink
@@ -427,7 +430,10 @@ class TestClipServiceComprehensive:
         from blinkapp.services.clip_processing import process_cloud_clip_background
 
         # Mock blink instance
-        mock_blink_instance = Mock(spec=object)
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_instance.get_clip_url = Mock(
+            return_value="http://example.com/video.mp4"
+        )
         mock_blink.return_value = mock_blink_instance
 
         # Mock executor
@@ -449,7 +455,7 @@ class TestClipServiceComprehensive:
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_local_clip_background_complete_flow(
         self, mock_executor, mock_cache, mock_connection, mock_blink
@@ -458,7 +464,10 @@ class TestClipServiceComprehensive:
         from blinkapp.services.clip_processing import process_local_clip_background
 
         # Mock blink instance
-        mock_blink_instance = Mock(spec=object)
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_instance.get_clip_url = Mock(
+            return_value="http://example.com/video.mp4"
+        )
         mock_blink.return_value = mock_blink_instance
 
         # Mock executor

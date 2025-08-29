@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blinkapp.services.blink_connection import BlinkConnection
@@ -39,7 +39,7 @@ def initialize_blink_objects() -> None:
     blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
 
 
-def ensure_blink_initialized() -> Any:
+def ensure_blink_initialized() -> Blink:
     """Ensure blink is initialized.
 
     Returns:

@@ -26,6 +26,8 @@ from flask.typing import (
 )
 
 if TYPE_CHECKING:
+    from blinkpy.blinkpy import Blink
+
     from blinkapp.models.ids import ClipId
 
 from blinkapp.config import Config
@@ -34,14 +36,14 @@ from blinkapp.models.responses import create_api_response
 logger = logging.getLogger(__name__)
 
 
-def _get_blink_instance():
+def _get_blink_instance() -> Blink | None:
     """Get Blink instance - extracted for testability."""
     from blinkapp.services.blink_service import blink
 
     return blink
 
 
-def _get_clips_cache_dir():
+def _get_clips_cache_dir() -> str:
     """Get clips cache directory - extracted for testability."""
     from blinkapp import CLIPS_CACHE_DIR
 
@@ -50,7 +52,7 @@ def _get_clips_cache_dir():
 
 def _download_cloud_clip_core(
     clip_id: ClipId,
-    blink_instance,
+    blink_instance: Blink,
     clips_cache_dir: Path,
 ) -> tuple[Path | None, str | None]:
     """Core cloud clip download logic - extracted for testability."""

@@ -20,7 +20,10 @@ from blinkapp.models.types import ClipDayGroup
 from blinkapp.utils.formatters import format_clips_by_day
 
 if TYPE_CHECKING:
+    from blinkpy.blinkpy import Blink
+
     from blinkapp.models.ids import ClipId
+    from blinkapp.services.blink_connection import BlinkConnection
 
 from blinkapp.config import Config
 from blinkapp.models.cache import ClipCacheEntry
@@ -31,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 def process_cloud_clips(
-    videos_metadata: list[dict[str, object]],
+    videos_metadata: list[dict[str, str | bool | None]],
 ) -> list[ClipDayGroup]:
     """Process cloud storage clips into day-grouped format.
 
@@ -146,7 +149,8 @@ def process_cloud_clips(
 
 
 def process_local_clips(
-    blink_instance=None, blink_connection_instance=None
+    blink_instance: Blink | None = None,
+    blink_connection_instance: BlinkConnection | None = None,
 ) -> list[ClipDayGroup]:
     """Process local storage clips into day-grouped format.
 

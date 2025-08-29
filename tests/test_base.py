@@ -15,13 +15,204 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 from unittest.mock import MagicMock, Mock
 
+from blinkpy.blinkpy import Blink
 from blinkpy.camera import BlinkCamera
+from blinkpy.livestream import BlinkLiveStream
 from blinkpy.sync_module import BlinkSyncModule
 
 from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
+from blinkapp.services.stream_service import StreamManager
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+
+# Standalone mock factory functions (can be used without inheriting from BaseTestCase)
+def create_mock_camera(
+    camera_id: int | str = 12345,
+    name: str = "Test Camera",
+    battery: str | None = "ok",
+    temperature: int | None = 72,
+    wifi_strength: int | None = -45,
+    motion_enabled: bool = True,
+    thumbnail: str | None = None,
+    last_record: Any = None,
+    updated_at: str | None = None,
+    temperature_calibrated: float | None = None,
+) -> Mock:
+    """Create a mock camera with common attributes."""
+    from unittest.mock import Mock
+
+    mock_camera = Mock(spec=BlinkCamera)
+    mock_camera.camera_id = camera_id
+    mock_camera.name = name
+    mock_camera.snap_picture = Mock(spec=callable)
+    mock_camera.motion_enabled = motion_enabled
+    mock_camera.battery = battery
+    mock_camera.temperature = temperature
+    mock_camera.temperature_calibrated = (
+        temperature_calibrated
+        if temperature_calibrated is not None
+        else (temperature + 0.5 if temperature is not None else None)
+    )
+    mock_camera.wifi_strength = wifi_strength
+    mock_camera.thumbnail = thumbnail
+    mock_camera.last_record = last_record
+    mock_camera.updated_at = updated_at
+    return mock_camera
+
+
+def create_mock_blink_instance(
+    available: bool = True,
+    sync_data: dict[str, Any] | None = None,
+    networks: dict[str, Any] | None = None,
+    cameras: dict[int | str, Any] | None = None,
+    refresh: Callable[[], Any] | None = None,
+    start: Callable[[], Any] | None = None,
+    save: Callable[[], Any] | None = None,
+    videos: dict[str, list[Any]] | None = None,
+) -> Mock:
+    """Create a mock blink instance with common methods."""
+    from unittest.mock import Mock
+
+    mock_blink = Mock(spec=Blink)
+    mock_blink.available = available
+    mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
+    mock_blink.sync = sync_data or {}
+    mock_blink.networks = networks or {}
+    mock_blink.cameras = cameras or {}
+    mock_blink.videos = videos or {"all": []}
+    if refresh:
+        mock_blink.refresh = refresh
+    if start:
+        mock_blink.start = start
+    if save:
+        mock_blink.save = save
+    return mock_blink
+
+
+def create_mock_stream_manager(
+    active_streams: dict[str, Any] | None = None, cleanup_on_exit: bool = True
+) -> Mock:
+    """Create a mock StreamManager with common attributes."""
+    from unittest.mock import Mock
+
+    mock_manager = Mock(spec=StreamManager)
+    mock_manager.active_streams = active_streams or {}
+    mock_manager.cleanup_on_exit = cleanup_on_exit
+    mock_manager.cleanup = Mock(spec=callable)
+    return mock_manager
+
+
+def create_mock_live_stream(
+    stream_id: str = "test_stream", stop_error: Exception | None = None
+) -> Mock:
+    """Create a mock BlinkLiveStream with common attributes."""
+    from unittest.mock import Mock
+
+    mock_stream = Mock(spec=BlinkLiveStream)
+    mock_stream.id = stream_id
+    if stop_error:
+        mock_stream.stop.side_effect = stop_error
+    else:
+        mock_stream.stop = Mock(spec=callable)
+    return mock_stream
+
+
+def create_mock_camera_cache(
+    size: int = 10, max_size: int | None = 100, hit_rate: float | None = 0.85
+) -> Mock:
+    """Create a mock CameraThumbnailCache with common attributes."""
+    from unittest.mock import Mock
+
+    mock_cache = Mock(spec=CameraThumbnailCache)
+    mock_cache.__len__ = Mock(return_value=size)
+    if max_size is not None:
+        mock_cache.max_size = max_size
+    if hit_rate is not None:
+        mock_cache.hit_rate = hit_rate
+    return mock_cache
+
+
+def create_mock_clips_cache(size: int = 5, max_size: int = 50) -> Mock:
+    """Create a mock ClipsCache with common attributes."""
+    from unittest.mock import Mock
+
+    mock_cache = Mock(spec=ClipsCache)
+    mock_cache.__len__ = Mock(return_value=size)
+    mock_cache.max_size = max_size
+    mock_cache.get = Mock(return_value=None)
+    mock_cache.add_clip = Mock(spec=callable)
+    return mock_cache
+
+
+def create_mock_sync(
+    network_id: int = 12345,
+    armed: bool = False,
+    online: bool = True,
+    cameras: dict[str, Any] | None = None,
+    local_storage: bool = False,
+    local_storage_manifest_ready: bool = False,
+    name: str | None = None,
+    refresh: Callable[[], Any] | None = None,
+    _local_storage: dict[str, Any] | None = None,
+) -> Mock:
+    """Create a mock sync module with common attributes."""
+    from unittest.mock import Mock
+
+    mock_sync = Mock(spec=BlinkSyncModule)
+    mock_sync.network_id = network_id
+    mock_sync.arm = armed
+    mock_sync.online = online
+    mock_sync.cameras = cameras or {}
+    mock_sync.local_storage = local_storage
+    mock_sync.local_storage_manifest_ready = local_storage_manifest_ready
+    mock_sync._local_storage = _local_storage or (
+        {"manifest": []} if local_storage else {}
+    )
+    if name:
+        mock_sync.name = name
+    if refresh is not None:
+        mock_sync.refresh = refresh
+    else:
+        mock_sync.refresh = Mock(spec=callable)
+    return mock_sync
+
+
+def create_mock_clip_item(
+    clip_id: str | int = "123",
+    created_at: Any = None,
+    name: str = "Test Camera",
+    size: int | None = None,
+    url: str | None = None,
+    is_local_storage: bool = True,
+) -> Mock:
+    """Create a mock clip item with proper spec."""
+    from datetime import datetime
+    from unittest.mock import Mock
+
+    if is_local_storage:
+        from blinkpy.sync_module import LocalStorageMediaItem
+
+        mock_item = Mock(spec=LocalStorageMediaItem)
+        # LocalStorageMediaItem.url is a method that returns URL
+        mock_item.url = Mock(return_value=url or "http://example.com/local_video.mp4")
+    else:
+        # Cloud clips are dict[str, str | bool | None]
+        # Keys: "id", "created_at", "device_name", "media", "thumbnail", "deleted"
+        # Values: strings, bools, or None (no integers in cloud clips)
+        mock_item = Mock(spec=dict[str, str | bool | None])
+        if url:
+            mock_item.url = url
+
+    mock_item.id = clip_id
+    mock_item.created_at = created_at or datetime(2023, 1, 1, 12, 0, 0)
+    mock_item.name = name
+
+    if size is not None:
+        mock_item.size = size
+
+    return mock_item
 
 
 # Test constants
@@ -174,7 +365,7 @@ class FlaskTestCase(BaseTestCase):
 
         if cameras:
             for sync_name, camera_list in cameras.items():
-                mock_sync = Mock(spec=BlinkSyncModule)
+                mock_sync = create_mock_sync()
                 mock_sync.cameras = {
                     f"camera{i}": cam for i, cam in enumerate(camera_list)
                 }
@@ -269,29 +460,6 @@ class FlaskTestCase(BaseTestCase):
                 return self.assert_api_error(response, expected_status)
         else:
             return response
-
-    def create_mock_camera(self, camera_id=TEST_CAMERA_ID, name="Test Camera"):
-        """Create a mock camera with common attributes."""
-        from unittest.mock import Mock
-
-        mock_camera = Mock(spec=BlinkCamera)
-        mock_camera.camera_id = camera_id
-        mock_camera.name = name
-        mock_camera.snap_picture = Mock(spec=callable)
-        return mock_camera
-
-    def create_mock_sync(
-        self, network_id=TEST_NETWORK_ID, armed=False, online=True, cameras=None
-    ):
-        """Create a mock sync module with common attributes."""
-        from unittest.mock import Mock
-
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.network_id = network_id
-        mock_sync.arm = armed
-        mock_sync.online = online
-        mock_sync.cameras = cameras or {}
-        return mock_sync
 
     def mock_blink_system(self, available=True, systems=None):
         """Context manager for mocking blink system with common setup."""

@@ -72,7 +72,7 @@ class HLSStreamConfig:
 
 
 def _create_ffmpeg_process(
-    cmd: list[str], process_factory=None
+    cmd: list[str], process_factory: type[subprocess.Popen] | None = None
 ) -> subprocess.Popen | None:
     """Create FFmpeg process with injectable factory."""
     if process_factory is None:
@@ -89,7 +89,9 @@ def _create_ffmpeg_process(
         return None
 
 
-def _build_ffmpeg_command(tcp_url: str, output_path: Path, config) -> list[str]:
+def _build_ffmpeg_command(
+    tcp_url: str, output_path: Path, config: HLSStreamConfig
+) -> list[str]:
     """Build FFmpeg command for TCP to HLS transcoding.
 
     Creates FFmpeg command to convert MPEG-TS stream from TCP source

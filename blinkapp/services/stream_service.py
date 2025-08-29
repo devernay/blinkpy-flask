@@ -327,7 +327,7 @@ class StreamManager:
 
 
 def _create_ffmpeg_process_testable(
-    cmd: list[str], process_factory=None
+    cmd: list[str], process_factory: type[subprocess.Popen] | None = None
 ) -> subprocess.Popen | None:
     """Create FFmpeg process with injectable factory for testing."""
     if process_factory is None:
@@ -345,7 +345,7 @@ def _create_ffmpeg_process_testable(
 
 
 def _build_ffmpeg_command_testable(
-    tcp_url: str, output_path: Path, config
+    tcp_url: str, output_path: Path, config: HLSStreamConfig
 ) -> list[str]:
     """Build FFmpeg command for TCP to HLS transcoding - testable version."""
     return [
@@ -391,7 +391,7 @@ def parse_tcp_url(tcp_url: str) -> tuple[str, int]:
 
 def validate_camera_id(camera_id: str) -> bool:
     """Validate camera ID format."""
-    return isinstance(camera_id, str) and len(camera_id) > 0
+    return isinstance(camera_id, str) and len(camera_id.strip()) > 0
 
 
 def validate_tcp_url(tcp_url: str) -> bool:

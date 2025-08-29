@@ -4,6 +4,7 @@ Critical Coverage Tests - Targeting the most important untested code paths
 Focus on core functionality that will significantly improve coverage percentage.
 """
 
+import logging
 import os
 import sys
 import threading
@@ -29,7 +30,11 @@ from blinkapp import (
 )
 from blinkapp.models.ids import CameraId, ClipId
 
-from .test_base import BaseTestCase, mock_execute_with_coroutine_cleanup
+from .test_base import (
+    BaseTestCase,
+    create_mock_camera,
+    mock_execute_with_coroutine_cleanup,
+)
 
 
 class TestLoggingSetup(BaseTestCase):
@@ -42,9 +47,10 @@ class TestLoggingSetup(BaseTestCase):
         self, mock_stream: Mock, mock_file: Mock, mock_logger: Mock
     ) -> None:
         """Test setup_logging function."""
-        mock_logger_instance = Mock(spec=object)
+        mock_logger_instance = Mock(spec=logging.Logger)
+        mock_logger_instance.handlers = []
         mock_logger.return_value = mock_logger_instance
-        mock_file_handler = Mock(spec=Path)
+        mock_file_handler = Mock(spec=logging.Handler)
         mock_file.return_value = mock_file_handler
 
         from blinkapp import initialize_cache_paths, setup_logging
@@ -141,9 +147,9 @@ class TestCameraThumbnailCacheUpdate(BaseTestCase):
 
     def setUp(self) -> None:
         """Set up test environment."""
-        self.mock_camera: Mock = Mock(spec=object)
-        self.mock_camera.name = "Test Camera"
-        self.mock_camera.thumbnail = "http://example.com/thumb.jpg"
+        self.mock_camera = create_mock_camera(
+            name="Test Camera", thumbnail="http://example.com/thumb.jpg"
+        )
 
     @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
     @patch("blinkapp.services.blink_service.blink_connection")

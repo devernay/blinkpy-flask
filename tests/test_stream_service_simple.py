@@ -5,6 +5,8 @@ import multiprocessing
 import unittest
 from unittest.mock import Mock, patch
 
+from test_base import create_mock_stream_manager
+
 from blinkapp.services.stream_service import (
     ensure_stream_manager_initialized,
     generate_hls_url,
@@ -12,6 +14,13 @@ from blinkapp.services.stream_service import (
     validate_camera_id,
     validate_tcp_url,
 )
+
+try:
+    from blinkapp.services.stream_manager import StreamManager
+except ImportError:
+    # Create a mock class for testing if StreamManager is not available
+    class StreamManager:
+        pass
 
 
 class TestStreamServiceSimple(unittest.TestCase):
@@ -110,7 +119,7 @@ class TestStreamServiceSimple(unittest.TestCase):
         """Test ensure_stream_manager_initialized when no manager exists - lines 75-82."""
         # Mock the global stream_manager to be None
         with patch("blinkapp.services.stream_service.stream_manager", None):
-            mock_factory = Mock(spec=object)
+            mock_factory = Mock()  # Factory function
             mock_manager = Mock(spec=multiprocessing.Manager)
             mock_factory.return_value = mock_manager
 
@@ -123,13 +132,13 @@ class TestStreamServiceSimple(unittest.TestCase):
 
     def test_ensure_stream_manager_initialized_existing_manager(self) -> None:
         """Test ensure_stream_manager_initialized when manager exists - line 73."""
-        mock_existing_manager = Mock(spec=object)
+        mock_existing_manager = create_mock_stream_manager()
 
         # Mock the global stream_manager to exist
         with patch(
             "blinkapp.services.stream_service.stream_manager", mock_existing_manager
         ):
-            mock_factory = Mock(spec=object)
+            mock_factory = Mock()  # Factory function
 
             result = ensure_stream_manager_initialized(mock_factory)
 

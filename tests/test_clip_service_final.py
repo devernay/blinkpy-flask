@@ -8,8 +8,8 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from blinkpy.sync_module import BlinkSyncModule
 from requests import Response
+from test_base import create_mock_sync
 
 from blinkapp.models.ids import ClipId
 
@@ -27,9 +27,9 @@ class TestClipServiceFinal:
 
         with patch("blinkapp.CLIPS_CACHE_DIR", "/test/cache"):
             result = _get_clips_cache_dir()
-            assert result == Path("/test/cache")
+            assert result == "/test/cache"  # Function returns string, not Path
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_no_url(self, mock_cache: Mock) -> None:
         """Test download_and_cache_cloud_thumbnail with no URL."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
@@ -40,7 +40,7 @@ class TestClipServiceFinal:
 
         assert result is None
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_no_blink(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with no blink instance."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
@@ -57,7 +57,7 @@ class TestClipServiceFinal:
 
         assert error is not None and "blink instance" in error.lower()
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_core_no_clip_found(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with clip not found."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
@@ -77,7 +77,7 @@ class TestClipServiceFinal:
 
         assert error is not None and "not found" in error.lower()
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_exists(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with existing cached file."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
@@ -100,7 +100,7 @@ class TestClipServiceFinal:
 
         assert filepath == mock_filepath
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_cloud_clip_cached_file_os_error(self, mock_cache: Mock) -> None:
         """Test _download_cloud_clip_core with cached file OS error."""
         from blinkapp.services.clip_download import _download_cloud_clip_core
@@ -143,7 +143,7 @@ class TestClipServiceFinal:
                             self.clip_id, mock_blink, Path("/tmp")
                         )
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_cloud_clips_invalid_timestamp(self, mock_cache: Mock) -> None:
         """Test process_cloud_clips with invalid timestamp."""
         from blinkapp.services.clip_service import process_cloud_clips
@@ -168,15 +168,14 @@ class TestClipServiceFinal:
             # Should handle invalid timestamp gracefully
             assert result == []
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_local_clips_no_local_storage(self, mock_cache: Mock) -> None:
         """Test process_local_clips with no local storage."""
         from blinkapp.services.clip_service import process_local_clips
 
         mock_cache.return_value = {}
 
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.local_storage = False
+        mock_sync = create_mock_sync(local_storage=False)
 
         mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
@@ -193,16 +192,16 @@ class TestClipServiceFinal:
 
             assert result == []
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_local_clips_manifest_not_ready(self, mock_cache: Mock) -> None:
         """Test process_local_clips with manifest not ready."""
         from blinkapp.services.clip_service import process_local_clips
 
         mock_cache.return_value = {}
 
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.local_storage = True
-        mock_sync.local_storage_manifest_ready = False
+        mock_sync = create_mock_sync(
+            local_storage=True, local_storage_manifest_ready=False
+        )
 
         mock_blink_instance = Mock(spec=object)
         mock_blink_instance.sync = {"sync1": mock_sync}
@@ -219,7 +218,7 @@ class TestClipServiceFinal:
 
             assert result == []
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_local_clips_invalid_item(self, mock_cache: Mock) -> None:
         """Test process_local_clips with invalid item in manifest."""
         from blinkapp.services.clip_service import process_local_clips
@@ -230,9 +229,9 @@ class TestClipServiceFinal:
         mock_item = Mock(spec=dict)
         mock_item.created_at = "invalid_date"  # This will cause an error
 
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.local_storage = True
-        mock_sync.local_storage_manifest_ready = True
+        mock_sync = create_mock_sync(
+            local_storage=True, local_storage_manifest_ready=True
+        )
         mock_sync._local_storage = {
             "manifest": [mock_item],
             "last_manifest_id": "manifest_123",
@@ -258,7 +257,7 @@ class TestClipServiceFinal:
                 mock_logger.warning.assert_called()
                 assert result == []
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_success(self, mock_cache: Mock) -> None:
         """Test download_and_cache_cloud_thumbnail success path."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
@@ -267,15 +266,14 @@ class TestClipServiceFinal:
         mock_cache.return_value = mock_cache_instance
 
         # Mock session and response
-        mock_session = Mock(spec=object)
         mock_response = Mock(spec=Response)
         mock_response.status_code = 200
         mock_response.content = b"thumbnail_data"
-        mock_session.get.return_value = mock_response
+        mock_response.raise_for_status = Mock()
 
         with patch(
-            "blinkapp.services.connection_service.ensure_http_session_initialized",
-            return_value=mock_session,
+            "blinkapp.services.clip_processing.requests.get",
+            return_value=mock_response,
         ):
             result = download_and_cache_cloud_thumbnail(
                 self.clip_id, "http://example.com/thumb.jpg"
@@ -284,7 +282,7 @@ class TestClipServiceFinal:
             # Should return the thumbnail path
             assert result is not None
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_http_error(
         self, mock_cache: Mock
     ) -> None:
@@ -294,16 +292,14 @@ class TestClipServiceFinal:
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
 
-        # Mock session with error response
-        mock_session = Mock(spec=object)
+        # Mock requests.get with error response
         mock_response = Mock(spec=Response)
         mock_response.status_code = 404
         mock_response.raise_for_status.side_effect = Exception("HTTP 404")
-        mock_session.get.return_value = mock_response
 
         with patch(
-            "blinkapp.services.connection_service.ensure_http_session_initialized",
-            return_value=mock_session,
+            "blinkapp.services.clip_processing.requests.get",
+            return_value=mock_response,
         ):
             result = download_and_cache_cloud_thumbnail(
                 self.clip_id, "http://example.com/thumb.jpg"
@@ -311,7 +307,7 @@ class TestClipServiceFinal:
 
             assert result is None
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_clip_common_file_not_exists(self, mock_cache: Mock) -> None:
         """Test download_clip_common with non-existent file."""
         from blinkapp.services.clip_download import download_clip_common
@@ -343,7 +339,7 @@ class TestClipServiceFinal:
                 assert status_code == 404
                 mock_jsonify.assert_called_once()
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_clip_common_cached_file_exists(self, mock_cache: Mock) -> None:
         """Test download_clip_common with existing cached file."""
         from blinkapp.services.clip_download import download_clip_common
@@ -371,7 +367,7 @@ class TestClipServiceFinal:
                 # When file exists, it returns send_file response directly
                 assert result == "file_response"
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_local_clips_default_dependencies(self, mock_cache: Mock) -> None:
         """Test process_local_clips with default dependencies."""
         from blinkapp.services.clip_service import process_local_clips
@@ -390,7 +386,7 @@ class TestClipServiceFinal:
 
                     assert result == []
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_cloud_clips_empty_metadata(self, mock_cache: Mock) -> None:
         """Test process_cloud_clips with empty metadata."""
         from blinkapp.services.clip_service import process_cloud_clips
@@ -404,7 +400,7 @@ class TestClipServiceFinal:
 
             assert result == []
 
-    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_exception(
         self, mock_cache: Mock
     ) -> None:
@@ -413,13 +409,9 @@ class TestClipServiceFinal:
 
         mock_cache.return_value = {}
 
-        # Mock session that raises exception
-        mock_session = Mock(spec=object)
-        mock_session.get.side_effect = Exception("Network error")
-
         with patch(
-            "blinkapp.services.connection_service.ensure_http_session_initialized",
-            return_value=mock_session,
+            "blinkapp.services.clip_processing.requests.get",
+            side_effect=Exception("Network error"),
         ):
             result = download_and_cache_cloud_thumbnail(
                 self.clip_id, "http://example.com/thumb.jpg"

@@ -72,7 +72,7 @@ class TestStreamServiceBoost(unittest.TestCase):
 
     def test_initialize_stream_manager(self) -> None:
         """Test initialize_stream_manager function."""
-        with patch("blinkapp.services.stream_service.Config") as mock_config:
+        with patch("blinkapp.Config") as mock_config:
             mock_config.HLS_SEGMENT_TIME = 4
             mock_config.HLS_LIST_SIZE = 5
             mock_config.HLS_OUTPUT_DIR = Path(self.temp_dir)

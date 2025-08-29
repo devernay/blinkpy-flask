@@ -11,9 +11,11 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from blinkpy.camera import BlinkCamera
-
-from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
+from test_base import (
+    create_mock_camera,
+    create_mock_camera_cache,
+    create_mock_clips_cache,
+)
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -233,8 +235,8 @@ class TestGlobalVariableAccess(BaseTestCase):
     def test_cache_instance_access(self) -> None:
         """Test cache instance access."""
         # Mock the cache instances directly since they're imported globals
-        mock_camera_thumbnail_cache = Mock(spec=CameraThumbnailCache)
-        mock_clips_cache = Mock(spec=ClipsCache)
+        mock_camera_thumbnail_cache = create_mock_camera_cache()
+        mock_clips_cache = create_mock_clips_cache()
 
         with patch(
             "blinkapp.services.cache_service.camera_thumbnail_cache",
@@ -425,15 +427,15 @@ class TestBasicOperations(BaseTestCase):
         from blinkapp.services.device_service import create_device_data
 
         # Mock camera object
-        mock_camera = Mock(spec=BlinkCamera)
-        mock_camera.name = "Test Camera"
-        mock_camera.camera_id = "test_camera_boost"  # Use camera_id, not id
-        mock_camera.motion_enabled = True
-        mock_camera.temperature = 72
-        mock_camera.temperature_calibrated = 72.1
-        mock_camera.battery = "ok"  # Use battery, not battery_state
-        mock_camera.wifi_strength = 4  # Use 0-5 scale, not negative dBm
-        mock_camera.last_record = {"created_at": "2023-01-01T00:00:00Z"}
+        mock_camera = create_mock_camera(
+            camera_id="test_camera_boost",
+            name="Test Camera",
+            motion_enabled=True,
+            temperature=72,
+            battery="ok",
+            wifi_strength=4,
+            last_record={"created_at": "2023-01-01T00:00:00Z"},
+        )
 
         cache_key = CameraId("test_camera")
         current_ts = 1640995200  # 2022-01-01 00:00:00
