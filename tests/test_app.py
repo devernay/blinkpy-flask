@@ -1299,9 +1299,9 @@ class TestThumbnailManagement(FlaskTestCase):
     @patch("blinkapp.services.blink_service.blink")
     def test_get_camera_thumbnail_timestamp_success(self, mock_blink: Mock) -> None:
         """Test get_camera_thumbnail_timestamp endpoint."""
-        mock_camera = create_mock_camera(camera_id=12345)
-        # Mock camera with thumbnail
-        mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1234567890"
+        mock_camera = create_mock_camera(
+            camera_id=12345, thumbnail="https://example.com/thumb.jpg?ts=1234567890"
+        )
 
         # Mock sync structure
         mock_sync = create_mock_sync(cameras={})
