@@ -32,7 +32,7 @@ def create_mock_camera(
     camera_id: int | str = 12345,
     name: str = "Test Camera",
     battery: str | None = "ok",
-    temperature: int | None = 72,
+    temperature: int | float | None = 72,
     wifi_strength: int | None = -45,
     motion_enabled: bool = True,
     thumbnail: str | None = None,
@@ -62,7 +62,7 @@ def create_mock_camera(
     mock_camera.thumbnail = thumbnail
     mock_camera.last_record = last_record
     mock_camera.updated_at = updated_at
-    
+
     # Optional attributes
     if battery_voltage is not None:
         mock_camera.battery_voltage = battery_voltage
@@ -70,7 +70,7 @@ def create_mock_camera(
         mock_camera.armed = armed
     if enabled is not None:
         mock_camera.enabled = enabled
-        
+
     return mock_camera
 
 
