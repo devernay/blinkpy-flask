@@ -19,7 +19,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from io import IOBase
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 
 import requests
 from aiohttp import ClientResponse
@@ -2276,7 +2276,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
 
         # Mock sync module (not network)
         mock_sync = create_mock_sync(network_id=12345)
-        mock_sync.async_arm = Mock(spec=callable)
+        mock_sync.async_arm = AsyncMock(return_value=None)
         mock_blink.sync = {"sync1": mock_sync}
         mock_connection.execute.return_value = None
 
@@ -3451,7 +3451,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Mock sync module structure
         mock_sync = create_mock_sync(cameras={})
         mock_sync.network_id = 12345
-        mock_sync.async_arm = Mock(spec=callable)
+        mock_sync.async_arm = AsyncMock(return_value=None)
         mock_blink.sync = {"sync1": mock_sync}
 
         # Simulate network delay
@@ -4086,7 +4086,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         """Test arm system with partial failure scenarios."""
         mock_sync = create_mock_sync(cameras={})
         mock_sync.network_id = 12345
-        mock_sync.async_arm = Mock(return_value="mock_coroutine")
+        mock_sync.async_arm = AsyncMock(return_value=True)
         mock_blink.sync = {"sync1": mock_sync}
 
         # Mock partial failure - connection succeeds but arm fails
@@ -5400,7 +5400,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         mock_sync.name = "Test Network"
         mock_sync.arm = False  # Initially disarmed
         mock_sync.online = True
-        mock_sync.async_arm = Mock(return_value="mock_coroutine")
+        mock_sync.async_arm = AsyncMock(return_value=True)
 
         mock_blink.sync = {"sync1": mock_sync}
         mock_connection.execute.return_value = None
