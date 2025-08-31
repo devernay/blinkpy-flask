@@ -2218,9 +2218,17 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         # Initialize globals for testing
         setup_test_globals()
 
+    @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.blink_service.blink")
-    def test_get_devices_with_cameras(self, mock_blink: Mock) -> None:
+    def test_get_devices_with_cameras(
+        self, mock_blink: Mock, mock_executor: Mock
+    ) -> None:
         """Test get_devices endpoint with camera data."""
+        # Mock executor to prevent async submission warnings
+        mock_executor_instance = Mock()
+        mock_executor_instance.submit = Mock(return_value=Mock())
+        mock_executor.return_value = mock_executor_instance
+
         # Mock blink availability
         mock_blink.available = True
 
@@ -3367,9 +3375,17 @@ class TestSystemDeviceOperations(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
+    @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     @patch("blinkapp.services.blink_service.blink")
-    def test_get_devices_with_multiple_cameras(self, mock_blink: Mock) -> None:
+    def test_get_devices_with_multiple_cameras(
+        self, mock_blink: Mock, mock_executor: Mock
+    ) -> None:
         """Test get_devices with multiple cameras and complex data."""
+        # Mock executor to prevent async submission warnings
+        mock_executor_instance = Mock()
+        mock_executor_instance.submit = Mock(return_value=Mock())
+        mock_executor.return_value = mock_executor_instance
+
         # Mock blink to be available
         mock_blink.available = True
 
