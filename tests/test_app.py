@@ -15,10 +15,12 @@ import os
 import subprocess
 import sys
 import unittest
+from collections.abc import Coroutine
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from io import IOBase
 from pathlib import Path
+from typing import Any, TypeVar
 from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 
 import requests
@@ -610,14 +612,14 @@ class TestErrorHandlingExtended(BaseTestCase):
         from blinkapp.utils.decorators import safe_execute
 
         # Test with ValueError - safe_execute returns operation name on failure
-        def failing_func():
+        def failing_func() -> None:
             raise ValueError("Test ValueError")
 
         result = safe_execute(failing_func, "test operation")
         self.assertEqual(result, "test operation")  # Returns operation name on failure
 
         # Test with successful function
-        def success_func():
+        def success_func() -> str:
             return "success"
 
         result = safe_execute(success_func, "test operation")
@@ -701,10 +703,11 @@ class TestAuthenticationFlows(FlaskTestCase):
         ) as mock_connection:
             mock_connection.start = Mock(spec=callable)
 
-            def mock_execute(coro):
+            T = TypeVar("T")
+
+            def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
                 # Close the coroutine to prevent warnings
-                if hasattr(coro, "close"):
-                    coro.close()
+                coro.close()
                 raise Exception("Unexpected error")
 
             mock_connection.execute = Mock(side_effect=mock_execute)
@@ -815,10 +818,11 @@ class TestAuthenticationFlows(FlaskTestCase):
             sess["temp_password"] = "password123"
 
         # Mock unexpected error during 2FA - consume the coroutine argument
-        def mock_execute(coro):
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             # Close the coroutine to prevent warnings
-            if hasattr(coro, "close"):
-                coro.close()
+            coro.close()
             raise Exception("Unexpected 2FA error")
 
         mock_connection.execute = Mock(side_effect=mock_execute)
@@ -1020,7 +1024,7 @@ class TestErrorHandling(BaseTestCase):
         """Test safe_execute with successful function."""
         from blinkapp.utils.decorators import safe_execute
 
-        def success_func():
+        def success_func() -> str:
             return "success"
 
         result = safe_execute(success_func, "default")
@@ -1030,7 +1034,7 @@ class TestErrorHandling(BaseTestCase):
         """Test safe_execute with failing function."""
         from blinkapp.utils.decorators import safe_execute
 
-        def fail_func():
+        def fail_func() -> None:
             raise ValueError("Test error")
 
         result = safe_execute(fail_func, "default", log_error=False)
@@ -1394,6 +1398,14 @@ class TestClipProcessing(BaseTestCase):
 
         # Mock get_videos_metadata to return empty list (no clips found)
         mock_blink.get_videos_metadata = AsyncMock(return_value=[])
+
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
+            coro.close()
+            return []  # type: ignore[return-value]
+
+        mock_connection.execute.side_effect = mock_execute
 
         response = self.client.get("/api/clips/nonexistent/download")
         self.assertEqual(response.status_code, 404)  # "Clip not found" triggers 404
@@ -2051,7 +2063,14 @@ class TestClipDownloadOperations(BaseTestCase):
         """Test downloading clip not found in metadata."""
         # Mock empty metadata with async return
         mock_blink.get_videos_metadata = AsyncMock(return_value=[])
-        mock_connection.execute.return_value = []
+
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
+            coro.close()
+            return []  # type: ignore[return-value]
+
+        mock_connection.execute.side_effect = mock_execute
 
         with patch(
             "blinkapp.services.cache_service.ensure_clips_cache_initialized",
@@ -2224,8 +2243,10 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
     ) -> None:
         """Test get_devices endpoint with camera data."""
         # Mock executor to prevent async submission warnings
-        mock_executor_instance = Mock()
-        mock_executor_instance.submit = Mock(return_value=Mock())
+        from concurrent.futures import Future, ThreadPoolExecutor
+
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
+        mock_executor_instance.submit = Mock(return_value=Mock(spec=Future))
         mock_executor.return_value = mock_executor_instance
 
         # Mock blink availability
@@ -2285,7 +2306,14 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         mock_sync = create_mock_sync(network_id=12345)
         mock_sync.async_arm = AsyncMock(return_value=None)
         mock_blink.sync = {"sync1": mock_sync}
-        mock_connection.execute.return_value = None
+
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
+            coro.close()
+            return None  # type: ignore[return-value]
+
+        mock_connection.execute.side_effect = mock_execute
 
         # Test arming
         response = self.client.put("/api/systems/12345", json={"armed": True})
@@ -2669,8 +2697,10 @@ class TestCacheLoadingOperations(BaseTestCase):
         mock_video_file.stat.return_value = Mock(st_size=1024000, st_mtime=1000)
 
         # Mock the cache instance
-        mock_cache = Mock()
-        mock_cache.add_clip = Mock()
+        from blinkapp.models.cache import ClipsCache
+
+        mock_cache = Mock(spec=ClipsCache)
+        mock_cache.add_clip = Mock(spec=callable)
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=[mock_video_file]):
@@ -3329,7 +3359,9 @@ class TestAdvancedClipOperations(BaseTestCase):
                     with patch(
                         "blinkapp.services.connection_service.ensure_executor_initialized"
                     ) as mock_executor:
-                        mock_executor_instance = Mock()
+                        from concurrent.futures import ThreadPoolExecutor
+
+                        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
                         mock_executor.return_value = mock_executor_instance
 
                         response = self.client.post("/api/clips/test_clip/thumbnail")
@@ -3381,8 +3413,10 @@ class TestSystemDeviceOperations(BaseTestCase):
     ) -> None:
         """Test get_devices with multiple cameras and complex data."""
         # Mock executor to prevent async submission warnings
-        mock_executor_instance = Mock()
-        mock_executor_instance.submit = Mock(return_value=Mock())
+        from concurrent.futures import Future, ThreadPoolExecutor
+
+        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
+        mock_executor_instance.submit = Mock(return_value=Mock(spec=Future))
         mock_executor.return_value = mock_executor_instance
 
         # Mock blink to be available
@@ -3468,6 +3502,14 @@ class TestSystemDeviceOperations(BaseTestCase):
         mock_sync.network_id = 12345
         mock_sync.async_arm = AsyncMock(return_value=None)
         mock_blink.sync = {"sync1": mock_sync}
+
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
+            coro.close()
+            return None  # type: ignore[return-value]
+
+        mock_connection.execute.side_effect = mock_execute
 
         # Simulate network delay
         import time
@@ -3991,8 +4033,10 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         mock_files = [mock_file1, mock_file2]
 
         # Mock the cache instance
-        mock_cache = Mock()
-        mock_cache.add_clip = Mock()
+        from blinkapp.models.cache import ClipsCache
+
+        mock_cache = Mock(spec=ClipsCache)
+        mock_cache.add_clip = Mock(spec=callable)
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=mock_files):
@@ -4103,6 +4147,14 @@ class TestAdvancedSystemOperations(BaseTestCase):
         mock_sync.network_id = 12345
         mock_sync.async_arm = AsyncMock(return_value=True)
         mock_blink.sync = {"sync1": mock_sync}
+
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
+            coro.close()
+            return True  # type: ignore[return-value]
+
+        mock_connection.execute.side_effect = mock_execute
 
         # Mock partial failure - connection succeeds but arm fails
         mock_connection.execute.side_effect = Exception("Arm failed")
@@ -5223,8 +5275,10 @@ class TestAdvancedCacheOperations(BaseTestCase):
             mock_files.append(mock_file)
 
         # Mock the cache instance
-        mock_cache = Mock()
-        mock_cache.add_clip = Mock()
+        from blinkapp.models.cache import ClipsCache
+
+        mock_cache = Mock(spec=ClipsCache)
+        mock_cache.add_clip = Mock(spec=callable)
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=mock_files):  # Only .mp4 files
@@ -5418,7 +5472,14 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         mock_sync.async_arm = AsyncMock(return_value=True)
 
         mock_blink.sync = {"sync1": mock_sync}
-        mock_connection.execute.return_value = None
+
+        T = TypeVar("T")
+
+        def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
+            coro.close()
+            return None  # type: ignore[return-value]
+
+        mock_connection.execute.side_effect = mock_execute
 
         # Test state consistency workflow
         # 1. Check initial state

@@ -66,7 +66,9 @@ def create_mock_cache_instance(
         """Mock cache.__contains__() method."""
         return str(key) in cache_data
 
-    mock_cache = Mock()
+    from blinkapp.models.cache import ClipsCache
+
+    mock_cache = Mock(spec=ClipsCache)
     mock_cache.get = mock_get
     mock_cache.__setitem__ = mock_setitem
     mock_cache.__getitem__ = mock_getitem

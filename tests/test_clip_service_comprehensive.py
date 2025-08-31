@@ -206,7 +206,7 @@ class TestClipServiceComprehensive(BaseTestCase):
 
         # Mock blink_connection with execute method
         mock_connection = Mock(spec=BlinkConnection)
-        mock_connection.execute = AsyncMock(None)
+        mock_connection.execute = AsyncMock(return_value=None)
 
         with patch("blinkapp.services.clip_service.format_clips_by_day") as mock_format:
             with patch("blinkapp.services.clip_service.logger") as mock_logger:
@@ -242,7 +242,7 @@ class TestClipServiceComprehensive(BaseTestCase):
         # Add do_http_get method for successful HTTP download
         async def mock_do_http_get(url: str) -> Mock:
             mock_response = Mock()
-            mock_response.read = AsyncMock(b"video_data")
+            mock_response.read = AsyncMock(return_value=b"video_data")
             return mock_response
 
         mock_blink.do_http_get = mock_do_http_get
@@ -279,7 +279,7 @@ class TestClipServiceComprehensive(BaseTestCase):
                 ) as mock_conn:
                     # Mock the connection to return proper video metadata
                     mock_connection = Mock(spec=BlinkConnection)
-                    mock_connection.execute = AsyncMock([clip_info])
+                    mock_connection.execute = AsyncMock(return_value=[clip_info])
                     mock_conn.return_value = mock_connection
 
                     filepath, error = _download_cloud_clip_core_sync(
@@ -321,7 +321,7 @@ class TestClipServiceComprehensive(BaseTestCase):
         mock_http_session = Mock(spec=Session)
         mock_response = Mock(spec=Response)
         mock_response.status_code = 404
-        mock_response.read = AsyncMock(b"fake video content")
+        mock_response.read = AsyncMock(return_value=b"fake video content")
         mock_http_session.get.return_value = mock_response
         mock_session.return_value = mock_http_session
 

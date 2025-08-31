@@ -42,7 +42,7 @@ class TestClipServiceCoreLogic(BaseTestCase):
         # Add do_http_get method for successful HTTP download
         async def mock_do_http_get(url: str) -> Mock:
             mock_response = Mock()
-            mock_response.read = AsyncMock(b"fake video content")
+            mock_response.read = AsyncMock(return_value=b"fake video content")
             return mock_response
 
         self.mock_blink.do_http_get = mock_do_http_get
