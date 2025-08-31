@@ -22,6 +22,7 @@ __all__ = [
     "clips_cache",
     "ensure_cache_directory",
     "validate_cache_directory",
+    "reset_global_caches",
 ]
 
 import logging
@@ -54,6 +55,13 @@ def initialize_caches(config: dict[str, Any]) -> None:
     clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
 
     logger.info("Cache instances initialized successfully")
+
+
+def reset_global_caches() -> None:
+    """Reset global cache instances to None for testing."""
+    global camera_thumbnail_cache, clips_cache
+    camera_thumbnail_cache = None
+    clips_cache = None
 
 
 def ensure_clips_cache_initialized() -> ClipsCache:

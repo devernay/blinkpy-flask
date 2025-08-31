@@ -356,6 +356,7 @@ class BaseTestCase(unittest.TestCase):
         """Clean up global state after each test."""
         try:
             from blinkapp.services import blink_service, connection_service
+            from blinkapp.services.cache_service import reset_global_caches
 
             # Reset Blink objects
             blink_service.blink = None
@@ -364,6 +365,9 @@ class BaseTestCase(unittest.TestCase):
             # Reset connection service
             if hasattr(connection_service, "executor"):
                 connection_service.executor = None
+
+            # Reset global caches to avoid test interference
+            reset_global_caches()
         except Exception:
             # Ignore teardown errors to prevent masking test failures
             pass

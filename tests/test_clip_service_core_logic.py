@@ -4,15 +4,17 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
-from test_base import create_mock_blink_instance
+from test_base import BaseTestCase, create_mock_blink_instance
 
 from blinkapp.models.ids import ClipId
 
 
-class TestClipServiceCoreLogic:
+class TestClipServiceCoreLogic(BaseTestCase):
     """Tests focusing on core business logic without Flask dependencies."""
 
-    def setup_method(self) -> None:
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
         """Set up test fixtures."""
         self.clip_id = ClipId("123456")
         self.mock_blink = create_mock_blink_instance()

@@ -4,6 +4,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 from test_base import (
+    BaseTestCase,
     create_mock_blink_instance,
     create_mock_clip_item,
     create_mock_sync,
@@ -12,7 +13,7 @@ from test_base import (
 from blinkapp.models.ids import ClipId
 
 
-class TestClipProcessingFunctions:
+class TestClipProcessingFunctions(BaseTestCase):
     """Tests for process_cloud_clips and process_local_clips functions."""
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")

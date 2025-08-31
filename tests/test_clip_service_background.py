@@ -5,16 +5,17 @@ from pathlib import Path
 from unittest.mock import Mock, mock_open, patch
 
 from requests import Response
-from test_base import create_mock_blink_instance
+from test_base import BaseTestCase, create_mock_blink_instance
 
 from blinkapp.models.ids import ClipId
 
 
-class TestClipServiceBackground:
+class TestClipServiceBackground(BaseTestCase):
     """Tests for background processing and thumbnail functions."""
 
-    def setup_method(self) -> None:
+    def setUp(self) -> None:
         """Set up test fixtures."""
+        super().setUp()
         self.clip_id = ClipId("123456")
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")

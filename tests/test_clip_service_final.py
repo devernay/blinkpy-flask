@@ -11,16 +11,17 @@ from unittest.mock import Mock, mock_open, patch
 
 from blinkpy.blinkpy import Blink
 from requests import Response
-from test_base import create_mock_blink_instance, create_mock_sync
+from test_base import BaseTestCase, create_mock_blink_instance, create_mock_sync
 
 from blinkapp.models.ids import ClipId
 
 
-class TestClipServiceFinal:
+class TestClipServiceFinal(BaseTestCase):
     """Final tests to reach 75% coverage."""
 
-    def setup_method(self) -> None:
+    def setUp(self) -> None:
         """Set up test fixtures."""
+        super().setUp()
         self.clip_id = ClipId("123456")
 
     def test_get_clips_cache_dir(self) -> None:

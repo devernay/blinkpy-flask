@@ -3,16 +3,17 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from test_base import create_mock_blink_instance
+from test_base import BaseTestCase, create_mock_blink_instance
 
 from blinkapp.models.ids import ClipId
 
 
-class TestClipServiceMaximumCoverage:
+class TestClipServiceMaximumCoverage(BaseTestCase):
     """Test clip service with maximum coverage - realistic tests only."""
 
-    def setup_method(self) -> None:
+    def setUp(self) -> None:
         """Set up test fixtures."""
+        super().setUp()
         self.clip_id = ClipId("123456")
         self.mock_blink = create_mock_blink_instance()
         self.mock_cache_dir = Path("/tmp/test_cache")
