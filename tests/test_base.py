@@ -77,13 +77,10 @@ def create_mock_cache_instance(
 
 
 def create_async_mock(return_value=None):
-    """Create a mock that works with async code without warnings."""
+    """Create a proper AsyncMock that works without warnings."""
+    from unittest.mock import AsyncMock
 
-    async def async_func(*args, **kwargs):
-        return return_value
-
-    mock = Mock(side_effect=async_func)
-    return mock
+    return AsyncMock(return_value=return_value)
 
 
 # Add the app directory to Python path
