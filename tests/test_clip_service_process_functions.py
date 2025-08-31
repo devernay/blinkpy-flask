@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 from test_base import (
     BaseTestCase,
     create_mock_blink_instance,
+    create_mock_cache_instance,
     create_mock_clip_item,
     create_mock_sync,
 )
@@ -82,7 +83,7 @@ class TestClipProcessingFunctions(BaseTestCase):
             process_cloud_clips(videos_metadata)
             mock_logger.warning.assert_called()
 
-    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.clip_service.ensure_clips_cache_initialized")
     @patch("blinkapp.utils.formatters.format_clips_by_day")
     def test_process_cloud_clips_with_cached_clip(
         self, mock_format, mock_cache
@@ -92,20 +93,9 @@ class TestClipProcessingFunctions(BaseTestCase):
 
         clip_id = ClipId("123456")
         cached_clip_data = {"cloud_thumbnail_url": "existing_url"}
-        # Use both string and ClipId as keys to handle different access patterns
-        mock_cache_instance = {clip_id: cached_clip_data, "123456": cached_clip_data}
 
-        # Mock the cache to support both get() and item assignment
-        def mock_get(key):
-            return mock_cache_instance.get(key)
-
-        def mock_setitem(key, value):
-            mock_cache_instance[key] = value
-
-        mock_cache_obj = Mock()
-        mock_cache_obj.get = mock_get
-        mock_cache_obj.__setitem__ = mock_setitem
-        mock_cache_obj.__getitem__ = lambda key: mock_cache_instance[key]
+        # Create mock cache with initial data
+        mock_cache_obj = create_mock_cache_instance({str(clip_id): cached_clip_data})
         mock_cache.return_value = mock_cache_obj
         mock_format.return_value = []
 
@@ -122,8 +112,9 @@ class TestClipProcessingFunctions(BaseTestCase):
 
         process_cloud_clips(videos_metadata)
 
-        # Verify cached clip was updated
-        updated_clip = mock_cache_instance[clip_id]
+        # Verify cached clip was updated - get the updated data from the mock cache
+        updated_clip = mock_cache_obj.get(clip_id)
+        assert updated_clip is not None
         assert updated_clip["cloud_thumbnail_url"] == "http://example.com/thumb.jpg"
 
     @patch("blinkapp.services.blink_service.blink")

@@ -2,9 +2,9 @@
 
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
-from test_base import BaseTestCase, create_mock_blink_instance
+from test_base import BaseTestCase, create_async_mock, create_mock_blink_instance
 
 from blinkapp.models.ids import ClipId
 
@@ -42,7 +42,7 @@ class TestClipServiceCoreLogic(BaseTestCase):
         # Add do_http_get method for successful HTTP download
         async def mock_do_http_get(url: str) -> Mock:
             mock_response = Mock()
-            mock_response.read = AsyncMock(return_value=b"fake video content")
+            mock_response.read = create_async_mock(b"fake video content")
             return mock_response
 
         self.mock_blink.do_http_get = mock_do_http_get

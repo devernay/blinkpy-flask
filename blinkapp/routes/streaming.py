@@ -19,9 +19,6 @@ from typing import TYPE_CHECKING
 
 from flask import send_file
 
-if TYPE_CHECKING:
-    pass
-
 from blinkapp.config import Config
 from blinkapp.models.ids import CameraId
 from blinkapp.models.types import JsonDict

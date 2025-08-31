@@ -16,12 +16,8 @@ __all__ = [
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from blinkapp.services.debug_service import dump_cloud_videos
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 

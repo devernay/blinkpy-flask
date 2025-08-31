@@ -31,8 +31,6 @@ class ClipData(TypedDict):
 class ClipCacheEntryRequired(TypedDict):
     """Required fields for clip cache entries."""
 
-    pass
-
 
 class ClipCacheEntry(ClipCacheEntryRequired, total=False):
     """Structure for clip cache entries."""

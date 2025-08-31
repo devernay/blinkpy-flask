@@ -99,5 +99,3 @@ Usage:
 
 class BlinkError(Exception):
     """Base exception for Blink-related errors."""
-
-    pass

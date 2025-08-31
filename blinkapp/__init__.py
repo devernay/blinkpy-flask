@@ -22,29 +22,23 @@ Author: Fredderic Devernay
 License: MIT
 """
 
-__all__ = [
-    "app",
-    "CLIPS_CACHE_SIZE",
-    "THUMBNAIL_CACHE_DIR",
-    "CLIPS_CACHE_DIR",
-    "logger",
-]
-
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    pass
+# Live streaming management
+# Third-party imports
+# Flask framework components
+# Type alias for Flask responses
+from flask import (
+    Flask,
+)
 
 # Authentication and session management
 # Caching system for camera thumbnails, clips, and metadata
-
 # ID validation and type safety
 # Type definitions for better code clarity
 # Blink camera library - third-party integration
-
 # Application configuration
 from blinkapp.config import Config
 
@@ -105,20 +99,6 @@ from blinkapp.utils.error_handlers import handle_api_error
 
 # Utilities
 from blinkapp.utils.logging_config import setup_logging
-
-# Live streaming management
-
-
-if TYPE_CHECKING:
-    pass
-
-# Third-party imports
-
-# Flask framework components
-# Type alias for Flask responses
-from flask import (
-    Flask,
-)
 
 # Explicitly define what this module exports
 __all__ = [

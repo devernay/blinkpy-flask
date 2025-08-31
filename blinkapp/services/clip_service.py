@@ -115,21 +115,20 @@ def process_cloud_clips(
                 # Update existing cache entry with cloud thumbnail URL
                 cached_clip["cloud_thumbnail_url"] = cloud_thumbnail_url
                 clips_cache_instance[clip_id] = cached_clip
-            else:
-                # Create new cache entry with cloud thumbnail URL
-                if cloud_thumbnail_url:
-                    media_url_obj = video.get("media")
-                    assert media_url_obj is None or isinstance(media_url_obj, str), (
-                        f"Expected media to be str, got {type(media_url_obj)}"
-                    )
-                    media_url = str(media_url_obj) if media_url_obj is not None else ""
+            # Create new cache entry with cloud thumbnail URL
+            elif cloud_thumbnail_url:
+                media_url_obj = video.get("media")
+                assert media_url_obj is None or isinstance(media_url_obj, str), (
+                    f"Expected media to be str, got {type(media_url_obj)}"
+                )
+                media_url = str(media_url_obj) if media_url_obj is not None else ""
 
-                    cache_entry: ClipCacheEntry = {
-                        "cloud_thumbnail_url": str(cloud_thumbnail_url),
-                        "media_url": media_url,
-                        "created_at": created_at.isoformat(),
-                    }
-                    clips_cache_instance[clip_id] = cache_entry
+                cache_entry: ClipCacheEntry = {
+                    "cloud_thumbnail_url": str(cloud_thumbnail_url),
+                    "media_url": media_url,
+                    "created_at": created_at.isoformat(),
+                }
+                clips_cache_instance[clip_id] = cache_entry
 
             # Build standardized clip object for UI consumption
             clip_data = {

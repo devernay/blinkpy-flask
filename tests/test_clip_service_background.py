@@ -5,7 +5,11 @@ from pathlib import Path
 from unittest.mock import Mock, mock_open, patch
 
 from requests import Response
-from test_base import BaseTestCase, create_mock_blink_instance
+from test_base import (
+    BaseTestCase,
+    create_mock_blink_instance,
+    create_mock_cache_instance,
+)
 
 from blinkapp.models.ids import ClipId
 
@@ -153,7 +157,7 @@ class TestClipServiceBackground(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
+    @patch("blinkapp.services.clip_processing.ensure_clips_cache_initialized")
     @patch("blinkapp.services.connection_service.ensure_executor_initialized")
     def test_process_cloud_clip_background(
         self, mock_executor, mock_cache, mock_connection, mock_blink
@@ -171,12 +175,11 @@ class TestClipServiceBackground(BaseTestCase):
         mock_executor.return_value = mock_executor_instance
 
         # Set up cache with clip data including media_url
-        mock_cache_instance = {
-            str(self.clip_id): {
-                "id": str(self.clip_id),
-                "media_url": "http://example.com/video.mp4",
-            }
+        clip_data = {
+            "id": str(self.clip_id),
+            "media_url": "http://example.com/video.mp4",
         }
+        mock_cache_instance = create_mock_cache_instance({str(self.clip_id): clip_data})
         mock_cache.return_value = mock_cache_instance
 
         with patch(

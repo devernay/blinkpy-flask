@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 __all__ = ["create_device_data", "format_device_temperature"]
 
 
-def format_device_temperature(temperature: float | int | None) -> str:
+def format_device_temperature(temperature: float | None) -> str:
     """Format device temperature for display.
 
     Converts temperature values to a user-friendly string format.

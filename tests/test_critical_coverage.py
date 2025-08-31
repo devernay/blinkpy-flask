@@ -13,9 +13,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 from requests import Response
+from test_base import create_async_mock
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -91,7 +92,7 @@ class TestBlinkInitialization(BaseTestCase):
 
         mock_blink_instance = Mock(spec=object)
         mock_blink_instance.key_required = False
-        mock_blink_instance.start = AsyncMock()
+        mock_blink_instance.start = create_async_mock(None)
         mock_blink.return_value = mock_blink_instance
 
         mock_auth_instance = Mock(spec=object)
@@ -124,7 +125,7 @@ class TestBlinkInitialization(BaseTestCase):
 
         mock_blink_instance = Mock(spec=object)
         mock_blink_instance.key_required = True
-        mock_blink_instance.start = AsyncMock()
+        mock_blink_instance.start = create_async_mock(None)
         mock_blink.return_value = mock_blink_instance
 
         try:

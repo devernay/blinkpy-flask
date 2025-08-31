@@ -7,6 +7,18 @@ This module provides all test utilities in one place:
 - Decorators for test setup
 """
 
+__all__ = [
+    "create_mock_cache_instance",
+    "create_async_mock",
+    "create_mock_blink_instance",
+    "create_mock_sync",
+    "create_mock_camera",
+    "create_mock_live_stream",
+    "initialize_for_testing",
+    "BaseTestCase",
+    "FlaskTestCase",
+]
+
 import functools
 import os
 import sys
@@ -22,6 +34,57 @@ from blinkpy.sync_module import BlinkSyncModule
 
 from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
+
+
+def create_mock_cache_instance(
+    initial_data: dict[str, dict[str, Any]] | None = None,
+) -> Mock:
+    """Create a mock cache instance that behaves like the real cache.
+
+    Args:
+        initial_data: Optional dictionary of initial cache data {key: value}
+
+    Returns:
+        Mock object that supports get(), __getitem__, __setitem__, and __contains__
+    """
+    cache_data = initial_data.copy() if initial_data else {}
+
+    def mock_get(key: Any) -> Any:
+        """Mock cache.get() method - returns copy to allow in-place modifications."""
+        str_key = str(key)
+        original = cache_data.get(str_key)
+        return original.copy() if original and isinstance(original, dict) else original
+
+    def mock_setitem(self_param: Any, key: Any, value: Any) -> None:
+        """Mock cache.__setitem__() method."""
+        cache_data[str(key)] = value
+
+    def mock_getitem(key: Any) -> Any:
+        """Mock cache.__getitem__() method."""
+        return cache_data[str(key)]
+
+    def mock_contains(key: Any) -> bool:
+        """Mock cache.__contains__() method."""
+        return str(key) in cache_data
+
+    mock_cache = Mock()
+    mock_cache.get = mock_get
+    mock_cache.__setitem__ = mock_setitem
+    mock_cache.__getitem__ = mock_getitem
+    mock_cache.__contains__ = mock_contains
+
+    return mock_cache
+
+
+def create_async_mock(return_value=None):
+    """Create a mock that works with async code without warnings."""
+
+    async def async_func(*args, **kwargs):
+        return return_value
+
+    mock = Mock(side_effect=async_func)
+    return mock
+
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))

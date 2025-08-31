@@ -23,7 +23,7 @@ class BaseId:
         value: The validated ID string value
     """
 
-    def __init__(self, value: str | int | float) -> None:
+    def __init__(self, value: str | float) -> None:
         """Initialize ID instance with validation.
 
         Args:
