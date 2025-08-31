@@ -168,7 +168,7 @@ class TestClipServiceComprehensive(BaseTestCase):
 
         # Mock blink_connection with execute method
         mock_connection = Mock(spec=BlinkConnection)
-        mock_connection.execute = create_async_mock(None)
+        mock_connection.execute = Mock(return_value=None)
 
         with patch(
             "blinkapp.services.clip_service.ensure_clips_cache_initialized"
