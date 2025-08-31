@@ -27,7 +27,6 @@ from blinkpy.livestream import BlinkLiveStream
 from flask.sessions import SessionMixin
 from flask.testing import FlaskClient
 from test_base import (
-    create_async_mock,
     create_mock_blink_instance,
     create_mock_camera,
     create_mock_clip_item,
@@ -1394,7 +1393,7 @@ class TestClipProcessing(BaseTestCase):
         mock_blink.available = True
 
         # Mock get_videos_metadata to return empty list (no clips found)
-        mock_blink.get_videos_metadata = create_async_mock([])
+        mock_blink.get_videos_metadata = AsyncMock(return_value=[])
 
         response = self.client.get("/api/clips/nonexistent/download")
         self.assertEqual(response.status_code, 404)  # "Clip not found" triggers 404
@@ -2051,7 +2050,7 @@ class TestClipDownloadOperations(BaseTestCase):
     ) -> None:
         """Test downloading clip not found in metadata."""
         # Mock empty metadata with async return
-        mock_blink.get_videos_metadata = create_async_mock([])
+        mock_blink.get_videos_metadata = AsyncMock(return_value=[])
         mock_connection.execute.return_value = []
 
         with patch(

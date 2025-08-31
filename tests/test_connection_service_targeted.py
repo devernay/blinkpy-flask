@@ -3,10 +3,9 @@
 import unittest
 from asyncio import AbstractEventLoop
 from concurrent.futures import Future
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from test_base import (
-    create_async_mock,
     create_mock_blink_instance,
     create_mock_live_stream,
 )
@@ -43,7 +42,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
         """Test BlinkConnection shutdown with timeout - lines 233-240."""
         connection = BlinkConnection()
         connection.blink = create_mock_blink_instance()
-        connection.blink.close = create_async_mock()
+        connection.blink.close = AsyncMock()
         connection.loop = Mock(spec=AbstractEventLoop)
         connection.loop.is_running.return_value = True
 
@@ -65,7 +64,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
         """Test BlinkConnection shutdown with runtime error - lines 233-240."""
         connection = BlinkConnection()
         connection.blink = create_mock_blink_instance()
-        connection.blink.close = create_async_mock()
+        connection.blink.close = AsyncMock()
         connection.loop = Mock(spec=AbstractEventLoop)
         connection.loop.is_running.return_value = True
 
@@ -87,7 +86,7 @@ class TestConnectionServiceTargeted(unittest.TestCase):
         """Test BlinkConnection shutdown with OS error - lines 233-240."""
         connection = BlinkConnection()
         connection.blink = create_mock_blink_instance()
-        connection.blink.close = create_async_mock()
+        connection.blink.close = AsyncMock()
         connection.loop = Mock(spec=AbstractEventLoop)
         connection.loop.is_running.return_value = True
 

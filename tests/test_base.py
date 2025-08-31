@@ -9,7 +9,6 @@ This module provides all test utilities in one place:
 
 __all__ = [
     "create_mock_cache_instance",
-    "create_async_mock",
     "create_mock_blink_instance",
     "create_mock_sync",
     "create_mock_camera",
@@ -74,13 +73,6 @@ def create_mock_cache_instance(
     mock_cache.__contains__ = mock_contains
 
     return mock_cache
-
-
-def create_async_mock(return_value=None):
-    """Create a proper AsyncMock that works without warnings."""
-    from unittest.mock import AsyncMock
-
-    return AsyncMock(return_value=return_value)
 
 
 # Add the app directory to Python path
