@@ -2012,39 +2012,36 @@ class TestClipDownloadOperations(BaseTestCase):
         mock_connection._started = True  # Mark as started
         mock_connection_func.return_value = mock_connection
 
-        with patch("pathlib.Path.exists") as mock_exists:  # Mock file existence
-            # Return False for initial check (not cached), True after download
-            mock_exists.side_effect = [False, True]
+        import tempfile
+        from pathlib import Path
 
-            with (
-                patch(
-                    "blinkapp.services.clip_download._download_cloud_clip_core_sync"
-                ) as mock_download_core,
-                patch("blinkapp.services.clip_download.send_file") as mock_send_file,
-                patch(
-                    "blinkapp.services.clip_processing.process_cloud_clip_background"
-                ) as mock_bg_process,
-            ):
-                # Mock successful download
-                from pathlib import Path
+        # Create temporary directory and file
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_clips_dir = Path(temp_dir)
+            temp_file = temp_clips_dir / "123456.mp4"
 
-                mock_download_core.return_value = (
-                    Path("/tmp/test_clips/123456.mp4"),
-                    None,
-                )
+            with patch("blinkapp.CLIPS_CACHE_DIR", temp_clips_dir):
+                with (
+                    patch(
+                        "blinkapp.services.clip_download._download_cloud_clip_core_sync"
+                    ) as mock_download_core,
+                    patch(
+                        "blinkapp.services.clip_processing.process_cloud_clip_background"
+                    ) as mock_bg_process,
+                ):
+                    # Mock successful download - create the file
+                    def create_file(*args, **kwargs):
+                        temp_file.write_bytes(b"fake video data")
+                        return temp_file, None
 
-                from flask import Response
+                    mock_download_core.side_effect = create_file
 
-                mock_send_file.return_value = Response(
-                    "fake video", status=200, mimetype="video/mp4"
-                )
+                    response = self.client.get("/api/clips/123456/download")
 
-                response = self.client.get("/api/clips/123456/download")
-
-                # Should successfully download and cache
-                self.assertEqual(response.status_code, 200)
-                mock_download_core.assert_called_once()
-                mock_bg_process.assert_called_once()
+                    # Should successfully download and cache
+                    self.assertEqual(response.status_code, 200)
+                    mock_download_core.assert_called_once()
+                    mock_bg_process.assert_called_once()
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
@@ -2069,37 +2066,38 @@ class TestClipDownloadOperations(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_download_clip_cached_file_exists(
         self, mock_connection, mock_blink
     ) -> None:
         """Test downloading clip when cached file exists."""
-        # Mock blink to be available
-        mock_blink.available = True
+        import tempfile
+        from pathlib import Path
 
-        # Mock cloud clip metadata
-        mock_clip = {
-            "id": 123456,
-            "created_at": "2025-01-15T10:30:00Z",
-            "device_name": "Front Door",
-            "media": "https://example.com/clip.mp4",
-        }
+        # Create temporary directory and file
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_clips_dir = Path(temp_dir)
+            temp_file = temp_clips_dir / "123456.mp4"
+            temp_file.write_bytes(b"fake video data")
 
-        mock_blink.get_videos_metadata.return_value = [mock_clip]
-        mock_connection.execute.return_value = [mock_clip]
+            with patch("blinkapp.CLIPS_CACHE_DIR", temp_clips_dir):
+                # Mock blink to be available
+                mock_blink.available = True
 
-        with (
-            patch("pathlib.Path.exists", return_value=True),  # File cached
-            patch("blinkapp.services.clip_download.send_file") as mock_send,
-        ):
-            from flask import Response
+                # Mock cloud clip metadata
+                mock_clip = {
+                    "id": 123456,
+                    "created_at": "2025-01-15T10:30:00Z",
+                    "device_name": "Front Door",
+                    "media": "https://example.com/clip.mp4",
+                }
 
-            mock_send.return_value = Response("fake file data", mimetype="video/mp4")
+                mock_blink.get_videos_metadata.return_value = [mock_clip]
+                mock_connection.execute.return_value = [mock_clip]
 
-            response = self.client.get("/api/clips/123456/download")
+                response = self.client.get("/api/clips/123456/download")
 
-            # Should serve cached file successfully
-            self.assertEqual(response.status_code, 200)
+                # Should serve cached file successfully
+                self.assertEqual(response.status_code, 200)
 
     @patch("blinkapp.services.cache_service.clips_cache")
     def test_process_clip_thumbnail_generation(self, mock_cache: Mock) -> None:

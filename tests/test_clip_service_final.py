@@ -363,34 +363,42 @@ class TestClipServiceFinal:
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_clip_common_cached_file_exists(self, mock_cache: Mock) -> None:
         """Test download_clip_common with existing cached file."""
+        import tempfile
+        from pathlib import Path
+
         from blinkapp.services.clip_download import download_clip_common
 
-        # Mock cached file that exists
-        mock_filepath = Mock(spec=Path)
-        mock_filepath.exists.return_value = True
-        mock_filepath.name = "test.mp4"
+        # Create a real temporary file for the test
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+            temp_file.write(b"fake video data")
+            temp_path = Path(temp_file.name)
 
-        mock_cache_instance = {self.clip_id: {"filepath": mock_filepath}}
-        mock_cache.return_value = mock_cache_instance
+        try:
+            mock_cache_instance = {self.clip_id: {"filepath": temp_path}}
+            mock_cache.return_value = mock_cache_instance
 
-        mock_send_file = Mock(return_value="file_response")
+            mock_send_file = Mock(return_value="file_response")
 
-        with patch("flask.send_file", mock_send_file):
-            with patch(
-                "blinkapp.services.connection_service.ensure_executor_initialized"
-            ) as mock_executor:
-                mock_executor_instance = Mock(spec=ThreadPoolExecutor)
-                mock_executor.return_value = mock_executor_instance
+            with patch("blinkapp.services.clip_download.send_file", mock_send_file):
+                with patch(
+                    "blinkapp.services.connection_service.ensure_executor_initialized"
+                ) as mock_executor:
+                    mock_executor_instance = Mock(spec=ThreadPoolExecutor)
+                    mock_executor.return_value = mock_executor_instance
 
-                # Need Flask request context for send_file
-                from blinkapp import app
+                    # Need Flask request context for send_file
+                    from blinkapp import app
 
-                with app.test_request_context():
-                    result = download_clip_common(mock_filepath, self.clip_id)
+                    with app.test_request_context():
+                        result = download_clip_common(temp_path, self.clip_id)
 
-                mock_send_file.assert_called_once()
-                # When file exists, it returns send_file response directly
-                assert result == "file_response"
+                    mock_send_file.assert_called_once()
+                    # When file exists, it returns send_file response directly
+                    assert result == "file_response"
+        finally:
+            # Clean up the temporary file
+            if temp_path.exists():
+                temp_path.unlink()
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_local_clips_default_dependencies(self, mock_cache: Mock) -> None:

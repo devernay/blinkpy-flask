@@ -90,8 +90,22 @@ class TestClipProcessingFunctions:
         from blinkapp.services.clip_service import process_cloud_clips
 
         clip_id = ClipId("123456")
-        mock_cache_instance = {clip_id: {"cloud_thumbnail_url": "existing_url"}}
-        mock_cache.return_value = mock_cache_instance
+        cached_clip_data = {"cloud_thumbnail_url": "existing_url"}
+        # Use both string and ClipId as keys to handle different access patterns
+        mock_cache_instance = {clip_id: cached_clip_data, "123456": cached_clip_data}
+
+        # Mock the cache to support both get() and item assignment
+        def mock_get(key):
+            return mock_cache_instance.get(key)
+
+        def mock_setitem(key, value):
+            mock_cache_instance[key] = value
+
+        mock_cache_obj = Mock()
+        mock_cache_obj.get = mock_get
+        mock_cache_obj.__setitem__ = mock_setitem
+        mock_cache_obj.__getitem__ = lambda key: mock_cache_instance[key]
+        mock_cache.return_value = mock_cache_obj
         mock_format.return_value = []
 
         videos_metadata: list[dict[str, str | int | bool | None]] = [
@@ -236,8 +250,9 @@ class TestClipProcessingFunctions:
 
         # Mock item that will cause an exception
         mock_item = create_mock_clip_item()
-        mock_item.created_at = Mock()
-        mock_item.created_at.strftime.side_effect = AttributeError("Invalid date")
+        mock_created_at = Mock()
+        mock_created_at.strftime.side_effect = AttributeError("Invalid date")
+        mock_item.created_at = mock_created_at
         mock_item.id = "test_id"
         mock_item.name = "test_camera"
 
@@ -249,6 +264,8 @@ class TestClipProcessingFunctions:
                 "last_manifest_id": "manifest_123",
             },
         )
+        # Add refresh method that returns a mock coroutine
+        mock_sync.refresh = Mock(return_value=Mock())
 
         mock_blink_instance = create_mock_blink_instance(sync_data={"sync1": mock_sync})
         mock_blink.return_value = mock_blink_instance
@@ -256,7 +273,13 @@ class TestClipProcessingFunctions:
         mock_cache.return_value = {}
         mock_format.return_value = []
 
+        # Mock the connection execute method
+        mock_connection.return_value.execute = Mock()
+
         with patch("blinkapp.services.clip_service.logger") as mock_logger:
-            process_local_clips()
+            process_local_clips(
+                blink_instance=mock_blink_instance,
+                blink_connection_instance=mock_connection.return_value,
+            )
             # Should log warning for invalid item but continue processing
             mock_logger.warning.assert_called()
