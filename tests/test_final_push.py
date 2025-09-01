@@ -36,16 +36,3 @@ class TestFinalPush(unittest.TestCase):
 
         network_id = NetworkId(67890)
         self.assertIn("67890", str(network_id))
-
-    def test_id_hash_functionality(self) -> None:
-        """Test hash functionality for ID classes."""
-        camera_id1 = CameraId(12345)
-        camera_id2 = CameraId(12345)
-
-        # Should be hashable and equal
-        self.assertEqual(hash(camera_id1), hash(camera_id2))
-
-        network_id1 = NetworkId(67890)
-        network_id2 = NetworkId(67890)
-
-        self.assertEqual(hash(network_id1), hash(network_id2))

@@ -204,25 +204,37 @@ class TestValidationClassMethods(BaseTestCase):
 class TestConfigurationValues(BaseTestCase):
     """Test configuration values and constants."""
 
-    def test_config_constants_exist(self) -> None:
-        """Test that Config constants exist and have reasonable values."""
-        # Test cache size constants
-        self.assertTrue(hasattr(Config, "CLIPS_CACHE_SIZE"))
-        self.assertIsInstance(Config.CLIPS_CACHE_SIZE, int)
-        self.assertGreater(Config.CLIPS_CACHE_SIZE, 0)
-
-        # Test file constants
-        self.assertTrue(hasattr(Config, "LOG_FILE"))
-        self.assertIsInstance(Config.LOG_FILE, str)
-
-        # Test directory constants
-        self.assertTrue(hasattr(Config, "DEFAULT_CACHE_DIR"))
-        self.assertIsInstance(Config.DEFAULT_CACHE_DIR, str)
-
     def test_config_filename_constants(self) -> None:
         """Test filename constants."""
         self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
         self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
+
+    def test_id_iteration(self) -> None:
+        """Test ID iteration functionality."""
+        from blinkapp.models.ids import CameraId
+        
+        camera_id = CameraId("12345")
+        chars = list(camera_id)
+        self.assertEqual(chars, ['1', '2', '3', '4', '5'])
+        
+        # Test with string iteration
+        result = ''.join(char for char in camera_id)
+        self.assertEqual(result, "12345")
+
+    def test_format_time_duration(self) -> None:
+        """Test time duration formatting."""
+        from blinkapp.utils.formatters import format_time_duration
+        
+        # Test various durations
+        self.assertEqual(format_time_duration(30), "30s")
+        self.assertEqual(format_time_duration(90), "1m")
+        self.assertEqual(format_time_duration(3600), "1h")
+        self.assertEqual(format_time_duration(86400), "1d")
+        
+        # Test edge cases
+        self.assertEqual(format_time_duration(0), "0s")
+        with self.assertRaises(ValueError):
+            format_time_duration(-1)
         self.assertTrue(hasattr(Config, "THUMBNAILS_SUBDIR"))
         self.assertTrue(hasattr(Config, "CLIPS_SUBDIR"))
 

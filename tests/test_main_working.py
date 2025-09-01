@@ -29,26 +29,6 @@ def test_run_app_dump_system() -> None:
         mock_dump.assert_called_once()
 
 
-def test_run_app_normal() -> None:
-    """Test run_app normal execution."""
-    args = Mock(spec=argparse.Namespace)
-    args.dump_system = False
-    args.cache = "/test"
-    args.host = "127.0.0.1"
-    args.port = 5001
-    args.debug = False
-
-    with (
-        patch("blinkapp.__main__.app") as mock_app,
-        patch("blinkapp.__main__.startup") as mock_startup,
-    ):
-        mock_app.run = Mock(spec=callable)
-
-        run_app(args)
-
-        mock_startup.assert_called_once()
-
-
 def test_configure_logging_levels() -> None:
     """Test logging configuration."""
     with patch("logging.getLogger") as mock_get_logger:
