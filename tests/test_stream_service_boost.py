@@ -14,8 +14,10 @@ from blinkapp.services.stream_service import (
     initialize_stream_manager,
 )
 
+from .test_base import BaseTestCase
 
-class TestStreamServiceBoost(unittest.TestCase):
+
+class TestStreamServiceBoost(BaseTestCase):
     """Test stream service coverage boost."""
 
     def setUp(self) -> None:

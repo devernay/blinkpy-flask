@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Targeted tests for models/cache.py expansion - covering remaining missed lines."""
 
-import unittest
-
 from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.models.ids import CameraId, ClipId
 
+from .test_base import BaseTestCase
 
-class TestCacheModelsExpansion(unittest.TestCase):
+
+class TestCacheModelsExpansion(BaseTestCase):
     """Test uncovered cache model functions."""
 
     def setUp(self) -> None:

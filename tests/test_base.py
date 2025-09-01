@@ -18,7 +18,9 @@ __all__ = [
     "FlaskTestCase",
 ]
 
+import asyncio
 import functools
+import gc
 import os
 import sys
 import unittest
@@ -422,8 +424,34 @@ class BaseTestCase(unittest.TestCase):
 
             # Reset global caches to avoid test interference
             reset_global_caches()
+
+            # Clean up any pending async operations to prevent warnings
+            self._cleanup_async_operations()
         except Exception:
             # Ignore teardown errors to prevent masking test failures
+            pass
+
+    def _cleanup_async_operations(self) -> None:
+        """Clean up pending async operations to prevent RuntimeWarnings."""
+        try:
+            # Force garbage collection to trigger any pending coroutine warnings
+            # This helps surface unawaited coroutines during test execution
+            # rather than at interpreter shutdown
+            gc.collect()
+
+            # If there's an active event loop, ensure it's properly cleaned
+            try:
+                loop = asyncio.get_running_loop()
+                # Cancel any pending tasks
+                pending = asyncio.all_tasks(loop)
+                for task in pending:
+                    if not task.done():
+                        task.cancel()
+            except RuntimeError:
+                # No running loop, which is expected in most test cases
+                pass
+        except Exception:
+            # Ignore cleanup errors
             pass
 
 
