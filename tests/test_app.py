@@ -759,7 +759,26 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_2fa_success(self, mock_connection: Mock) -> None:
-        """Test successful 2FA verification."""
+        """Test successful 2FA verification flow.
+
+        This test validates the complete two-factor authentication process,
+        ensuring users can successfully verify their identity after initial login.
+
+        Test scenario:
+        1. User has valid session from initial login
+        2. User submits correct 2FA verification code
+        3. System validates code with Blink API
+        4. User is fully authenticated and redirected
+
+        Mock setup:
+        - Simulates successful 2FA verification response
+        - Mocks blink_connection.execute() to return success
+
+        Why this is critical:
+        - 2FA is primary security mechanism for Blink accounts
+        - Failure here would prevent legitimate users from accessing system
+        - Must handle Blink API responses correctly
+        """
         with get_session_transaction(self.client) as sess:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password123"
@@ -2997,7 +3016,27 @@ class TestSecurityFeatures(BaseTestCase):
         self.client = app.test_client()
 
     def test_xss_prevention_in_endpoints(self) -> None:
-        """Test XSS prevention in various endpoints."""
+        """Test XSS prevention across all user input endpoints.
+
+        This security test ensures that malicious JavaScript and HTML cannot be
+        injected through any user input fields. It's essential for preventing
+        cross-site scripting attacks that could compromise user data.
+
+        Test coverage:
+        - Login form fields (username, password)
+        - Settings update endpoints
+        - Any other user input vectors
+
+        Attack vectors tested:
+        - <script> tags with JavaScript
+        - HTML injection attempts
+        - Event handler attributes (onclick, onload, etc.)
+
+        Expected behavior:
+        - All malicious input should be rejected with 400 status
+        - Error messages should indicate "invalid characters"
+        - No script execution should occur
+        """
         malicious_inputs = [
             "<script>alert('xss')</script>",
             "javascript:alert('xss')",
@@ -4208,7 +4247,22 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.blink", new_callable=lambda: Mock())
     def test_camera_thumbnail_cache_hit_optimization(self, mock_blink: Mock) -> None:
-        """Test thumbnail cache hit optimization."""
+        """Test thumbnail cache hit optimization prevents unnecessary API calls.
+
+        This test verifies that when a cached thumbnail is newer than the camera's
+        thumbnail timestamp, the system uses the cached version without making
+        additional API calls to Blink servers.
+
+        Test scenario:
+        - Camera thumbnail timestamp: 1000 (older)
+        - Cached thumbnail timestamp: 2000 (newer)
+        - Expected: Use cached version, no API calls to camera
+
+        Why this matters:
+        - Reduces API load on Blink servers
+        - Improves response times for users
+        - Prevents rate limiting issues
+        """
         mock_camera = create_mock_camera(
             camera_id=12345,
             name="Test Camera",
@@ -4247,7 +4301,22 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
             mock_camera = create_mock_camera(camera_id=12345)
 
     def test_concurrent_request_handling(self) -> None:
-        """Test handling of concurrent requests."""
+        """Test handling of concurrent requests to ensure thread safety.
+
+        This test verifies that the application can handle multiple simultaneous
+        requests without race conditions or data corruption. It's critical for
+        production environments where multiple users access the system concurrently.
+
+        Test approach:
+        - Spawns multiple threads making simultaneous API requests
+        - Verifies all requests complete successfully
+        - Ensures no data corruption or race conditions occur
+
+        Why this matters:
+        - Prevents crashes under load
+        - Ensures data integrity with concurrent access
+        - Validates thread-safe cache operations
+        """
         import threading
 
         results = []
