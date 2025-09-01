@@ -72,6 +72,11 @@ class BlinkConnection:
         if not self.thread or not self.thread.is_alive():
 
             def run_loop() -> None:
+                """Run the asyncio event loop for Blink operations.
+
+                This function runs indefinitely, processing async operations
+                submitted to the Blink connection thread.
+                """
                 self.loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self.loop)
                 self.loop.run_forever()

@@ -317,6 +317,12 @@ def clear_all_caches() -> dict[str, Any]:
     clips_cache_instance.clear()
 
     def clear_file_cache(cache_dir: str, cache_name: str) -> None:
+        """Clear all files from a cache directory.
+
+        Args:
+            cache_dir: Path to cache directory to clear
+            cache_name: Human-readable name for logging
+        """
         try:
             if os.path.exists(cache_dir):
                 shutil.rmtree(cache_dir)
