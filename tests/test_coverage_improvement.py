@@ -3,9 +3,7 @@
 
 from unittest.mock import Mock, patch
 
-from test_base import create_mock_sync
-
-from .test_base import FlaskTestCase
+from .test_base import FlaskTestCase, create_mock_sync
 
 
 class TestAuthService(FlaskTestCase):

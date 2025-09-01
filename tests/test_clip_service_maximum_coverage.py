@@ -3,9 +3,9 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from test_base import BaseTestCase, create_mock_blink_instance
-
 from blinkapp.models.ids import ClipId
+
+from .test_base import BaseTestCase, create_mock_blink_instance
 
 
 class TestClipServiceMaximumCoverage(BaseTestCase):

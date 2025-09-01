@@ -2,12 +2,12 @@
 
 import unittest
 
-from test_base import create_mock_camera
-
 from blinkapp.services.device_service import (
     create_device_data,
     format_device_temperature,
 )
+
+from .test_base import create_mock_camera
 
 
 class TestUtilsServiceFinal(unittest.TestCase):

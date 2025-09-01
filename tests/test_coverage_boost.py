@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from test_base import (
+from .test_base import (
     create_mock_camera,
     create_mock_camera_cache,
     create_mock_clips_cache,

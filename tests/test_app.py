@@ -28,12 +28,6 @@ from aiohttp import ClientResponse
 from blinkpy.livestream import BlinkLiveStream
 from flask.sessions import SessionMixin
 from flask.testing import FlaskClient
-from test_base import (
-    create_mock_blink_instance,
-    create_mock_camera,
-    create_mock_clip_item,
-    create_mock_sync,
-)
 
 from blinkapp import (
     Config,
@@ -51,6 +45,10 @@ from blinkapp.utils.validators import validate_string_input
 from .test_base import (
     BaseTestCase,
     FlaskTestCase,
+    create_mock_blink_instance,
+    create_mock_camera,
+    create_mock_clip_item,
+    create_mock_sync,
     mock_execute_with_coroutine_cleanup,
 )
 

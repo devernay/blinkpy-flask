@@ -5,8 +5,6 @@ import multiprocessing
 import unittest
 from unittest.mock import Mock, patch
 
-from test_base import create_mock_stream_manager
-
 from blinkapp.services.stream_service import (
     ensure_stream_manager_initialized,
     generate_hls_url,
@@ -14,6 +12,8 @@ from blinkapp.services.stream_service import (
     validate_camera_id,
     validate_tcp_url,
 )
+
+from .test_base import create_mock_stream_manager
 
 try:
     from blinkapp.services.stream_manager import StreamManager

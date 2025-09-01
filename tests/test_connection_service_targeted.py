@@ -5,15 +5,15 @@ from asyncio import AbstractEventLoop
 from concurrent.futures import Future
 from unittest.mock import AsyncMock, Mock, patch
 
-from test_base import (
-    create_mock_blink_instance,
-    create_mock_live_stream,
-)
-
 from blinkapp.services.blink_connection import BlinkConnection
 from blinkapp.services.connection_service import (
     ensure_executor_initialized,
     ensure_http_session_initialized,
+)
+
+from .test_base import (
+    create_mock_blink_instance,
+    create_mock_live_stream,
 )
 
 

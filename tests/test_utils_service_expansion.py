@@ -4,10 +4,10 @@
 import unittest
 from unittest.mock import Mock
 
-from test_base import create_mock_camera
-
 from blinkapp.services.debug_service import dump_blink_system_info, handle_dump_system
 from blinkapp.services.device_service import create_device_data
+
+from .test_base import create_mock_camera
 
 
 class TestDeviceServiceExpansion(unittest.TestCase):

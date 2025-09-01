@@ -4,10 +4,10 @@
 import unittest
 from pathlib import Path
 
-from test_base import create_mock_camera
-
 from blinkapp.services.debug_service import check_credentials_file_exists
 from blinkapp.services.device_service import create_device_data
+
+from .test_base import create_mock_camera
 
 
 class TestDeviceServiceAdvanced(unittest.TestCase):

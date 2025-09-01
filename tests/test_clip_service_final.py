@@ -11,9 +11,10 @@ from unittest.mock import Mock, mock_open, patch
 
 from blinkpy.blinkpy import Blink
 from requests import Response
-from test_base import BaseTestCase, create_mock_blink_instance, create_mock_sync
 
 from blinkapp.models.ids import ClipId
+
+from .test_base import BaseTestCase, create_mock_blink_instance, create_mock_sync
 
 
 class TestClipServiceFinal(BaseTestCase):

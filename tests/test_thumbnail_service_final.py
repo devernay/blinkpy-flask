@@ -4,9 +4,9 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from test_base import create_mock_camera_cache
-
 from blinkapp.services.thumbnail_service import get_camera_thumbnail_cache_stats
+
+from .test_base import create_mock_camera_cache
 
 
 class TestThumbnailServiceFinal(unittest.TestCase):

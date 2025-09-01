@@ -6,15 +6,16 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock, mock_open, patch
 
 from requests import Response, Session
-from test_base import (
+
+from blinkapp.models.ids import ClipId
+from blinkapp.services.blink_connection import BlinkConnection
+
+from .test_base import (
     BaseTestCase,
     create_mock_blink_instance,
     create_mock_sync,
     create_video_metadata,
 )
-
-from blinkapp.models.ids import ClipId
-from blinkapp.services.blink_connection import BlinkConnection
 
 
 class TestClipServiceComprehensive(BaseTestCase):

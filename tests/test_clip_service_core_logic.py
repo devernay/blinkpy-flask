@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
-from test_base import BaseTestCase, create_mock_blink_instance
-
 from blinkapp.models.ids import ClipId
+
+from .test_base import BaseTestCase, create_mock_blink_instance
 
 
 class TestClipServiceCoreLogic(BaseTestCase):

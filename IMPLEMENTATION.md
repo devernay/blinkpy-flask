@@ -728,7 +728,7 @@ are there any duplicate tests? if yes, compare individual tests and keep the one
 
 # Cleanup after reorganization
 
-Execute modifications from the "Cleanup after reorganization" section of `IMPLEMENTATION.md`. Start with High priority items, then Normal priority, and finally Lower priority. Read carefully the instructions at the beginning of the section.
+Execute modifications from the "Cleanup after reorganization" section of `IMPLEMENTATION.md`. Start with High priority items, then Normal priority when high priority issues are resolved, and finally Lower priority when normal priority issues are resolved. Read carefully the instructions at the beginning of the section.
 
 Before starting, and after each modificiation of the code, do the following tests:
 - [x] All imports updated (including in tests)
@@ -766,11 +766,13 @@ Do not forget to compact your context before it overflows.
 
 - Check in blinkpy-source if temperatures in the Blink API are supposed to be in Celsius or Fahrenheit (also look at the docume,ntation and tests from blinkpy-source). Update the code and tests for the app accordingly.
 
-- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works. Also add "operationId" tags to facilitate the migration to the connexion package, and make sure that API entry points are coded as connexion "operations".
+- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works.
+
+- For each API entry point in api.json, add an "operationId" tag to facilitate the migration to the connexion package, and make sure that API entry points are coded as connexion "operations" in the code, although we are not yet using connexion. This will facilitate the migration later.
 
 - Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations in blinkpy-source. This file must truly reflect how the API works.
 
-- Add significantly more comments and docstrings to each individual test, explaining what we are testing, why we are testing it, and how the test works.
+- Add significantly more comments and docstrings to each individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
 
 - Are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
 
