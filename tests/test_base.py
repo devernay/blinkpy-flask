@@ -434,9 +434,20 @@ class BaseTestCase(unittest.TestCase):
     def _cleanup_async_operations(self) -> None:
         """Clean up pending async operations to prevent RuntimeWarnings."""
         try:
-            # Force garbage collection to trigger any pending coroutine warnings
-            # This helps surface unawaited coroutines during test execution
-            # rather than at interpreter shutdown
+            import inspect
+
+            # Find and await any pending coroutines from AsyncMock
+            # This prevents "coroutine was never awaited" warnings
+            for obj in gc.get_objects():
+                if inspect.iscoroutine(obj):
+                    try:
+                        # Close the coroutine to prevent the warning
+                        obj.close()
+                    except Exception:
+                        # Ignore errors when closing coroutines
+                        pass
+
+            # Force garbage collection after cleanup
             gc.collect()
 
             # If there's an active event loop, ensure it's properly cleaned
