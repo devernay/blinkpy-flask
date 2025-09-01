@@ -404,7 +404,12 @@ class TestFlaskApp(FlaskTestCase):
     @patch("blinkapp.services.blink_service.blink")
     @patch("blinkapp.services.blink_service.blink_connection")
     def test_api_systems_success(self, mock_connection: Mock, mock_blink: Mock) -> None:
-        """Test successful systems API call."""
+        """Test successful systems API endpoint with complete mock setup.
+
+        Why: Systems API is the primary endpoint for retrieving Blink system information.
+        What: Verifies proper API response format and data structure for system listing.
+        How: Mocks both blink service and connection, validates JSON response structure.
+        """
         # Use helper to create mock objects
         mock_sync = create_mock_sync(network_id=12345, armed=False, online=True)
         mock_blink.available = True
@@ -847,7 +852,12 @@ class TestAuthenticationFlows(FlaskTestCase):
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.services.blink_service.blink")
     def test_logout_success(self, mock_blink: Mock, mock_executor: Mock) -> None:
-        """Test successful logout."""
+        """Test complete logout workflow with credential cleanup.
+
+        Why: Logout must properly clean up credentials and session state for security.
+        What: Verifies credential file deletion, session clearing, and executor cleanup.
+        How: Mocks file operations and services, validates cleanup sequence and redirects.
+        """
         # Mock executor and blink
         mock_executor.submit = Mock(spec=callable)
         mock_blink.auth.session.close = Mock(spec=callable)

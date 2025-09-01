@@ -46,7 +46,12 @@ class TestLoggingSetup(BaseTestCase):
     def test_setup_logging_function(
         self, mock_stream: Mock, mock_file: Mock, mock_logger: Mock
     ) -> None:
-        """Test setup_logging function."""
+        """Test logging system initialization with file rotation.
+
+        Why: Proper logging is critical for debugging production issues and monitoring.
+        What: Verifies logging setup creates both file and console handlers correctly.
+        How: Mocks logging components and validates handler configuration and formatting.
+        """
         mock_logger_instance = Mock(spec=logging.Logger)
         mock_logger_instance.handlers = []
         mock_logger.return_value = mock_logger_instance
@@ -117,7 +122,12 @@ class TestBlinkInitialization(BaseTestCase):
         mock_session: Mock,
         mock_connection: Mock,
     ) -> None:
-        """Test Blink initialization with 2FA required."""
+        """Test Blink initialization when 2FA authentication is required.
+
+        Why: 2FA is commonly required for Blink accounts and must be handled properly.
+        What: Verifies system detects 2FA requirement and handles authentication flow.
+        How: Mocks auth requiring 2FA and validates proper exception handling.
+        """
         # Setup mocks
         mock_session_instance = Mock(spec=object)
         mock_session.return_value = mock_session_instance
@@ -431,7 +441,12 @@ class TestLRUCacheAdvanced(BaseTestCase):
     """Test advanced LRU cache functionality."""
 
     def test_lru_cache_thread_safety(self) -> None:
-        """Test LRU cache thread safety."""
+        """Test LRU cache concurrent access from multiple threads.
+
+        Why: Cache is accessed by multiple request threads simultaneously in production.
+        What: Verifies thread-safe operations prevent data corruption and race conditions.
+        How: Spawns multiple threads performing cache operations and validates consistency.
+        """
         cache: LRUCache[str, str] = LRUCache(maxsize=100)
         results: list[bool] = []
 
@@ -458,7 +473,12 @@ class TestLRUCacheAdvanced(BaseTestCase):
         self.assertTrue(all(results))
 
     def test_lru_cache_memory_efficiency(self) -> None:
-        """Test LRU cache memory efficiency."""
+        """Test LRU cache memory management with size limits.
+
+        Why: Cache must evict old entries to prevent memory leaks in long-running processes.
+        What: Verifies proper eviction of least recently used items when cache is full.
+        How: Fills cache beyond capacity and validates oldest entries are removed.
+        """
         cache: LRUCache[str, str] = LRUCache(maxsize=10)
 
         # Fill beyond capacity

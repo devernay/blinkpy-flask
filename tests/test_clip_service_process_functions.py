@@ -31,7 +31,12 @@ class TestClipProcessingFunctions(BaseTestCase):
     def test_process_cloud_clips_with_valid_data(
         self, mock_format: Mock, mock_cache: Mock
     ) -> None:
-        """Test process_cloud_clips with valid data."""
+        """Test cloud clips processing with complete video metadata.
+
+        Why: This tests the main success path for displaying user's cloud-stored videos.
+        What: Verifies proper processing of video metadata into UI-ready clip data.
+        How: Provides complete metadata with all fields and validates processing pipeline.
+        """
         from blinkapp.services.clip_service import process_cloud_clips
 
         mock_cache.return_value = {}
@@ -65,7 +70,12 @@ class TestClipProcessingFunctions(BaseTestCase):
     def test_process_cloud_clips_invalid_timestamp(
         self, mock_format, mock_cache
     ) -> None:
-        """Test process_cloud_clips with invalid timestamp."""
+        """Test cloud clips processing with malformed timestamp data.
+
+        Why: Blink API can return corrupted timestamps that break date parsing.
+        What: Verifies graceful handling of invalid timestamp formats without crashing.
+        How: Provides metadata with malformed timestamp and validates error handling.
+        """
         from blinkapp.services.clip_service import process_cloud_clips
 
         mock_cache.return_value = {}
@@ -195,7 +205,12 @@ class TestClipProcessingFunctions(BaseTestCase):
     def test_process_local_clips_no_local_storage(
         self, mock_format, mock_cache, mock_connection, mock_blink
     ) -> None:
-        """Test process_local_clips with sync module that has no local storage."""
+        """Test local clips processing when USB storage is unavailable.
+
+        Why: Users may disconnect USB storage or it may fail, breaking local clip access.
+        What: Verifies system handles missing local storage gracefully without errors.
+        How: Mocks sync without local storage and validates empty result handling.
+        """
         from blinkapp.services.clip_service import process_local_clips
 
         mock_sync = create_mock_sync(local_storage=False)
@@ -215,7 +230,12 @@ class TestClipProcessingFunctions(BaseTestCase):
     def test_process_local_clips_manifest_not_ready(
         self, mock_format, mock_cache, mock_connection, mock_blink
     ) -> None:
-        """Test process_local_clips with manifest not ready."""
+        """Test local clips processing when manifest file is not ready.
+
+        Why: Local storage manifest can be corrupted or still being written during access.
+        What: Verifies system handles manifest read failures without crashing.
+        How: Mocks sync with manifest_ready=False and validates error handling.
+        """
         from blinkapp.services.clip_service import process_local_clips
 
         mock_sync = create_mock_sync(
