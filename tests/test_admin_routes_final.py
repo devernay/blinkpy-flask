@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Final targeted tests for routes/admin.py - covering remaining missed lines."""
 
-import unittest
-
 from flask import Flask
 
 from blinkapp.routes.admin import register_admin_routes
 
+from .test_base import FlaskTestCase
 
-class TestAdminRoutesFinal(unittest.TestCase):
+
+class TestAdminRoutesFinal(FlaskTestCase):
     """Test remaining uncovered admin route functions."""
 
     def test_register_admin_routes(self) -> None:

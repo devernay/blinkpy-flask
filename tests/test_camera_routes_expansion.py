@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Targeted tests for routes/camera.py - covering highest missed lines."""
 
-import unittest
 from unittest.mock import patch
 
 from flask import Flask
 
 from blinkapp.routes.camera import setup_camera_routes
 
+from .test_base import FlaskTestCase
 
-class TestCameraRoutesExpansion(unittest.TestCase):
+
+class TestCameraRoutesExpansion(FlaskTestCase):
     """Test uncovered camera route functions with highest missed lines."""
 
     def test_setup_camera_routes(self) -> None:

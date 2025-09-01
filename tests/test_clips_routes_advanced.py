@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Advanced tests for routes/clips.py - targeting highest missed lines."""
 
-import unittest
-
 from flask import Flask
 
 from blinkapp.routes.clips import setup_clips_routes
 
+from .test_base import FlaskTestCase
 
-class TestClipsRoutesAdvanced(unittest.TestCase):
+
+class TestClipsRoutesAdvanced(FlaskTestCase):
     """Test advanced clips route functions with highest missed lines."""
 
     def test_setup_clips_routes(self) -> None:
