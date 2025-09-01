@@ -3672,21 +3672,31 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
         initialize_caches({})
 
         # Mock initial failure followed by success
-        mock_connection.execute.side_effect = [
-            Exception("Connection failed"),  # First call fails
-            {"success": True},  # Second call succeeds
-        ]
+        # execute() is synchronous but takes coroutines - mock it properly
+        call_count = 0
+
+        def mock_execute_side_effect(coro, timeout=None):
+            nonlocal call_count
+            call_count += 1
+
+            if call_count == 1:
+                raise Exception("Connection failed")
+            else:
+                # Return a proper HTTP response mock
+                from unittest.mock import Mock
+
+                mock_response = Mock()
+                mock_response.status = 200
+                mock_response.read = Mock(return_value=b"image_data")
+                return mock_response
+
+        mock_connection.execute.side_effect = mock_execute_side_effect
 
         # First request should fail
         response1 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertEqual(response1.status_code, 500)
 
-        # Reset side effect for second request
-        mock_response = Mock(spec=ClientResponse)
-        mock_response.status = 200
-        mock_connection.execute.side_effect = [mock_response, b"image_data"]
-
-        # Second request should succeed
+        # Second request should succeed (using the same mock)
         response2 = self.client.get("/api/cameras/12345/thumbnail")
         self.assertEqual(response2.status_code, 200)
 

@@ -762,7 +762,7 @@ Do not forget to compact your context before it overflows.
 
 ## Normal priority
 
-- Add significantly more comments and docstrings to each individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
+- Add significantly more comments and docstrings to each non-trivial individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
 
 - Are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
 

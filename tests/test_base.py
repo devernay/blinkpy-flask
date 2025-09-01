@@ -25,6 +25,7 @@ import os
 import sys
 import unittest
 from collections.abc import Callable
+from contextlib import contextmanager
 from typing import Any, ParamSpec, TypeVar
 from unittest.mock import MagicMock, Mock
 
@@ -119,6 +120,9 @@ def create_mock_camera(
     mock_camera.last_record = last_record
     mock_camera.updated_at = updated_at
 
+    # Mock init_livestream to return a proper mock live stream
+    mock_camera.init_livestream = Mock(return_value=create_mock_live_stream())
+
     # Optional attributes
     if battery_voltage is not None:
         mock_camera.battery_voltage = battery_voltage
@@ -206,6 +210,11 @@ def create_mock_live_stream(
 
     mock_stream = Mock(spec=BlinkLiveStream)
     mock_stream.id = stream_id
+    mock_stream.url = f"tcp://localhost:8080/{stream_id}"
+
+    # Mock start() to return a simple value, not a coroutine
+    mock_stream.start = Mock(return_value=None)
+
     if stop_error:
         mock_stream.stop.side_effect = stop_error
     else:
@@ -599,7 +608,6 @@ class FlaskTestCase(BaseTestCase):
 
     def mock_blink_system(self, available=True, systems=None):
         """Context manager for mocking blink system with common setup."""
-        from contextlib import contextmanager
         from unittest.mock import patch
 
         @contextmanager
