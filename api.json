@@ -242,22 +242,11 @@
         }
       }
     },
-                        }
-                      }
-                    },
-                    "timestamp": {"type": "string", "format": "date-time"}
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/systems/{network_id}": {
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
+        "operationId": "getSystemDetails",
         "parameters": [
           {
             "name": "network_id",
@@ -278,6 +267,7 @@
       "put": {
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
+        "operationId": "updateSystem",
         "parameters": [
           {
             "name": "network_id",
@@ -347,6 +337,7 @@
       "get": {
         "summary": "List all cameras",
         "description": "Get list of all available cameras across all systems",
+        "operationId": "listCameras",
         "responses": {
           "200": {
             "description": "List of cameras",
@@ -557,6 +548,7 @@
       "get": {
         "summary": "List clips",
         "description": "Get list of clips from cloud or local storage",
+        "operationId": "listClips",
         "parameters": [
           {
             "name": "storage",
