@@ -1,9 +1,9 @@
 """Connexion-compatible camera management handlers."""
 
-from typing import Any
+from ..models.types import JsonDict
 
 
-def list_cameras() -> dict[str, Any]:
+def list_cameras() -> JsonDict:
     """Get list of all available cameras across all systems.
 
     Connexion-compatible handler that returns camera information.

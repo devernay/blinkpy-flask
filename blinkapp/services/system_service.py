@@ -14,17 +14,19 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from blinkpy.camera import BlinkCamera
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import NetworkId
 
+from ..models.types import DeviceDict, JsonDict, SystemDict
+
 logger = logging.getLogger(__name__)
 
 
-def get_systems() -> dict[str, Any]:
+def get_systems() -> JsonDict:
     """Get list of available Blink systems.
 
     Retrieves all configured Blink sync modules and their associated
@@ -39,7 +41,7 @@ def get_systems() -> dict[str, Any]:
     assert blink is not None, "Blink must be initialized"
 
     logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
-    systems: list[dict[str, Any]] = []
+    systems: list[SystemDict] = []
     for name, sync in blink.sync.items():
         logger.debug(f"Processing sync: {name}, network_id: {sync.network_id}")
         systems.append(
@@ -54,7 +56,7 @@ def get_systems() -> dict[str, Any]:
     return {"systems": systems}
 
 
-def get_devices(network_id: NetworkId) -> dict[str, Any]:
+def get_devices(network_id: NetworkId) -> JsonDict:
     """Get devices for a specific Blink system.
 
     Args:
@@ -76,7 +78,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     from blinkapp.utils.errors import ValidationError
     from blinkapp.utils.parsers import extract_thumbnail_timestamp
 
-    devices: list[dict[str, Any]] = []
+    devices: list[DeviceDict] = []
 
     # Find the sync module for this network
     sync_module, error_response = require_sync_module(network_id)
@@ -125,7 +127,7 @@ def get_devices(network_id: NetworkId) -> dict[str, Any]:
     return {"devices": devices}
 
 
-def arm_system(network_id: NetworkId, armed: bool) -> dict[str, Any]:
+def arm_system(network_id: NetworkId, armed: bool) -> JsonDict:
     """Arm or disarm a Blink system.
 
     Args:
@@ -155,7 +157,7 @@ def arm_system(network_id: NetworkId, armed: bool) -> dict[str, Any]:
         return {"armed": armed}
 
 
-def refresh_system() -> dict[str, Any]:
+def refresh_system() -> JsonDict:
     """Refresh all Blink systems.
 
     Returns:

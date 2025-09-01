@@ -1,13 +1,12 @@
 """Connexion-compatible clips management handlers."""
 
-from typing import Any
-
 from ..config import Config
+from ..models.types import ClipDayGroup
 
 
 def get_clips(
     storage: str | None = None,
-) -> dict[str, Any] | tuple[dict[str, Any], int]:
+) -> dict[str, list[ClipDayGroup]] | tuple[dict[str, str], int]:
     """Get clips from cloud or local storage.
 
     Args:

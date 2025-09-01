@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 from blinkpy.camera import BlinkCamera
 
@@ -40,7 +40,7 @@ clips_cache: ClipsCache | None = None
 camera_thumbnail_cache: CameraThumbnailCache | None = None
 
 
-def initialize_caches(config: dict[str, Any]) -> None:
+def initialize_caches(config: dict[str, object]) -> None:
     """Initialize global cache instances with configuration.
 
     Args:
@@ -50,9 +50,9 @@ def initialize_caches(config: dict[str, Any]) -> None:
     from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
     camera_thumbnail_cache = CameraThumbnailCache(
-        maxsize=config.get("camera_thumbnail_cache_size", 100)
+        maxsize=cast(int, config.get("camera_thumbnail_cache_size") or 100)
     )
-    clips_cache = ClipsCache(maxsize=config.get("clips_cache_size", 50))
+    clips_cache = ClipsCache(maxsize=cast(int, config.get("clips_cache_size") or 50))
 
     logger.info("Cache instances initialized successfully")
 
@@ -302,7 +302,7 @@ def initialize_cache_paths() -> None:
     Path(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
 
-def clear_all_caches() -> dict[str, Any]:
+def clear_all_caches() -> dict[str, str]:
     """Clear all caches except credentials."""
     import os
     import shutil

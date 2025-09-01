@@ -1,14 +1,13 @@
 """Connexion-compatible system management handlers."""
 
-from typing import Any
-
 from ..models.ids import NetworkId
+from ..models.types import JsonDict
 from ..services.system_service import arm_system
 from ..services.system_service import get_devices as service_get_devices
 from ..services.system_service import get_systems as service_get_systems
 
 
-def get_systems() -> dict[str, Any]:
+def get_systems() -> JsonDict:
     """Get list of available Blink systems.
 
     Connexion-compatible handler that returns system information.
@@ -18,7 +17,7 @@ def get_systems() -> dict[str, Any]:
 
 def get_system_devices(
     network_id_str: str,
-) -> dict[str, Any] | tuple[dict[str, Any], int]:
+) -> JsonDict | tuple[JsonDict, int]:
     """Get devices for a specific Blink system.
 
     Args:
@@ -37,7 +36,7 @@ def get_system_devices(
 
 def get_devices(
     network_id_str: str,
-) -> dict[str, Any] | tuple[dict[str, Any], int]:
+) -> JsonDict | tuple[JsonDict, int]:
     """Get devices for a specific Blink system.
 
     Args:
@@ -55,8 +54,8 @@ def get_devices(
 
 
 def update_system(
-    network_id_str: str, body: dict[str, Any]
-) -> dict[str, Any] | tuple[dict[str, Any], int]:
+    network_id_str: str, body: JsonDict
+) -> JsonDict | tuple[JsonDict, int]:
     """Update a Blink system (arm/disarm).
 
     Args:
@@ -81,7 +80,7 @@ def update_system(
     return arm_system(network_id, armed)
 
 
-def clear_systems_cache() -> dict[str, Any]:
+def clear_systems_cache() -> JsonDict:
     """Clear systems cache.
 
     Returns:

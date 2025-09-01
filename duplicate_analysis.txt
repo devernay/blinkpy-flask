@@ -1,0 +1,628 @@
+Found 39 duplicate test method names:
+
+=== test_app_initialization_sequence ===
+  1. tests/test_app.py:2785 (18 lines)
+         def test_app_initialization_sequence(self) -> None:
+             """Test application initialization sequence."""
+             from blinkapp import initialize_cache_paths, setup_logging
+             # Test cache initialization - it sets global variables
+     ...
+  2. tests/test_app.py:5959 (13 lines)
+         def test_app_initialization_sequence(
+             self, mock_logging: Mock, mock_cache: Mock
+         ) -> None:
+             """Test application initialization sequence."""
+             # Mock the initialization functions
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_auth_route ===
+  1. tests/test_app.py:6028 (11 lines)
+         def test_auth_route(self, mock_auth: Mock) -> None:
+             """Test auth route functionality."""
+             mock_auth.return_value = False
+             # Test GET request to login endpoint (not /auth)
+     ...
+  2. tests/test_app.py:1675 (8 lines)
+         def test_auth_route(self) -> None:
+             """Test the login route (auth functionality)."""
+             response = self.client.get("/login")
+             self.assertEqual(response.status_code, 200)
+             # Should return HTML content
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_auth_template_rendering ===
+  1. tests/test_app.py:5992 (13 lines)
+         def test_auth_template_rendering(self, mock_render: Mock) -> None:
+             """Test auth template rendering."""
+             mock_render.return_value = "<html>Auth</html>"
+             # Test auth route exists and responds
+     ...
+  2. tests/test_app.py:1804 (6 lines)
+         def test_auth_template_rendering(self) -> None:
+             """Test login template renders successfully."""
+             response = self.client.get("/login")
+             self.assertEqual(response.status_code, 200)
+             self.assertIn("text/html", response.content_type or "")
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_cache_directory_creation ===
+  1. tests/test_app.py:6129 (17 lines)
+         def test_cache_directory_creation(
+             self, mock_exists: Mock, mock_makedirs: Mock
+         ) -> None:
+             """Test cache directory creation."""
+             mock_exists.return_value = False
+     ...
+  2. tests/test_app.py:1475 (16 lines)
+         def test_cache_directory_creation(self, mock_mkdir: Mock) -> None:
+             """Test cache directory creation."""
+             from blinkapp import startup
+             # Mock other startup operations to avoid side effects
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_cache_hit_optimization ===
+  1. tests/test_app.py:2916 (39 lines)
+         def test_cache_hit_optimization(self, mock_cache: Mock) -> None:
+             """Test cache hit optimization."""
+             # Mock cache hit
+             mock_cache.get.return_value = {
+     ...
+  2. tests/test_app.py:6149 (23 lines)
+         def test_cache_hit_optimization(self) -> None:
+             """Test cache hit optimization."""
+             from blinkapp.models.cache import CameraThumbnailCache
+             cache = CameraThumbnailCache(maxsize=10)
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_cache_loading_with_missing_directory ===
+  1. tests/test_app.py:2708 (27 lines)
+         def test_cache_loading_with_missing_directory(self) -> None:
+             """Test cache loading when directory doesn't exist."""
+             from blinkapp import load_clips_cache
+             from blinkapp.services.cache_service import load_camera_thumbnail_cache
+     ...
+  2. tests/test_app.py:6176 (15 lines)
+         def test_cache_loading_with_missing_directory(self, mock_exists: Mock) -> None:
+             """Test cache loading when directory doesn't exist."""
+             mock_exists.return_value = False
+             try:
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_camera_recording_route_registration ===
+  1. tests/test_camera_routes_expansion.py:49 (24 lines)
+         def test_camera_recording_route_registration(self) -> None:
+             """Test camera recording route registration."""
+             app = Flask(__name__)
+             # Mock all required decorators to pass through
+     ...
+  2. tests/test_camera_routes_final.py:48 (24 lines)
+         def test_camera_recording_route_registration(self) -> None:
+             """Test camera recording route registration."""
+             app = Flask(__name__)
+             # Mock all required decorators to pass through
+     ...
+  KEEP: tests/test_camera_routes_expansion.py (best coverage)
+
+=== test_camera_routes_registration ===
+  1. tests/test_camera_routes_expansion.py:32 (17 lines)
+         def test_camera_routes_registration(self) -> None:
+             """Test camera routes are properly registered."""
+             app = Flask(__name__)
+             setup_camera_routes(app)
+     ...
+  2. tests/test_camera_routes_final.py:31 (17 lines)
+         def test_camera_routes_registration(self) -> None:
+             """Test camera routes are properly registered."""
+             app = Flask(__name__)
+             setup_camera_routes(app)
+     ...
+  KEEP: tests/test_camera_routes_expansion.py (best coverage)
+
+=== test_config_constants_exist ===
+  1. tests/test_app.py:1039 (17 lines)
+         def test_config_constants_exist(self) -> None:
+             """Test that all expected config constants exist."""
+             required_constants = [
+                 "CLIPS_CACHE_SIZE",
+                 "THUMBNAIL_CACHE_SIZE",
+     ...
+  2. tests/test_coverage_boost.py:192 (15 lines)
+         def test_config_constants_exist(self) -> None:
+             """Test that Config constants exist and have reasonable values."""
+             # Test cache size constants
+             self.assertTrue(hasattr(Config, "CLIPS_CACHE_SIZE"))
+             self.assertIsInstance(Config.CLIPS_CACHE_SIZE, int)
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_create_api_response_error ===
+  1. tests/test_critical_coverage.py:400 (9 lines)
+         def test_create_api_response_error(self) -> None:
+             """Test API response creation with error."""
+             error_msg = "Test error message"
+             response, _ = create_api_response(success=False, error=error_msg)
+     ...
+  2. tests/test_coverage_improvement.py:70 (8 lines)
+         def test_create_api_response_error(self) -> None:
+             """Test create_api_response with error."""
+             from blinkapp import create_api_response
+             response, status = create_api_response(success=False, error="Test error")
+     ...
+  KEEP: tests/test_critical_coverage.py (best coverage)
+
+=== test_create_device_data_function ===
+  1. tests/test_app.py:6084 (33 lines)
+         def test_create_device_data_function(self, mock_connection: Mock) -> None:
+             """Test create_device_data function if it exists."""
+             from unittest.mock import Mock
+             # Mock blink connection
+     ...
+  2. tests/test_app.py:1596 (19 lines)
+         def test_create_device_data_function(self) -> None:
+             """Test create_device_data utility function."""
+             from blinkapp.services.device_service import create_device_data
+             mock_camera = create_mock_camera(
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_download_and_cache_cloud_thumbnail_http_error ===
+  1. tests/test_clip_service_background.py:57 (29 lines)
+         def test_download_and_cache_cloud_thumbnail_http_error(self, mock_cache) -> None:
+             """Test download_and_cache_cloud_thumbnail with HTTP error."""
+             import requests
+             from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+     ...
+  2. tests/test_clip_service_final.py:311 (28 lines)
+         def test_download_and_cache_cloud_thumbnail_http_error(
+             self, mock_cache: Mock
+         ) -> None:
+             """Test download_and_cache_cloud_thumbnail HTTP error."""
+             from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+     ...
+  KEEP: tests/test_clip_service_background.py (best coverage)
+
+=== test_download_and_cache_cloud_thumbnail_success ===
+  1. tests/test_clip_service_background.py:27 (30 lines)
+         def test_download_and_cache_cloud_thumbnail_success(self, mock_cache) -> None:
+             """Test download_and_cache_cloud_thumbnail success."""
+             from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+             mock_response = Mock(spec=Response)
+     ...
+  2. tests/test_clip_service_final.py:286 (25 lines)
+         def test_download_and_cache_cloud_thumbnail_success(self, mock_cache: Mock) -> None:
+             """Test download_and_cache_cloud_thumbnail success path."""
+             from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+             mock_cache_instance = {}
+     ...
+  KEEP: tests/test_clip_service_background.py (best coverage)
+
+=== test_download_cloud_clip_core_sync_no_blink_instance ===
+  1. tests/test_clip_service_core_logic.py:24 (14 lines)
+         def test_download_cloud_clip_core_sync_no_blink_instance(
+             self, mock_cache: Mock
+         ) -> None:
+             """Test _download_cloud_clip_core_sync with no blink instance."""
+             from blinkapp.services.clip_download import _download_cloud_clip_core_sync
+     ...
+  2. tests/test_clip_service_maximum_coverage.py:21 (13 lines)
+         def test_download_cloud_clip_core_sync_no_blink_instance(self) -> None:
+             """Test _download_cloud_clip_core_sync with no blink instance."""
+             from blinkapp.services.clip_download import _download_cloud_clip_core_sync
+             filepath, error = _download_cloud_clip_core_sync(
+     ...
+  KEEP: tests/test_clip_service_core_logic.py (best coverage)
+
+=== test_error_context_success ===
+  1. tests/test_app.py:1770 (10 lines)
+         def test_error_context_success(self) -> None:
+             """Test error_context with successful operation."""
+             from blinkapp.utils.decorators import error_context
+             with error_context("test operation"):
+     ...
+  2. tests/test_decorators_expansion.py:12 (6 lines)
+         def test_error_context_success(self) -> None:
+             """Test error_context decorator with successful execution."""
+             with error_context("test operation"):
+                 result = "success"
+             self.assertEqual(result, "success")
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_extract_thumbnail_timestamp_none ===
+  1. tests/test_coverage_improvement.py:134 (7 lines)
+         def test_extract_thumbnail_timestamp_none(self) -> None:
+             """Test extract_thumbnail_timestamp with None."""
+             from blinkapp.utils.parsers import extract_thumbnail_timestamp
+             result = extract_thumbnail_timestamp(None)
+     ...
+  2. tests/test_app.py:347 (5 lines)
+         def test_extract_thumbnail_timestamp_none(self) -> None:
+             """Test extracting timestamp from None URL."""
+             timestamp = extract_thumbnail_timestamp(None)
+             self.assertEqual(timestamp, 0)
+  KEEP: tests/test_coverage_improvement.py (best coverage)
+
+=== test_extract_thumbnail_timestamp_valid ===
+  1. tests/test_coverage_improvement.py:126 (8 lines)
+         def test_extract_thumbnail_timestamp_valid(self) -> None:
+             """Test extract_thumbnail_timestamp with valid URL."""
+             from blinkapp.utils.parsers import extract_thumbnail_timestamp
+             url = "https://example.com/thumb.jpg?ts=1234567890"
+     ...
+  2. tests/test_app.py:335 (6 lines)
+         def test_extract_thumbnail_timestamp_valid(self) -> None:
+             """Test extracting timestamp from thumbnail URL."""
+             url = "/api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext="
+             timestamp = extract_thumbnail_timestamp(url)
+             self.assertEqual(timestamp, 1742459551)
+     ...
+  KEEP: tests/test_coverage_improvement.py (best coverage)
+
+=== test_func ===
+  1. tests/test_decorators_final.py:40 (11 lines)
+             def test_func() -> str:
+                 raise ValueError("Test error")
+             result = safe_execute(test_func, "default_value", log_error=False)
+     ...
+  2. tests/test_decorators_simple.py:54 (8 lines)
+             def test_func() -> None:
+                 pass
+             result = _get_operation_name(test_func, "custom_operation")
+     ...
+  3. tests/test_decorators_simple.py:65 (8 lines)
+             def test_func() -> None:
+                 pass
+             result = _get_operation_name(test_func)
+     ...
+  4. tests/test_decorators_final.py:30 (7 lines)
+             def test_func() -> str:
+                 raise ValueError("Test error")
+             result = safe_execute(test_func, "default_value")
+     ...
+  5. tests/test_decorators_expansion.py:21 (6 lines)
+             def test_func() -> str:
+                 raise ValueError("test error")
+             result = safe_execute(test_func, "test operation")
+             self.assertEqual(result, "test operation")  # Returns operation name on error
+     ...
+  KEEP: tests/test_decorators_final.py (best coverage)
+
+=== test_function ===
+  1. tests/test_coverage_improvement.py:165 (7 lines)
+             def test_function() -> str:
+                 return "success"
+             result = test_function()
+             self.assertEqual(result, "success")
+     ...
+  2. tests/test_simple_coverage.py:56 (6 lines)
+             def test_function() -> str:
+                 return "success"
+             result = test_function()
+             self.assertEqual(result, "success")
+     ...
+  KEEP: tests/test_coverage_improvement.py (best coverage)
+
+=== test_get_clip_thumbnail_check_not_found ===
+  1. tests/test_app.py:6067 (13 lines)
+         def test_get_clip_thumbnail_check_not_found(self, mock_cache: Mock) -> None:
+             """Test clip thumbnail check not found."""
+             mock_cache.get.return_value = None
+             response = self.client.get("/api/clips/99999/thumbnail?check=true")
+     ...
+  2. tests/test_app.py:1658 (11 lines)
+         def test_get_clip_thumbnail_check_not_found(self, mock_blink: Mock) -> None:
+             """Test clip thumbnail check when not found."""
+             with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
+                 mock_cache.get.return_value = None
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_get_clip_thumbnail_check_success ===
+  1. tests/test_app.py:1644 (14 lines)
+         def test_get_clip_thumbnail_check_success(self, mock_blink: Mock) -> None:
+             """Test clip thumbnail check endpoint."""
+             # Mock clip in cache
+             with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
+                 mock_cache.get.return_value = {"thumbnail": Path("/tmp/test_thumb.jpg")}
+     ...
+  2. tests/test_app.py:6054 (13 lines)
+         def test_get_clip_thumbnail_check_success(self, mock_cache: Mock) -> None:
+             """Test clip thumbnail check success."""
+             from pathlib import Path
+             from unittest.mock import Mock
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_get_clips_cache_dir ===
+  1. tests/test_clip_service_final.py:28 (9 lines)
+         def test_get_clips_cache_dir(self) -> None:
+             """Test _get_clips_cache_dir helper function."""
+             from blinkapp.services.clip_download import _get_clips_cache_dir
+             with patch("blinkapp.CLIPS_CACHE_DIR", "/test/cache"):
+     ...
+  2. tests/test_clip_service_core_logic.py:174 (8 lines)
+         def test_get_clips_cache_dir(self) -> None:
+             """Test _get_clips_cache_dir function."""
+             from blinkapp.services.clip_download import _get_clips_cache_dir
+             with patch("blinkapp.CLIPS_CACHE_DIR", "/test/cache"):
+     ...
+  KEEP: tests/test_clip_service_final.py (best coverage)
+
+=== test_get_clips_missing_storage_param ===
+  1. tests/test_app.py:1692 (19 lines)
+         def test_get_clips_missing_storage_param(self, mock_blink: Mock) -> None:
+             """Test get_clips without storage parameter."""
+             # Mock blink to be available
+             mock_blink.available = True
+     ...
+  2. tests/test_app.py:6039 (15 lines)
+         def test_get_clips_missing_storage_param(
+             self, mock_connection, mock_blink, mock_cache
+         ) -> None:
+             """Test get clips without storage parameter."""
+             # Mock blink to be available
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_id_hash_functionality ===
+  1. tests/test_ids_models_final.py:82 (14 lines)
+         def test_id_hash_functionality(self) -> None:
+             """Test ID hash functionality for sets and dicts."""
+             camera_id1 = CameraId("test")
+             camera_id2 = CameraId("test")
+             camera_id3 = CameraId("different")
+     ...
+  2. tests/test_final_push.py:40 (13 lines)
+         def test_id_hash_functionality(self) -> None:
+             """Test hash functionality for ID classes."""
+             camera_id1 = CameraId(12345)
+             camera_id2 = CameraId(12345)
+     ...
+  KEEP: tests/test_ids_models_final.py (best coverage)
+
+=== test_index_route ===
+  1. tests/test_app.py:6020 (8 lines)
+         def test_index_route(self, mock_auth: Mock) -> None:
+             """Test index route functionality."""
+             mock_auth.return_value = False
+             response = self.client.get("/")
+             # Should redirect to login when not authenticated
+     ...
+  2. tests/test_app.py:1669 (6 lines)
+         def test_index_route(self) -> None:
+             """Test the main index route."""
+             response = self.client.get("/")
+             # Should redirect to login if not authenticated
+             self.assertEqual(response.status_code, 302)
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_index_template_rendering ===
+  1. tests/test_app.py:5982 (10 lines)
+         def test_index_template_rendering(self, mock_render: Mock, mock_auth: Mock) -> None:
+             """Test index template rendering."""
+             mock_auth.return_value = True
+             mock_render.return_value = "<html>Test</html>"
+     ...
+  2. tests/test_app.py:1798 (6 lines)
+         def test_index_template_rendering(self) -> None:
+             """Test index template redirects when not authenticated."""
+             response = self.client.get("/")
+             # Should redirect to login when not authenticated
+             self.assertEqual(response.status_code, 302)
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_initialize_cache_paths_basic ===
+  1. tests/test_init_final.py:31 (13 lines)
+         def test_initialize_cache_paths_basic(self, mock_path: Mock) -> None:
+             """Test initialize_cache_paths basic functionality."""
+             mock_path_instance = Mock(spec=Path)
+             mock_path.return_value = mock_path_instance
+             mock_path_instance.mkdir = Mock(spec=callable)
+     ...
+  2. tests/test_init_expansion.py:51 (9 lines)
+         def test_initialize_cache_paths_basic(self) -> None:
+             """Test initialize_cache_paths basic functionality."""
+             # Should not raise exception
+             try:
+                 initialize_cache_paths()
+     ...
+  KEEP: tests/test_init_final.py (best coverage)
+
+=== test_initialize_stream_manager ===
+  1. tests/test_stream_service_boost.py:75 (14 lines)
+         def test_initialize_stream_manager(self) -> None:
+             """Test initialize_stream_manager function."""
+             with patch("blinkapp.Config") as mock_config:
+                 mock_config.HLS_SEGMENT_TIME = 4
+                 mock_config.HLS_LIST_SIZE = 5
+     ...
+  2. tests/test_coverage_improvement.py:36 (6 lines)
+         def test_initialize_stream_manager(self) -> None:
+             """Test initialize_stream_manager function."""
+             from blinkapp.services.stream_service import initialize_stream_manager
+             initialize_stream_manager()
+     ...
+  KEEP: tests/test_stream_service_boost.py (best coverage)
+
+=== test_load_clips_cache_success ===
+  1. tests/test_app.py:2682 (26 lines)
+         def test_load_clips_cache_success(self) -> None:
+             """Test successful clips cache loading."""
+             from blinkapp.services.cache_service import load_clips_cache
+             # Mock clip files with proper naming format
+     ...
+  2. tests/test_app.py:6191 (17 lines)
+         def test_load_clips_cache_success(
+             self, mock_exists: Mock, mock_listdir: Mock
+         ) -> None:
+             """Test successful clips cache loading."""
+             mock_exists.return_value = True
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_process_cloud_clips_empty_metadata ===
+  1. tests/test_clip_service_final.py:425 (14 lines)
+         def test_process_cloud_clips_empty_metadata(self, mock_cache: Mock) -> None:
+             """Test process_cloud_clips with empty metadata."""
+             from blinkapp.services.clip_service import process_cloud_clips
+             mock_cache.return_value = {}
+     ...
+  2. tests/test_clip_service_process_functions.py:21 (10 lines)
+         def test_process_cloud_clips_empty_metadata(self, mock_cache: Mock) -> None:
+             """Test process_cloud_clips with empty metadata."""
+             from blinkapp.services.clip_service import process_cloud_clips
+             mock_cache.return_value = {}
+     ...
+  KEEP: tests/test_clip_service_final.py (best coverage)
+
+=== test_process_cloud_clips_invalid_timestamp ===
+  1. tests/test_clip_service_final.py:172 (25 lines)
+         def test_process_cloud_clips_invalid_timestamp(self, mock_cache: Mock) -> None:
+             """Test process_cloud_clips with invalid timestamp."""
+             from blinkapp.services.clip_service import process_cloud_clips
+             mock_cache.return_value = {}
+     ...
+  2. tests/test_clip_service_process_functions.py:65 (23 lines)
+         def test_process_cloud_clips_invalid_timestamp(
+             self, mock_format, mock_cache
+         ) -> None:
+             """Test process_cloud_clips with invalid timestamp."""
+             from blinkapp.services.clip_service import process_cloud_clips
+     ...
+  KEEP: tests/test_clip_service_final.py (best coverage)
+
+=== test_process_local_clips_invalid_item ===
+  1. tests/test_clip_service_process_functions.py:237 (42 lines)
+         def test_process_local_clips_invalid_item(
+             self, mock_format, mock_cache, mock_connection, mock_blink
+         ) -> None:
+             """Test process_local_clips with invalid item in manifest."""
+             from blinkapp.services.clip_service import process_local_clips
+     ...
+  2. tests/test_clip_service_final.py:247 (39 lines)
+         def test_process_local_clips_invalid_item(self, mock_cache: Mock) -> None:
+             """Test process_local_clips with invalid item in manifest."""
+             from blinkapp.services.clip_service import process_local_clips
+             mock_cache.return_value = {}
+     ...
+  KEEP: tests/test_clip_service_process_functions.py (best coverage)
+
+=== test_process_local_clips_manifest_not_ready ===
+  1. tests/test_clip_service_final.py:221 (26 lines)
+         def test_process_local_clips_manifest_not_ready(self, mock_cache: Mock) -> None:
+             """Test process_local_clips with manifest not ready."""
+             from blinkapp.services.clip_service import process_local_clips
+             mock_cache.return_value = {}
+     ...
+  2. tests/test_clip_service_process_functions.py:215 (22 lines)
+         def test_process_local_clips_manifest_not_ready(
+             self, mock_format, mock_cache, mock_connection, mock_blink
+         ) -> None:
+             """Test process_local_clips with manifest not ready."""
+             from blinkapp.services.clip_service import process_local_clips
+     ...
+  KEEP: tests/test_clip_service_final.py (best coverage)
+
+=== test_process_local_clips_no_local_storage ===
+  1. tests/test_clip_service_final.py:197 (24 lines)
+         def test_process_local_clips_no_local_storage(self, mock_cache: Mock) -> None:
+             """Test process_local_clips with no local storage."""
+             from blinkapp.services.clip_service import process_local_clips
+             mock_cache.return_value = {}
+     ...
+  2. tests/test_clip_service_process_functions.py:195 (20 lines)
+         def test_process_local_clips_no_local_storage(
+             self, mock_format, mock_cache, mock_connection, mock_blink
+         ) -> None:
+             """Test process_local_clips with sync module that has no local storage."""
+             from blinkapp.services.clip_service import process_local_clips
+     ...
+  KEEP: tests/test_clip_service_final.py (best coverage)
+
+=== test_run_app_dump_system ===
+  1. tests/test_main_working.py:22 (10 lines)
+     def test_run_app_dump_system() -> None:
+         """Test run_app with dump system option."""
+         args = Mock(spec=argparse.Namespace)
+         args.dump_system = True
+     ...
+  2. tests/test_main_module.py:123 (10 lines)
+         def test_run_app_dump_system(self, mock_dump: Mock) -> None:
+             """Test run_app with dump_system flag."""
+             args = Mock(spec=object)
+             args.dump_system = True
+     ...
+  KEEP: tests/test_main_working.py (best coverage)
+
+=== test_run_app_normal ===
+  1. tests/test_main_working.py:32 (20 lines)
+     def test_run_app_normal() -> None:
+         """Test run_app normal execution."""
+         args = Mock(spec=argparse.Namespace)
+         args.dump_system = False
+         args.cache = "/test"
+     ...
+  2. tests/test_main_module.py:133 (14 lines)
+         def test_run_app_normal(self, mock_run: Mock) -> None:
+             """Test normal app execution."""
+             args = Mock(spec=object)
+             args.dump_system = False
+             args.cache = "/tmp/test"
+     ...
+  KEEP: tests/test_main_working.py (best coverage)
+
+=== test_settings_with_none_file ===
+  1. tests/test_app.py:1589 (7 lines)
+         def test_settings_with_none_file(self) -> None:
+             """Test settings operations when SETTINGS_FILE is None."""
+             # This should be handled gracefully
+             response = self.client.get("/api/settings")
+             # Should either work with defaults or return an error
+     ...
+  2. tests/test_app.py:6117 (7 lines)
+         def test_settings_with_none_file(self, mock_open: Mock) -> None:
+             """Test settings loading with missing file."""
+             # Test that settings loading handles missing files gracefully
+             result = {}  # Default empty settings
+             self.assertIsInstance(result, dict)
+     ...
+  KEEP: tests/test_app.py (best coverage)
+
+=== test_setup_camera_routes ===
+  1. tests/test_camera_routes_expansion.py:16 (16 lines)
+         def test_setup_camera_routes(self) -> None:
+             """Test setup_camera_routes function."""
+             app = Flask(__name__)
+             # Should not raise exception
+     ...
+  2. tests/test_camera_routes_final.py:15 (16 lines)
+         def test_setup_camera_routes(self) -> None:
+             """Test setup_camera_routes function."""
+             app = Flask(__name__)
+             # Should not raise exception
+     ...
+  KEEP: tests/test_camera_routes_expansion.py (best coverage)
+
+=== test_validate ===
+  1. tests/test_route_decorators.py:135 (14 lines)
+             def test_validate(camera_id: CameraId) -> dict[str, str]:
+                 return {"validated_id": str(camera_id)}
+             with self.test_app.test_request_context():
+                 with patch("flask.request") as mock_request:
+     ...
+  2. tests/test_route_decorators.py:158 (14 lines)
+             def test_validate(camera_id: CameraId) -> dict[str, str]:
+                 return {"validated_id": str(camera_id)}
+             with self.test_app.test_request_context():
+                 with patch("flask.request") as mock_request:
+     ...
+  KEEP: tests/test_route_decorators.py (best coverage)
+

@@ -2,7 +2,6 @@
 
 import json
 from pathlib import Path
-from typing import Any
 
 from flask import Flask, jsonify, request
 from flask.typing import (
@@ -61,7 +60,7 @@ def setup_settings_routes(app: Flask) -> None:
         else:  # PUT - Save new settings
             # Validate incoming JSON data
             assert isinstance(request, Request)
-            data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+            data: dict[str, object] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
             if data is None or not isinstance(data, dict):
                 response, status_code = create_api_response(
                     success=False,
