@@ -267,6 +267,59 @@ class TestConfigurationValues(BaseTestCase):
         # Test with maxsplit
         parts = camera_id.split("-", 1)
         self.assertEqual(parts, ["12", "34-56"])
+
+    def test_email_validation(self) -> None:
+        """Test email format validation."""
+        from blinkapp.utils.validators import is_valid_email_format
+        
+        # Valid emails
+        self.assertTrue(is_valid_email_format("test@example.com"))
+        self.assertTrue(is_valid_email_format("user.name+tag@domain.co.uk"))
+        
+        # Invalid emails
+        self.assertFalse(is_valid_email_format(""))
+        self.assertFalse(is_valid_email_format("invalid"))
+        self.assertFalse(is_valid_email_format("@domain.com"))
+        self.assertFalse(is_valid_email_format("user@"))
+        self.assertFalse(is_valid_email_format(None))
+
+    def test_credential_validation(self) -> None:
+        """Test credential validation."""
+        from blinkapp.utils.validators import validate_credentials
+        
+        # Valid credentials
+        username, password = validate_credentials("user@example.com", "password123")
+        self.assertEqual(username, "user@example.com")
+        self.assertEqual(password, "password123")
+        
+        # Invalid credentials
+        with self.assertRaises(ValueError):
+            validate_credentials("", "pass")
+        with self.assertRaises(ValueError):
+            validate_credentials("user@example.com", "")
+        with self.assertRaises(ValueError):
+            validate_credentials("invalid-email", "pass")
+
+    def test_config_regex_patterns(self) -> None:
+        """Test Config regex patterns work correctly."""
+        import re
+        from blinkapp.config import Config
+        
+        # Test camera ID pattern
+        camera_pattern = Config.VALID_CAMERA_ID_PATTERN
+        self.assertTrue(re.match(camera_pattern, "camera123"))
+        self.assertTrue(re.match(camera_pattern, "cam-era_123"))
+        self.assertFalse(re.match(camera_pattern, "cam@era"))
+        
+        # Test network ID pattern  
+        network_pattern = Config.VALID_NETWORK_ID_PATTERN
+        self.assertTrue(re.match(network_pattern, "12345"))
+        self.assertFalse(re.match(network_pattern, "abc123"))
+        
+        # Test clip ID pattern
+        clip_pattern = Config.VALID_CLIP_ID_PATTERN
+        self.assertTrue(re.match(clip_pattern, "clip_123-test~456"))
+        self.assertFalse(re.match(clip_pattern, "clip@123"))
         self.assertTrue(hasattr(Config, "THUMBNAILS_SUBDIR"))
         self.assertTrue(hasattr(Config, "CLIPS_SUBDIR"))
 
