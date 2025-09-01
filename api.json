@@ -246,6 +246,7 @@
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
+        "operationId": "get_system_details",
         "operationId": "get_system_devices",
         "parameters": [
           {
@@ -267,6 +268,7 @@
       "put": {
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
+        "operationId": "update_system_settings",
         "operationId": "update_system",
         "parameters": [
           {
@@ -395,6 +397,7 @@
       "get": {
         "summary": "Get camera thumbnail",
         "description": "Get current thumbnail image for a camera",
+        "operationId": "get_camera_thumbnail",
         "parameters": [
           {
             "name": "camera_id",
@@ -422,6 +425,7 @@
       "delete": {
         "summary": "Refresh camera thumbnail",
         "description": "Clear thumbnail cache and trigger refresh from camera",
+        "operationId": "refresh_camera_thumbnail",
         "parameters": [
           {
             "name": "camera_id",
