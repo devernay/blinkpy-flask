@@ -330,7 +330,7 @@ async function loadSettings() {
             const data = await response.json();
             if (data.success) {
                 const settings = data.data;
-                document.getElementById('temperature-units').value = settings.temperatureUnits || 'celsius';
+                document.getElementById('temperature-units').value = settings.temperatureUnits || 'C';
                 document.getElementById('cloud-clip-retention').value = settings.cloudClipRetention || '30';
                 document.getElementById('local-clip-retention').value = settings.localClipRetention || 'never';
                 document.getElementById('clip-thumbnail-size').value = settings.clipThumbnailSize || 'medium';

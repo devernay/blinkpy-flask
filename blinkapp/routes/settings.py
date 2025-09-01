@@ -47,7 +47,7 @@ def setup_settings_routes(app: Flask) -> None:
             else:
                 # Return default settings if no file exists
                 settings_data = {
-                    "temperatureUnits": "celsius",
+                    "temperatureUnits": "C",
                     "cloudClipRetention": "30",
                     "localClipRetention": "never",
                     "clipThumbnailSize": "medium",

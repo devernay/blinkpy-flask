@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import blinkapp
 from blinkapp.config import Config
@@ -18,7 +18,7 @@ def get_user_settings() -> dict[str, Any]:
 
     Returns:
         Dictionary containing user settings with keys:
-        - temperatureUnits: "celsius" or "fahrenheit"
+        - temperatureUnits: "C" or "F"
         - cloudClipRetention: retention period in days
         - localClipRetention: "never" or retention period
         - clipThumbnailSize: "small", "medium", or "large"
@@ -38,7 +38,7 @@ def get_user_settings() -> dict[str, Any]:
 
     # Return default settings if file doesn't exist or can't be loaded
     default_settings = {
-        "temperatureUnits": "celsius",
+        "temperatureUnits": "C",
         "cloudClipRetention": "30",
         "localClipRetention": "never",
         "clipThumbnailSize": "medium",
@@ -47,20 +47,19 @@ def get_user_settings() -> dict[str, Any]:
     return default_settings
 
 
-def get_temperature_unit() -> str:
+def get_temperature_unit() -> Literal["C", "F"]:
     """Get the user's preferred temperature unit.
 
     Returns:
-        Temperature unit preference: "celsius" or "fahrenheit"
+        Temperature unit preference: "C" for Celsius or "F" for Fahrenheit
+
+    Raises:
+        ValueError: If temperatureUnits setting is not "C" or "F"
     """
     settings = get_user_settings()
-    unit = settings.get("temperatureUnits", "celsius")
+    unit = settings.get("temperatureUnits", "C")
 
-    # Validate and normalize the unit
-    if unit.lower() in ("celsius", "c"):
-        return "celsius"
-    elif unit.lower() in ("fahrenheit", "f"):
-        return "fahrenheit"
-    else:
-        logger.warning(f"Invalid temperature unit '{unit}', defaulting to celsius")
-        return "celsius"
+    if unit not in ("C", "F"):
+        raise ValueError(f"Invalid temperature unit '{unit}', must be 'C' or 'F'")
+
+    return unit
