@@ -327,6 +327,7 @@
     "/api/systems/cache": {
       "delete": {
         "summary": "Clear systems cache",
+        "operationId": "clear_systems_cache",
         "description": "Clear cached system information to force refresh",
         "responses": {
           "200": {
@@ -471,6 +472,7 @@
     "/api/cameras/{camera_id}/streams": {
       "post": {
         "summary": "Start live stream",
+        "operationId": "start_live_stream",
         "description": "Start live streaming from camera using TCP to HLS transcoding",
         "parameters": [
           {
@@ -503,6 +505,7 @@
       },
       "delete": {
         "summary": "Stop live stream",
+        "operationId": "stop_live_stream",
         "description": "Stop active live stream for camera",
         "parameters": [
           {
@@ -602,6 +605,7 @@
     "/api/clips/{clip_id}": {
       "delete": {
         "summary": "Delete clip",
+        "operationId": "delete_clip",
         "description": "Delete a clip from storage",
         "parameters": [
           {
@@ -624,6 +628,7 @@
     "/api/clips/{clip_id}/download": {
       "get": {
         "summary": "Download clip",
+        "operationId": "download_clip",
         "description": "Download clip file",
         "parameters": [
           {
@@ -654,6 +659,7 @@
     "/api/clips/{clip_id}/thumbnail": {
       "get": {
         "summary": "Get clip thumbnail",
+        "operationId": "get_clip_thumbnail",
         "description": "Get thumbnail image for a clip",
         "parameters": [
           {
@@ -681,6 +687,7 @@
       },
       "post": {
         "summary": "Generate clip thumbnail",
+        "operationId": "generate_clip_thumbnail",
         "description": "Generate thumbnail for a clip",
         "parameters": [
           {
@@ -700,6 +707,7 @@
     "/api/config": {
       "get": {
         "summary": "Get application configuration",
+        "operationId": "get_app_config",
         "description": "Get current application configuration and status",
         "responses": {
           "200": {
@@ -732,6 +740,7 @@
     "/api/settings": {
       "get": {
         "summary": "Get user settings",
+        "operationId": "get_user_settings",
         "description": "Get current user preferences and settings",
         "responses": {
           "200": {
@@ -800,6 +809,7 @@
     "/api/cache": {
       "delete": {
         "summary": "Clear all caches",
+        "operationId": "clear_all_caches",
         "description": "Clear all application caches (thumbnails, clips, systems)",
         "responses": {
           "200": {
@@ -811,6 +821,7 @@
     "/api/cache/thumbnails": {
       "delete": {
         "summary": "Clear thumbnail cache",
+        "operationId": "clear_thumbnail_cache",
         "description": "Clear only the thumbnail cache",
         "responses": {
           "200": {
@@ -822,6 +833,7 @@
     "/api/cache/clips": {
       "delete": {
         "summary": "Clear clips cache",
+        "operationId": "clear_clips_cache",
         "description": "Clear only the clips cache",
         "responses": {
           "200": {
