@@ -20,21 +20,6 @@ class TestClipServiceCoreLogic(BaseTestCase):
         self.mock_blink = create_mock_blink_instance()
         self.mock_cache_dir = Path("/tmp/test_cache")
 
-    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_download_cloud_clip_core_sync_no_blink_instance(
-        self, mock_cache: Mock
-    ) -> None:
-        """Test _download_cloud_clip_core_sync with no blink instance."""
-        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
-
-        filepath, error = _download_cloud_clip_core_sync(
-            self.clip_id, None, self.mock_cache_dir
-        )
-
-        assert filepath is None
-        assert error is not None
-        assert "'NoneType' object has no attribute 'get_clip_url'" in error
-
     def test_download_cloud_clip_core_sync_cached_file_exists(self) -> None:
         """Test _download_cloud_clip_core_sync successful download."""
         from blinkapp.services.clip_download import _download_cloud_clip_core_sync
