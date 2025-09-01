@@ -50,14 +50,16 @@ __all__ = [
     "ErrorResponse",
     "TemplateResult",
     "DecoratorFunction",
+    "DecoratedRouteFunction",
+    "ValidationFunction",
     "CacheKey",
+    "DeviceDict",
+    "SystemDict",
 ]
 
 # Basic data types
 JsonDict = dict[str, object]  # Standard JSON-serializable dictionary
-SettingsDict = dict[str, str | int | bool]  # User settings dictionary
 DeviceDict = dict[str, object]  # Device information dictionary
-ClipDict = dict[str, object]  # Clip metadata dictionary
 SystemDict = dict[str, object]  # System information dictionary
 ClipsResponse = dict[str, list[ClipDayGroup]]  # Clips API response type
 
@@ -67,7 +69,6 @@ ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 
 # Flask response types - use Flask's own types
 FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, str]]
-FlaskRouteResponse = ResponseReturnValue
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
 
