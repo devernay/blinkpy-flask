@@ -15,7 +15,7 @@ class TestUtilsServiceFinal(unittest.TestCase):
 
     def test_format_device_temperature_basic(self) -> None:
         """Test format_device_temperature basic functionality."""
-        result = format_device_temperature(68.5)
+        result = format_device_temperature(68.5, "F")
         self.assertEqual(result, "68.5°F")
 
     def test_create_device_data_exception_handling(self) -> None:

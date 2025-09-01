@@ -17,7 +17,7 @@ directly from the Blink API as the preferred approach.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
@@ -28,30 +28,38 @@ logger = logging.getLogger(__name__)
 __all__ = ["create_device_data", "format_device_temperature"]
 
 
-def format_device_temperature(temperature: float | None) -> str:
-    """Format device temperature for display.
+def format_device_temperature(
+    temperature: float | None, unit: Literal["C", "F"]
+) -> str:
+    """Format device temperature for display with unit conversion support.
 
     Converts temperature values to a user-friendly string format.
-    Currently displays in Fahrenheit as returned by the Blink API.
+    The Blink API returns temperatures in Fahrenheit. This function can convert
+    to Celsius when requested.
 
-    Note: The Blink API returns temperatures in Fahrenheit. The blinkpy library
-    provides a temperature_c property for Celsius conversion using the formula:
-    celsius = (fahrenheit - 32) / 9.0 * 5.0
-
-    TODO: Enhance to respect user temperature unit settings (temperatureUnits)
-    from the settings service to display in Celsius when preferred.
+    Note: The blinkpy library provides a temperature_c property for Celsius
+    conversion using the formula: celsius = (fahrenheit - 32) / 9.0 * 5.0
 
     Args:
-        temperature: Temperature value in Fahrenheit (numeric or None)
+        temperature: Temperature value in Fahrenheit from Blink API (numeric or None)
+        unit: Temperature unit for display ("C" for Celsius or "F" for Fahrenheit)
 
     Returns:
-        Formatted temperature string (e.g., "72.5°F") or "N/A" if invalid
+        Formatted temperature string (e.g., "72.5°F" or "22.5°C") or "N/A" if invalid
     """
     if temperature is None:
         return "N/A"
+
     try:
         temp_val = float(temperature)
-        return f"{temp_val}°F"
+
+        if unit == "C":
+            # Convert Fahrenheit to Celsius using blinkpy's formula
+            celsius_val = round((temp_val - 32) / 9.0 * 5.0, 1)
+            return f"{celsius_val}°C"
+        else:
+            # Default to Fahrenheit (original API format)
+            return f"{temp_val}°F"
     except (ValueError, TypeError):
         return "N/A"
 
