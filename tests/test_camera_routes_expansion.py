@@ -26,8 +26,8 @@ class TestCameraRoutesExpansion(FlaskTestCase):
 
         # Check specific routes are registered (thumbnail routes moved to thumbnails module)
         endpoints = [rule.endpoint for rule in rules]
-        self.assertIn("list_cameras", endpoints)
-        self.assertIn("get_camera_details", endpoints)
+        self.assertIn("list_cameras_route", endpoints)
+        self.assertIn("get_camera_details_route", endpoints)
 
     def test_camera_routes_registration(self) -> None:
         """Test camera routes are properly registered."""

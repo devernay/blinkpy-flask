@@ -31,7 +31,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips")
     @ensure_blink_available
     @api_route("get clips")
-    def get_clips_route() -> JsonDict:
+    def get_clips_route() -> JsonDict | tuple[JsonDict, int]:
         """Get clips from cloud or local storage.
 
         Retrieves video clips from either Blink's cloud storage or local
@@ -47,7 +47,7 @@ def setup_clips_routes(app: Flask) -> None:
         storage_type = request.args.get("storage")
         result = get_clips(storage_type)
         if isinstance(result, tuple):
-            return result[0]  # Return just the dict part for Flask
+            return result[0], result[1]  # Return dict and status code
         return result
 
     @app.route("/api/clips/<clip_id_str>/thumbnail", methods=["POST"])

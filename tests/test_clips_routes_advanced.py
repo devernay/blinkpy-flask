@@ -24,7 +24,7 @@ class TestClipsRoutesAdvanced(FlaskTestCase):
 
         # Check specific routes are registered
         endpoints = [rule.endpoint for rule in rules]
-        self.assertIn("get_clips", endpoints)
+        self.assertIn("get_clips_route", endpoints)
 
     def test_clips_routes_registration(self) -> None:
         """Test clips routes are properly registered."""

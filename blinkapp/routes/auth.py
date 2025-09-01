@@ -93,13 +93,13 @@ def setup_auth_routes(app_instance: Flask) -> None:
                 if success == "2fa_required":
                     session["temp_username"] = username
                     session["temp_password"] = password
-                    return redirect(url_for("two_factor"))
+                    return redirect(url_for("two_factor_route"))
                 elif success:
                     assert CREDENTIALS_FILE is not None
                     assert blink_connection is not None
                     blink_connection.execute(blink.save(CREDENTIALS_FILE))
                     session["authenticated"] = True
-                    return redirect(url_for("index"))
+                    return redirect(url_for("index_route"))
                 else:
                     return render_template(
                         "auth.html",
@@ -128,7 +128,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
         from blinkapp.services.blink_service import blink_connection
 
         if "temp_username" not in session:
-            return redirect(url_for("login"))
+            return redirect(url_for("login_route"))
 
         if request.method == "POST":
             try:
@@ -162,7 +162,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
                     session.pop("temp_username", None)
                     session.pop("temp_password", None)
                     session["authenticated"] = True
-                    return redirect(url_for("index"))
+                    return redirect(url_for("index_route"))
                 else:
                     logger.debug("2FA failed, showing error")
                     return render_template(
@@ -244,7 +244,7 @@ def register_auth_routes(app: Flask) -> None:
                 session["authenticated"] = True
                 return index()
             else:
-                return redirect(url_for("login"))
+                return redirect(url_for("login_route"))
         # Clear initializing flag if set
         session.pop("initializing", None)
         return index()
