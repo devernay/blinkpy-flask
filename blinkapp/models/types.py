@@ -10,7 +10,6 @@ from collections.abc import Callable
 from typing import ParamSpec, TypedDict, TypeVar
 
 from flask import Response
-from flask.typing import ResponseReturnValue
 
 # Common type variables used across the application
 P = ParamSpec("P")

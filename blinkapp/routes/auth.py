@@ -97,7 +97,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
                     assert blink_connection is not None
                     blink_connection.execute(blink.save(CREDENTIALS_FILE))
                     session["authenticated"] = True
-                    return redirect(url_for("index_route"))
+                    return redirect(url_for("main_page_route"))
                 else:
                     return render_template(
                         "auth.html",
@@ -160,7 +160,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
                     session.pop("temp_username", None)
                     session.pop("temp_password", None)
                     session["authenticated"] = True
-                    return redirect(url_for("index_route"))
+                    return redirect(url_for("main_page_route"))
                 else:
                     logger.debug("2FA failed, showing error")
                     return render_template(

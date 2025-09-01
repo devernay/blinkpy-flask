@@ -5978,7 +5978,9 @@ class TestTemplateRoutesFixed(BaseTestCase):
 
     @patch("blinkapp.routes.auth.is_session_authenticated")
     @patch("flask.render_template")
-    def test_index_template_rendering_with_mocks(self, mock_render: Mock, mock_auth: Mock) -> None:
+    def test_index_template_rendering_with_mocks(
+        self, mock_render: Mock, mock_auth: Mock
+    ) -> None:
         """Test index template rendering."""
         mock_auth.return_value = True
         mock_render.return_value = "<html>Test</html>"

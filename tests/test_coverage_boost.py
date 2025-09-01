@@ -215,10 +215,10 @@ class TestConfigurationValues(BaseTestCase):
 
         camera_id = CameraId("12345")
         chars = list(camera_id)
-        self.assertEqual(chars, ['1', '2', '3', '4', '5'])
+        self.assertEqual(chars, ["1", "2", "3", "4", "5"])
 
         # Test with string iteration
-        result = ''.join(char for char in camera_id)
+        result = "".join(char for char in camera_id)
         self.assertEqual(result, "12345")
 
     def test_format_time_duration(self) -> None:

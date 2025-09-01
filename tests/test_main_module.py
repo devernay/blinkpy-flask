@@ -121,7 +121,7 @@ class TestAppExecution:
 
     @patch("blinkapp.services.debug_service.handle_dump_system")
     @patch("blinkapp.app.run")
-    def test_run_app_normal(self, mock_run: Mock) -> None:
+    def test_run_app_normal(self, mock_run: Mock, mock_dump: Mock) -> None:
         """Test normal app execution."""
         args = Mock(spec=object)
         args.dump_system = False
