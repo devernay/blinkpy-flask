@@ -3,18 +3,20 @@
 from typing import Any
 
 from ..models.ids import NetworkId
-from ..services.system_service import arm_system, get_devices, get_systems
+from ..services.system_service import arm_system
+from ..services.system_service import get_devices as service_get_devices
+from ..services.system_service import get_systems as service_get_systems
 
 
-def get_systems_route() -> dict[str, Any]:
+def get_systems() -> dict[str, Any]:
     """Get list of available Blink systems.
 
     Connexion-compatible handler that returns system information.
     """
-    return get_systems()
+    return service_get_systems()
 
 
-def get_system_devices_route(
+def get_system_devices(
     network_id_str: str,
 ) -> dict[str, Any] | tuple[dict[str, Any], int]:
     """Get devices for a specific Blink system.
@@ -30,10 +32,10 @@ def get_system_devices_route(
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
-    return get_devices(network_id)
+    return service_get_devices(network_id)
 
 
-def get_devices_route(
+def get_devices(
     network_id_str: str,
 ) -> dict[str, Any] | tuple[dict[str, Any], int]:
     """Get devices for a specific Blink system.
@@ -49,10 +51,10 @@ def get_devices_route(
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
-    return get_devices(network_id)
+    return service_get_devices(network_id)
 
 
-def update_system_route(
+def update_system(
     network_id_str: str, body: dict[str, Any]
 ) -> dict[str, Any] | tuple[dict[str, Any], int]:
     """Update a Blink system (arm/disarm).
@@ -79,7 +81,7 @@ def update_system_route(
     return arm_system(network_id, armed)
 
 
-def clear_systems_cache_route() -> dict[str, Any]:
+def clear_systems_cache() -> dict[str, Any]:
     """Clear systems cache.
 
     Returns:

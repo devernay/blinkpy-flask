@@ -12,7 +12,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from blinkapp.config import Config
-from blinkapp.connexion_handlers.camera import list_cameras as connexion_list_cameras
+from blinkapp.connexion_handlers.camera import list_cameras
 from blinkapp.models.ids import CameraId
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import ensure_blink_available, error_context
@@ -41,7 +41,7 @@ def setup_camera_routes(app: "Flask") -> None:
         Returns:
             JSON response with camera list
         """
-        return connexion_list_cameras()
+        return list_cameras()
 
     @app.route("/api/cameras/<camera_id_str>")
     @ensure_blink_available

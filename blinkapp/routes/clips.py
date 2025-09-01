@@ -5,7 +5,7 @@ from flask.typing import (
     ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
 )
 
-from blinkapp.connexion_handlers.clips import get_clips as connexion_get_clips
+from blinkapp.connexion_handlers.clips import get_clips
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
@@ -45,7 +45,7 @@ def setup_clips_routes(app: Flask) -> None:
             JSON response with list of clips organized by date
         """
         storage_type = request.args.get("storage")
-        result = connexion_get_clips(storage_type)
+        result = get_clips(storage_type)
         if isinstance(result, tuple):
             return result[0]  # Return just the dict part for Flask
         return result

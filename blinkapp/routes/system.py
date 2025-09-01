@@ -6,19 +6,11 @@ from flask import Flask, request
 from flask.wrappers import Request
 
 from blinkapp.connexion_handlers.system import (
-    clear_systems_cache_route as connexion_clear_cache,
-)
-from blinkapp.connexion_handlers.system import (
-    get_devices_route as connexion_get_devices,
-)
-from blinkapp.connexion_handlers.system import (
-    get_system_devices_route as connexion_get_system_devices,
-)
-from blinkapp.connexion_handlers.system import (
-    get_systems_route as connexion_get_systems,
-)
-from blinkapp.connexion_handlers.system import (
-    update_system_route as connexion_update_system,
+    clear_systems_cache,
+    get_devices,
+    get_system_devices,
+    get_systems,
+    update_system,
 )
 from blinkapp.models.ids import NetworkId
 from blinkapp.models.types import JsonDict
@@ -53,7 +45,7 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with list of systems or error message
         """
-        return connexion_get_systems()
+        return get_systems()
 
     @app.route("/api/systems/<network_id_str>")
     @ensure_blink_available
@@ -70,7 +62,7 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with devices list or error message
         """
-        result = connexion_get_system_devices(str(network_id))
+        result = get_system_devices(str(network_id))
         if isinstance(result, tuple):
             return result[0]  # Return just the dict part for Flask
         return result
@@ -89,7 +81,7 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with list of devices or error message
         """
-        result = connexion_get_devices(str(network_id))
+        result = get_devices(str(network_id))
         if isinstance(result, tuple):
             return result[0]  # Return just the dict part for Flask
         return result
@@ -115,7 +107,7 @@ def setup_system_routes(app: Flask) -> None:
         data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
         if data is None:
             data = {}
-        result = connexion_update_system(str(network_id), data)
+        result = update_system(str(network_id), data)
         if isinstance(result, tuple):
             return result[0]  # Return just the dict part for Flask
         return result
@@ -129,4 +121,4 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with success status or error message
         """
-        return connexion_clear_cache()
+        return clear_systems_cache()

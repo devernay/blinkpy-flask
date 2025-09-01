@@ -163,7 +163,7 @@
       "get": {
         "summary": "List all Blink systems",
         "description": "Retrieves a comprehensive list of all available Blink sync modules and their network information. Each system includes network ID, name, armed status, and associated cameras.",
-        "operationId": "get_systems_route",
+        "operationId": "get_systems",
         "tags": ["System Management"],
         "responses": {
           "200": {
@@ -246,7 +246,7 @@
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
-        "operationId": "get_system_devices_route",
+        "operationId": "get_system_devices",
         "parameters": [
           {
             "name": "network_id_str",
@@ -267,7 +267,7 @@
       "put": {
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
-        "operationId": "update_system_route",
+        "operationId": "update_system",
         "parameters": [
           {
             "name": "network_id_str",
