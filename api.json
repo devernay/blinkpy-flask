@@ -268,7 +268,6 @@
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
         "operationId": "update_system_settings",
-        "operationId": "update_system",
         "parameters": [
           {
             "name": "network_id_str",
@@ -529,6 +528,7 @@
       "get": {
         "summary": "Get HLS stream segments",
         "description": "Get HLS playlist or video segments for live streaming",
+        "operationId": "get_hls_stream_segments",
         "parameters": [
           {
             "name": "camera_id",
@@ -777,6 +777,7 @@
       "put": {
         "summary": "Update user settings",
         "description": "Update user preferences and settings",
+        "operationId": "update_user_settings",
         "requestBody": {
           "required": true,
           "content": {
@@ -846,6 +847,7 @@
       "post": {
         "summary": "Logout",
         "description": "Logout and clear credentials",
+        "operationId": "logout",
         "responses": {
           "200": {
             "description": "Logged out successfully"

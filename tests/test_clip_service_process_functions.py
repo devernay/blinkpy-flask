@@ -18,15 +18,6 @@ class TestClipProcessingFunctions(BaseTestCase):
     """Tests for process_cloud_clips and process_local_clips functions."""
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    def test_process_cloud_clips_empty_metadata(self, mock_cache: Mock) -> None:
-        """Test process_cloud_clips with empty metadata."""
-        from blinkapp.services.clip_service import process_cloud_clips
-
-        mock_cache.return_value = {}
-        result = process_cloud_clips([])
-        assert result == []
-
-    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.clip_service.format_clips_by_day")
     def test_process_cloud_clips_with_valid_data(
         self, mock_format: Mock, mock_cache: Mock

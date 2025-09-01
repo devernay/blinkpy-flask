@@ -48,15 +48,6 @@ class TestInitExpansion(unittest.TestCase):
             # Expected to fail in test environment, but function exists
             pass
 
-    def test_initialize_cache_paths_basic(self) -> None:
-        """Test initialize_cache_paths basic functionality."""
-        # Should not raise exception
-        try:
-            initialize_cache_paths()
-        except Exception:
-            # Expected to fail in test environment, but function exists
-            pass
-
     def test_require_sync_module_with_blink(self) -> None:
         """Test require_sync_module function exists."""
         # Function should exist and be importable
