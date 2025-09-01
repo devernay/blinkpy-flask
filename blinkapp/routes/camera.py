@@ -12,6 +12,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from blinkapp.config import Config
+from blinkapp.connexion_handlers.camera import list_cameras as connexion_list_cameras
 from blinkapp.models.ids import CameraId
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import ensure_blink_available, error_context
@@ -40,22 +41,7 @@ def setup_camera_routes(app: "Flask") -> None:
         Returns:
             JSON response with camera list
         """
-        from blinkapp.services.blink_service import ensure_blink_connection_initialized
-        from blinkapp.services.device_service import create_device_data
-
-        blink_connection = ensure_blink_connection_initialized()
-
-        with error_context("list cameras", CameraError):
-            blink = blink_connection.blink
-            if blink is None or not hasattr(blink, "cameras"):
-                return {"cameras": []}
-
-            cameras = []
-            for camera_id, camera in blink.cameras.items():
-                camera_data = create_device_data(camera)
-                cameras.append(camera_data)
-
-            return {"cameras": cameras}
+        return connexion_list_cameras()
 
     @app.route("/api/cameras/<camera_id_str>")
     @ensure_blink_available

@@ -5,14 +5,23 @@ from typing import Any
 from flask import Flask, request
 from flask.wrappers import Request
 
+from blinkapp.connexion_handlers.system import (
+    clear_systems_cache_route as connexion_clear_cache,
+)
+from blinkapp.connexion_handlers.system import (
+    get_devices_route as connexion_get_devices,
+)
+from blinkapp.connexion_handlers.system import (
+    get_system_devices_route as connexion_get_system_devices,
+)
+from blinkapp.connexion_handlers.system import (
+    get_systems_route as connexion_get_systems,
+)
+from blinkapp.connexion_handlers.system import (
+    update_system_route as connexion_update_system,
+)
 from blinkapp.models.ids import NetworkId
 from blinkapp.models.types import JsonDict
-from blinkapp.services.system_service import (
-    arm_system,
-    get_devices,
-    get_systems,
-    refresh_system,
-)
 from blinkapp.utils.decorators import (
     ensure_blink_available,
 )
@@ -44,7 +53,7 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with list of systems or error message
         """
-        return get_systems()
+        return connexion_get_systems()
 
     @app.route("/api/systems/<network_id_str>")
     @ensure_blink_available
@@ -52,16 +61,19 @@ def setup_system_routes(app: Flask) -> None:
         "get system details",
         validate_params={"network_id_str": NetworkId},
     )
-    def get_system_route(network_id: NetworkId) -> JsonDict:
-        """Get details for a specific Blink system.
+    def get_system_devices_route(network_id: NetworkId) -> JsonDict:
+        """Get devices for a specific Blink system.
 
         Args:
-            network_id: Network ID of the system to retrieve
+            network_id: Network ID of the system to retrieve devices for
 
         Returns:
-            JSON response with system details or error message
+            JSON response with devices list or error message
         """
-        return get_devices(network_id)
+        result = connexion_get_system_devices(str(network_id))
+        if isinstance(result, tuple):
+            return result[0]  # Return just the dict part for Flask
+        return result
 
     @app.route("/api/systems/<network_id_str>/devices")
     @ensure_blink_available
@@ -77,7 +89,10 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with list of devices or error message
         """
-        return get_devices(network_id)
+        result = connexion_get_devices(str(network_id))
+        if isinstance(result, tuple):
+            return result[0]  # Return just the dict part for Flask
+        return result
 
     @app.route("/api/systems/<network_id_str>", methods=["PUT"])
     @ensure_blink_available
@@ -98,12 +113,12 @@ def setup_system_routes(app: Flask) -> None:
         """
         assert isinstance(request, Request)
         data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
-        if data is not None and isinstance(data, dict):
-            armed: bool | None = data.get("armed")
-            if isinstance(armed, bool):
-                return arm_system(network_id, armed)
-        # Handle invalid data - this should be handled by validation decorators
-        return arm_system(network_id, False)  # Default fallback
+        if data is None:
+            data = {}
+        result = connexion_update_system(str(network_id), data)
+        if isinstance(result, tuple):
+            return result[0]  # Return just the dict part for Flask
+        return result
 
     @app.route("/api/systems/cache", methods=["DELETE"])
     @ensure_blink_available
@@ -114,4 +129,4 @@ def setup_system_routes(app: Flask) -> None:
         Returns:
             JSON response with success status or error message
         """
-        return refresh_system()
+        return connexion_clear_cache()

@@ -1,0 +1,6 @@
+"""Connexion-compatible API handlers.
+
+These functions are designed to work with Connexion's automatic parameter
+validation and routing. They use basic Python types that match the OpenAPI
+specification and handle their own type conversion internally.
+"""

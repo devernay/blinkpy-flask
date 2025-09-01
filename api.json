@@ -246,7 +246,7 @@
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
-        "operationId": "get_system_route",
+        "operationId": "get_system_devices_route",
         "parameters": [
           {
             "name": "network_id_str",

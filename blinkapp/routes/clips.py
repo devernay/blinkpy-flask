@@ -5,15 +5,13 @@ from flask.typing import (
     ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
 )
 
-from blinkapp.config import Config
+from blinkapp.connexion_handlers.clips import get_clips as connexion_get_clips
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import (
     ensure_blink_available,
-    error_context,
 )
-from blinkapp.utils.errors import ValidationError
 from blinkapp.utils.route_decorators import (
     api_route,
     api_route_with_validation,
@@ -46,34 +44,11 @@ def setup_clips_routes(app: Flask) -> None:
         Returns:
             JSON response with list of clips organized by date
         """
-        from blinkapp.services.blink_service import (
-            blink,
-            blink_connection,
-        )
-        from blinkapp.services.clip_service import (
-            process_cloud_clips,
-            process_local_clips,
-        )
-
-        assert blink is not None
-        storage_type = request.args.get("storage", "cloud")
-        if storage_type not in ["cloud", "local"]:
-            raise ValidationError(Config.ErrorMessages.INVALID_STORAGE_TYPE, 400)
-
-        with error_context(f"get {storage_type} clips"):
-            if storage_type == "cloud":
-                # Get cloud clips via blink operation
-                if blink_connection:
-                    videos_metadata = blink_connection.execute(
-                        blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
-                    )
-                else:
-                    videos_metadata = []
-                clips = process_cloud_clips(videos_metadata)
-            else:
-                clips = process_local_clips()
-
-        return {"clips": clips}
+        storage_type = request.args.get("storage")
+        result = connexion_get_clips(storage_type)
+        if isinstance(result, tuple):
+            return result[0]  # Return just the dict part for Flask
+        return result
 
     @app.route("/api/clips/<clip_id_str>/thumbnail", methods=["POST"])
     @ensure_blink_available
