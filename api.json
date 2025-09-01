@@ -139,7 +139,7 @@
       "get": {
         "summary": "Main application interface",
         "description": "Serves the main web interface. Redirects to login page if user is not authenticated, otherwise displays the main dashboard with camera thumbnails, system controls, and navigation.",
-        "operationId": "get_main_page",
+        "operationId": "index",
         "tags": ["Web Interface"],
         "responses": {
           "200": {
@@ -163,7 +163,7 @@
       "get": {
         "summary": "List all Blink systems",
         "description": "Retrieves a comprehensive list of all available Blink sync modules and their network information. Each system includes network ID, name, armed status, and associated cameras.",
-        "operationId": "list_systems",
+        "operationId": "get_systems_route",
         "tags": ["System Management"],
         "responses": {
           "200": {
@@ -246,7 +246,7 @@
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
-        "operationId": "get_system_details",
+        "operationId": "get_system_route",
         "parameters": [
           {
             "name": "network_id",
@@ -267,7 +267,7 @@
       "put": {
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
-        "operationId": "update_system",
+        "operationId": "update_system_route",
         "parameters": [
           {
             "name": "network_id",
@@ -548,7 +548,7 @@
       "get": {
         "summary": "List clips",
         "description": "Get list of clips from cloud or local storage",
-        "operationId": "list_clips",
+        "operationId": "get_clips",
         "parameters": [
           {
             "name": "storage",
