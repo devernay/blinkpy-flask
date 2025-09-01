@@ -7,6 +7,14 @@ from blinkapp.utils.formatters import format_time_ago
 
 
 class TestValidatorsFinal(unittest.TestCase):
+    """Pure unit tests for validation functions.
+
+    Inherits from unittest.TestCase because:
+    - Tests pure validation logic without external dependencies
+    - No mocks, Flask setup, or global state management needed
+    - Simple input/output validation testing
+    """
+
     """Test remaining uncovered validator functions."""
 
     def test_format_time_ago_valid_timestamp(self) -> None:

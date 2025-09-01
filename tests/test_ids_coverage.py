@@ -6,6 +6,14 @@ from blinkapp.models.ids import CameraId
 
 
 class TestIdsCoverage(unittest.TestCase):
+    """Pure unit tests for ID model edge cases and coverage.
+
+    Inherits from unittest.TestCase because:
+    - Tests simple model methods and validation logic
+    - No external dependencies, mocks, or async operations
+    - Pure unit testing of data model behavior
+    """
+
     """Test IDs module for coverage improvement."""
 
     def test_camera_id_int_invalid(self) -> None:

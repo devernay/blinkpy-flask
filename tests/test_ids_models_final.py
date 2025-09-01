@@ -7,6 +7,14 @@ from blinkapp.models.ids import CameraId, ClipId, NetworkId
 
 
 class TestIdsModelsFinal(unittest.TestCase):
+    """Pure unit tests for ID model classes.
+
+    Inherits from unittest.TestCase because:
+    - Tests simple data model validation and methods
+    - No mocks, Flask dependencies, or async operations
+    - Pure unit tests of model behavior and edge cases
+    """
+
     """Test remaining uncovered ID model functions."""
 
     def test_camera_id_string_methods(self) -> None:

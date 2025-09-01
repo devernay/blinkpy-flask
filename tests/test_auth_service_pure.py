@@ -12,6 +12,14 @@ from blinkapp.services.auth_service import (
 
 
 class TestAuthServicePure(unittest.TestCase):
+    """Pure unit tests for auth service functions.
+
+    Inherits from unittest.TestCase because:
+    - Tests pure functions without mocks or Flask dependencies
+    - No async operations or global state to clean up
+    - Simple validation and utility function testing
+    """
+
     """Test auth service pure functions."""
 
     def test_extract_username_domain_with_at_symbol(self) -> None:

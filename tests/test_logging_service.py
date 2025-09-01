@@ -12,6 +12,14 @@ from blinkapp.services.logging_service import (
 
 
 class TestLoggingService(unittest.TestCase):
+    """Pure unit tests for logging service functions.
+
+    Inherits from unittest.TestCase because:
+    - Tests logging configuration and utility functions
+    - No async operations, mocks, or Flask dependencies
+    - Simple logging setup and validation testing
+    """
+
     """Test logging service functions."""
 
     def test_log_error_with_logger(self) -> None:
