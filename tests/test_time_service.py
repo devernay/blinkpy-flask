@@ -9,8 +9,10 @@ from blinkapp.services.time_service import (
 )
 from blinkapp.utils.formatters import format_time_ago
 
+from .test_base import BaseTestCase
 
-class TestTimeService(unittest.TestCase):
+
+class TestTimeService(BaseTestCase):
     """Test time service functions."""
 
     def test_get_current_timestamp_with_provider(self) -> None:

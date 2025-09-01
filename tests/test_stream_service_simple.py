@@ -13,7 +13,7 @@ from blinkapp.services.stream_service import (
     validate_tcp_url,
 )
 
-from .test_base import create_mock_stream_manager
+from .test_base import BaseTestCase, create_mock_stream_manager
 
 try:
     from blinkapp.services.stream_manager import StreamManager
@@ -23,7 +23,7 @@ except ImportError:
         pass
 
 
-class TestStreamServiceSimple(unittest.TestCase):
+class TestStreamServiceSimple(BaseTestCase):
     """Test stream service pure functions."""
 
     def test_parse_tcp_url_empty_string(self) -> None:

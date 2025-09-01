@@ -12,12 +12,13 @@ from blinkapp.services.connection_service import (
 )
 
 from .test_base import (
+    BaseTestCase,
     create_mock_blink_instance,
     create_mock_live_stream,
 )
 
 
-class TestConnectionServiceTargeted(unittest.TestCase):
+class TestConnectionServiceTargeted(BaseTestCase):
     """Test connection service functions for coverage improvement."""
 
     def test_blink_connection_cleanup_streams_error(self) -> None:

@@ -11,8 +11,10 @@ from blinkapp.services.file_service import (
     write_file_safely,
 )
 
+from .test_base import BaseTestCase
 
-class TestFileService(unittest.TestCase):
+
+class TestFileService(BaseTestCase):
     """Test file service functions."""
 
     def test_write_file_safely_success(self) -> None:

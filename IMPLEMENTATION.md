@@ -756,7 +756,7 @@ Do not forget to compact your context before it overflows.
 
 ## High priority
 
-- Fix all pyright issues, fix all tests (full test suite), run ruff check and ruff format, then `git commit`
+- Fix all pyright errors and warnings, fix all tests (full test suite) including warnings, run ruff check and ruff format, then `git commit`
 
 - Update all docstrings, README.md, and add comments to the code where it's not self-explanatory.
 

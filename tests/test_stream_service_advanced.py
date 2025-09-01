@@ -2,7 +2,6 @@
 """Advanced tests for services/stream_service.py - targeting more missed lines."""
 
 import multiprocessing
-import unittest
 from unittest.mock import Mock, patch
 
 from blinkapp.services.stream_service import (
@@ -13,8 +12,10 @@ from blinkapp.services.stream_service import (
     validate_tcp_url,
 )
 
+from .test_base import BaseTestCase
 
-class TestStreamServiceAdvanced(unittest.TestCase):
+
+class TestStreamServiceAdvanced(BaseTestCase):
     """Test advanced stream service functions with highest missed lines."""
 
     def test_validate_camera_id_empty(self) -> None:
