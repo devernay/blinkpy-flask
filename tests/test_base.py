@@ -532,6 +532,18 @@ class FlaskTestCase(BaseTestCase):
         self.assertTrue(data["success"])
         return data
 
+    def authenticated_session(self):
+        """Context manager for authenticated session."""
+        from contextlib import contextmanager
+
+        @contextmanager
+        def session_context():
+            with self.client.session_transaction() as sess:
+                sess["authenticated"] = True
+            yield
+
+        return session_context()
+
     def assert_api_error(self, response, expected_status=500, error_contains=None):
         """Assert API response is an error with expected format."""
         import json
