@@ -760,6 +760,8 @@ Do not forget to compact your context before it overflows.
 
 - Update all docstrings, README.md, and add comments to the code where it's not self-explanatory.
 
+- Run test coverage and add new tests to expand the coverage. Focus first on modules that have the highest numbered of uncovered statements.
+
 ## Normal priority
 
 - Add comments and docstrings to each non-trivial individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
@@ -773,9 +775,3 @@ Do not forget to compact your context before it overflows.
 - Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations found in blinkpy-source. This file must truly reflect how the API works.
 
 # Lower priority
-
-- Run test coverage and add new tests to expand the coverage. Focus first on modules that have the highest numbered of uncovered statements.
-
-- I see that many connexion handlers are using Any type hints. Can you be more specific? Try not to use Any or object, nor "# type:ignore"
-
-- Several tests use assertIn, with a list of possible status codes. I think the tested functions should, in general, return a specific status code. Can you fix those tests?

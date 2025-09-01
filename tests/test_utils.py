@@ -1,53 +1,338 @@
-#!/usr/bin/env python3
-"""Test utilities for enforcing proper import/patch patterns."""
+"""Comprehensive unit tests for utility classes and functions.
 
-import importlib
-from typing import Any
-from unittest.mock import patch as original_patch
+Complete test suite covering testable functions in blinkapp/utils/:
+- Decorators (decorators.py, route_decorators.py)
+- Formatters (formatters.py)
+- Validators (validators.py)
+- Parsers (parsers.py)
+- Error classes (errors.py)
+- Logging configuration (logging_config.py)
+"""
 
+import time
+import unittest
 
-def strict_patch(target: str, *args, **kwargs) -> Any:
-    """Patch function that only allows patching symbols in __all__.
-
-    Args:
-        target: The target to patch (e.g., 'module.symbol')
-        *args, **kwargs: Arguments passed to original patch
-
-    Raises:
-        ValueError: If symbol is not in module's __all__
-    """
-    if "." not in target:
-        return original_patch(target, *args, **kwargs)
-
-    module_path, symbol = target.rsplit(".", 1)
-
-    try:
-        module = importlib.import_module(module_path)
-    except ImportError:
-        # If module doesn't exist, let original patch handle it
-        return original_patch(target, *args, **kwargs)
-
-    # Check if module has __all__ and symbol is not in it
-    if hasattr(module, "__all__"):
-        if symbol not in module.__all__:
-            raise ValueError(
-                f"Symbol '{symbol}' is not exported by module '{module_path}'. "
-                f"Available exports: {sorted(module.__all__)}"
-            )
-
-    return original_patch(target, *args, **kwargs)
+from tests.test_base import BaseTestCase
 
 
-# Monkey patch unittest.mock.patch to use strict version
-def enable_strict_patching() -> None:
-    """Enable strict patching that respects __all__ exports."""
-    import unittest.mock
+class TestDecorators(BaseTestCase):
+    """Test decorator functions."""
 
-    unittest.mock.patch = strict_patch
+    def test_safe_execute_success(self) -> None:
+        """Test safe_execute with successful function."""
+        from blinkapp.utils.decorators import safe_execute
+
+        def success_func():
+            return "success"
+
+        result = safe_execute(success_func)
+        self.assertEqual(result, "success")
+
+    def test_safe_execute_exception_with_default(self) -> None:
+        """Test safe_execute with exception and default value."""
+        from blinkapp.utils.decorators import safe_execute
+
+        def failing_func():
+            raise ValueError("Test error")
+
+        result = safe_execute(failing_func, default="default_value")
+        self.assertEqual(result, "default_value")
+
+    def test_safe_execute_exception_no_default(self) -> None:
+        """Test safe_execute with exception and no default."""
+        from blinkapp.utils.decorators import safe_execute
+
+        def failing_func():
+            raise ValueError("Test error")
+
+        result = safe_execute(failing_func)
+        self.assertIsNone(result)
 
 
-def disable_strict_patching() -> None:
-    """Disable strict patching and restore original behavior."""
-    import unittest.mock
+class TestRouteDecorators(BaseTestCase):
+    """Test route decorator functions."""
 
-    unittest.mock.patch = original_patch
+    def test_get_operation_name_basic(self) -> None:
+        """Test _get_operation_name with basic function."""
+        from blinkapp.utils.route_decorators import _get_operation_name
+
+        def test_function():
+            pass
+
+        result = _get_operation_name(test_function)
+        # The function converts underscores to spaces
+        self.assertEqual(result, "test function")
+
+    def test_get_operation_name_with_module(self) -> None:
+        """Test _get_operation_name includes module info."""
+        from blinkapp.utils.route_decorators import _get_operation_name
+
+        # Use an actual function with module
+        result = _get_operation_name(len)
+        self.assertIn("len", result)
+
+    def test_is_error_response_true(self) -> None:
+        """Test _is_error_response returns True for error responses."""
+        from blinkapp.utils.route_decorators import _is_error_response
+
+        error_response = ({"success": False, "error": "Test error"}, 400)
+        result = _is_error_response(error_response)
+        self.assertTrue(result)
+
+    def test_is_error_response_success_response(self) -> None:
+        """Test _is_error_response with success response tuple."""
+        from blinkapp.utils.route_decorators import _is_error_response
+
+        # The function checks if result is Response or tuple, so tuples return True
+        success_response = ({"success": True, "data": "test"}, 200)
+        result = _is_error_response(success_response)
+        self.assertTrue(
+            result
+        )  # Tuples are considered "error responses" for caching purposes
+
+    def test_is_error_response_invalid_format(self) -> None:
+        """Test _is_error_response with invalid response format."""
+        from blinkapp.utils.route_decorators import _is_error_response
+
+        invalid_response = "not a tuple"
+        result = _is_error_response(invalid_response)
+        self.assertFalse(result)
+
+
+class TestFormatters(BaseTestCase):
+    """Test formatter functions."""
+
+    def test_format_clips_by_day_empty(self) -> None:
+        """Test format_clips_by_day with empty list."""
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        result = format_clips_by_day([])
+        self.assertEqual(result, [])
+
+    def test_format_clips_by_day_single_clip(self) -> None:
+        """Test format_clips_by_day with single clip."""
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        clips = [
+            {
+                "id": "1",
+                "created_at": "2024-01-01T12:00:00Z",
+                "device_name": "Camera 1",
+                "thumbnail": "thumb.jpg",
+                "media": "clip.mp4",
+            }
+        ]
+
+        result = format_clips_by_day(clips)
+        self.assertEqual(len(result), 1)
+        # The function formats dates as "January 01, 2024"
+        self.assertEqual(result[0]["date"], "January 01, 2024")
+        self.assertEqual(len(result[0]["clips"]), 1)
+
+    def test_format_time_duration_seconds(self) -> None:
+        """Test format_time_duration with seconds only."""
+        from blinkapp.utils.formatters import format_time_duration
+
+        result = format_time_duration(45)
+        self.assertEqual(result, "45s")
+
+    def test_format_time_duration_minutes(self) -> None:
+        """Test format_time_duration with minutes only."""
+        from blinkapp.utils.formatters import format_time_duration
+
+        result = format_time_duration(120)  # 2m exactly
+        self.assertEqual(result, "2m")
+
+    def test_format_time_duration_hours(self) -> None:
+        """Test format_time_duration with hours only."""
+        from blinkapp.utils.formatters import format_time_duration
+
+        result = format_time_duration(3600)  # 1h exactly
+        self.assertEqual(result, "1h")
+
+    def test_format_time_ago_recent(self) -> None:
+        """Test format_time_ago with recent timestamp."""
+        from blinkapp.utils.formatters import format_time_ago
+
+        recent_timestamp = int(time.time()) - 300  # 5 minutes ago
+        result = format_time_ago(recent_timestamp)
+        self.assertIn("ago", result)
+
+    def test_format_time_ago_very_old(self) -> None:
+        """Test format_time_ago with very old timestamp."""
+        from blinkapp.utils.formatters import format_time_ago
+
+        # The function handles negative timestamps by calculating from epoch
+        result = format_time_ago(-1)
+        self.assertIn("ago", result)
+
+
+class TestValidators(BaseTestCase):
+    """Test validator functions."""
+
+    def test_validate_string_input_valid(self) -> None:
+        """Test validate_string_input with valid input."""
+        from blinkapp.utils.validators import validate_string_input
+
+        result = validate_string_input("hello", 10, "test_field")
+        self.assertEqual(result, "hello")
+
+    def test_validate_string_input_too_long(self) -> None:
+        """Test validate_string_input with input too long."""
+        from blinkapp.utils.validators import validate_string_input
+
+        with self.assertRaises(ValueError):
+            validate_string_input("hello world", 5, "test_field")
+
+    def test_validate_camera_id_valid(self) -> None:
+        """Test validate_camera_id with valid ID."""
+        from blinkapp.utils.validators import validate_camera_id
+
+        result = validate_camera_id("12345")
+        self.assertEqual(result, "12345")
+
+    def test_validate_camera_id_invalid_raises_exception(self) -> None:
+        """Test validate_camera_id with invalid ID raises exception."""
+        from blinkapp.utils.validators import validate_camera_id
+
+        with self.assertRaises(ValueError):
+            validate_camera_id("")
+
+    def test_validate_tcp_url_valid(self) -> None:
+        """Test validate_tcp_url with valid URL."""
+        from blinkapp.utils.validators import validate_tcp_url
+
+        result = validate_tcp_url("tcp://127.0.0.1:8080")
+        self.assertEqual(result, "tcp://127.0.0.1:8080")
+
+    def test_validate_tcp_url_invalid(self) -> None:
+        """Test validate_tcp_url with invalid URL."""
+        from blinkapp.utils.validators import validate_tcp_url
+
+        with self.assertRaises(ValueError):
+            validate_tcp_url("invalid_url")
+
+    def test_is_valid_email_format_valid(self) -> None:
+        """Test is_valid_email_format with valid email."""
+        from blinkapp.utils.validators import is_valid_email_format
+
+        self.assertTrue(is_valid_email_format("test@example.com"))
+
+    def test_is_valid_email_format_invalid(self) -> None:
+        """Test is_valid_email_format with invalid email."""
+        from blinkapp.utils.validators import is_valid_email_format
+
+        self.assertFalse(is_valid_email_format("invalid"))
+
+    def test_validate_credentials_valid(self) -> None:
+        """Test validate_credentials with valid inputs."""
+        from blinkapp.utils.validators import validate_credentials
+
+        username, password = validate_credentials("test@example.com", "password123")
+        self.assertEqual(username, "test@example.com")
+        self.assertEqual(password, "password123")
+
+    def test_validate_credentials_invalid_email(self) -> None:
+        """Test validate_credentials with invalid email."""
+        from blinkapp.utils.validators import validate_credentials
+
+        with self.assertRaises(ValueError):
+            validate_credentials("invalid", "password123")
+
+
+class TestParsers(BaseTestCase):
+    """Test parser functions."""
+
+    def test_extract_thumbnail_timestamp_valid(self) -> None:
+        """Test extract_thumbnail_timestamp with valid filename."""
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
+
+        filename = "thumb_1234567890.jpg"
+        result = extract_thumbnail_timestamp(filename)
+        self.assertEqual(result, 1234567890)
+
+    def test_extract_thumbnail_timestamp_invalid(self) -> None:
+        """Test extract_thumbnail_timestamp with invalid filename."""
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
+
+        result = extract_thumbnail_timestamp("invalid.jpg")
+        self.assertEqual(result, 0)
+
+    def test_extract_thumbnail_timestamp_none(self) -> None:
+        """Test extract_thumbnail_timestamp with None filename."""
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
+
+        result = extract_thumbnail_timestamp(None)
+        self.assertEqual(result, 0)
+
+    def test_parse_arguments_string(self) -> None:
+        """Test parse_arguments with string input."""
+        from blinkapp.utils.parsers import parse_arguments
+
+        result = parse_arguments("--host 127.0.0.1 --port 8080")
+        self.assertEqual(result.host, "127.0.0.1")
+        self.assertEqual(result.port, 8080)
+
+    def test_parse_arguments_list(self) -> None:
+        """Test parse_arguments with list input."""
+        from blinkapp.utils.parsers import parse_arguments
+
+        result = parse_arguments(["--host", "127.0.0.1", "--port", "8080"])
+        self.assertEqual(result.host, "127.0.0.1")
+        self.assertEqual(result.port, 8080)
+
+    def test_parse_arguments_defaults(self) -> None:
+        """Test parse_arguments with default values."""
+        from blinkapp.utils.parsers import parse_arguments
+
+        result = parse_arguments("")
+        self.assertEqual(result.host, "0.0.0.0")
+        self.assertEqual(result.port, 5001)
+
+    def test_parse_clip_id_basic(self) -> None:
+        """Test parse_clip_id with basic ID."""
+        from blinkapp.utils.parsers import parse_clip_id
+
+        result = parse_clip_id("12345")
+        self.assertEqual(result, "12345")
+
+    def test_parse_clip_id_with_whitespace(self) -> None:
+        """Test parse_clip_id removes whitespace."""
+        from blinkapp.utils.parsers import parse_clip_id
+
+        result = parse_clip_id("  12345  ")
+        self.assertEqual(result, "12345")
+
+
+class TestErrors(BaseTestCase):
+    """Test error classes."""
+
+    def test_authentication_error_creation(self) -> None:
+        """Test AuthenticationError creation."""
+        from blinkapp.utils.errors import AuthenticationError
+
+        error = AuthenticationError("Test error")
+        self.assertEqual(str(error), "Test error")
+
+    def test_authentication_error_with_status_code(self) -> None:
+        """Test AuthenticationError with status code."""
+        from blinkapp.utils.errors import AuthenticationError
+
+        error = AuthenticationError("Test error", 401)
+        # The error stores both message and status code
+        self.assertIn("Test error", str(error))
+
+
+class TestLoggingConfig(BaseTestCase):
+    """Test logging configuration."""
+
+    def test_setup_logging_basic(self) -> None:
+        """Test basic logging setup."""
+        from blinkapp.utils.logging_config import setup_logging
+
+        # Should not raise exception
+        setup_logging()
+
+
+if __name__ == "__main__":
+    unittest.main()

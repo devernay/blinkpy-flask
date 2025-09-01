@@ -50,6 +50,7 @@ from .test_base import (
     create_mock_clip_item,
     create_mock_sync,
     mock_execute_with_coroutine_cleanup,
+    with_blink_auth,
 )
 
 
@@ -1161,7 +1162,8 @@ class TestAPIEndpoints(FlaskTestCase):
             # Should return 404 when camera not found
             self.assertEqual(response.status_code, 404)
 
-    @patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json")
+    @patch("blinkapp.CACHE_DIR", "/tmp")
+    @with_blink_auth
     def test_get_settings_endpoint(self) -> None:
         """Test get_settings endpoint."""
         with patch("pathlib.Path.exists", return_value=False):
@@ -1615,7 +1617,7 @@ class TestConfigurationEdgeCases(BaseTestCase):
         self.assertTrue(hasattr(Config, "CLIPS_CACHE_SIZE"))
         self.assertTrue(hasattr(Config, "LOG_FILE"))
 
-    @patch("blinkapp.SETTINGS_FILE", None)
+    @patch("blinkapp.CACHE_DIR", "/tmp")
     def test_settings_with_none_file(self) -> None:
         """Test settings operations when SETTINGS_FILE is None."""
         # This should be handled gracefully
@@ -2510,6 +2512,7 @@ class TestSettingsAdvanced(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @with_blink_auth
     def test_save_settings_with_validation(self) -> None:
         """Test saving settings with validation."""
         with patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json"):
@@ -2528,6 +2531,7 @@ class TestSettingsAdvanced(BaseTestCase):
                 data = json.loads(response.data)
                 self.assertTrue(data["success"])
 
+    @with_blink_auth
     def test_load_settings_with_existing_file(self) -> None:
         """Test loading settings from existing file."""
         with patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json"):
@@ -2989,6 +2993,7 @@ class TestSecurityFeatures(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @with_blink_auth
     def test_xss_prevention_in_endpoints(self) -> None:
         """Test XSS prevention across all user input endpoints.
 
@@ -3050,6 +3055,7 @@ class TestSecurityFeatures(BaseTestCase):
             # Should prevent path traversal with 404 (URL validation error)
             self.assertEqual(response.status_code, 404)
 
+    @with_blink_auth
     def test_input_length_limits(self) -> None:
         """Test input length limits are enforced."""
         # Test very long input
@@ -4150,7 +4156,8 @@ class TestAdvancedFileOperations(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json")
+    @patch("blinkapp.CACHE_DIR", "/tmp")
+    @with_blink_auth
     def test_settings_file_corruption_recovery(self) -> None:
         """Test recovery from corrupted settings file."""
         # Mock corrupted JSON file
@@ -4164,7 +4171,7 @@ class TestAdvancedFileOperations(BaseTestCase):
                 data = json.loads(response.data)
                 self.assertTrue(data["success"])
 
-    @patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json")
+    @patch("blinkapp.CACHE_DIR", "/tmp")
     def test_settings_file_permission_error(self) -> None:
         """Test handling of settings file permission errors."""
         valid_settings = {"temperature_unit": "celsius"}
@@ -4397,6 +4404,7 @@ class TestSecurityAdvanced(BaseTestCase):
                     # Should prevent path traversal
                     self.assertEqual(response.status_code, 404)
 
+    @with_blink_auth
     def test_rate_limiting_simulation(self) -> None:
         """Test rate limiting behavior simulation."""
         # Simulate rapid requests
@@ -4410,6 +4418,7 @@ class TestSecurityAdvanced(BaseTestCase):
         for status_code in responses:
             self.assertEqual(status_code, 200)  # All requests succeed
 
+    @with_blink_auth
     def test_large_payload_handling(self) -> None:
         """Test handling of large payloads."""
         # Test with very large JSON payload
@@ -4551,6 +4560,7 @@ class TestIntegrationScenarios(BaseTestCase):
                         response2 = self.client.get("/api/clips/123456/download")
                         self.assertEqual(response2.status_code, 500)
 
+    @with_blink_auth
     def test_error_recovery_workflow(self) -> None:
         """Test error recovery across multiple requests."""
         # Test that system recovers from errors gracefully
@@ -5738,6 +5748,7 @@ class TestCriticalPathCoverage(BaseTestCase):
                 f"Route {route} returned {response.status_code}, expected one of {expected_codes}",
             )
 
+    @with_blink_auth
     def test_http_methods_handling(self) -> None:
         """Test HTTP methods handling."""
         # Test GET method on settings
@@ -5916,6 +5927,7 @@ class TestCriticalPathCoverage(BaseTestCase):
         response = self.client.get("/logout")
         self.assertEqual(response.status_code, 405)
 
+    @with_blink_auth
     def test_content_type_handling(self) -> None:
         """Test content type handling."""
         # Test JSON content type

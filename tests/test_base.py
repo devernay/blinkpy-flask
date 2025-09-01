@@ -16,6 +16,7 @@ __all__ = [
     "initialize_for_testing",
     "BaseTestCase",
     "FlaskTestCase",
+    "with_blink_auth",
 ]
 
 import functools
@@ -404,6 +405,18 @@ def with_app_initialized(func: Callable[P, T]) -> Callable[P, T]:  # noqa: UP047
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         initialize_for_testing()
         return func(*args, **kwargs)
+
+    return wrapper
+
+
+def with_blink_auth(test_func):
+    """Decorator to add blink authentication mock to test methods."""
+    from unittest.mock import patch
+
+    @functools.wraps(test_func)
+    @patch("blinkapp.services.blink_service.blink", create_mock_blink_instance())
+    def wrapper(*args, **kwargs):
+        return test_func(*args, **kwargs)
 
     return wrapper
 
