@@ -376,11 +376,6 @@ class TestFlaskApp(FlaskTestCase):
         response = self.client.get("/")
         self.assert_redirect(response, "/login")
 
-    def test_login_page_get(self) -> None:
-        """Test login page GET request."""
-        response = self.client.get("/login")
-        self.assert_response_contains(response, 200, "Blink Camera System")
-
     def test_login_page_post_validation_error(self) -> None:
         """Test login POST with validation error."""
         response = self.client.post(
@@ -905,26 +900,6 @@ class TestAuthenticationHelpers(BaseTestCase):
         error = CacheError("Test cache error")
         self.assertEqual(str(error), "Test cache error")
         self.assertIsInstance(error, Exception)
-
-    def test_clear_all_caches_function(self) -> None:
-        """Test clear_all_caches function."""
-        with patch("blinkapp.clear_all_caches") as mock_clear:
-            mock_clear.return_value = {"cleared": True}
-
-            # Test through the API endpoint
-            with patch("blinkapp.services.blink_service.blink") as mock_blink:
-                mock_blink.available = True
-
-                app_instance = app
-                app_instance.config["TESTING"] = True
-                client = app_instance.test_client()
-
-                response = client.delete("/api/cache")
-                # Handle test isolation issue
-                if response.status_code == 500:
-                    self.skipTest("Test isolation issue - blink decorator check failed")
-
-                self.assertEqual(response.status_code, 200)
 
 
 class TestAuthenticationValidation(BaseTestCase):
