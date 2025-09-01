@@ -53,10 +53,10 @@ class TestSimpleCoverage(BaseTestCase):
         from blinkapp.utils.decorators import error_context
 
         @error_context("test operation")
-        def test_function() -> str:
+        def simple_test_function() -> str:
             return "success"
 
-        result = test_function()
+        result = simple_test_function()
         self.assertEqual(result, "success")
 
     def test_connection_service_basic(self) -> None:

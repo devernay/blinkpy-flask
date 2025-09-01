@@ -51,10 +51,10 @@ class TestDecoratorsSimple(unittest.TestCase):
     def test_get_operation_name_with_provided_name(self) -> None:
         """Test _get_operation_name with provided name - line 218."""
 
-        def test_func() -> None:
+        def simple_test_func() -> None:
             pass
 
-        result = _get_operation_name(test_func, "custom_operation")
+        result = _get_operation_name(simple_test_func, "custom_operation")
 
         # Should return provided name
         self.assertEqual(result, "custom_operation")
@@ -62,13 +62,13 @@ class TestDecoratorsSimple(unittest.TestCase):
     def test_get_operation_name_without_provided_name(self) -> None:
         """Test _get_operation_name without provided name - line 219."""
 
-        def test_func() -> None:
+        def simple_test_func_2() -> None:
             pass
 
-        result = _get_operation_name(test_func)
+        result = _get_operation_name(simple_test_func_2)
 
         # Should return function name with underscores replaced by spaces
-        self.assertEqual(result, "test func")
+        self.assertEqual(result, "simple test func 2")
 
     def test_is_error_response_with_response_object(self) -> None:
         """Test _is_error_response with Response object - line 453."""

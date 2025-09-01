@@ -235,6 +235,38 @@ class TestConfigurationValues(BaseTestCase):
         self.assertEqual(format_time_duration(0), "0s")
         with self.assertRaises(ValueError):
             format_time_duration(-1)
+
+    def test_validate_string_input(self) -> None:
+        """Test string input validation."""
+        from blinkapp.utils.validators import validate_string_input
+        
+        # Test valid input
+        result = validate_string_input("test", 10, "field")
+        self.assertEqual(result, "test")
+        
+        # Test whitespace trimming
+        result = validate_string_input("  test  ", 10, "field")
+        self.assertEqual(result, "test")
+        
+        # Test empty input
+        with self.assertRaises(ValueError):
+            validate_string_input("", 10, "field")
+            
+        # Test too long input
+        with self.assertRaises(ValueError):
+            validate_string_input("toolong", 5, "field")
+
+    def test_id_split_method(self) -> None:
+        """Test ID split method delegation."""
+        from blinkapp.models.ids import CameraId
+        
+        camera_id = CameraId("12-34-56")
+        parts = camera_id.split("-")
+        self.assertEqual(parts, ["12", "34", "56"])
+        
+        # Test with maxsplit
+        parts = camera_id.split("-", 1)
+        self.assertEqual(parts, ["12", "34-56"])
         self.assertTrue(hasattr(Config, "THUMBNAILS_SUBDIR"))
         self.assertTrue(hasattr(Config, "CLIPS_SUBDIR"))
 
