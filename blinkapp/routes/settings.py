@@ -9,6 +9,7 @@ from flask.wrappers import Request
 
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
+from blinkapp.utils.decorators import ensure_blink_available
 from blinkapp.utils.route_decorators import method_dispatch_route
 
 # Explicitly define what this module exports
@@ -21,6 +22,7 @@ def setup_settings_routes(app: Flask) -> None:
     """Set up settings management routes."""
 
     @app.route("/api/settings", methods=["GET", "PUT"])
+    @ensure_blink_available
     @method_dispatch_route("settings")
     def settings_route() -> ResponseReturnValue:
         """Get or save application settings.

@@ -64,7 +64,7 @@ class TestAPIRouteAuthentication(FlaskTestCase):
 
     def test_api_routes_require_authentication(self) -> None:
         """Test that API routes require authentication."""
-        api_routes = ["/api/systems", "/api/cameras", "/api/clips"]
+        api_routes = ["/api/systems", "/api/cameras", "/api/clips", "/api/settings"]
 
         for route in api_routes:
             with self.subTest(route=route):
