@@ -118,6 +118,7 @@ def _validate_json_payload(
     from blinkapp import Config, create_api_response
 
     assert isinstance(request, Request)
+    # Flask's request.get_json() can return None, but pyright doesn't recognize the method exists
     data: dict[str, object] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
     if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(

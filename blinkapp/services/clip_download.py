@@ -21,9 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from flask import jsonify, send_file
-from flask.typing import (
-    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
-)
+from flask.typing import ResponseReturnValue
 
 if TYPE_CHECKING:
     from blinkpy.blinkpy import Blink
@@ -59,6 +57,7 @@ def _download_cloud_clip_core_sync(
     if blink_instance is None:
         try:
             # This will trigger the expected AttributeError for backward compatibility
+            # blinkpy's Blink instance may be None, but we know it exists in this context
             blink_instance.get_clip_url(clip_id)  # type: ignore[union-attr]
         except AttributeError as e:
             return None, f"Error downloading cloud clip {clip_id}: {e}"

@@ -1,9 +1,8 @@
 """Clip management routes for the Blink Flask application."""
 
-from flask import Flask, jsonify, request
-from flask.typing import (
-    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
-)
+from typing import Union
+
+from flask import Flask, Response, jsonify, request
 
 from blinkapp.connexion_handlers.clips import get_clips
 from blinkapp.models.ids import ClipId
@@ -98,7 +97,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips/<clip_id_str>/download")
     @ensure_blink_available
     @api_route_with_validation("download clip", validate_params={"clip_id_str": ClipId})
-    def download_clip_route(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def download_clip_route(clip_id: ClipId) -> Union[Response, tuple[str, int]]:
         """Download a specific clip.
 
         Args:
@@ -140,7 +139,7 @@ def setup_clips_routes(app: Flask) -> None:
 
     @app.route("/api/clips/<clip_id_str>/thumbnail")
     @file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
-    def get_clip_thumbnail_route(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def get_clip_thumbnail_route(clip_id: ClipId) -> Union[Response, tuple[str, int]]:
         """Serve clip thumbnail or check availability.
 
         Query Parameters:

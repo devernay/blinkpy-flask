@@ -4,9 +4,7 @@ import json
 from pathlib import Path
 
 from flask import Flask, jsonify, request
-from flask.typing import (
-    ResponseReturnValue,  # pyright: ignore[reportUnknownVariableType]
-)
+from flask.typing import ResponseReturnValue
 from flask.wrappers import Request
 
 from blinkapp.config import Config
@@ -24,7 +22,7 @@ def setup_settings_routes(app: Flask) -> None:
 
     @app.route("/api/settings", methods=["GET", "PUT"])
     @method_dispatch_route("settings")
-    def settings_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def settings_route() -> ResponseReturnValue:
         """Get or save application settings.
 
         GET: Returns current user settings (temperature units, clip retention, etc.)
@@ -60,6 +58,7 @@ def setup_settings_routes(app: Flask) -> None:
         else:  # PUT - Save new settings
             # Validate incoming JSON data
             assert isinstance(request, Request)
+            # Flask's request.get_json() method exists but pyright has issues with it in some contexts
             data: dict[str, object] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
             if data is None or not isinstance(data, dict):
                 response, status_code = create_api_response(

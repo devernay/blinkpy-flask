@@ -104,6 +104,7 @@ def setup_system_routes(app: Flask) -> None:
             JSON response with success status or error message
         """
         assert isinstance(request, Request)
+        # Flask's request.get_json() method exists but pyright has issues with it in some contexts
         data: dict[str, Any] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
         if data is None:
             data = {}
