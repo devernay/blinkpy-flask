@@ -4215,6 +4215,11 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
             thumbnail="https://example.com/thumb.jpg?ts=1000",
         )
 
+        # Prevent AsyncMock coroutines by explicitly mocking async methods
+        mock_camera.get_thumbnail = Mock(return_value=None)
+        mock_camera.snap_picture = Mock(return_value=None)
+        mock_camera.update = Mock(return_value=None)
+
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
         mock_blink.sync = {"sync1": mock_sync}
