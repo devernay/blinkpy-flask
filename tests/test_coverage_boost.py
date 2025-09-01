@@ -212,11 +212,11 @@ class TestConfigurationValues(BaseTestCase):
     def test_id_iteration(self) -> None:
         """Test ID iteration functionality."""
         from blinkapp.models.ids import CameraId
-        
+
         camera_id = CameraId("12345")
         chars = list(camera_id)
         self.assertEqual(chars, ['1', '2', '3', '4', '5'])
-        
+
         # Test with string iteration
         result = ''.join(char for char in camera_id)
         self.assertEqual(result, "12345")
@@ -224,13 +224,13 @@ class TestConfigurationValues(BaseTestCase):
     def test_format_time_duration(self) -> None:
         """Test time duration formatting."""
         from blinkapp.utils.formatters import format_time_duration
-        
+
         # Test various durations
         self.assertEqual(format_time_duration(30), "30s")
         self.assertEqual(format_time_duration(90), "1m")
         self.assertEqual(format_time_duration(3600), "1h")
         self.assertEqual(format_time_duration(86400), "1d")
-        
+
         # Test edge cases
         self.assertEqual(format_time_duration(0), "0s")
         with self.assertRaises(ValueError):
