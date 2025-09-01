@@ -333,24 +333,31 @@ The project includes a comprehensive test suite with **50% code coverage** and *
 
 ### Quick Start
 ```bash
-# Run all tests (recommended)
-cd tests
-python run_tests.py
+# Run all tests
+pytest
 
-# Or use the convenience script from project root
-./test.sh
+# Run with coverage
+pytest --cov=blinkapp --cov-report=html
 
-# Run all tests with coverage
-cd tests
-python run_tests.py --coverage
+# Run specific test suites by marker
+pytest -m core                             # Core application tests
+pytest -m critical                         # Critical coverage tests
+pytest -m boost                            # Coverage boost tests
+
+# Run specific test files
+pytest tests/test_app.py                    # Core application tests
+pytest tests/test_critical_coverage.py     # Critical coverage tests
+pytest tests/test_coverage_boost.py        # Coverage boost tests
+
+# Run with verbose output
+pytest -v
+```
 
 # Run fast test suite (core tests only)
-cd tests
-python run_tests.py --fast
+pytest tests/test_app.py
 
 # Generate HTML coverage report
-cd tests
-python run_tests.py --html
+pytest --cov=blinkapp --cov-report=html
 ```
 
 ### Regression Testing
@@ -402,13 +409,18 @@ The script exits with:
 
 ### Using pytest directly
 ```bash
-# Run all tests (must be run from tests directory)
-cd tests
+# Run all tests
 pytest
 
+# Run specific test file
+pytest tests/test_app.py
+
 # Run with coverage
-cd tests
 pytest --cov=blinkapp --cov-report=term-missing
+
+# Generate HTML coverage report
+pytest --cov=blinkapp --cov-report=html --cov-report=term
+```
 
 # Run specific test file
 cd tests
@@ -419,25 +431,26 @@ cd tests
 pytest --cov=blinkapp --cov-report=html --cov-report=term
 ```
 
-### Test Runner Options
-The `tests/run_tests.py` script provides several options:
-
+### Test Options
 ```bash
 # Basic usage
-python run_tests.py                    # All core tests
-python run_tests.py --coverage        # With detailed coverage
-python run_tests.py --html            # Generate HTML report
-python run_tests.py --fast            # Core tests only
-python run_tests.py --verbose         # Verbose output
+pytest                                     # All tests
+pytest --cov=blinkapp --cov-report=html   # With HTML coverage
+pytest -v                                 # Verbose output
+pytest -q                                 # Quiet output
 
-# Specific test suites
-python run_tests.py --specific core      # Main application tests
-python run_tests.py --specific critical  # Critical path tests
-python run_tests.py --specific boost     # Coverage boost tests
-python run_tests.py --specific advanced  # Experimental tests
+# Specific test suites by marker (fast)
+pytest -m core                             # Core application tests (12 tests)
+pytest -m critical                        # Critical path tests
+pytest -m boost                           # Coverage boost tests
+
+# Specific test suites by file (comprehensive)
+pytest tests/test_app.py                   # Core application tests (288 tests)
+pytest tests/test_critical_coverage.py    # Critical path tests
+pytest tests/test_coverage_boost.py       # Coverage boost tests
 
 # Additional options
-python run_tests.py --no-warnings     # Suppress warnings
+pytest --disable-warnings                 # Suppress warnings
 ```
 
 ### Test Coverage Status

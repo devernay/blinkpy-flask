@@ -762,17 +762,15 @@ Do not forget to compact your context before it overflows.
 
 ## Normal priority
 
-- fix get_session_transaction to return an actual type. I know that "Iterator[SessionMixin]" doesn't work because client.session_transaction() returns a context manager, not an iterator. Find the right return type.
-
 - Where do the thresholds for voltage values in format_battery_level come from? Did you get these from blinkpy-source code or tests? Or did you get these from somewhere else?
 
 - Check in blinkpy-source if temperatures in the Blink API are supposed to be in Celsius or Fahrenheit (also look at the docume,ntation and tests from blinkpy-source). Update the code and tests for the app accordingly.
 
-- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works.
+- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works. Also add "operationId" tags to facilitate the migration to the connexion package, and make sure that API entry points are coded as connexion "operations".
 
 - Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations in blinkpy-source. This file must truly reflect how the API works.
 
-- Add significantly more comments to the tests, explaining what we are testing, why we are testing it, and how the test works.
+- Add significantly more comments and docstrings to each individual test, explaining what we are testing, why we are testing it, and how the test works.
 
 - Are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
 
