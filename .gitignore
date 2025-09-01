@@ -8,3 +8,6 @@ __pycache__
 tests/.coverage
 /blinkpy-stubs/blinkpy_stubs.egg-info
 /types-blinkpy/types_blinkpy.egg-info
+
+# Prevent duplicate pytest configuration
+tests/pytest.ini
