@@ -111,17 +111,23 @@ class TestFormatters(BaseTestCase):
 
     def test_format_clips_by_day_single_clip(self) -> None:
         """Test format_clips_by_day with single clip."""
+        from typing import cast
+
+        from blinkapp.models.types import ClipData
         from blinkapp.utils.formatters import format_clips_by_day
 
-        clips = [
-            {
-                "id": "1",
-                "created_at": "2024-01-01T12:00:00Z",
-                "device_name": "Camera 1",
-                "thumbnail": "thumb.jpg",
-                "media": "clip.mp4",
-            }
-        ]
+        clips = cast(
+            list[ClipData],
+            [
+                {
+                    "id": "1",
+                    "created_at": "2024-01-01T12:00:00Z",
+                    "device_name": "Camera 1",
+                    "thumbnail": "thumb.jpg",
+                    "media": "clip.mp4",
+                }
+            ],
+        )
 
         result = format_clips_by_day(clips)
         self.assertEqual(len(result), 1)

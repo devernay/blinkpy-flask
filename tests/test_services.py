@@ -208,7 +208,10 @@ class TestCacheService(BaseTestCase):
         """Test cache initialization."""
         from blinkapp.services.cache_service import initialize_caches
 
-        config = {"CLIPS_CACHE_SIZE": 50, "THUMBNAIL_CACHE_SIZE": 100}
+        config: dict[str, object] = {
+            "CLIPS_CACHE_SIZE": 50,
+            "THUMBNAIL_CACHE_SIZE": 100,
+        }
         initialize_caches(config)
 
         # Verify caches are initialized
@@ -224,7 +227,10 @@ class TestCacheService(BaseTestCase):
             initialize_caches,
         )
 
-        config = {"CLIPS_CACHE_SIZE": 50, "THUMBNAIL_CACHE_SIZE": 100}
+        config: dict[str, object] = {
+            "CLIPS_CACHE_SIZE": 50,
+            "THUMBNAIL_CACHE_SIZE": 100,
+        }
         initialize_caches(config)
 
         cache = ensure_clips_cache_initialized()
@@ -237,7 +243,10 @@ class TestCacheService(BaseTestCase):
             initialize_caches,
         )
 
-        config = {"CLIPS_CACHE_SIZE": 50, "THUMBNAIL_CACHE_SIZE": 100}
+        config: dict[str, object] = {
+            "CLIPS_CACHE_SIZE": 50,
+            "THUMBNAIL_CACHE_SIZE": 100,
+        }
         initialize_caches(config)
 
         cache = ensure_camera_thumbnail_cache_initialized()
@@ -251,7 +260,10 @@ class TestCacheService(BaseTestCase):
         )
 
         # Initialize caches
-        config = {"CLIPS_CACHE_SIZE": 50, "THUMBNAIL_CACHE_SIZE": 100}
+        config: dict[str, object] = {
+            "CLIPS_CACHE_SIZE": 50,
+            "THUMBNAIL_CACHE_SIZE": 100,
+        }
         initialize_caches(config)
 
         # Reset caches

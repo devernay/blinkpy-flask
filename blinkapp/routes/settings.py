@@ -60,7 +60,8 @@ def setup_settings_routes(app: Flask) -> None:
         else:  # PUT - Save new settings
             # Validate incoming JSON data
             assert isinstance(request, Request)
-            # Flask's request.get_json() method exists but pyright has issues with it in some contexts
+            # Flask's request.get_json() method exists but pyright doesn't recognize it on the Request type
+            # This is a known issue with Flask type stubs - the method is dynamically added
             data: dict[str, object] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
             if data is None or not isinstance(data, dict):
                 response, status_code = create_api_response(

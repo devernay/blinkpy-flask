@@ -281,8 +281,8 @@ class TestConfigurationValues(BaseTestCase):
         self.assertFalse(is_valid_email_format("invalid"))
         self.assertFalse(is_valid_email_format("@domain.com"))
         self.assertFalse(is_valid_email_format("user@"))
-        # Test None input (type: ignore for testing purposes)
-        self.assertFalse(is_valid_email_format(None))  # type: ignore[arg-type]
+        # Test None input - function handles None gracefully but type checker doesn't know this
+        self.assertFalse(is_valid_email_format(None))  # type: ignore[arg-type] # Testing None input handling
 
     def test_credential_validation(self) -> None:
         """Test credential validation."""

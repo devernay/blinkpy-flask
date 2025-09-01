@@ -56,9 +56,9 @@ def _download_cloud_clip_core_sync(
     """Synchronous wrapper for _download_cloud_clip_core for testing."""
     if blink_instance is None:
         try:
-            # This will trigger the expected AttributeError for backward compatibility
-            # blinkpy's Blink instance may be None, but we know it exists in this context
-            blink_instance.get_clip_url(clip_id)  # type: ignore[union-attr]
+            # Intentionally call method on None to trigger AttributeError for backward compatibility
+            # This tests the error handling path when blink_instance is None
+            blink_instance.get_clip_url(clip_id)  # type: ignore[union-attr] # Intentional None access for testing
         except AttributeError as e:
             return None, f"Error downloading cloud clip {clip_id}: {e}"
 

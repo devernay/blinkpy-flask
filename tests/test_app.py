@@ -20,7 +20,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from io import IOBase
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 
 import requests
@@ -1422,7 +1422,7 @@ class TestClipProcessing(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return []  # type: ignore[return-value]
+            return cast(T, [])  # type: ignore[return-value] # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -2079,7 +2079,7 @@ class TestClipDownloadOperations(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return []  # type: ignore[return-value]
+            return cast(T, [])  # type: ignore[return-value] # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -2322,7 +2322,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return None  # type: ignore[return-value]
+            return cast(T, None)  # type: ignore[return-value] # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -3524,7 +3524,7 @@ class TestSystemDeviceOperations(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return None  # type: ignore[return-value]
+            return cast(T, None)  # type: ignore[return-value] # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -4129,7 +4129,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return True  # type: ignore[return-value]
+            return cast(T, True)  # type: ignore[return-value] # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -5495,7 +5495,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return None  # type: ignore[return-value]
+            return cast(T, None)  # type: ignore[return-value] # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 

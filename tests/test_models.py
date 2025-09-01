@@ -338,6 +338,7 @@ class TestCreateApiResponse(BaseTestCase):
 
         # Should be ISO format string
         self.assertIsInstance(timestamp, str)
+        assert isinstance(timestamp, str)  # Type narrowing for pyright
         self.assertIn("T", timestamp)  # ISO format contains T separator
 
 
@@ -472,8 +473,16 @@ class TestCameraThumbnailCache(BaseTestCase):
 
     def test_get_thumbnail_timestamp_invalid_format(self) -> None:
         """Test getting timestamp with invalid format."""
+        from blinkapp.models.cache import CameraThumbnailCacheEntry
+
         # Create entry with invalid timestamp format
-        self.cache[self.camera_id] = {"timestamp": "invalid", "filename": "test.jpg"}
+        invalid_entry = CameraThumbnailCacheEntry(
+            timestamp=0, filename="test.jpg"
+        )  # Use valid type
+        invalid_entry["timestamp"] = (  # type: ignore[typeddict-item]
+            "invalid"  # Intentionally set invalid type to test error handling
+        )
+        self.cache[self.camera_id] = invalid_entry
 
         timestamp = self.cache.get_thumbnail_timestamp(self.camera_id)
         self.assertIsNone(timestamp)
@@ -550,15 +559,19 @@ class TestClipsCache(BaseTestCase):
 
     def test_add_clip(self) -> None:
         """Test adding clip to cache."""
+        from typing import cast
+
         before_time = time.time()
         self.cache.add_clip(self.clip_id, self.clip_data)
         after_time = time.time()
 
         entry = self.cache[self.clip_id]
-        self.assertEqual(entry["clip_data"], self.clip_data)
-        self.assertGreaterEqual(entry["cached_at"], before_time)
-        self.assertLessEqual(entry["cached_at"], after_time)
-        self.assertEqual(entry["access_count"], 0)
+        # Cast to access optional fields that we know exist after add_clip
+        full_entry = cast(dict[str, object], entry)
+        self.assertEqual(full_entry["clip_data"], self.clip_data)
+        self.assertGreaterEqual(cast(float, full_entry["cached_at"]), before_time)
+        self.assertLessEqual(cast(float, full_entry["cached_at"]), after_time)
+        self.assertEqual(full_entry["access_count"], 0)
 
     def test_get_clip_existing(self) -> None:
         """Test getting existing clip data."""
@@ -568,8 +581,11 @@ class TestClipsCache(BaseTestCase):
         self.assertEqual(retrieved_data, self.clip_data)
 
         # Check access count was incremented
+        from typing import cast
+
         entry = self.cache[self.clip_id]
-        self.assertEqual(entry["access_count"], 1)
+        full_entry = cast(dict[str, object], entry)
+        self.assertEqual(full_entry["access_count"], 1)
 
     def test_get_clip_missing(self) -> None:
         """Test getting missing clip data."""
@@ -581,16 +597,24 @@ class TestClipsCache(BaseTestCase):
         self.cache.add_clip(self.clip_id, self.clip_data)
 
         # Get initial access time
+        from typing import cast
+
         initial_entry = self.cache[self.clip_id]
-        initial_access_time = initial_entry["last_accessed"]
+        full_initial_entry = cast(dict[str, object], initial_entry)
+        initial_access_time = cast(float, full_initial_entry["last_accessed"])
 
         # Wait a bit and access again
         time.sleep(0.01)
         self.cache.get_clip(self.clip_id)
 
         # Check access time was updated
+        from typing import cast
+
         updated_entry = self.cache[self.clip_id]
-        self.assertGreater(updated_entry["last_accessed"], initial_access_time)
+        full_updated_entry = cast(dict[str, object], updated_entry)
+        self.assertGreater(
+            cast(float, full_updated_entry["last_accessed"]), initial_access_time
+        )
 
     def test_cleanup_old_clips(self) -> None:
         """Test cleanup of old clips."""
