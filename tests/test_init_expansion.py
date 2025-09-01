@@ -5,7 +5,6 @@ import unittest
 
 from blinkapp import (
     handle_api_error,
-    initialize_cache_paths,
     require_sync_module,
     setup_logging,
 )
