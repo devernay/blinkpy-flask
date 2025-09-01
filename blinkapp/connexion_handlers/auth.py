@@ -3,7 +3,7 @@
 from flask import render_template
 
 
-def index() -> str:
+def main_page() -> str:
     """Render the main application page.
 
     Returns:

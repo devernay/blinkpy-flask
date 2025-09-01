@@ -139,7 +139,7 @@
       "get": {
         "summary": "Main application interface",
         "description": "Serves the main web interface. Redirects to login page if user is not authenticated, otherwise displays the main dashboard with camera thumbnails, system controls, and navigation.",
-        "operationId": "index",
+        "operationId": "main_page",
         "tags": ["Web Interface"],
         "responses": {
           "200": {

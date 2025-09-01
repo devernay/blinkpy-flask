@@ -21,7 +21,7 @@ from flask.typing import (
 )
 
 from blinkapp.config import Config
-from blinkapp.connexion_handlers.auth import index
+from blinkapp.connexion_handlers.auth import main_page
 from blinkapp.models.types import AuthJsonDict as JsonDict
 from blinkapp.services.auth_service import (
     initialize_blink,
@@ -230,7 +230,7 @@ def register_auth_routes(app: Flask) -> None:
     """Register authentication routes with the Flask app."""
 
     @app.route("/")
-    def index_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def main_page_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Main page - redirect to login if not authenticated.
 
         Returns:
@@ -242,9 +242,9 @@ def register_auth_routes(app: Flask) -> None:
 
             if blink and blink.available:
                 session["authenticated"] = True
-                return index()
+                return main_page()
             else:
                 return redirect(url_for("login_route"))
         # Clear initializing flag if set
         session.pop("initializing", None)
-        return index()
+        return main_page()
