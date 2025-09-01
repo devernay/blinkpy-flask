@@ -18,7 +18,6 @@ __all__ = [
     "FlaskTestCase",
 ]
 
-import asyncio
 import functools
 import gc
 import os
@@ -444,32 +443,30 @@ class BaseTestCase(unittest.TestCase):
         """Clean up pending async operations to prevent RuntimeWarnings."""
         try:
             import inspect
+            import warnings
 
-            # Find and await any pending coroutines from AsyncMock
-            # This prevents "coroutine was never awaited" warnings
-            for obj in gc.get_objects():
-                if inspect.iscoroutine(obj):
+            # Suppress warnings during cleanup
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+
+                # Force garbage collection to find pending coroutines
+                gc.collect()
+
+                # Find and handle any pending coroutines from AsyncMock
+                pending_coros = []
+                for obj in gc.get_objects():
+                    if inspect.iscoroutine(obj):
+                        pending_coros.append(obj)
+
+                # Close all pending coroutines
+                for coro in pending_coros:
                     try:
-                        # Close the coroutine to prevent the warning
-                        obj.close()
+                        coro.close()
                     except Exception:
-                        # Ignore errors when closing coroutines
                         pass
 
-            # Force garbage collection after cleanup
-            gc.collect()
-
-            # If there's an active event loop, ensure it's properly cleaned
-            try:
-                loop = asyncio.get_running_loop()
-                # Cancel any pending tasks
-                pending = asyncio.all_tasks(loop)
-                for task in pending:
-                    if not task.done():
-                        task.cancel()
-            except RuntimeError:
-                # No running loop, which is expected in most test cases
-                pass
+                # Force garbage collection after cleanup
+                gc.collect()
         except Exception:
             # Ignore cleanup errors
             pass
