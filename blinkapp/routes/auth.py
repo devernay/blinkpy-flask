@@ -16,10 +16,11 @@ import logging
 from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, session, url_for
+from flask.typing import ResponseReturnValue
 
 from blinkapp.config import Config
 from blinkapp.connexion_handlers.auth import main_page
-from blinkapp.models.types import AuthJsonDict as JsonDict, FlaskResponseType
+from blinkapp.models.types import AuthJsonDict as JsonDict
 from blinkapp.services.auth_service import (
     initialize_blink,
     verify_2fa_and_save,
@@ -50,7 +51,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
     """Set up authentication routes on the Flask app instance."""
 
     @app_instance.route("/login", methods=["GET", "POST"])
-    def login_route() -> FlaskResponseType:
+    def login_route() -> ResponseReturnValue:
         """Handle login page GET/POST requests.
 
         Returns:
@@ -114,7 +115,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
         return render_template("auth.html", is_2fa=False)
 
     @app_instance.route("/2fa", methods=["GET", "POST"])
-    def two_factor_route() -> FlaskResponseType:
+    def two_factor_route() -> ResponseReturnValue:
         """Handle 2FA verification page GET/POST requests.
 
         Returns:
@@ -227,7 +228,7 @@ def register_auth_routes(app: Flask) -> None:
     """Register authentication routes with the Flask app."""
 
     @app.route("/")
-    def main_page_route() -> FlaskResponseType:
+    def main_page_route() -> ResponseReturnValue:
         """Main page - redirect to login if not authenticated.
 
         Returns:

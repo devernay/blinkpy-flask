@@ -7,12 +7,10 @@ defining them locally in individual modules.
 """
 
 from collections.abc import Callable
-from typing import ParamSpec, TypedDict, TypeVar, Union
+from typing import ParamSpec, TypedDict, TypeVar
 
 from flask import Response
-
-# Define Flask response types explicitly to avoid pyright issues
-FlaskResponseType = Union[Response, str, tuple[str, int], tuple[str, int, dict[str, str]]]
+from flask.typing import ResponseReturnValue
 
 # Common type variables used across the application
 P = ParamSpec("P")
@@ -69,7 +67,7 @@ ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 
 # Flask response types - use Flask's own types
 FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, str]]
-FlaskRouteResponse = FlaskResponseType
+FlaskRouteResponse = ResponseReturnValue
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = FlaskResponse | JsonDict | object  # What route functions can return
 
