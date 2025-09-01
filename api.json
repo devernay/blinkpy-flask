@@ -242,14 +242,14 @@
         }
       }
     },
-    "/api/systems/{network_id}": {
+    "/api/systems/{network_id_str}": {
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
         "operationId": "get_system_route",
         "parameters": [
           {
-            "name": "network_id",
+            "name": "network_id_str",
             "in": "path",
             "required": true,
             "schema": {"type": "string"}
@@ -270,7 +270,7 @@
         "operationId": "update_system_route",
         "parameters": [
           {
-            "name": "network_id",
+            "name": "network_id_str",
             "in": "path",
             "required": true,
             "schema": {"type": "string"}
@@ -300,13 +300,13 @@
         }
       }
     },
-    "/api/systems/{network_id}/devices": {
+    "/api/systems/{network_id_str}/devices": {
       "get": {
         "summary": "Get system devices",
         "description": "Get all devices (cameras, sync modules) for a specific system",
         "parameters": [
           {
-            "name": "network_id",
+            "name": "network_id_str",
             "in": "path",
             "required": true,
             "schema": {"type": "string"}
