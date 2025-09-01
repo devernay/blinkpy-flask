@@ -23,7 +23,7 @@ def setup_config_routes(app: Flask) -> None:
 
     @app.route("/api/config")
     @api_route("get config")
-    def get_config() -> JsonDict:
+    def get_config_route() -> JsonDict:
         """Get application configuration.
 
         Returns:

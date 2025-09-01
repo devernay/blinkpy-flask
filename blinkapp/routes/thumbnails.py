@@ -151,7 +151,7 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
     @api_route_with_validation(
         "clear camera thumbnail cache", validate_params={"camera_id_str": CameraId}
     )
-    def clear_camera_camera_thumbnail_cache(camera_id: CameraId) -> JsonDict:
+    def clear_camera_camera_thumbnail_cache_route(camera_id: CameraId) -> JsonDict:
         """Clear camera thumbnail cache and refresh.
 
         Args:
@@ -222,7 +222,7 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
     @api_route_with_validation(
         "get camera thumbnail", validate_params={"camera_id_str": CameraId}
     )
-    def get_camera_thumbnail(camera_id: CameraId) -> FlaskResponse:
+    def get_camera_thumbnail_route(camera_id: CameraId) -> FlaskResponse:
         """Proxy camera thumbnail with authentication or get timestamp.
 
         Args:

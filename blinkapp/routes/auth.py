@@ -53,7 +53,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
     """Set up authentication routes on the Flask app instance."""
 
     @app_instance.route("/login", methods=["GET", "POST"])
-    def login() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def login_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Handle login page GET/POST requests.
 
         Returns:
@@ -117,7 +117,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
         return render_template("auth.html", is_2fa=False)
 
     @app_instance.route("/2fa", methods=["GET", "POST"])
-    def two_factor() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def two_factor_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Handle 2FA verification page GET/POST requests.
 
         Returns:
@@ -193,7 +193,7 @@ def setup_auth_routes(app_instance: Flask) -> None:
 
     @app_instance.route("/logout", methods=["POST"])
     @simple_success_response("Logged out successfully")
-    def logout() -> "JsonDict":
+    def logout_route() -> "JsonDict":
         """Logout user and clear all credentials and caches.
 
         Returns:
@@ -230,7 +230,7 @@ def register_auth_routes(app: Flask) -> None:
     """Register authentication routes with the Flask app."""
 
     @app.route("/")
-    def index() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def index_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Main page - redirect to login if not authenticated.
 
         Returns:

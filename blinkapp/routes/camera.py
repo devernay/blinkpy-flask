@@ -35,7 +35,7 @@ def setup_camera_routes(app: "Flask") -> None:
     @app.route("/api/cameras")
     @ensure_blink_available
     @api_route_with_validation("list cameras")
-    def list_cameras() -> JsonDict:
+    def list_cameras_route() -> JsonDict:
         """List all available cameras.
 
         Returns:
@@ -48,7 +48,7 @@ def setup_camera_routes(app: "Flask") -> None:
     @api_route_with_validation(
         "get camera details", validate_params={"camera_id_str": CameraId}
     )
-    def get_camera_details(camera_id: CameraId) -> JsonDict:
+    def get_camera_details_route(camera_id: CameraId) -> JsonDict:
         """Get detailed information about a specific camera.
 
         Args:
@@ -73,7 +73,7 @@ def setup_camera_routes(app: "Flask") -> None:
     @api_route_with_validation(
         "start camera recording", validate_params={"camera_id_str": CameraId}
     )
-    def start_camera_recording(camera_id: CameraId) -> JsonDict:
+    def start_camera_recording_route(camera_id: CameraId) -> JsonDict:
         """Start recording on a camera.
 
         Args:

@@ -25,7 +25,7 @@ def setup_settings_routes(app: Flask) -> None:
 
     @app.route("/api/settings", methods=["GET", "PUT"])
     @method_dispatch_route("settings")
-    def settings() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def settings_route() -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Get or save application settings.
 
         GET: Returns current user settings (temperature units, clip retention, etc.)

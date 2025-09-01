@@ -23,7 +23,7 @@ def register_admin_routes(app: Flask) -> None:
 
     @app.route("/api/cache", methods=["DELETE"])
     @simple_success_response("Cache clearing initiated")
-    def clear_cache() -> JsonDict:
+    def clear_cache_route() -> JsonDict:
         """Clear all caches except credentials.
 
         Returns:
@@ -37,7 +37,7 @@ def register_admin_routes(app: Flask) -> None:
 
     @app.route("/api/cache/thumbnails", methods=["DELETE"])
     @simple_success_response("Thumbnail cache cleared")
-    def clear_camera_thumbnail_cache() -> JsonDict:
+    def clear_camera_thumbnail_cache_route() -> JsonDict:
         """Clear thumbnail cache only.
 
         Returns:
@@ -51,7 +51,7 @@ def register_admin_routes(app: Flask) -> None:
 
     @app.route("/api/cache/clips", methods=["DELETE"])
     @simple_success_response("Clips cache cleared")
-    def clear_clips_cache() -> JsonDict:
+    def clear_clips_cache_route() -> JsonDict:
         """Clear clips cache only.
 
         Returns:
@@ -65,7 +65,7 @@ def register_admin_routes(app: Flask) -> None:
 
     @app.route("/placeholder")
     @api_route("placeholder feature")
-    def placeholder() -> tuple[object, int]:
+    def placeholder_route() -> tuple[object, int]:
         """Placeholder endpoint for future features.
 
         Returns:

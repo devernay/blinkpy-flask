@@ -42,7 +42,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @api_route_with_validation(
         "start camera stream", validate_params={"camera_id_str": CameraId}
     )
-    def start_camera_stream(camera_id: CameraId) -> JsonDict:
+    def start_camera_stream_route(camera_id: CameraId) -> JsonDict:
         """Start live stream for camera.
 
         Args:
@@ -80,7 +80,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @api_route_with_validation(
         "stop camera stream", validate_params={"camera_id_str": CameraId}
     )
-    def stop_camera_stream(camera_id: CameraId) -> JsonDict:
+    def stop_camera_stream_route(camera_id: CameraId) -> JsonDict:
         """Stop live stream for camera.
 
         Args:
@@ -117,7 +117,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @api_route_with_validation(
         "serve stream file", validate_params={"camera_id_str": CameraId}
     )
-    def get_hls_file(camera_id: CameraId, filename: str) -> FlaskResponse:
+    def get_hls_file_route(camera_id: CameraId, filename: str) -> FlaskResponse:
         """Serve HLS stream files.
 
         Args:

@@ -31,7 +31,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips")
     @ensure_blink_available
     @api_route("get clips")
-    def get_clips() -> JsonDict:
+    def get_clips_route() -> JsonDict:
         """Get clips from cloud or local storage.
 
         Retrieves video clips from either Blink's cloud storage or local
@@ -53,7 +53,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips/<clip_id_str>/thumbnail", methods=["POST"])
     @ensure_blink_available
     @simple_success_response("Clip thumbnail generation initiated")
-    def create_clip_thumbnail(clip_id_str: str) -> JsonDict:
+    def create_clip_thumbnail_route(clip_id_str: str) -> JsonDict:
         """Generate thumbnail for clip (download and process) without sending to client.
 
         Initiates background processing of clip for thumbnail generation.
@@ -98,7 +98,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips/<clip_id_str>/download")
     @ensure_blink_available
     @api_route_with_validation("download clip", validate_params={"clip_id_str": ClipId})
-    def download_clip(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def download_clip_route(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Download a specific clip.
 
         Args:
@@ -140,7 +140,7 @@ def setup_clips_routes(app: Flask) -> None:
 
     @app.route("/api/clips/<clip_id_str>/thumbnail")
     @file_response_route("get clip thumbnail", validate_params={"clip_id_str": ClipId})
-    def get_clip_thumbnail(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
+    def get_clip_thumbnail_route(clip_id: ClipId) -> ResponseReturnValue:  # pyright: ignore[reportUnknownParameterType]
         """Serve clip thumbnail or check availability.
 
         Query Parameters:
@@ -211,7 +211,7 @@ def setup_clips_routes(app: Flask) -> None:
 
     @app.route("/api/clips/<clip_id_str>", methods=["DELETE"])
     @api_route_with_validation("delete clip", validate_params={"clip_id_str": ClipId})
-    def delete_clip(clip_id: ClipId) -> JsonDict:
+    def delete_clip_route(clip_id: ClipId) -> JsonDict:
         """Delete a clip.
 
         Args:
