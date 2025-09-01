@@ -4206,14 +4206,14 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.services.blink_service.blink")
+    @patch("blinkapp.services.blink_service.blink", new_callable=lambda: Mock())
     def test_camera_thumbnail_cache_hit_optimization(self, mock_blink: Mock) -> None:
         """Test thumbnail cache hit optimization."""
-        mock_camera = create_mock_camera(
-            camera_id=12345,
-            name="Test Camera",
-            thumbnail="https://example.com/thumb.jpg?ts=1000",
-        )
+        # Use regular Mock for camera to avoid AsyncMock issues
+        mock_camera = Mock()
+        mock_camera.camera_id = 12345
+        mock_camera.name = "Test Camera"
+        mock_camera.thumbnail = "https://example.com/thumb.jpg?ts=1000"
 
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
@@ -4230,7 +4230,9 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
             }
 
             with patch("flask.send_file") as mock_send:
-                mock_send.return_value = Mock(spec=ClientResponse)
+                from flask import Response
+
+                mock_send.return_value = Mock(spec=Response)
 
                 response = self.client.get("/api/cameras/12345/thumbnail")
 
