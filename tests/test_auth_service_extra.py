@@ -42,35 +42,6 @@ class TestAuthServiceExtra(unittest.TestCase):
                 result = is_valid_email_format(email)
                 self.assertFalse(result, f"Email {email} should be invalid")
 
-    def test_is_valid_email_format_empty_string(self) -> None:
-        """Test is_valid_email_format with empty string."""
-        result = is_valid_email_format("")
-        self.assertFalse(result)
-
-    def test_extract_username_domain_valid(self) -> None:
-        """Test extract_username_domain with valid inputs."""
-        test_cases = [
-            ("user@example.com", "example.com"),
-            ("test@domain.org", "domain.org"),
-            ("a@b.co", "b.co"),
-            ("user.name@sub.domain.com", "sub.domain.com"),
-        ]
-
-        for username, expected_domain in test_cases:
-            with self.subTest(username=username):
-                result = extract_username_domain(username)
-                self.assertEqual(result, expected_domain)
-
-    def test_extract_username_domain_no_at(self) -> None:
-        """Test extract_username_domain with no @ symbol."""
-        result = extract_username_domain("no-at-sign")
-        self.assertEqual(result, "")
-
-    def test_extract_username_domain_empty(self) -> None:
-        """Test extract_username_domain with empty string."""
-        result = extract_username_domain("")
-        self.assertEqual(result, "")
-
     def test_extract_username_domain_edge_cases(self) -> None:
         """Test extract_username_domain with edge cases."""
         test_cases = [

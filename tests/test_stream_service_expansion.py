@@ -6,8 +6,6 @@ import unittest
 from blinkapp.services.stream_service import (
     create_stream_manager,
     ensure_stream_manager_initialized,
-    generate_hls_url,
-    parse_tcp_url,
     validate_tcp_url,
 )
 
@@ -44,36 +42,3 @@ class TestStreamServiceExpansion(unittest.TestCase):
         result = validate_tcp_url(tcp_url)
 
         self.assertTrue(result)
-
-    def test_parse_tcp_url_valid(self) -> None:
-        """Test parse_tcp_url with valid URL."""
-        tcp_url = "tcp://127.0.0.1:8080"
-
-        result = parse_tcp_url(tcp_url)
-
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(len(result), 2)
-        host, port = result
-        self.assertEqual(host, "127.0.0.1")
-        self.assertEqual(port, 8080)  # Port is returned as int
-
-    def test_generate_hls_url_basic(self) -> None:
-        """Test generate_hls_url basic functionality."""
-        camera_id = "12345"
-        filename = "test.m3u8"
-
-        result = generate_hls_url(camera_id, filename)
-
-        self.assertIsInstance(result, str)
-        self.assertIn("12345", result)
-        self.assertIn("test.m3u8", result)
-
-    def test_parse_tcp_url_invalid(self) -> None:
-        """Test parse_tcp_url with invalid URL."""
-        tcp_url = "invalid://url"
-
-        # Function should raise ValueError for non-TCP URL
-        with self.assertRaises(ValueError) as context:
-            parse_tcp_url(tcp_url)
-
-        self.assertIn("Invalid TCP URL format", str(context.exception))

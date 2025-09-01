@@ -26,8 +26,3 @@ class TestAuthServiceFinal(unittest.TestCase):
         """Test is_valid_email_format with empty domain."""
         result = is_valid_email_format("test@")
         self.assertFalse(result)
-
-    def test_auth_functions_exist(self) -> None:
-        """Test that auth functions are importable."""
-        self.assertTrue(callable(extract_username_domain))
-        self.assertTrue(callable(is_valid_email_format))

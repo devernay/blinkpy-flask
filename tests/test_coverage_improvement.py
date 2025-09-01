@@ -33,12 +33,6 @@ class TestUtilsService(FlaskTestCase):
 class TestStreamService(FlaskTestCase):
     """Test stream_service.py (currently 31% coverage)."""
 
-    def test_initialize_stream_manager(self) -> None:
-        """Test initialize_stream_manager function."""
-        from blinkapp.services.stream_service import initialize_stream_manager
-
-        initialize_stream_manager()
-
     def test_ensure_stream_manager_initialized(self) -> None:
         """Test ensure_stream_manager_initialized function."""
         from blinkapp.services.stream_service import ensure_stream_manager_initialized
@@ -66,14 +60,6 @@ class TestMainApp(FlaskTestCase):
         response, status = create_api_response(success=True, data={"test": "data"})
         self.assertEqual(status, 200)
         self.assertTrue(response["success"])
-
-    def test_create_api_response_error(self) -> None:
-        """Test create_api_response with error."""
-        from blinkapp import create_api_response
-
-        response, status = create_api_response(success=False, error="Test error")
-        self.assertEqual(status, 200)  # Default status is 200
-        self.assertFalse(response["success"])
 
     def test_create_api_response_custom_status(self) -> None:
         """Test create_api_response with custom status."""

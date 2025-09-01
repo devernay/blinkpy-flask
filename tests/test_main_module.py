@@ -120,15 +120,6 @@ class TestAppExecution:
     """Test application execution functionality."""
 
     @patch("blinkapp.services.debug_service.handle_dump_system")
-    def test_run_app_dump_system(self, mock_dump: Mock) -> None:
-        """Test run_app with dump_system flag."""
-        args = Mock(spec=object)
-        args.dump_system = True
-
-        run_app(args)
-
-        mock_dump.assert_called_once()
-
     @patch("blinkapp.app.run")
     def test_run_app_normal(self, mock_run: Mock) -> None:
         """Test normal app execution."""

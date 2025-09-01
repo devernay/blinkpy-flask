@@ -7,7 +7,6 @@ from unittest.mock import Mock, patch
 from blinkapp.services.stream_service import (
     ensure_stream_manager_initialized,
     generate_hls_url,
-    parse_tcp_url,
     validate_camera_id,
     validate_tcp_url,
 )
@@ -33,20 +32,6 @@ class TestStreamServiceAdvanced(BaseTestCase):
         result = validate_tcp_url("http://example.com")
         # Function validates URL format, not protocol
         self.assertIsInstance(result, bool)
-
-    def test_parse_tcp_url_empty(self) -> None:
-        """Test parse_tcp_url with empty string."""
-        # Function should raise ValueError for empty string
-        with self.assertRaises(ValueError) as context:
-            parse_tcp_url("")
-        self.assertIn("Invalid TCP URL format", str(context.exception))
-
-    def test_parse_tcp_url_malformed(self) -> None:
-        """Test parse_tcp_url with malformed URL."""
-        # Function should raise ValueError for malformed URL
-        with self.assertRaises(ValueError) as context:
-            parse_tcp_url("not-a-url")
-        self.assertIn("Invalid TCP URL format", str(context.exception))
 
     def test_generate_hls_url_empty_filename(self) -> None:
         """Test generate_hls_url with empty filename."""

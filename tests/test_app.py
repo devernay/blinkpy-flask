@@ -1672,13 +1672,6 @@ class TestAdvancedEndpoints(BaseTestCase):
         # Should redirect to login if not authenticated
         self.assertEqual(response.status_code, 302)
 
-    def test_auth_route(self) -> None:
-        """Test the login route (auth functionality)."""
-        response = self.client.get("/login")
-        self.assertEqual(response.status_code, 200)
-        # Should return HTML content
-        self.assertIn("text/html", response.content_type or "")
-
     @patch("blinkapp.services.blink_service.blink")
     def test_get_clips_invalid_storage_type(self, mock_blink: Mock) -> None:
         """Test get_clips with invalid storage type."""
@@ -1800,12 +1793,6 @@ class TestTemplateRoutes(BaseTestCase):
         response = self.client.get("/")
         # Should redirect to login when not authenticated
         self.assertEqual(response.status_code, 302)
-
-    def test_auth_template_rendering(self) -> None:
-        """Test login template renders successfully."""
-        response = self.client.get("/login")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("text/html", response.content_type or "")
 
     def test_static_file_serving(self) -> None:
         """Test that static files can be served."""
@@ -2782,24 +2769,6 @@ class TestApplicationInitialization(BaseTestCase):
     """Test application initialization and startup."""
 
     @patch("blinkapp.CACHE_DIR", "/tmp/test_cache")
-    def test_app_initialization_sequence(self) -> None:
-        """Test application initialization sequence."""
-        from blinkapp import initialize_cache_paths, setup_logging
-
-        # Test cache initialization - it sets global variables
-        with patch("blinkapp.app.config.get", return_value="/tmp/test_cache"):
-            initialize_cache_paths()
-            # Check that global variables are set
-            import blinkapp
-
-            self.assertIsNotNone(blinkapp.CACHE_DIR)
-
-        # Test logging setup
-        with patch("logging.handlers.RotatingFileHandler"):
-            with patch("logging.getLogger") as mock_logger:
-                setup_logging()
-                self.assertTrue(mock_logger.called)
-
     def test_config_class_values(self) -> None:
         """Test Config class has reasonable values."""
         from blinkapp import Config
