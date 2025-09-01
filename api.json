@@ -139,7 +139,7 @@
       "get": {
         "summary": "Main application interface",
         "description": "Serves the main web interface. Redirects to login page if user is not authenticated, otherwise displays the main dashboard with camera thumbnails, system controls, and navigation.",
-        "operationId": "getMainPage",
+        "operationId": "get_main_page",
         "tags": ["Web Interface"],
         "responses": {
           "200": {
@@ -163,7 +163,7 @@
       "get": {
         "summary": "List all Blink systems",
         "description": "Retrieves a comprehensive list of all available Blink sync modules and their network information. Each system includes network ID, name, armed status, and associated cameras.",
-        "operationId": "listSystems",
+        "operationId": "list_systems",
         "tags": ["System Management"],
         "responses": {
           "200": {
@@ -246,7 +246,7 @@
       "get": {
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
-        "operationId": "getSystemDetails",
+        "operationId": "get_system_details",
         "parameters": [
           {
             "name": "network_id",
@@ -267,7 +267,7 @@
       "put": {
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
-        "operationId": "updateSystem",
+        "operationId": "update_system",
         "parameters": [
           {
             "name": "network_id",
@@ -337,7 +337,7 @@
       "get": {
         "summary": "List all cameras",
         "description": "Get list of all available cameras across all systems",
-        "operationId": "listCameras",
+        "operationId": "list_cameras",
         "responses": {
           "200": {
             "description": "List of cameras",
@@ -548,7 +548,7 @@
       "get": {
         "summary": "List clips",
         "description": "Get list of clips from cloud or local storage",
-        "operationId": "listClips",
+        "operationId": "list_clips",
         "parameters": [
           {
             "name": "storage",
