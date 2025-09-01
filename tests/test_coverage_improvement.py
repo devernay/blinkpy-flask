@@ -86,7 +86,10 @@ class TestCacheService(FlaskTestCase):
         """Test initialize_caches function."""
         from blinkapp.services.cache_service import initialize_caches
 
-        config = {"camera_thumbnail_cache_size": 10, "clips_cache_size": 10}
+        config: dict[str, object] = {
+            "camera_thumbnail_cache_size": 10,
+            "clips_cache_size": 10,
+        }
         initialize_caches(config)
 
     def test_ensure_camera_thumbnail_cache_initialized(self) -> None:

@@ -762,7 +762,7 @@ Do not forget to compact your context before it overflows.
 
 ## Normal priority
 
-- Add significantly more comments and docstrings to each non-trivial individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
+- Add comments and docstrings to each non-trivial individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
 
 - Are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
 
@@ -770,8 +770,12 @@ Do not forget to compact your context before it overflows.
 
 - For each API entry point in api.json, add an "operationId" tag to facilitate the migration to the connexion package, and make sure that API entry points are coded as connexion "operations" in the code, although we are not yet using connexion. This will facilitate the migration later.
 
-- Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations in blinkpy-source. This file must truly reflect how the API works.
+- Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations found in blinkpy-source. This file must truly reflect how the API works.
 
 # Lower priority
 
 - Run test coverage and add new tests to expand the coverage. Focus first on modules that have the highest numbered of uncovered statements.
+
+- I see that many connexion handlers are using Any type hints. Can you be more specific? Try not to use Any or object, nor "# type:ignore"
+
+- Several tests use assertIn, with a list of possible status codes. I think the tested functions should, in general, return a specific status code. Can you fix those tests?

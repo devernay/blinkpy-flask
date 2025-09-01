@@ -44,6 +44,7 @@ __all__ = [
     "ClipData",
     "ClipDayGroup",
     "JsonDict",
+    "ClipsResponse",
     "AuthJsonDict",
     "ApiResponse",
     "RouteResult",
@@ -60,6 +61,7 @@ SettingsDict = dict[str, str | int | bool]  # User settings dictionary
 DeviceDict = dict[str, object]  # Device information dictionary
 ClipDict = dict[str, object]  # Clip metadata dictionary
 SystemDict = dict[str, object]  # System information dictionary
+ClipsResponse = dict[str, list[ClipDayGroup]]  # Clips API response type
 
 # API response types
 ApiResponse = tuple[JsonDict, int]  # Standard API response (data, status_code)

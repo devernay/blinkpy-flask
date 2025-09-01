@@ -8,7 +8,7 @@ from flask.typing import (
 from blinkapp.connexion_handlers.clips import get_clips
 from blinkapp.models.ids import ClipId
 from blinkapp.models.responses import create_api_response
-from blinkapp.models.types import JsonDict
+from blinkapp.models.types import ClipsResponse, JsonDict
 from blinkapp.utils.decorators import (
     ensure_blink_available,
 )
@@ -31,7 +31,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips")
     @ensure_blink_available
     @api_route("get clips")
-    def get_clips_route() -> JsonDict | tuple[JsonDict, int]:
+    def get_clips_route() -> ClipsResponse | tuple[JsonDict, int]:
         """Get clips from cloud or local storage.
 
         Retrieves video clips from either Blink's cloud storage or local
