@@ -3,7 +3,7 @@
 
 import unittest
 
-from blinkapp.utils.decorators import error_context, safe_execute
+from blinkapp.utils.decorators import safe_execute
 
 
 class TestDecoratorsExpansion(unittest.TestCase):
