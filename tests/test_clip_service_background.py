@@ -25,7 +25,12 @@ class TestClipServiceBackground(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_success(self, mock_cache) -> None:
-        """Test download_and_cache_cloud_thumbnail success."""
+        """Test successful cloud thumbnail download and caching.
+
+        Why: Thumbnails are essential for clip browsing UI performance and user experience.
+        What: Verifies complete download workflow from HTTP request to cache storage.
+        How: Mocks HTTP response and file operations, validates caching behavior.
+        """
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_response = Mock(spec=Response)
@@ -120,7 +125,12 @@ class TestClipServiceBackground(BaseTestCase):
     def test_download_and_cache_cloud_thumbnail_update_existing_cache(
         self, mock_cache
     ) -> None:
-        """Test download_and_cache_cloud_thumbnail updating existing cache entry."""
+        """Test thumbnail cache update when entry already exists.
+
+        Why: Cache updates are needed when thumbnails change or become corrupted.
+        What: Verifies existing cache entries are properly updated with new thumbnail data.
+        How: Mocks existing cache entry and validates update behavior with new data.
+        """
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_response = Mock()

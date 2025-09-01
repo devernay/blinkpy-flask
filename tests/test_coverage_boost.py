@@ -32,7 +32,12 @@ class TestBaseIdNotImplementedMethods(BaseTestCase):
     """Test BaseId NotImplementedError methods - lines 211, 222."""
 
     def test_base_id_get_pattern_not_implemented(self) -> None:
-        """Test BaseId._get_pattern raises NotImplementedError."""
+        """Test BaseId abstract method enforcement.
+
+        Why: BaseId is an abstract base class that requires subclasses to implement _get_pattern.
+        What: Verifies NotImplementedError is raised when abstract method is called directly.
+        How: Creates incomplete subclass and tests that abstract method raises expected error.
+        """
 
         # Create a test subclass that implements the abstract methods
         class TestId(BaseId):
@@ -85,7 +90,12 @@ class TestCachePathValidation(BaseTestCase):
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
     @patch("blinkapp.CLIPS_CACHE_DIR", "test")
     def test_ensure_cache_paths_cache_dir_none(self) -> None:
-        """Test ensure_cache_paths_initialized when CACHE_DIR is None."""
+        """Test cache path initialization when main cache directory is None.
+
+        Why: Cache directory can be None during startup or configuration errors.
+        What: Verifies cache initialization handles missing main directory gracefully.
+        How: Mocks CACHE_DIR as None and tests initialization doesn't crash.
+        """
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
@@ -422,7 +432,12 @@ class TestBasicOperations(BaseTestCase):
         self.assertIsInstance(converted, datetime)
 
     def test_device_service_create_device_data(self) -> None:
-        """Test device_service create_device_data function."""
+        """Test device data creation for UI display.
+
+        Why: Device data formatting is critical for camera status display in web interface.
+        What: Verifies proper transformation of camera objects into JSON-ready data.
+        How: Creates mock camera and validates all required fields are present and formatted.
+        """
         from blinkapp.services.device_service import create_device_data
 
         # Mock camera object

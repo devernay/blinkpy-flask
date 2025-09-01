@@ -23,7 +23,12 @@ class TestStreamServiceAdvanced(BaseTestCase):
         self.assertFalse(result)
 
     def test_validate_camera_id_whitespace(self) -> None:
-        """Test validate_camera_id with whitespace."""
+        """Test camera ID validation with whitespace-only input.
+
+        Why: Whitespace-only strings can bypass simple empty checks but are invalid IDs.
+        What: Verifies validation correctly rejects whitespace-only camera IDs.
+        How: Passes string with only spaces and expects False return.
+        """
         result = validate_camera_id("   ")
         self.assertFalse(result)
 
@@ -40,7 +45,12 @@ class TestStreamServiceAdvanced(BaseTestCase):
         self.assertIn("12345", result)
 
     def test_generate_hls_url_special_chars(self) -> None:
-        """Test generate_hls_url with special characters."""
+        """Test HLS URL generation with special characters in camera ID.
+
+        Why: Camera IDs may contain hyphens, underscores, or numbers from Blink API.
+        What: Verifies URL generation handles special characters correctly.
+        How: Uses camera ID with hyphens/underscores and validates URL construction.
+        """
         result = generate_hls_url("test-cam_123", "file.m3u8")
         self.assertIsInstance(result, str)
         self.assertIn("test-cam_123", result)
@@ -48,11 +58,16 @@ class TestStreamServiceAdvanced(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.create_stream_manager")
     def test_ensure_stream_manager_with_factory(self, mock_factory: Mock) -> None:
-        """Test ensure_stream_manager_initialized with factory."""
+        """Test stream manager initialization with factory function.
+
+        Why: Stream manager creation involves complex multiprocessing setup that can fail.
+        What: Verifies factory-based initialization handles creation and potential failures.
+        How: Mocks factory function and tests initialization with expected error handling.
+        """
         mock_manager = Mock(spec=multiprocessing.Manager)
         mock_factory.return_value = mock_manager
 
-        # Should not raise exception
+        # Should not raise exception during initialization attempt
         try:
             result = ensure_stream_manager_initialized(mock_factory)
             self.assertIsNotNone(result)

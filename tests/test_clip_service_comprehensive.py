@@ -32,14 +32,19 @@ class TestClipServiceComprehensive(BaseTestCase):
     def test_process_cloud_clips_complete_flow(
         self, mock_format: Mock, mock_cache: Mock
     ) -> None:
-        """Test complete process_cloud_clips flow with all branches."""
+        """Test complete cloud clips processing workflow.
+
+        Why: Cloud clips processing is core functionality for displaying user's recorded videos.
+        What: Verifies end-to-end processing of video metadata into formatted clip data.
+        How: Mocks cache and formatting, provides test metadata, validates processing flow.
+        """
         from blinkapp.services.clip_service import process_cloud_clips
 
         mock_cache_instance = {}
         mock_cache.return_value = mock_cache_instance
         mock_format.return_value = [{"date": "January 01, 2023", "clips": []}]
 
-        # Test with valid video metadata
+        # Test with valid video metadata including edge cases
         from tests.test_base import create_video_metadata
 
         videos_metadata = [
@@ -52,8 +57,8 @@ class TestClipServiceComprehensive(BaseTestCase):
                 clip_id="789012",
                 created_at="2023-01-01T14:00:00Z",
                 device_name="Test Camera 2",
-                thumbnail=None,
-                size=None,
+                thumbnail=None,  # Test missing thumbnail handling
+                size=None,  # Test missing size handling
             ),
         ]
 

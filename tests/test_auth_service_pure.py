@@ -58,7 +58,12 @@ class TestAuthServicePure(unittest.TestCase):
         self.assertFalse(result)
 
     def test_is_valid_email_format_none(self) -> None:
-        """Test is_valid_email_format with None - line 55."""
+        """Test email validation with None input.
+
+        Why: None values can come from uninitialized form fields or API responses.
+        What: Verifies email validation handles None gracefully without crashing.
+        How: Uses type casting to test runtime behavior with None input.
+        """
         from typing import cast
 
         result = is_valid_email_format(
@@ -97,7 +102,12 @@ class TestAuthServicePure(unittest.TestCase):
         self.assertFalse(result)
 
     def test_create_auth_config(self) -> None:
-        """Test create_auth_config - line 68."""
+        """Test authentication configuration creation.
+
+        Why: Auth config is essential for Blink API authentication and session management.
+        What: Verifies proper configuration object structure with required fields.
+        How: Creates config with test credentials and validates dictionary structure.
+        """
         result = create_auth_config("user@example.com", "password123")
 
         # Should return dict with username and password

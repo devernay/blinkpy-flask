@@ -14,7 +14,12 @@ class TestDeviceServiceExpansion(unittest.TestCase):
     """Test uncovered device service functions with highest missed lines."""
 
     def test_create_device_data_basic(self) -> None:
-        """Test create_device_data with mock camera."""
+        """Test device data creation with complete camera information.
+
+        Why: Device data formatting is essential for displaying camera status in the UI.
+        What: Verifies proper transformation of camera objects into UI-ready data structures.
+        How: Creates mock camera with full attributes and validates formatted output.
+        """
 
         mock_camera = create_mock_camera(
             camera_id="test_camera_basic",
@@ -35,7 +40,12 @@ class TestDeviceServiceExpansion(unittest.TestCase):
         self.assertEqual(result["temperature"], 72)
 
     def test_create_device_data_minimal(self) -> None:
-        """Test create_device_data with minimal camera data."""
+        """Test device data creation with minimal camera information.
+
+        Why: Some cameras may have missing or null attributes from the Blink API.
+        What: Verifies graceful handling of cameras with incomplete data.
+        How: Creates mock camera with minimal attributes and validates safe formatting.
+        """
 
         mock_camera = create_mock_camera(
             camera_id="test_camera_minimal",
