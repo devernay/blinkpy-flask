@@ -6016,7 +6016,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.routes.auth.is_session_authenticated")
-    def test_index_route(self, mock_auth: Mock) -> None:
+    def test_index_route_with_auth_mock(self, mock_auth: Mock) -> None:
         """Test index route functionality."""
         mock_auth.return_value = False
         response = self.client.get("/")

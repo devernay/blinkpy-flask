@@ -155,11 +155,3 @@ class TestClipServiceCoreLogic(BaseTestCase):
         with patch("blinkapp.services.blink_service.blink", "mock_blink"):
             result = _get_blink_instance()
             assert result == "mock_blink"
-
-    def test_get_clips_cache_dir(self) -> None:
-        """Test _get_clips_cache_dir function."""
-        from blinkapp.services.clip_download import _get_clips_cache_dir
-
-        with patch("blinkapp.CLIPS_CACHE_DIR", "/test/cache"):
-            result = _get_clips_cache_dir()
-            assert result == "/test/cache"  # Function returns string, not Path

@@ -247,7 +247,6 @@
         "summary": "Get system details",
         "description": "Get detailed information about a specific Blink system",
         "operationId": "get_system_details",
-        "operationId": "get_system_devices",
         "parameters": [
           {
             "name": "network_id_str",
@@ -306,6 +305,7 @@
       "get": {
         "summary": "Get system devices",
         "description": "Get all devices (cameras, sync modules) for a specific system",
+        "operationId": "get_system_devices",
         "parameters": [
           {
             "name": "network_id_str",
@@ -375,6 +375,7 @@
       "get": {
         "summary": "Get camera details",
         "description": "Get detailed information about a specific camera",
+        "operationId": "get_camera_details",
         "parameters": [
           {
             "name": "camera_id",
@@ -448,6 +449,7 @@
       "post": {
         "summary": "Start recording",
         "description": "Start recording a clip on the camera",
+        "operationId": "start_camera_recording",
         "parameters": [
           {
             "name": "camera_id",
