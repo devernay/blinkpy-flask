@@ -339,7 +339,12 @@ class TestValidationClasses(BaseTestCase):
                 pass
 
     def test_validation_error_messages(self) -> None:
-        """Test validation error messages."""
+        """Test ID validation provides meaningful error messages for debugging.
+
+        Why: Clear error messages help developers identify validation failures quickly.
+        What: Verifies error messages contain relevant context about validation failure.
+        How: Triggers validation error with empty ID and checks message content.
+        """
         with self.assertRaises(ValueError) as context:
             CameraId("")
 
@@ -398,7 +403,12 @@ class TestAPIResponseCreation(BaseTestCase):
     """Test API response creation functionality."""
 
     def test_create_api_response_success_with_data(self) -> None:
-        """Test successful API response creation with data."""
+        """Test API response creation with structured data payload.
+
+        Why: Consistent API response format is critical for frontend integration.
+        What: Verifies response structure includes success flag, data, and timestamp.
+        How: Creates response with test data and validates JSON structure compliance.
+        """
         test_data: dict[str, Any] = {"key": "value", "number": 123}
         response, status_code = create_api_response(success=True, data=test_data)
 
@@ -417,7 +427,12 @@ class TestAPIResponseCreation(BaseTestCase):
         self.assertIn("timestamp", response)
 
     def test_create_api_response_with_status_code(self) -> None:
-        """Test API response creation with custom status code."""
+        """Test API response creation with custom HTTP status codes.
+
+        Why: Different operations require specific HTTP status codes (201 for creation, etc).
+        What: Verifies custom status codes are properly returned with response data.
+        How: Creates response with 201 status and validates both data and status code.
+        """
         response, status_code = create_api_response(
             success=True, data={"test": "data"}, status_code=201
         )

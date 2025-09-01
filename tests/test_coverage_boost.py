@@ -180,7 +180,12 @@ class TestValidationClassMethods(BaseTestCase):
             self.assertTrue(True)
 
     def test_clip_id_validation_method(self) -> None:
-        """Test ClipId._validate method."""
+        """Test ClipId internal validation method with edge cases.
+
+        Why: Internal validation prevents invalid IDs from corrupting clip operations.
+        What: Verifies _validate method handles both valid and invalid input correctly.
+        How: Tests validation with valid ID and empty string edge case.
+        """
         clip_id = ClipId("valid456")
         # Test validation with valid input
         self.assertTrue(clip_id._validate("valid456"))
@@ -243,7 +248,12 @@ class TestGlobalVariableAccess(BaseTestCase):
         self.assertTrue(hasattr(blinkapp.app, "config"))
 
     def test_cache_instance_access(self) -> None:
-        """Test cache instance access."""
+        """Test global cache instance access and initialization patterns.
+
+        Why: Cache instances are global singletons that must be accessible across modules.
+        What: Verifies cache instances can be accessed and mocked for testing.
+        How: Patches global cache instances and validates access patterns work correctly.
+        """
         # Mock the cache instances directly since they're imported globals
         mock_camera_thumbnail_cache = create_mock_camera_cache()
         mock_clips_cache = create_mock_clips_cache()
@@ -299,7 +309,12 @@ class TestErrorHandlingPaths(BaseTestCase):
     """Test error handling code paths."""
 
     def test_exception_handling_patterns(self) -> None:
-        """Test exception handling patterns used in the blinkapp."""
+        """Test consistent exception handling patterns across ID validation.
+
+        Why: Consistent error handling prevents application crashes from invalid input.
+        What: Verifies ID classes raise ValueError for invalid input consistently.
+        How: Tests empty string input to both CameraId and ClipId validation.
+        """
         # Test ValueError handling
         with self.assertRaises(ValueError):
             CameraId("")  # Should raise ValueError for empty string

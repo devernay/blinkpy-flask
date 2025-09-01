@@ -1326,7 +1326,12 @@ class TestThumbnailManagement(FlaskTestCase):
     def test_refresh_camera_thumbnail_success(
         self, mock_connection, mock_blink
     ) -> None:
-        """Test refresh_camera_thumbnail endpoint."""
+        """Test camera thumbnail refresh with snap_picture API call.
+
+        Why: Thumbnails become stale and users need to trigger fresh captures.
+        What: Verifies thumbnail refresh triggers camera snap and cache update.
+        How: Mocks snap_picture API call and validates cache invalidation workflow.
+        """
         # Use helpers to create mock objects
         mock_sync = create_mock_sync(
             cameras={"Test Camera": create_mock_camera(camera_id=12345)}
@@ -1363,7 +1368,12 @@ class TestClipProcessing(BaseTestCase):
     def test_get_local_clips_success(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test getting local clips successfully."""
+        """Test local clips retrieval from USB storage with manifest processing.
+
+        Why: Local clips are stored on USB drives and require manifest file parsing.
+        What: Verifies complete local storage workflow from sync module to clip listing.
+        How: Mocks sync module with local storage and validates manifest processing.
+        """
         from datetime import datetime
 
         # Mock sync module with local storage
@@ -1394,7 +1404,12 @@ class TestClipProcessing(BaseTestCase):
     def test_download_clip_not_found(
         self, mock_blink: Mock, mock_connection: Mock
     ) -> None:
-        """Test downloading non-existent clip."""
+        """Test clip download when requested clip doesn't exist in metadata.
+
+        Why: Users may request clips that have been deleted or never existed.
+        What: Verifies proper 404 error handling for missing clip requests.
+        How: Mocks empty video metadata and validates error response format.
+        """
         # Mock blink to be available
         mock_blink.available = True
 
@@ -1437,7 +1452,12 @@ class TestAsyncOperations(BaseTestCase):
     def test_refresh_system_endpoint(
         self, mock_connection, mock_blink, mock_executor
     ) -> None:
-        """Test system refresh endpoint with proper mocking."""
+        """Test system refresh endpoint with background task execution.
+
+        Why: System refresh updates camera states and requires background processing.
+        What: Verifies proper task submission to executor and response handling.
+        How: Mocks executor service and validates async task submission workflow.
+        """
         # Mock the executor and blink refresh
         mock_executor.submit.return_value = Mock(spec=Future)
         mock_refresh_task = Mock(spec=callable)
