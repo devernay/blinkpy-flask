@@ -5978,7 +5978,7 @@ class TestTemplateRoutesFixed(BaseTestCase):
 
     @patch("blinkapp.routes.auth.is_session_authenticated")
     @patch("flask.render_template")
-    def test_index_template_rendering(self, mock_render: Mock, mock_auth: Mock) -> None:
+    def test_index_template_rendering_with_mocks(self, mock_render: Mock, mock_auth: Mock) -> None:
         """Test index template rendering."""
         mock_auth.return_value = True
         mock_render.return_value = "<html>Test</html>"
@@ -6111,13 +6111,6 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
             self.assertTrue(True)
 
             mock_camera = create_mock_camera(camera_id=12345)
-
-    @patch("builtins.open", side_effect=FileNotFoundError)
-    def test_settings_with_none_file(self, mock_open: Mock) -> None:
-        """Test settings loading with missing file."""
-        # Test that settings loading handles missing files gracefully
-        result = {}  # Default empty settings
-        self.assertIsInstance(result, dict)
 
 
 class TestFileOperationsFixed(BaseTestCase):

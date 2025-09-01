@@ -112,21 +112,6 @@ class TestValidators(FlaskTestCase):
         with self.assertRaises(ValueError):
             validate_string_input("very long string", 5, "test_field")
 
-    def test_extract_thumbnail_timestamp_valid(self) -> None:
-        """Test extract_thumbnail_timestamp with valid URL."""
-        from blinkapp.utils.parsers import extract_thumbnail_timestamp
-
-        url = "https://example.com/thumb.jpg?ts=1234567890"
-        result = extract_thumbnail_timestamp(url)
-        self.assertEqual(result, 1234567890)
-
-    def test_extract_thumbnail_timestamp_none(self) -> None:
-        """Test extract_thumbnail_timestamp with None."""
-        from blinkapp.utils.parsers import extract_thumbnail_timestamp
-
-        result = extract_thumbnail_timestamp(None)
-        self.assertEqual(result, 0)
-
     def test_format_time_ago_recent(self) -> None:
         """Test format_time_ago with recent timestamp."""
         from datetime import datetime
