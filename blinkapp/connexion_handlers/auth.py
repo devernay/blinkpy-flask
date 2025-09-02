@@ -71,7 +71,7 @@ def verify_twofa() -> "Response":
 
     from ..services.auth_service import handle_2fa_verification
 
-    code = request.form.get("code", "")
+    code = request.form.get("key", "")
 
     if not code:
         return render_template(
