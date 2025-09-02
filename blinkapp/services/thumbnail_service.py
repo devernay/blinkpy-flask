@@ -23,6 +23,7 @@ from blinkapp.models.types import JsonDict
 
 if TYPE_CHECKING:
     from flask import Response
+
     from blinkapp.models.ids import CameraId, ClipId
 
 from blinkapp.config import Config
@@ -65,7 +66,6 @@ def generate_local_clip_thumbnail(
         - Corrupted video: Returns None, logs error
         - Timeout: Returns None after configured timeout
     """
-    import subprocess
 
     # Verify this is a local clip - raise exception if not
     if not clip_id.is_local():
@@ -150,8 +150,8 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
 
 
 def get_camera_thumbnail(
-    camera_id: "CameraId", timestamp: bool = False
-) -> "Response | JsonDict | tuple[JsonDict, int]":
+    camera_id: CameraId, timestamp: bool = False
+) -> Response | JsonDict | tuple[JsonDict, int]:
     """Get camera thumbnail with intelligent caching based on timestamp.
 
     Args:
@@ -161,7 +161,6 @@ def get_camera_thumbnail(
     Returns:
         Response with thumbnail image or timestamp data
     """
-    import re
     from pathlib import Path
 
     from flask import Response
@@ -182,16 +181,19 @@ def get_camera_thumbnail(
 
         # Extract timestamp from camera thumbnail URL
         current_ts = None
-        if hasattr(camera, "thumb") and camera.thumb:
+        if hasattr(camera, "thumbnail") and camera.thumbnail:
             # Extract ts parameter from URL like ?ts=1742459551&ext=
-            ts_match = re.search(r"[?&]ts=(\d+)", camera.thumb)
+            ts_match = re.search(r"[?&]ts=(\d+)", camera.thumbnail)
             if ts_match:
                 current_ts = int(ts_match.group(1))
 
         if timestamp:
             # Return timestamp information
             if cached_entry:
-                return {"success": True, "data": {"timestamp": cached_entry["timestamp"]}}
+                return {
+                    "success": True,
+                    "data": {"timestamp": cached_entry["timestamp"]},
+                }
             elif current_ts:
                 return {"success": True, "data": {"timestamp": current_ts}}
             else:
@@ -202,14 +204,16 @@ def get_camera_thumbnail(
             current_ts and current_ts > cached_entry["timestamp"]
         )
 
-        if should_update and current_ts and camera.thumb:
+        if should_update and current_ts and camera.thumbnail:
             # Download and cache new thumbnail
-            _download_camera_thumbnail(camera_id, camera.thumb, current_ts)
+            _download_camera_thumbnail(camera_id, camera.thumbnail, current_ts)
             cached_entry = cache.get(camera_id)
 
         if cached_entry and blinkapp.THUMBNAIL_CACHE_DIR:
             # Serve cached thumbnail
-            thumbnail_path = Path(blinkapp.THUMBNAIL_CACHE_DIR) / cached_entry["filename"]
+            thumbnail_path = (
+                Path(blinkapp.THUMBNAIL_CACHE_DIR) / cached_entry["filename"]
+            )
             if thumbnail_path.exists():
                 with open(thumbnail_path, "rb") as f:
                     return Response(f.read(), mimetype="image/jpeg")
@@ -223,7 +227,7 @@ def get_camera_thumbnail(
         return {"success": False, "error": "Internal server error"}, 500
 
 
-def refresh_camera_thumbnail(camera_id: "CameraId") -> JsonDict | tuple[JsonDict, int]:
+def refresh_camera_thumbnail(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
     """Force refresh of camera thumbnail by clearing cache and re-downloading.
 
     Args:
@@ -232,7 +236,6 @@ def refresh_camera_thumbnail(camera_id: "CameraId") -> JsonDict | tuple[JsonDict
     Returns:
         Success response or error
     """
-    import re
     from pathlib import Path
 
     import blinkapp
@@ -256,11 +259,11 @@ def refresh_camera_thumbnail(camera_id: "CameraId") -> JsonDict | tuple[JsonDict
             del cache[camera_id]
 
         # Extract current timestamp and download new thumbnail
-        if hasattr(camera, "thumb") and camera.thumb:
-            ts_match = re.search(r"[?&]ts=(\d+)", camera.thumb)
+        if hasattr(camera, "thumbnail") and camera.thumbnail:
+            ts_match = re.search(r"[?&]ts=(\d+)", camera.thumbnail)
             if ts_match:
                 current_ts = int(ts_match.group(1))
-                _download_camera_thumbnail(camera_id, camera.thumb, current_ts)
+                _download_camera_thumbnail(camera_id, camera.thumbnail, current_ts)
                 return {
                     "success": True,
                     "data": {"message": "Thumbnail refresh initiated"},
@@ -276,7 +279,7 @@ def refresh_camera_thumbnail(camera_id: "CameraId") -> JsonDict | tuple[JsonDict
 
 
 def _download_camera_thumbnail(
-    camera_id: "CameraId", thumbnail_url: str, timestamp: int
+    camera_id: CameraId, thumbnail_url: str, timestamp: int
 ) -> None:
     """Download and cache camera thumbnail.
 
@@ -327,23 +330,3 @@ def _download_camera_thumbnail(
         from blinkapp import logger
 
         logger.error(f"Error downloading thumbnail for camera {camera_id}: {e}")
-
-    """Get thumbnail cache statistics.
-
-    Returns:
-        Dictionary with cache statistics
-    """
-    from blinkapp.services.cache_service import (
-        ensure_camera_thumbnail_cache_initialized,
-    )
-
-    try:
-        camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
-        return {
-            "size": len(camera_thumbnail_cache),
-            "max_size": getattr(camera_thumbnail_cache, "max_size", "unknown"),
-            "hit_rate": getattr(camera_thumbnail_cache, "hit_rate", "unknown"),
-        }
-    except Exception as e:
-        logger.error(f"Failed to get thumbnail cache stats: {e}")
-        return {"error": str(e)}
