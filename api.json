@@ -321,7 +321,7 @@
         "tags": ["Authentication"],
         "security": [{"sessionAuth": []}],
         "responses": {
-          "200": {
+          "302": {
             "description": "Logout successful - redirect to login page"
           }
         }
