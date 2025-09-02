@@ -9,8 +9,6 @@ import logging
 import logging.handlers
 from pathlib import Path
 
-from blinkapp.config import Config
-
 __all__ = [
     "setup_logging",
 ]
@@ -45,11 +43,27 @@ def setup_logging() -> None:
     )
     simple_formatter = logging.Formatter("%(levelname)s: %(message)s")
 
-    # File handler with rotation for main application logs
+    # File handler with rotation at each app launch
     log_file = cache_dir / "blink_app.log"
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file, maxBytes=Config.LOG_MAX_BYTES, backupCount=Config.LOG_BACKUP_COUNT
-    )
+
+    # Rotate existing log file if it exists and has content
+    if log_file.exists() and log_file.stat().st_size > 0:
+        import time
+
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        rotated_file = cache_dir / f"blink_app.log.{timestamp}"
+        log_file.rename(rotated_file)
+
+        # Clean up old rotated files, keep only the most recent 9 (plus current = 10 total)
+        rotated_files = sorted(
+            cache_dir.glob("blink_app.log.*"),
+            key=lambda x: x.stat().st_mtime,
+            reverse=True,
+        )
+        for old_file in rotated_files[9:]:  # Keep 9 rotated + 1 current = 10 total
+            old_file.unlink()
+
+    file_handler = logging.FileHandler(log_file)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(detailed_formatter)
     root_logger.addHandler(file_handler)

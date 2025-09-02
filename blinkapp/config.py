@@ -79,7 +79,7 @@ class Config:
     # File System and Logging
     # ========================================================================
     LOG_FILE = "blink_app.log"  # Application log file (relative to cache dir)
-    LOG_BACKUP_COUNT = 5  # Number of rotated log files to keep
+    LOG_BACKUP_COUNT = 10  # Number of rotated log files to keep (total)
     LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit before rotation
     SECRET_KEY = "your-secret-key-here"  # Flask session secret (override in production)
 
