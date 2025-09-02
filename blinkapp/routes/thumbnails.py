@@ -24,11 +24,14 @@ def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
         cached_ts: Cached timestamp
     """
     from ..services.thumbnail_service import _download_camera_thumbnail
+    from ..services.connection_service import ensure_executor_initialized
 
     if current_ts > cached_ts:
         camera_id = CameraId(str(camera.camera_id))
         if hasattr(camera, "thumbnail") and camera.thumbnail:
-            _download_camera_thumbnail(camera_id, camera.thumbnail, current_ts)
+            # Submit to executor for background processing
+            executor = ensure_executor_initialized()
+            executor.submit(_download_camera_thumbnail, camera_id, camera.thumbnail, current_ts)
 
 
 def setup_camera_thumbnail_routes(app: Flask) -> None:

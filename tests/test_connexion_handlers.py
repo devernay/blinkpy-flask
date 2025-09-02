@@ -35,7 +35,7 @@ class TestAuthHandlers(BaseTestCase):
 class TestSystemHandlers(BaseTestCase):
     """Test system management connexion handlers."""
 
-    @patch("blinkapp.connexion_handlers.system.service_get_systems")
+    @patch("blinkapp.services.system_service.get_systems")
     def test_get_systems(self, mock_service: Mock) -> None:
         """Test get_systems handler delegates to service."""
         mock_service.return_value = {"systems": []}

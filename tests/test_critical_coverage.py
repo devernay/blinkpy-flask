@@ -62,6 +62,8 @@ class TestLoggingSetup(BaseTestCase):
         mock_logger.return_value = mock_logger_instance
         mock_file_handler = Mock(spec=logging.Handler)
         mock_file.return_value = mock_file_handler
+        mock_stream_handler = Mock(spec=logging.Handler)
+        mock_stream.return_value = mock_stream_handler
 
         from blinkapp import initialize_cache_paths, setup_logging
 

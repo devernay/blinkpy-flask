@@ -26,7 +26,7 @@ class TestRouteExistence(FlaskTestCase):
                 "/2fa",
                 "/logout",
                 "/api/systems",
-                "/api/systems/<network_id_str>/devices",
+                "/api/systems/<network_id>/devices",
                 "/api/cameras",
                 "/api/clips",
                 "/api/config",
