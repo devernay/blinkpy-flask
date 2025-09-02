@@ -22,6 +22,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
+from unittest.mock import patch as original_patch
 
 from tests.test_base import BaseTestCase
 
@@ -744,7 +745,7 @@ class TestHLSStream(BaseTestCase):
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
-        with patch.object(stream, "cleanup") as mock_cleanup:
+        with original_patch.object(stream, "cleanup") as mock_cleanup:
             stream.stop()
 
             self.assertFalse(stream._active)

@@ -11,6 +11,7 @@ __all__ = [
     "process_local_clip_background",
     "download_and_cache_cloud_thumbnail",
     "process_cloud_clip_thumbnail_only",
+    "logger",
 ]
 
 import logging

@@ -17,6 +17,7 @@ __all__ = [
     "create_auth_config",
     "handle_login",
     "handle_2fa_verification",
+    "logger",
 ]
 
 import logging

@@ -11,6 +11,7 @@ __all__ = [
     "get_devices",
     "arm_system",
     "refresh_system",
+    "logger",
 ]
 
 import logging

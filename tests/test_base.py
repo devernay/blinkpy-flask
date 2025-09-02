@@ -5,7 +5,63 @@ This module provides all test utilities in one place:
 - Test initialization functions
 - Mock utilities
 - Decorators for test setup
+- Strict patching utilities
 """
+
+import functools
+import gc
+import importlib
+import os
+import sys
+import unittest
+from collections.abc import Callable
+from contextlib import contextmanager
+from typing import Any, ParamSpec, TypeVar
+from unittest.mock import MagicMock, Mock
+from unittest.mock import patch as original_patch
+
+from blinkpy.blinkpy import Blink
+from blinkpy.camera import BlinkCamera
+from blinkpy.livestream import BlinkLiveStream
+from blinkpy.sync_module import BlinkSyncModule
+
+from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
+from blinkapp.services.stream_service import StreamManager
+
+
+def strict_patch(target: str, *args, **kwargs) -> Any:
+    """Patch function that only allows patching symbols in __all__."""
+    if "." not in target:
+        return original_patch(target, *args, **kwargs)
+
+    module_path, symbol = target.rsplit(".", 1)
+
+    try:
+        module = importlib.import_module(module_path)
+    except ImportError:
+        return original_patch(target, *args, **kwargs)
+
+    if hasattr(module, "__all__"):
+        if symbol not in module.__all__:
+            raise ValueError(
+                f"Symbol '{symbol}' is not exported by module '{module_path}'. "
+                f"Available exports: {sorted(module.__all__)}"
+            )
+
+    return original_patch(target, *args, **kwargs)
+
+
+def enable_strict_patching() -> None:
+    """Enable strict patching that respects __all__ exports."""
+    import unittest.mock
+    unittest.mock.patch = strict_patch
+
+
+def disable_strict_patching() -> None:
+    """Disable strict patching and restore original behavior."""
+    import unittest.mock
+    unittest.mock.patch = original_patch
+
 
 __all__ = [
     "create_mock_cache_instance",
@@ -17,25 +73,10 @@ __all__ = [
     "BaseTestCase",
     "FlaskTestCase",
     "with_blink_auth",
+    "strict_patch",
+    "enable_strict_patching",
+    "disable_strict_patching",
 ]
-
-import functools
-import gc
-import os
-import sys
-import unittest
-from collections.abc import Callable
-from contextlib import contextmanager
-from typing import Any, ParamSpec, TypeVar
-from unittest.mock import MagicMock, Mock
-
-from blinkpy.blinkpy import Blink
-from blinkpy.camera import BlinkCamera
-from blinkpy.livestream import BlinkLiveStream
-from blinkpy.sync_module import BlinkSyncModule
-
-from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
-from blinkapp.services.stream_service import StreamManager
 
 
 def create_mock_cache_instance(

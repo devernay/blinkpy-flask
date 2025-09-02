@@ -23,8 +23,8 @@ def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
         current_ts: Current timestamp from camera
         cached_ts: Cached timestamp
     """
-    from ..services.thumbnail_service import _download_camera_thumbnail
     from ..services.connection_service import ensure_executor_initialized
+    from ..services.thumbnail_service import _download_camera_thumbnail
 
     if current_ts > cached_ts:
         camera_id = CameraId(str(camera.camera_id))
