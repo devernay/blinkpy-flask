@@ -54,17 +54,6 @@ def setup_logging() -> None:
     file_handler.setFormatter(detailed_formatter)
     root_logger.addHandler(file_handler)
 
-    # Separate file handler for errors and critical issues
-    error_log_file = cache_dir / "blink_app_errors.log"
-    error_handler = logging.handlers.RotatingFileHandler(
-        error_log_file,
-        maxBytes=Config.LOG_MAX_BYTES,
-        backupCount=Config.LOG_BACKUP_COUNT,
-    )
-    error_handler.setLevel(logging.ERROR)
-    error_handler.setFormatter(detailed_formatter)
-    root_logger.addHandler(error_handler)
-
     # Console handler for development and debugging
     console_handler = logging.StreamHandler()
     console_handler.setLevel(
