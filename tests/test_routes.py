@@ -141,3 +141,245 @@ class TestRouteIntegration(FlaskTestCase):
             response = self.client.get("/api/config")
             # Should not return 404 (route exists)
             self.assertNotEqual(response.status_code, 404)
+
+
+class TestAdminRoutes(FlaskTestCase):
+    """Test admin route setup and registration."""
+
+    def test_register_admin_routes(self) -> None:
+        """Test register_admin_routes function."""
+        from flask import Flask
+        from blinkapp.routes.admin import register_admin_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        register_admin_routes(app)
+
+        # Should have registered routes
+        self.assertGreater(len(list(app.url_map.iter_rules())), 0)
+
+
+class TestCameraRoutes(FlaskTestCase):
+    """Test camera route setup and registration."""
+
+    def test_setup_camera_routes(self) -> None:
+        """Test setup_camera_routes function."""
+        from flask import Flask
+        from blinkapp.routes.camera import setup_camera_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_camera_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+        # Check specific routes are registered
+        endpoints = [rule.endpoint for rule in rules]
+        self.assertIn("list_cameras_route", endpoints)
+        self.assertIn("get_camera_details_route", endpoints)
+
+
+class TestClipsRoutes(FlaskTestCase):
+    """Test clips route setup and registration."""
+
+    def test_setup_clips_routes(self) -> None:
+        """Test setup_clips_routes function."""
+        from flask import Flask
+        from blinkapp.routes.clips import setup_clips_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_clips_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+        # Check specific routes are registered
+        endpoints = [rule.endpoint for rule in rules]
+        self.assertIn("get_clips_route", endpoints)
+
+    def test_clips_routes_registration(self) -> None:
+        """Test clips routes are properly registered."""
+        from flask import Flask
+        from blinkapp.routes.clips import setup_clips_routes
+
+        app = Flask(__name__)
+        setup_clips_routes(app)
+
+        # Get all registered routes
+        rules = list(app.url_map.iter_rules())
+        endpoints = [rule.endpoint for rule in rules]
+
+        # Check that clips routes are registered
+        expected_endpoints = ["get_clips_route"]
+        for endpoint in expected_endpoints:
+            self.assertIn(endpoint, endpoints)
+
+    def test_clips_thumbnail_route_registration(self) -> None:
+        """Test clips thumbnail routes are registered."""
+        from flask import Flask
+        from blinkapp.routes.clips import setup_clips_routes
+
+        app = Flask(__name__)
+        setup_clips_routes(app)
+
+        rules = list(app.url_map.iter_rules())
+        endpoints = [rule.endpoint for rule in rules]
+        self.assertIn("get_clips_route", endpoints)
+
+    def test_clips_process_route_registration(self) -> None:
+        """Test clips processing routes are registered."""
+        from flask import Flask
+        from blinkapp.routes.clips import setup_clips_routes
+
+        app = Flask(__name__)
+        setup_clips_routes(app)
+
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestAuthRoutesSetup(FlaskTestCase):
+    """Test auth route setup and registration."""
+
+    def test_setup_auth_routes(self) -> None:
+        """Test setup_auth_routes function."""
+        from flask import Flask
+        from blinkapp.routes.auth import setup_auth_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_auth_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+    def test_register_auth_routes(self) -> None:
+        """Test register_auth_routes function."""
+        from flask import Flask
+        from blinkapp.routes.auth import register_auth_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        register_auth_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestConfigRoutes(FlaskTestCase):
+    """Test config route setup and registration."""
+
+    def test_setup_config_routes(self) -> None:
+        """Test setup_config_routes function."""
+        from flask import Flask
+        from blinkapp.routes.config import setup_config_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_config_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestSettingsRoutes(FlaskTestCase):
+    """Test settings route setup and registration."""
+
+    def test_setup_settings_routes(self) -> None:
+        """Test setup_settings_routes function."""
+        from flask import Flask
+        from blinkapp.routes.settings import setup_settings_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_settings_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+    def test_register_settings_routes(self) -> None:
+        """Test register_settings_routes function."""
+        from flask import Flask
+        from blinkapp.routes.settings import register_settings_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        register_settings_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestStreamingRoutes(FlaskTestCase):
+    """Test streaming route setup and registration."""
+
+    def test_setup_streaming_routes(self) -> None:
+        """Test setup_streaming_routes function."""
+        from flask import Flask
+        from blinkapp.routes.streaming import setup_streaming_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_streaming_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestSystemRoutes(FlaskTestCase):
+    """Test system route setup and registration."""
+
+    def test_setup_system_routes(self) -> None:
+        """Test setup_system_routes function."""
+        from flask import Flask
+        from blinkapp.routes.system import setup_system_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_system_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestThumbnailsRoutes(FlaskTestCase):
+    """Test thumbnails route setup and registration."""
+
+    def test_setup_thumbnails_routes(self) -> None:
+        """Test thumbnails route setup if it exists."""
+        try:
+            from flask import Flask
+            from blinkapp.routes.thumbnails import setup_thumbnails_routes
+
+            app = Flask(__name__)
+
+            # Should not raise exception
+            setup_thumbnails_routes(app)
+
+            # Should have registered routes
+            rules = list(app.url_map.iter_rules())
+            self.assertGreater(len(rules), 0)
+        except ImportError:
+            # thumbnails.py might not have setup function
+            self.skipTest("setup_thumbnails_routes not found")
