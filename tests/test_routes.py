@@ -157,6 +157,7 @@ class TestAdminRoutes(FlaskTestCase):
     def test_register_admin_routes(self) -> None:
         """Test register_admin_routes function."""
         from flask import Flask
+
         from blinkapp.routes.admin import register_admin_routes
 
         app = Flask(__name__)
@@ -174,6 +175,7 @@ class TestCameraRoutes(FlaskTestCase):
     def test_setup_camera_routes(self) -> None:
         """Test setup_camera_routes function."""
         from flask import Flask
+
         from blinkapp.routes.camera import setup_camera_routes
 
         app = Flask(__name__)
@@ -197,6 +199,7 @@ class TestClipsRoutes(FlaskTestCase):
     def test_setup_clips_routes(self) -> None:
         """Test setup_clips_routes function."""
         from flask import Flask
+
         from blinkapp.routes.clips import setup_clips_routes
 
         app = Flask(__name__)
@@ -215,6 +218,7 @@ class TestClipsRoutes(FlaskTestCase):
     def test_clips_routes_registration(self) -> None:
         """Test clips routes are properly registered."""
         from flask import Flask
+
         from blinkapp.routes.clips import setup_clips_routes
 
         app = Flask(__name__)
@@ -232,6 +236,7 @@ class TestClipsRoutes(FlaskTestCase):
     def test_clips_thumbnail_route_registration(self) -> None:
         """Test clips thumbnail routes are registered."""
         from flask import Flask
+
         from blinkapp.routes.clips import setup_clips_routes
 
         app = Flask(__name__)
@@ -244,6 +249,7 @@ class TestClipsRoutes(FlaskTestCase):
     def test_clips_process_route_registration(self) -> None:
         """Test clips processing routes are registered."""
         from flask import Flask
+
         from blinkapp.routes.clips import setup_clips_routes
 
         app = Flask(__name__)
@@ -259,6 +265,7 @@ class TestAuthRoutesSetup(FlaskTestCase):
     def test_setup_auth_routes(self) -> None:
         """Test setup_auth_routes function."""
         from flask import Flask
+
         from blinkapp.routes.auth import setup_auth_routes
 
         app = Flask(__name__)
@@ -273,6 +280,7 @@ class TestAuthRoutesSetup(FlaskTestCase):
     def test_register_auth_routes(self) -> None:
         """Test register_auth_routes function."""
         from flask import Flask
+
         from blinkapp.routes.auth import register_auth_routes
 
         app = Flask(__name__)
@@ -291,6 +299,7 @@ class TestConfigRoutes(FlaskTestCase):
     def test_setup_config_routes(self) -> None:
         """Test setup_config_routes function."""
         from flask import Flask
+
         from blinkapp.routes.config import setup_config_routes
 
         app = Flask(__name__)
@@ -309,6 +318,7 @@ class TestSettingsRoutes(FlaskTestCase):
     def test_setup_settings_routes(self) -> None:
         """Test setup_settings_routes function."""
         from flask import Flask
+
         from blinkapp.routes.settings import setup_settings_routes
 
         app = Flask(__name__)
@@ -323,6 +333,7 @@ class TestSettingsRoutes(FlaskTestCase):
     def test_register_settings_routes(self) -> None:
         """Test register_settings_routes function."""
         from flask import Flask
+
         from blinkapp.routes.settings import register_settings_routes
 
         app = Flask(__name__)
@@ -341,6 +352,7 @@ class TestStreamingRoutes(FlaskTestCase):
     def test_setup_streaming_routes(self) -> None:
         """Test setup_streaming_routes function."""
         from flask import Flask
+
         from blinkapp.routes.streaming import setup_streaming_routes
 
         app = Flask(__name__)
@@ -359,6 +371,7 @@ class TestSystemRoutes(FlaskTestCase):
     def test_setup_system_routes(self) -> None:
         """Test setup_system_routes function."""
         from flask import Flask
+
         from blinkapp.routes.system import setup_system_routes
 
         app = Flask(__name__)
@@ -378,6 +391,7 @@ class TestThumbnailsRoutes(FlaskTestCase):
         """Test thumbnails route setup if it exists."""
         try:
             from flask import Flask
+
             from blinkapp.routes.thumbnails import setup_thumbnails_routes
 
             app = Flask(__name__)

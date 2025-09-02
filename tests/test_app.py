@@ -3,7 +3,7 @@
 
 LARGE INTEGRATION TEST FILE - NEEDS REORGANIZATION INTO:
 - test_integration_api.py (API endpoints, routes, HTTP handling)
-- test_integration_core.py (app initialization, core functionality)  
+- test_integration_core.py (app initialization, core functionality)
 - test_integration_features.py (streaming, clips, thumbnails, complex workflows)
 
 This file currently contains mixed integration tests that should be split:
@@ -14,11 +14,6 @@ This file currently contains mixed integration tests that should be split:
 - Cache integration tests (→ test_integration_core.py)
 
 DO NOT add new tests to this file - add them to the appropriate test_integration_*.py file.
-"""
-- API endpoints
-- Cache operations
-- Error handling
-- Authentication flow
 """
 
 import json

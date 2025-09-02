@@ -2,7 +2,7 @@
 
 This file contains ONLY unit tests for blinkapp/services/ modules:
 - Time services (time_service.py)
-- File services (file_service.py) 
+- File services (file_service.py)
 - Authentication services (auth_service.py)
 - Cache services (cache_service.py)
 - Device services (device_service.py)
@@ -15,7 +15,6 @@ This file contains ONLY unit tests for blinkapp/services/ modules:
 These are pure unit tests with mocked dependencies.
 DO NOT add integration tests here - those belong in test_integration_*.py files.
 DO NOT add Flask route tests here - those belong in test_integration_api.py.
-"""
 """
 
 import subprocess
@@ -388,7 +387,7 @@ class TestCacheService(BaseTestCase):
     def test_validate_cache_directory(self) -> None:
         """Test cache directory validation."""
         from blinkapp.services.cache_service import validate_cache_directory
-        
+
         # Test with /tmp which should exist on most systems
         result = validate_cache_directory("/tmp")
         self.assertIsInstance(result, bool)
@@ -397,6 +396,7 @@ class TestCacheService(BaseTestCase):
         """Test cache directory creation."""
         import os
         import tempfile
+
         from blinkapp.services.cache_service import ensure_cache_directory
 
         # Use a temporary directory that we can actually write to
@@ -417,7 +417,7 @@ class TestCacheService(BaseTestCase):
             "THUMBNAIL_CACHE_SIZE": 100,
         }
         initialize_caches(config)
-        
+
         stats = get_cache_stats()
         self.assertIsInstance(stats, dict)
 

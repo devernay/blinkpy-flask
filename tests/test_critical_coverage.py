@@ -5,7 +5,7 @@ INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_core.py
 
 This file contains integration tests for critical application functionality:
 - Logging system integration
-- Cache system integration  
+- Cache system integration
 - Core app initialization paths
 - Error handling integration
 - Threading and concurrency integration

@@ -16,8 +16,6 @@ DO NOT add new tests to this file - add them to test_integration_features.py.
 import os
 import sys
 import unittest
-from datetime import datetime
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from .test_base import (
@@ -231,7 +229,7 @@ class TestErrorHandlingPaths(BaseTestCase):
         How: Tests empty string input to both CameraId and ClipId validation.
         """
         from blinkapp.models.ids import CameraId, ClipId
-        
+
         # Test ValueError handling
         with self.assertRaises(ValueError):
             CameraId("")  # Should raise ValueError for empty string
@@ -242,7 +240,7 @@ class TestErrorHandlingPaths(BaseTestCase):
     def test_type_error_handling(self) -> None:
         """Test TypeError handling."""
         from blinkapp.models.ids import CameraId, ClipId
-        
+
         # Test with wrong types that should raise ValueError
         with self.assertRaises((ValueError, TypeError)):
             CameraId("")  # Empty string should raise ValueError

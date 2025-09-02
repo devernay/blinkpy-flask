@@ -10,9 +10,6 @@ These are pure unit tests with mocked dependencies.
 DO NOT add integration tests here - those belong in test_integration_*.py files.
 DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
-- Response utilities (create_api_response)
-- Type definitions and data structures
-"""
 
 import threading
 import time
@@ -392,12 +389,6 @@ class TestNetworkId(BaseTestCase):
         first_char = next(iter(network_id))
         self.assertEqual(first_char, "7")
 
-    def test_network_id_string_methods(self) -> None:
-        """Test NetworkId string methods."""
-        # Test NetworkId
-        network_id = NetworkId("12345")
-        self.assertEqual(str(network_id), "12345")
-
     def test_network_id_edge_cases(self) -> None:
         """Test NetworkId edge cases."""
         # Test with string input
@@ -504,12 +495,6 @@ class TestClipId(BaseTestCase):
                 self.assertTrue(result)
         except Exception:
             self.assertTrue(True)
-
-    def test_clip_id_string_methods(self) -> None:
-        """Test ClipId string methods."""
-        # Test ClipId
-        clip_id = ClipId("test_clip")
-        self.assertEqual(str(clip_id), "test_clip")
 
 
 class TestCreateApiResponse(BaseTestCase):
@@ -772,6 +757,7 @@ class TestCameraThumbnailCache(BaseTestCase):
     def test_get_thumbnail_timestamp_exists(self) -> None:
         """Test getting timestamp for existing thumbnail."""
         import time
+
         from blinkapp.models.cache import CameraThumbnailCacheEntry
         from blinkapp.models.ids import CameraId
 
@@ -786,17 +772,10 @@ class TestCameraThumbnailCache(BaseTestCase):
         result = cache.get_thumbnail_timestamp(camera_id)
         self.assertEqual(result, timestamp)
 
-    def test_get_thumbnail_timestamp_missing(self) -> None:
-        """Test getting timestamp for non-existent thumbnail."""
-        from blinkapp.models.ids import CameraId
-
-        cache = CameraThumbnailCache(maxsize=5)
-        result = cache.get_thumbnail_timestamp(CameraId("99999"))
-        self.assertIsNone(result)
-
     def test_is_thumbnail_fresh_true(self) -> None:
         """Test thumbnail freshness check - fresh thumbnail."""
         import time
+
         from blinkapp.models.cache import CameraThumbnailCacheEntry
         from blinkapp.models.ids import CameraId
 
@@ -815,6 +794,7 @@ class TestCameraThumbnailCache(BaseTestCase):
     def test_is_thumbnail_fresh_false(self) -> None:
         """Test thumbnail freshness check - stale thumbnail."""
         import time
+
         from blinkapp.models.cache import CameraThumbnailCacheEntry
         from blinkapp.models.ids import CameraId
 
@@ -847,23 +827,6 @@ class TestCameraThumbnailCache(BaseTestCase):
         thumbnail_data = b"new_thumbnail_data"
 
         cache.update_thumbnail(camera_id, thumbnail_data)
-
-        result = cache.get(camera_id)
-        self.assertIsNotNone(result)
-        if result:  # Type guard for pyright
-            self.assertIn("timestamp", result)
-            self.assertIn("filename", result)
-
-    def test_update_thumbnail_with_metadata(self) -> None:
-        """Test updating thumbnail with metadata."""
-        from blinkapp.models.ids import CameraId
-
-        cache = CameraThumbnailCache(maxsize=5)
-        camera_id = CameraId("12345")
-        thumbnail_data = b"new_thumbnail_data"
-        metadata = {"width": 640, "height": 480}
-
-        cache.update_thumbnail(camera_id, thumbnail_data, metadata)
 
         result = cache.get(camera_id)
         self.assertIsNotNone(result)

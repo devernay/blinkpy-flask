@@ -3,7 +3,7 @@
 
 This file contains ONLY unit tests for app initialization functions:
 - clear_all_caches() function
-- setup_logging() function  
+- setup_logging() function
 - initialize_cache_paths() function
 - Other app-level utility functions
 
