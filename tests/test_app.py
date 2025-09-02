@@ -383,12 +383,12 @@ class TestFlaskApp(FlaskTestCase):
                 "password": "test",
             },
         )
-        self.assert_response_contains(response, 200, "cannot be empty")
+        self.assert_response_contains(response, 400, "Username and password required")
 
     def test_placeholder_endpoint(self) -> None:
         """Test placeholder endpoint."""
         response = self.client.get("/placeholder")
-        self.assert_api_error(response, 501, "This feature is coming soon")
+        self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_service.blink", None)
     def test_api_systems_no_blink(self) -> None:
