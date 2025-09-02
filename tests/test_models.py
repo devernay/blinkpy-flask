@@ -326,6 +326,13 @@ class TestCameraId(BaseTestCase):
         parts = camera_id.split("-", 1)
         self.assertEqual(parts, ["12", "34-56"])
 
+    def test_models_ids_string_methods(self) -> None:
+        """Test ID model string methods."""
+        # Test CameraId
+        camera_id = CameraId("test_camera")
+        self.assertEqual(str(camera_id), "test_camera")
+        self.assertEqual(repr(camera_id), "CameraId('test_camera')")
+
 
 class TestNetworkId(BaseTestCase):
     """Test NetworkId validation and functionality."""
@@ -362,6 +369,12 @@ class TestNetworkId(BaseTestCase):
         # Test iteration
         first_char = next(iter(network_id))
         self.assertEqual(first_char, "7")
+
+    def test_network_id_string_methods(self) -> None:
+        """Test NetworkId string methods."""
+        # Test NetworkId
+        network_id = NetworkId("12345")
+        self.assertEqual(str(network_id), "12345")
 
 
 class TestClipId(BaseTestCase):
@@ -454,6 +467,12 @@ class TestClipId(BaseTestCase):
                 self.assertTrue(result)
         except Exception:
             self.assertTrue(True)
+
+    def test_clip_id_string_methods(self) -> None:
+        """Test ClipId string methods."""
+        # Test ClipId
+        clip_id = ClipId("test_clip")
+        self.assertEqual(str(clip_id), "test_clip")
 
 
 class TestCreateApiResponse(BaseTestCase):
@@ -951,6 +970,31 @@ class TestCacheStatsAndMethods(BaseTestCase):
         # Initially no hits or misses
         stats = cache.get_stats()
         self.assertEqual(stats["hit_rate"], 0.0)
+
+    def test_models_cache_basic_operations(self) -> None:
+        """Test basic cache operations."""
+        import time
+        from pathlib import Path
+
+        from blinkapp.models.cache import ClipsCache
+        from blinkapp.models.ids import ClipId
+
+        cache = ClipsCache()
+        self.assertEqual(len(cache), 0)
+
+        # Test adding items
+        clip_id = ClipId("test_clip")
+        cache[clip_id] = {
+            "cached_at": time.time(),
+            "access_count": 0,
+            "filepath": Path("/test/path.mp4"),
+        }
+        self.assertEqual(len(cache), 1)
+        self.assertIn(clip_id, cache)
+
+        # Test getting items
+        result = cache[clip_id]
+        self.assertIn("cached_at", result)
 
 
 if __name__ == "__main__":
