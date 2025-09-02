@@ -9,17 +9,21 @@ from __future__ import annotations
 __all__ = [
     "generate_local_clip_thumbnail",
     "notify_thumbnail_ready",
-    "get_camera_thumbnail_cache_stats",
+    "get_camera_thumbnail",
+    "refresh_camera_thumbnail",
 ]
 
 import logging
+import re
+import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from blinkapp.models.types import JsonDict
 
 if TYPE_CHECKING:
-    from blinkapp.models.ids import ClipId
+    from flask import Response
+    from blinkapp.models.ids import CameraId, ClipId
 
 from blinkapp.config import Config
 
@@ -145,7 +149,185 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
     logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
-def get_camera_thumbnail_cache_stats() -> JsonDict:
+def get_camera_thumbnail(
+    camera_id: "CameraId", timestamp: bool = False
+) -> "Response | JsonDict | tuple[JsonDict, int]":
+    """Get camera thumbnail with intelligent caching based on timestamp.
+
+    Args:
+        camera_id: Camera identifier
+        timestamp: If True, return timestamp info instead of image
+
+    Returns:
+        Response with thumbnail image or timestamp data
+    """
+    import re
+    from pathlib import Path
+
+    from flask import Response
+
+    import blinkapp
+
+    from ..services.cache_service import ensure_camera_thumbnail_cache_initialized
+    from ..services.camera_service import find_camera_by_id
+
+    try:
+        camera = find_camera_by_id(camera_id)
+        if not camera:
+            return {"success": False, "error": "Camera not found"}, 404
+
+        # Get cached thumbnail info
+        cache = ensure_camera_thumbnail_cache_initialized()
+        cached_entry = cache.get(camera_id)
+
+        # Extract timestamp from camera thumbnail URL
+        current_ts = None
+        if hasattr(camera, "thumb") and camera.thumb:
+            # Extract ts parameter from URL like ?ts=1742459551&ext=
+            ts_match = re.search(r"[?&]ts=(\d+)", camera.thumb)
+            if ts_match:
+                current_ts = int(ts_match.group(1))
+
+        if timestamp:
+            # Return timestamp information
+            if cached_entry:
+                return {"success": True, "data": {"timestamp": cached_entry["timestamp"]}}
+            elif current_ts:
+                return {"success": True, "data": {"timestamp": current_ts}}
+            else:
+                return {"success": False, "error": "No timestamp available"}, 404
+
+        # Check if we need to update cached thumbnail
+        should_update = not cached_entry or (
+            current_ts and current_ts > cached_entry["timestamp"]
+        )
+
+        if should_update and current_ts and camera.thumb:
+            # Download and cache new thumbnail
+            _download_camera_thumbnail(camera_id, camera.thumb, current_ts)
+            cached_entry = cache.get(camera_id)
+
+        if cached_entry and blinkapp.THUMBNAIL_CACHE_DIR:
+            # Serve cached thumbnail
+            thumbnail_path = Path(blinkapp.THUMBNAIL_CACHE_DIR) / cached_entry["filename"]
+            if thumbnail_path.exists():
+                with open(thumbnail_path, "rb") as f:
+                    return Response(f.read(), mimetype="image/jpeg")
+
+        return {"success": False, "error": "Thumbnail not available"}, 404
+
+    except Exception as e:
+        from blinkapp import logger
+
+        logger.error(f"Error getting camera thumbnail for {camera_id}: {e}")
+        return {"success": False, "error": "Internal server error"}, 500
+
+
+def refresh_camera_thumbnail(camera_id: "CameraId") -> JsonDict | tuple[JsonDict, int]:
+    """Force refresh of camera thumbnail by clearing cache and re-downloading.
+
+    Args:
+        camera_id: Camera identifier
+
+    Returns:
+        Success response or error
+    """
+    import re
+    from pathlib import Path
+
+    import blinkapp
+
+    from ..services.cache_service import ensure_camera_thumbnail_cache_initialized
+    from ..services.camera_service import find_camera_by_id
+
+    try:
+        camera = find_camera_by_id(camera_id)
+        if not camera:
+            return {"success": False, "error": "Camera not found"}, 404
+
+        # Clear cached entry
+        cache = ensure_camera_thumbnail_cache_initialized()
+        if camera_id in cache:
+            old_entry = cache[camera_id]
+            if blinkapp.THUMBNAIL_CACHE_DIR:
+                old_path = Path(blinkapp.THUMBNAIL_CACHE_DIR) / old_entry["filename"]
+                if old_path.exists():
+                    old_path.unlink()
+            del cache[camera_id]
+
+        # Extract current timestamp and download new thumbnail
+        if hasattr(camera, "thumb") and camera.thumb:
+            ts_match = re.search(r"[?&]ts=(\d+)", camera.thumb)
+            if ts_match:
+                current_ts = int(ts_match.group(1))
+                _download_camera_thumbnail(camera_id, camera.thumb, current_ts)
+                return {
+                    "success": True,
+                    "data": {"message": "Thumbnail refresh initiated"},
+                }
+
+        return {"success": False, "error": "No thumbnail URL available"}, 404
+
+    except Exception as e:
+        from blinkapp import logger
+
+        logger.error(f"Error refreshing camera thumbnail for {camera_id}: {e}")
+        return {"success": False, "error": "Internal server error"}, 500
+
+
+def _download_camera_thumbnail(
+    camera_id: "CameraId", thumbnail_url: str, timestamp: int
+) -> None:
+    """Download and cache camera thumbnail.
+
+    Args:
+        camera_id: Camera identifier
+        thumbnail_url: URL to download thumbnail from
+        timestamp: Timestamp for cache entry
+    """
+    from pathlib import Path
+
+    import requests
+
+    import blinkapp
+
+    from ..models.cache import CameraThumbnailCacheEntry
+    from ..services.cache_service import ensure_camera_thumbnail_cache_initialized
+
+    try:
+        if not blinkapp.THUMBNAIL_CACHE_DIR:
+            return
+
+        cache_dir = Path(blinkapp.THUMBNAIL_CACHE_DIR)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate filename: camera_id_timestamp.jpg
+        filename = f"{camera_id}_{timestamp}.jpg"
+        file_path = cache_dir / filename
+
+        # Download thumbnail
+        response = requests.get(thumbnail_url, timeout=10)
+        response.raise_for_status()
+
+        # Save to cache
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
+        # Update cache entry
+        cache = ensure_camera_thumbnail_cache_initialized()
+        cache[camera_id] = CameraThumbnailCacheEntry(
+            timestamp=timestamp, filename=filename
+        )
+
+        from blinkapp import logger
+
+        logger.info(f"Downloaded and cached thumbnail for camera {camera_id}")
+
+    except Exception as e:
+        from blinkapp import logger
+
+        logger.error(f"Error downloading thumbnail for camera {camera_id}: {e}")
+
     """Get thumbnail cache statistics.
 
     Returns:

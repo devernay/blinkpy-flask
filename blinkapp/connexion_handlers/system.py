@@ -30,15 +30,15 @@ def get_system_details(network_id: str) -> JsonDict | tuple[JsonDict, int]:
     try:
         network_id_obj = NetworkId(network_id)
         systems_response = get_systems()
-        
+
         if not systems_response.get("success", False):
             return systems_response
-            
+
         systems = systems_response.get("data", {}).get("systems", [])
         for system in systems:
             if str(system.get("network_id")) == str(network_id_obj):
                 return {"success": True, "data": system}
-                
+
         return {"success": False, "error": "System not found"}, 404
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
@@ -53,7 +53,6 @@ def get_system_devices(network_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Devices list dictionary
     """
-    from ..services.system_service import get_devices
 
     try:
         network_id_obj = NetworkId(network_id)
