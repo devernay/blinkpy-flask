@@ -656,7 +656,7 @@ class TestFFmpegHelpers(BaseTestCase):
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         with patch("subprocess.Popen") as mock_popen:
-            mock_process = Mock()
+            mock_process = Mock(spec=subprocess.Popen)
             mock_popen.return_value = mock_process
 
             cmd = ["echo", "test"]
@@ -703,7 +703,7 @@ class TestHLSStream(BaseTestCase):
         from blinkapp.services.hls_service import HLSStream
 
         # Mock temporary directory
-        mock_dir = Mock()
+        mock_dir = Mock(spec=tempfile.TemporaryDirectory)
         mock_dir.name = "/tmp/hls_test_camera_123"
         mock_temp_dir.return_value = mock_dir
 
@@ -763,7 +763,7 @@ class TestHLSStream(BaseTestCase):
         stream.process = mock_process
 
         # Mock temp directory
-        mock_temp_dir = Mock()
+        mock_temp_dir = Mock(spec=tempfile.TemporaryDirectory)
         stream.temp_dir = mock_temp_dir
 
         stream.cleanup()
@@ -795,7 +795,7 @@ class TestHLSStream(BaseTestCase):
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
-        stream.temp_dir = Mock()
+        stream.temp_dir = Mock(spec=tempfile.TemporaryDirectory)
         stream.temp_dir.name = "/tmp/test"
 
         url = stream.get_hls_url()
@@ -825,12 +825,12 @@ class TestHLSStream(BaseTestCase):
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
-        mock_temp_dir = Mock()
+        mock_temp_dir = Mock(spec=tempfile.TemporaryDirectory)
         mock_temp_dir.name = "/tmp/test"
         stream.temp_dir = mock_temp_dir
 
         mock_exists.return_value = True
-        mock_file = Mock()
+        mock_file = Mock(spec=object)  # File-like object
         mock_file.read.return_value = b"playlist content"
         mock_open.return_value.__enter__.return_value = mock_file
 

@@ -49,7 +49,9 @@ class TestSystemHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_system_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_system_devices with valid network ID."""
-        mock_sync = Mock()
+        from blinkpy.sync_module import BlinkSyncModule
+        
+        mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.cameras = {}  # Empty cameras dict
         mock_sync.online = True
         mock_sync.sync_id = 12345
@@ -102,16 +104,12 @@ class TestSystemHandlers(BaseTestCase):
     def test_update_system_valid_request(self, mock_validator: Mock, mock_connection: Mock) -> None:
         """Test update_system with valid request."""
         from blinkpy.sync_module import BlinkSyncModule
-        from tests.test_base import create_mock_connection
         
         mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.async_arm.return_value = Mock()  # Mock coroutine
+        mock_sync.async_arm.return_value = Mock(spec=object)
         mock_validator.return_value = (mock_sync, None)
         
-        # Use factory for consistent connection mocking
-        connection_factory = create_mock_connection()
-        mock_connection.execute = connection_factory.execute
-        mock_connection.is_started = connection_factory.is_started
+        mock_connection.execute.return_value = None
         
         body: JsonDict = {"armed": True}
 

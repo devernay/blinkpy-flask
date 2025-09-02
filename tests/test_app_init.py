@@ -34,18 +34,19 @@ class TestAppInitialization(unittest.TestCase):
             # Expected to fail in test environment, but function exists
             pass
 
-    @patch("blinkapp.logging")
-    def test_setup_logging_with_mock(self, mock_logging: Mock) -> None:
+    def test_setup_logging_with_mock(self) -> None:
         """Test setup_logging with mocked logging."""
-        mock_logging.basicConfig = Mock(spec=callable)
-        mock_logging.getLogger = Mock(spec=callable)
-
-        # Should not raise exception
-        try:
-            setup_logging()
-        except Exception:
-            # Expected to fail in test environment, but function exists
-            pass
+        with patch("logging.basicConfig") as mock_basic_config, \
+             patch("logging.getLogger") as mock_get_logger:
+            
+            mock_get_logger.return_value = Mock(spec=logging.Logger)
+            
+            # Should not raise exception
+            try:
+                setup_logging()
+            except Exception:
+                # Expected to fail in test environment, but function exists
+                pass
 
     def test_initialize_cache_paths_basic(self) -> None:
         """Test initialize_cache_paths basic functionality."""

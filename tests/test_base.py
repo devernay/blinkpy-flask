@@ -73,7 +73,6 @@ __all__ = [
     "create_mock_sync",
     "create_mock_camera",
     "create_mock_live_stream",
-    "create_mock_connection",
     "initialize_for_testing",
     "BaseTestCase",
     "FlaskTestCase",
@@ -332,16 +331,6 @@ def create_mock_sync(
     else:
         mock_sync.refresh = Mock(spec=callable)
     return mock_sync
-
-
-def create_mock_connection() -> Mock:
-    """Create a properly configured mock BlinkConnection."""
-    from unittest.mock import Mock
-    
-    mock_connection = Mock()  # Don't use spec to allow __bool__
-    mock_connection.execute.return_value = None
-    mock_connection.is_started = True
-    return mock_connection
 
 
 def create_mock_clip_item(
