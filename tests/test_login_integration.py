@@ -111,7 +111,7 @@ class TestLoginIntegration:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password"
 
-        response = client.post("/2fa", data={"code": "123456"})
+        response = client.post("/2fa", data={"key": "123456"})
 
         # Should redirect to main page
         assert response.status_code == 302
@@ -128,7 +128,7 @@ class TestLoginIntegration:
             sess["temp_username"] = "test@example.com"
             sess["temp_password"] = "password"
 
-        response = client.post("/2fa", data={"code": "wrong"})
+        response = client.post("/2fa", data={"key": "wrong"})
 
         # Should return error on 2FA page
         assert response.status_code == 400
@@ -212,7 +212,7 @@ class TestLoginFlowEnd2End:
 
             # Step 3: Submit 2FA code
             mock_handle_2fa.return_value = {"success": True}
-            response = client.post("/2fa", data={"code": "123456"})
+            response = client.post("/2fa", data={"key": "123456"})
 
             # Should redirect to main page
             assert response.status_code == 302
