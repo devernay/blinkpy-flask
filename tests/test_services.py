@@ -7,6 +7,7 @@ Complete test suite covering testable functions in blinkapp/services/:
 - Cache services (cache_service.py)
 - Device services (device_service.py)
 - HLS services (hls_service.py)
+- Clip processing services (clip_processing.py)
 """
 
 import subprocess
@@ -14,8 +15,17 @@ import time
 import unittest
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, mock_open, patch
 
+import requests
+
+from blinkapp.models.ids import ClipId
+from blinkapp.services.clip_processing import (
+    download_and_cache_cloud_thumbnail,
+    process_cloud_clip_background,
+    process_cloud_clip_thumbnail_only,
+    process_local_clip_background,
+)
 from blinkapp.services.hls_service import (
     HLSStream,
     HLSStreamConfig,
@@ -863,6 +873,65 @@ class TestHLSStream(BaseTestCase):
 
         self.assertEqual(content, b"playlist content")
         self.assertEqual(content_type, "application/vnd.apple.mpegurl")
+
+
+class TestCloudClipProcessing(BaseTestCase):
+    """Test cloud clip processing functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+        self.clip_id = ClipId("123456")
+        self.clips_cache_dir = Path("/tmp/test_clips")
+
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
+    @patch("pathlib.Path.exists")
+    def test_process_cloud_clip_background_thumbnail_exists(
+        self, mock_exists: Mock
+    ) -> None:
+        """Test cloud clip processing when thumbnail already exists."""
+        mock_exists.return_value = True
+
+        with patch("blinkapp.services.clip_processing.logger") as mock_logger:
+            process_cloud_clip_background(self.clip_id)
+
+            mock_logger.debug.assert_called_with(
+                f"Thumbnail already cached for clip {self.clip_id}"
+            )
+
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
+    @patch("pathlib.Path.exists")
+    @patch("blinkapp.services.blink_service.blink", None)
+    def test_process_cloud_clip_background_no_blink(self, mock_exists: Mock) -> None:
+        """Test cloud clip processing when blink is not available."""
+        mock_exists.return_value = False
+
+        with patch("blinkapp.services.clip_processing.logger") as mock_logger:
+            process_cloud_clip_background(self.clip_id)
+
+            mock_logger.warning.assert_called_with(
+                f"Blink not available for processing clip {self.clip_id}"
+            )
+
+    def test_download_and_cache_cloud_thumbnail_local_clip_error(self) -> None:
+        """Test download thumbnail with local clip raises error."""
+        # Create a local clip ID that will return True for is_local()
+        local_clip_id = ClipId.from_local("test_sync", 123456)
+
+        with self.assertRaises(ValueError) as context:
+            download_and_cache_cloud_thumbnail(local_clip_id, "http://example.com/thumbnail.jpg")
+
+        self.assertIn("called on local clip", str(context.exception))
+
+    def test_download_and_cache_cloud_thumbnail_no_url(self) -> None:
+        """Test download thumbnail with no URL."""
+        with patch("blinkapp.services.clip_processing.logger") as mock_logger:
+            result = download_and_cache_cloud_thumbnail(self.clip_id, "")
+
+            self.assertIsNone(result)
+            mock_logger.error.assert_called_with(
+                f"No thumbnail URL provided for clip {self.clip_id}"
+            )
 
 
 if __name__ == "__main__":
