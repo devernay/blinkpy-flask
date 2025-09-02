@@ -3,7 +3,6 @@
 from ..models.ids import NetworkId
 from ..models.types import JsonDict
 from ..services.system_service import arm_system, get_devices
-from ..services.system_service import get_systems as get_systems_service
 
 
 def get_systems() -> JsonDict:
@@ -12,7 +11,9 @@ def get_systems() -> JsonDict:
     Returns:
         Systems list dictionary
     """
-    return get_systems_service()
+    from ..services.system_service import get_systems as service_get_systems
+
+    return service_get_systems()
 
 
 def get_system_details(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
