@@ -377,6 +377,28 @@ class TestCacheService(BaseTestCase):
         self.assertIsNone(clips_cache)
         self.assertIsNone(camera_thumbnail_cache)
 
+    def test_validate_cache_directory(self) -> None:
+        """Test cache directory validation."""
+        from blinkapp.services.cache_service import validate_cache_directory
+        
+        # Test with /tmp which should exist on most systems
+        result = validate_cache_directory("/tmp")
+        self.assertIsInstance(result, bool)
+
+    def test_ensure_cache_directory(self) -> None:
+        """Test cache directory creation."""
+        import os
+        import tempfile
+        from blinkapp.services.cache_service import ensure_cache_directory
+
+        # Use a temporary directory that we can actually write to
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_path = os.path.join(temp_dir, "test_cache")
+            result = ensure_cache_directory(test_path)
+            self.assertEqual(result, test_path)
+            self.assertTrue(os.path.exists(test_path))
+            self.assertTrue(os.path.isdir(test_path))
+
     def test_cache_service_stats(self) -> None:
         """Test cache service stats."""
         from blinkapp.services.cache_service import get_cache_stats, initialize_caches
