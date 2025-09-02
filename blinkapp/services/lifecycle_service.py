@@ -228,7 +228,7 @@ async def cleanup_blink_session() -> None:
     if blink_connection and blink_connection.blink:
         blink = blink_connection.blink
         try:
-            await blink.auth.session.close()
+            blink_connection.execute(blink.auth.session.close())
         except Exception as e:
             logger.debug(f"Error closing Blink session: {e}")
 

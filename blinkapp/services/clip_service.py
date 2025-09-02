@@ -197,8 +197,7 @@ def process_local_clips(
             # This ensures we have the latest clip information
             if blink_connection_instance:
                 try:
-                    refresh_result = sync_module.refresh()
-                    blink_connection_instance.execute(refresh_result)
+                    blink_connection_instance.execute(sync_module.refresh())
                 except Exception as refresh_error:
                     logger.warning(
                         f"Failed to refresh sync module {sync_name}: {refresh_error}"

@@ -195,7 +195,7 @@ async def initialize_blink(
         blink.auth = auth
 
         # Attempt to start Blink system and authenticate
-        await blink.start()
+        blink_connection.execute(blink.start())
 
         # Check if 2FA is required before proceeding
         if blink.key_required:
@@ -254,16 +254,18 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         assert blink is not None, (
             "Blink instance must be initialized before 2FA verification"
         )
-        await blink.auth.send_auth_key(blink, tfa_key)
+        from blinkapp.services.blink_connection import blink_connection
+        assert blink_connection is not None
+        blink_connection.execute(blink.auth.send_auth_key(blink, tfa_key))
 
         # Complete the post-verification setup process
         logger.debug("Setting up post verification...")
-        await blink.setup_post_verify()
+        blink_connection.execute(blink.setup_post_verify())
 
         # Save encrypted credentials to disk for future sessions
         logger.debug("Saving credentials...")
         assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
-        await blink.save(CREDENTIALS_FILE)
+        blink_connection.execute(blink.save(CREDENTIALS_FILE))
 
         logger.info("2FA verification and save completed successfully")
         return True
@@ -324,7 +326,9 @@ async def load_saved_blink() -> bool:
                 blink.auth = auth
 
                 # Attempt to start Blink system with saved credentials
-                success = await blink.start()
+                from blinkapp.services.blink_connection import blink_connection
+                assert blink_connection is not None
+                success = blink_connection.execute(blink.start())
                 if success is True:
                     logger.info("Blink system loaded from saved credentials")
                     # blink is already updated in the blink_service module
@@ -363,42 +367,31 @@ def handle_login(username: str, password: str) -> JsonDict:
         if not validate_credentials(username, password):
             return {"success": False, "error": "Invalid username or password format"}
 
-        # Run async authentication in a new event loop
-        import asyncio
+        # Ensure blink_connection is initialized
+        from blinkapp.services.blink_connection import blink_connection
 
-        # Create new event loop for this thread
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is already running, we need a new one
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        if blink_connection is None:
+            from blinkapp.services.blink_connection import initialize_blink_connection
 
-        try:
-            result = loop.run_until_complete(initialize_blink(username, password))
+            initialize_blink_connection()
+            from blinkapp.services.blink_connection import blink_connection
 
-            if result is True:
-                return {"success": True}
-            elif result == "2fa_required":
-                # Store credentials in Flask session for 2FA verification
-                from flask import session
+        assert blink_connection is not None
+        # Use blink_connection to run authentication
+        result = blink_connection.execute(initialize_blink(username, password))
 
-                session["pending_2fa"] = True
-                session["temp_username"] = username
-                session["temp_password"] = password
-                return {"success": False, "requires_2fa": True}
-            else:
-                return {"success": False, "error": "Authentication failed"}
+        if result is True:
+            return {"success": True}
+        elif result == "2fa_required":
+            # Store credentials in Flask session for 2FA verification
+            from flask import session
 
-        finally:
-            # Clean up the event loop
-            try:
-                loop.close()
-            except Exception:
-                pass
+            session["pending_2fa"] = True
+            session["temp_username"] = username
+            session["temp_password"] = password
+            return {"success": False, "requires_2fa": True}
+        else:
+            return {"success": False, "error": "Authentication failed"}
 
     except Exception as e:
         logger.error(f"Login error: {e}")
@@ -423,39 +416,27 @@ def handle_2fa_verification(code: str) -> JsonDict:
         if not username or not password:
             return {"success": False, "error": "Session expired. Please login again."}
 
-        # Run async 2FA verification
-        import asyncio
+        # Use blink_connection for 2FA verification
+        from blinkapp.services.blink_connection import blink_connection
 
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        if blink_connection is None:
+            from blinkapp.services.blink_connection import initialize_blink_connection
 
-        try:
-            result = loop.run_until_complete(
-                verify_2fa_and_save(username, password, code)
-            )
+            initialize_blink_connection()
+            from blinkapp.services.blink_connection import blink_connection
 
-            if result:
-                # Clear temporary session data
-                session.pop("pending_2fa", None)
-                session.pop("temp_username", None)
-                session.pop("temp_password", None)
-                session["authenticated"] = True
-                return {"success": True}
-            else:
-                return {"success": False, "error": "Invalid 2FA code"}
+        assert blink_connection is not None
+        result = blink_connection.execute(verify_2fa_and_save(username, password, code))
 
-        finally:
-            try:
-                loop.close()
-            except Exception:
-                pass
-
+        if result:
+            # Clear temporary session data
+            session.pop("pending_2fa", None)
+            session.pop("temp_username", None)
+            session.pop("temp_password", None)
+            session["authenticated"] = True
+            return {"success": True}
+        else:
+            return {"success": False, "error": "Invalid 2FA code"}
     except Exception as e:
         logger.error(f"2FA verification error: {e}")
         return {"success": False, "error": "2FA verification failed"}
