@@ -192,17 +192,17 @@ async def initialize_blink(
         # Attempt to start Blink system and authenticate
         await blink.start()
 
+        # Update global blink reference for use in route handlers
+        from blinkapp.services import blink_service
+
+        blink_service.blink = blink
+
         # Check if 2FA is required before proceeding
         if blink.key_required:
             logger.info("2FA key required - check your email or SMS")
             return "2fa_required"
 
         logger.info("Blink system initialized successfully")
-
-        # Update global blink reference for use in route handlers
-        from blinkapp.services import blink_service
-
-        blink_service.blink = blink
 
         return True
 
