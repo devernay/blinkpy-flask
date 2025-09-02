@@ -152,11 +152,10 @@ class TestLoginIntegration:
         assert response.status_code == 302
         assert response.location.endswith("/login")
 
-    @patch("blinkapp.services.auth_service.load_saved_blink")
-    def test_main_page_with_saved_credentials(self, mock_load, client):
-        """Test main page loads with saved credentials."""
-        # Mock successful credential loading
-        mock_load.return_value = True
+    def test_main_page_with_saved_credentials(self, client):
+        """Test main page loads with authenticated session."""
+        with client.session_transaction() as sess:
+            sess["authenticated"] = True
 
         response = client.get("/")
 
@@ -183,8 +182,18 @@ class TestLoginFlowEnd2End:
     @patch("blinkapp.services.auth_service.handle_2fa_verification")
     def test_complete_2fa_flow(self, mock_handle_2fa, mock_handle_login, client):
         """Test complete login flow with 2FA."""
+
+        def mock_login_side_effect(username, password):
+            # Simulate the session setting that happens in real handle_login
+            from flask import session
+
+            session["pending_2fa"] = True
+            session["temp_username"] = username
+            session["temp_password"] = password
+            return {"success": False, "requires_2fa": True}
+
         # Step 1: Initial login requires 2FA
-        mock_handle_login.return_value = {"success": False, "requires_2fa": True}
+        mock_handle_login.side_effect = mock_login_side_effect
 
         with client:
             # Login with credentials

@@ -386,6 +386,20 @@ def handle_login(username: str, password: str) -> JsonDict:
         return {"success": False, "error": "Authentication failed"}
 
 
+def handle_logout() -> dict[str, bool]:
+    """Handle user logout by clearing session data.
+
+    Returns:
+        Dict with success status
+    """
+    from flask import session
+
+    # Clear all session data
+    session.clear()
+
+    return {"success": True}
+
+
 def handle_2fa_verification(code: str) -> JsonDict:
     """Handle 2FA verification.
 
