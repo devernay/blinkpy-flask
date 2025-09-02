@@ -47,10 +47,7 @@ from blinkapp.models.responses import create_api_response
 
 # Admin routes
 from blinkapp.routes.admin import register_admin_routes
-from blinkapp.routes.auth import (
-    register_auth_routes,
-    setup_auth_routes,
-)
+from blinkapp.routes.auth import setup_auth_routes
 
 # Camera operations and route handlers
 from blinkapp.routes.camera import (
@@ -59,9 +56,6 @@ from blinkapp.routes.camera import (
 
 # Clip management routes
 from blinkapp.routes.clips import setup_clips_routes
-
-# Configuration routes
-from blinkapp.routes.config import setup_config_routes
 
 # Settings management routes
 from blinkapp.routes.settings import setup_settings_routes
@@ -153,9 +147,6 @@ setup_camera_thumbnail_routes(app)
 # Set up streaming routes
 setup_streaming_routes(app)
 
-# Set up configuration routes
-setup_config_routes(app)
-
 # Set up clip routes
 setup_clips_routes(app)
 
@@ -169,7 +160,7 @@ setup_settings_routes(app)
 register_admin_routes(app)
 
 # Register additional auth routes (index)
-register_auth_routes(app)
+# register_auth_routes(app)  # Already called via setup_auth_routes
 
 # ============================================================================
 # Global Application State

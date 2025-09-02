@@ -7,10 +7,40 @@ from typing import Any, Literal
 
 import blinkapp
 from blinkapp.config import Config
+from blinkapp.models.types import JsonDict
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["get_user_settings", "get_temperature_unit"]
+__all__ = ["get_user_settings", "get_temperature_unit", "get_app_config"]
+
+
+def get_app_config() -> JsonDict:
+    """Get application configuration.
+
+    Returns:
+        JSON response with configuration data
+    """
+    from blinkapp.config import Config
+
+    return {
+        "version": "1.0.0",
+        "features": {
+            "live_streaming": True,
+            "clip_management": True,
+            "thumbnail_caching": True,
+            "settings_persistence": True,
+        },
+        "limits": {
+            "max_clip_cache_size": Config.CLIPS_CACHE_SIZE,
+            "thumbnail_cache_max_age": 300,  # 5 minutes
+            "api_timeout": 30,
+        },
+        "supported_formats": {
+            "video": ["mp4"],
+            "image": ["jpg", "jpeg"],
+            "streaming": ["hls", "m3u8"],
+        },
+    }
 
 
 def get_user_settings() -> dict[str, Any]:

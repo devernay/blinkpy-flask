@@ -1,12 +1,14 @@
 """Connexion-compatible camera management handlers."""
 
+from ..models.ids import CameraId
 from ..models.types import JsonDict
 
 
 def list_cameras() -> JsonDict:
     """Get list of all available cameras across all systems.
 
-    Connexion-compatible handler that returns camera information.
+    Returns:
+        Cameras list dictionary
     """
     from ..services.blink_service import ensure_blink_connection_initialized
     from ..services.device_service import create_device_data
@@ -23,3 +25,41 @@ def list_cameras() -> JsonDict:
         cameras.append(camera_data)
 
     return {"cameras": cameras}
+
+
+def get_camera_details(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
+    """Get camera details.
+
+    Args:
+        camera_id: Camera ID string
+
+    Returns:
+        Camera details dictionary
+    """
+    from ..services.camera_service import (
+        get_camera_details as service_get_camera_details,
+    )
+
+    try:
+        camera_id_obj = CameraId(camera_id)
+        return service_get_camera_details(camera_id_obj)
+    except ValueError:
+        return {"success": False, "error": "Invalid camera ID"}, 400
+
+
+def start_camera_recording(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
+    """Start recording on camera.
+
+    Args:
+        camera_id: Camera ID string
+
+    Returns:
+        Recording start result
+    """
+    from ..services.camera_service import record_camera
+
+    try:
+        camera_id_obj = CameraId(camera_id)
+        return record_camera(camera_id_obj)
+    except ValueError:
+        return {"success": False, "error": "Invalid camera ID"}, 400

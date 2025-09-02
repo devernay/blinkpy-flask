@@ -14,6 +14,7 @@ __all__ = [
     "stop_camera_stream",
     "is_stream_active",
     "get_hls_file",
+    "init_camera_stream",
     "HLSStream",
     "HLSStreamConfig",
     "StreamManager",
@@ -33,21 +34,10 @@ from blinkapp.services.hls_service import (
     HLSStreamConfig,
 )
 
-__all__ = [
-    "initialize_stream_manager",
-    "ensure_stream_manager_initialized",
-    "start_camera_stream",
-    "stop_camera_stream",
-    "is_stream_active",
-    "get_hls_file",
-    "HLSStream",
-    "HLSStreamConfig",
-    "StreamManager",
-]
-
 if TYPE_CHECKING:
     from blinkapp.models.ids import CameraId
-    from blinkapp.services.stream_service import StreamManager
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -349,3 +339,70 @@ def validate_tcp_url(tcp_url: str) -> bool:
         return True
     except (ValueError, AttributeError):
         return False
+
+
+def init_camera_stream(
+    camera: object, camera_id: CameraId
+) -> tuple[object | None, str | None]:
+    """Initialize camera stream and return stream object and HLS URL.
+
+    Args:
+        camera: Camera object from blinkpy
+        camera_id: Camera ID for stream management
+
+    Returns:
+        Tuple of (stream_object, hls_url) or (None, None) on failure
+    """
+    from blinkapp import HLS_OUTPUT_DIR
+
+    if HLS_OUTPUT_DIR is None:
+        logger.error("HLS output directory not configured")
+        return None, None
+
+    try:
+        # Initialize camera livestream
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
+        connection = ensure_blink_connection_initialized()
+
+        # Type assertion for camera - we know it's a BlinkCamera
+        from blinkpy.camera import BlinkCamera
+
+        if not isinstance(camera, BlinkCamera):
+            logger.error(f"Invalid camera type for {camera_id}")
+            return None, None
+
+        # Initialize livestream on camera to get TCP stream
+        camera_stream_result = connection.execute(camera.init_livestream())
+        if camera_stream_result is None:
+            logger.error(f"Failed to initialize livestream for camera {camera_id}")
+            return None, None
+
+        # Type assertion: we know init_livestream returns BlinkLiveStream
+        from blinkpy.livestream import BlinkLiveStream
+
+        if not isinstance(camera_stream_result, BlinkLiveStream):
+            logger.error(f"Unexpected stream type: {type(camera_stream_result)}")
+            return None, None
+
+        camera_stream = camera_stream_result
+
+        # Start the camera stream
+        connection.execute(camera_stream.start())
+        tcp_url = camera_stream.url
+
+        # Initialize stream manager
+        stream_manager = ensure_stream_manager_initialized()
+
+        # Start HLS transcoding
+        hls_url, error = stream_manager.start_stream(str(camera_id), tcp_url)
+        if hls_url is not None:
+            logger.info(f"Started live stream for camera {camera_id}: {hls_url}")
+            return camera_stream, hls_url
+        else:
+            logger.error(f"Failed to start stream for camera {camera_id}: {error}")
+            return None, None
+
+    except Exception as e:
+        logger.error(f"Error initializing stream for camera {camera_id}: {e}")
+        return None, None

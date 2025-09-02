@@ -1056,18 +1056,6 @@
           }
         }
       }
-    },
-    "/logout": {
-      "post": {
-        "summary": "Logout",
-        "description": "Logout and clear credentials",
-        "operationId": "logout",
-        "responses": {
-          "200": {
-            "description": "Logged out successfully"
-          }
-        }
-      }
     }
   },
   "components": {

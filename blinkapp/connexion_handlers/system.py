@@ -10,14 +10,33 @@ from ..services.system_service import get_systems as service_get_systems
 def get_systems() -> JsonDict:
     """Get list of available Blink systems.
 
-    Connexion-compatible handler that returns system information.
+    Returns:
+        Systems list dictionary
     """
     return service_get_systems()
 
 
-def get_system_devices(
-    network_id_str: str,
-) -> JsonDict | tuple[JsonDict, int]:
+def get_system_details(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
+    """Get system details.
+
+    Args:
+        network_id_str: Network ID string
+
+    Returns:
+        System details dictionary
+    """
+    from ..services.system_service import (
+        get_system_details as service_get_system_details,
+    )
+
+    try:
+        network_id = NetworkId(network_id_str)
+        return service_get_system_details(network_id)
+    except ValueError:
+        return {"success": False, "error": "Invalid network ID"}, 400
+
+
+def get_system_devices(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
     """Get devices for a specific Blink system.
 
     Args:
@@ -34,9 +53,7 @@ def get_system_devices(
     return service_get_devices(network_id)
 
 
-def get_devices(
-    network_id_str: str,
-) -> JsonDict | tuple[JsonDict, int]:
+def get_devices(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
     """Get devices for a specific Blink system.
 
     Args:
@@ -53,7 +70,7 @@ def get_devices(
     return service_get_devices(network_id)
 
 
-def update_system(
+def update_system_settings(
     network_id_str: str, body: JsonDict
 ) -> JsonDict | tuple[JsonDict, int]:
     """Update a Blink system (arm/disarm).

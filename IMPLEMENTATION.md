@@ -758,20 +758,20 @@ Do not forget to compact your context before it overflows.
 
 - Fix all pyright errors and warnings, fix all tests (full test suite) including warnings, run ruff check and ruff format, then `git commit`
 
-- Update all docstrings, README.md, and add comments to the code where it's not self-explanatory.
+- Update all docstrings, README.md, and add comments to the code where the code itself is not self-explanatory.
 
-- Run test coverage and add new tests to expand the coverage. Focus first on modules that have the highest numbered of uncovered statements.
+- Run test coverage and add new tests to expand the coverage. Focus first on modules that have the highest numbered of uncovered statements. All tests should have strong type hints (no Any, object or "# type: ignore" if possible).
 
 ## Normal priority
 
-- Add comments and docstrings to each non-trivial individual test, explaining what we are testing, why we are testing it, and how the test works. Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
+- Add comments and docstrings to non-trivial tests, explaining what we are testing, why we are testing it, and how the test works (see the docstring of test_refresh_camera_thumbnail_success for an example). Work test case by test case, one by one, so that the docstrings and comments are specific to each test. Don't batch-add comments, each comment much be written specifically for each test. Don't over-comment either: trivial tests should not have much comments.
 
 - Are there any duplicate tests? if yes, compare individual tests and keep the one with the best coverage (in number of lines). Do not remove whole files, but reason test case by test case.
 
-- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works.
+- Update the api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification. This file must truly reflect how the Flask app API works. Can we also inline the API documentation in the api.json?
 
-- For each API entry point in api.json, add an "operationId" tag to facilitate the migration to the connexion package, and make sure that API entry points are coded as connexion "operations" in the code, although we are not yet using connexion. This will facilitate the migration later.
+- For each API entry point in api.json, make sure there's an "operationId" tag to facilitate the migration to the connexion package, and make sure that API entry points are coded as "connexion handlers" in the code (in blinkapp/connexion_handlers directory), with the proper parameters list and return values, although we are not yet using connexion. Most of the connexion handlers already exist. If a connexion handler already exists, just check that the parameters and return values are correct, as well as the documentation. This will facilitate the migration later. Update the corresponding flask route to be a thin wrapper around the connexion handler (the flask route should convert the inputs if necessary, then call the connexion handler, then convert back the returned outputs if necessary). Each flask route should be named after the connexian handler it wraps around, with a "_route" suffix. Use strong type hints (no Any, object or "# type: ignore" if possible).
 
-- Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations found in blinkpy-source. This file must truly reflect how the API works.
+- Update the blink-api.json file by adding as much metadata as possible, following the OpenAPI 3.1.1 specification, by looking at the source code, tests and documentations found in blinkpy-source, as well as additional documentation that can be found on github in https://github.com/MattTW/BlinkMonitorProtocol (you can git clone that repository if it helps). This file must truly reflect how the API works.
 
 # Lower priority

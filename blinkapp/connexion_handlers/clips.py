@@ -1,20 +1,17 @@
 """Connexion-compatible clips management handlers."""
 
+from typing import TYPE_CHECKING
+
 from ..config import Config
+from ..models.ids import ClipId
 from ..models.types import ClipsResponse, JsonDict
 
+if TYPE_CHECKING:
+    from flask import Response
 
-def get_clips(
-    storage: str | None = None,
-) -> ClipsResponse | tuple[JsonDict, int]:
-    """Get clips from cloud or local storage.
 
-    Args:
-        storage: Storage type ('cloud' or 'local'), defaults to 'cloud'
-
-    Returns:
-        Clips list dictionary
-    """
+def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int]:
+    """Get clips from cloud or local storage."""
     from ..services.blink_service import blink, blink_connection
     from ..services.clip_service import process_cloud_clips, process_local_clips
     from ..utils.decorators import error_context
@@ -32,7 +29,6 @@ def get_clips(
 
     with error_context(f"get {storage} clips"):
         if storage == "cloud":
-            # Get cloud clips via blink operation
             if blink_connection:
                 videos_metadata = blink_connection.execute(
                     blink.get_videos_metadata(stop=Config.CLIPS_PER_STORAGE_TYPE)
@@ -41,5 +37,52 @@ def get_clips(
                 videos_metadata = []
             return {"clips": process_cloud_clips(videos_metadata)}
         else:
-            # Get local clips from sync modules
             return {"clips": process_local_clips()}
+
+
+def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
+    """Delete clip."""
+    from ..services.clip_service import delete_clip as service_delete_clip
+
+    try:
+        clip_id_obj = ClipId(clip_id)
+        return service_delete_clip(clip_id_obj)
+    except ValueError:
+        return {"success": False, "error": "Invalid clip ID"}, 400
+
+
+def download_clip(clip_id: str) -> "Response | tuple[JsonDict, int]":
+    """Download clip file."""
+    from ..services.clip_service import download_clip as service_download_clip
+
+    try:
+        clip_id_obj = ClipId(clip_id)
+        return service_download_clip(clip_id_obj)
+    except ValueError:
+        return {"success": False, "error": "Invalid clip ID"}, 400
+
+
+def get_clip_thumbnail(
+    clip_id: str, check: bool = False
+) -> "Response | JsonDict | tuple[JsonDict, int]":
+    """Get clip thumbnail."""
+    from ..services.clip_service import get_clip_thumbnail as service_get_clip_thumbnail
+
+    try:
+        clip_id_obj = ClipId(clip_id)
+        return service_get_clip_thumbnail(clip_id_obj, check)
+    except ValueError:
+        return {"success": False, "error": "Invalid clip ID"}, 400
+
+
+def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
+    """Generate clip thumbnail."""
+    from ..services.clip_service import (
+        generate_clip_thumbnail as service_generate_thumbnail,
+    )
+
+    try:
+        clip_id_obj = ClipId(clip_id)
+        return service_generate_thumbnail(clip_id_obj)
+    except ValueError:
+        return {"success": False, "error": "Invalid clip ID"}, 400

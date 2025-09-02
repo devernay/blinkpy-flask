@@ -1,79 +1,43 @@
-"""
-Administrative routes for the Blink Camera Flask application.
+"""Admin routes for Blink Camera Flask application."""
 
-This module handles administrative functionality including:
-- Cache management and clearing
-- System maintenance operations
-- Placeholder endpoints for future features
-"""
+from __future__ import annotations
 
-from flask import Flask, jsonify
+from typing import TYPE_CHECKING
 
-from blinkapp.config import Config
-from blinkapp.models.responses import create_api_response
-from blinkapp.models.types import JsonDict
-from blinkapp.utils.route_decorators import api_route, simple_success_response
+from ..models.types import JsonDict
+from ..utils.decorators import ensure_blink_available
+from ..utils.route_decorators import simple_success_response
 
-# Explicitly define what this module exports
-__all__ = ["register_admin_routes"]
+if TYPE_CHECKING:
+    from flask import Flask
 
 
 def register_admin_routes(app: Flask) -> None:
-    """Register administrative routes with the Flask app."""
+    """Register admin routes with the Flask app."""
 
     @app.route("/api/cache", methods=["DELETE"])
-    @simple_success_response("Cache clearing initiated")
-    def clear_cache_route() -> JsonDict:
-        """Clear all caches except credentials.
+    @ensure_blink_available
+    @simple_success_response("clear all caches")
+    def clear_all_caches_route() -> JsonDict:
+        """Clear all caches route - thin wrapper around connexion handler."""
+        from ..connexion_handlers.admin import clear_all_caches
 
-        Returns:
-            JSON response with success status
-        """
-        from blinkapp.services.cache_service import clear_all_caches
-        from blinkapp.services.connection_service import ensure_executor_initialized
-
-        ensure_executor_initialized().submit(clear_all_caches)
-        return {}  # Decorator will handle the actual response
+        return clear_all_caches()
 
     @app.route("/api/cache/thumbnails", methods=["DELETE"])
-    @simple_success_response("Thumbnail cache cleared")
-    def clear_camera_thumbnail_cache_route() -> JsonDict:
-        """Clear thumbnail cache only.
+    @ensure_blink_available
+    @simple_success_response("clear thumbnail cache")
+    def clear_thumbnail_cache_route() -> JsonDict:
+        """Clear thumbnail cache route - thin wrapper around connexion handler."""
+        from ..connexion_handlers.admin import clear_thumbnail_cache
 
-        Returns:
-            JSON response with success status
-        """
-        from blinkapp.services.cache_service import clear_camera_thumbnail_cache_files
-        from blinkapp.services.connection_service import ensure_executor_initialized
-
-        ensure_executor_initialized().submit(clear_camera_thumbnail_cache_files)
-        return {}
+        return clear_thumbnail_cache()
 
     @app.route("/api/cache/clips", methods=["DELETE"])
-    @simple_success_response("Clips cache cleared")
+    @ensure_blink_available
+    @simple_success_response("clear clips cache")
     def clear_clips_cache_route() -> JsonDict:
-        """Clear clips cache only.
+        """Clear clips cache route - thin wrapper around connexion handler."""
+        from ..connexion_handlers.admin import clear_clips_cache
 
-        Returns:
-            JSON response with success status
-        """
-        from blinkapp.services.cache_service import clear_clips_cache_files
-        from blinkapp.services.connection_service import ensure_executor_initialized
-
-        ensure_executor_initialized().submit(clear_clips_cache_files)
-        return {}
-
-    @app.route("/placeholder")
-    @api_route("placeholder feature")
-    def placeholder_route() -> tuple[object, int]:
-        """Placeholder endpoint for future features.
-
-        Returns:
-            JSON response indicating feature is not yet implemented
-        """
-        response, status_code = create_api_response(
-            success=False,
-            error=Config.ErrorMessages.FEATURE_NOT_AVAILABLE,
-            status_code=Config.HTTP_STATUS_NOT_IMPLEMENTED,
-        )
-        return jsonify(response), status_code
+        return clear_clips_cache()
