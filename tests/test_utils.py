@@ -48,6 +48,17 @@ class TestDecorators(BaseTestCase):
         result = safe_execute(failing_func)
         self.assertIsNone(result)
 
+    def test_decorators_basic_usage(self) -> None:
+        """Test basic decorator usage."""
+        from blinkapp.utils.decorators import error_context
+
+        @error_context("test operation")
+        def simple_test_function() -> str:
+            return "success"
+
+        result = simple_test_function()
+        self.assertEqual(result, "success")
+
 
 class TestRouteDecorators(BaseTestCase):
     """Test route decorator functions."""
@@ -172,6 +183,21 @@ class TestFormatters(BaseTestCase):
         result = format_time_ago(-1)
         self.assertIn("ago", result)
 
+    def test_format_time_duration(self) -> None:
+        """Test time duration formatting."""
+        from blinkapp.utils.formatters import format_time_duration
+
+        # Test various durations
+        self.assertEqual(format_time_duration(30), "30s")
+        self.assertEqual(format_time_duration(90), "1m")
+        self.assertEqual(format_time_duration(3600), "1h")
+        self.assertEqual(format_time_duration(86400), "1d")
+
+        # Test edge cases
+        self.assertEqual(format_time_duration(0), "0s")
+        with self.assertRaises(ValueError):
+            format_time_duration(-1)
+
 
 class TestValidators(BaseTestCase):
     """Test validator functions."""
@@ -244,6 +270,59 @@ class TestValidators(BaseTestCase):
 
         with self.assertRaises(ValueError):
             validate_credentials("invalid", "password123")
+
+    def test_validate_string_input_comprehensive(self) -> None:
+        """Test string input validation comprehensively."""
+        from blinkapp.utils.validators import validate_string_input
+
+        # Test valid input
+        result = validate_string_input("test", 10, "field")
+        self.assertEqual(result, "test")
+
+        # Test whitespace trimming
+        result = validate_string_input("  test  ", 10, "field")
+        self.assertEqual(result, "test")
+
+        # Test empty input
+        with self.assertRaises(ValueError):
+            validate_string_input("", 10, "field")
+
+        # Test too long input
+        with self.assertRaises(ValueError):
+            validate_string_input("toolong", 5, "field")
+
+    def test_email_validation_comprehensive(self) -> None:
+        """Test email format validation comprehensively."""
+        from blinkapp.utils.validators import is_valid_email_format
+
+        # Valid emails
+        self.assertTrue(is_valid_email_format("test@example.com"))
+        self.assertTrue(is_valid_email_format("user.name+tag@domain.co.uk"))
+
+        # Invalid emails
+        self.assertFalse(is_valid_email_format(""))
+        self.assertFalse(is_valid_email_format("invalid"))
+        self.assertFalse(is_valid_email_format("@domain.com"))
+        self.assertFalse(is_valid_email_format("user@"))
+        # Test None input - function handles None gracefully but type checker doesn't know this
+        self.assertFalse(is_valid_email_format(None))  # type: ignore[arg-type] # Testing None input handling
+
+    def test_credential_validation_comprehensive(self) -> None:
+        """Test credential validation comprehensively."""
+        from blinkapp.utils.validators import validate_credentials
+
+        # Valid credentials
+        username, password = validate_credentials("user@example.com", "password123")
+        self.assertEqual(username, "user@example.com")
+        self.assertEqual(password, "password123")
+
+        # Invalid credentials
+        with self.assertRaises(ValueError):
+            validate_credentials("", "pass")
+        with self.assertRaises(ValueError):
+            validate_credentials("user@example.com", "")
+        with self.assertRaises(ValueError):
+            validate_credentials("invalid-email", "pass")
 
 
 class TestParsers(BaseTestCase):
@@ -327,6 +406,17 @@ class TestErrors(BaseTestCase):
         error = AuthenticationError("Test error", 401)
         # The error stores both message and status code
         self.assertIn("Test error", str(error))
+
+
+class TestErrorHandlers(BaseTestCase):
+    """Test error handler functions."""
+
+    def test_handle_api_error_exists(self) -> None:
+        """Test handle_api_error function exists."""
+        from blinkapp.utils.error_handlers import handle_api_error
+
+        # Function should exist and be callable
+        self.assertTrue(callable(handle_api_error))
 
 
 class TestLoggingConfig(BaseTestCase):
