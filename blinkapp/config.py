@@ -66,8 +66,8 @@ class Config:
     # ========================================================================
     PROCESS_TERMINATE_TIMEOUT = 5  # Graceful process termination timeout (seconds)
     PROCESS_WAIT_TIMEOUT = 5  # Process wait timeout in seconds
-    BLINK_OPERATION_TIMEOUT = 30  # Blink API operation timeout (seconds)
-    BLINK_CONNECTION_TIMEOUT = 30  # Blink connection timeout in seconds
+    BLINK_OPERATION_TIMEOUT = 60  # Blink API operation timeout (seconds)
+    BLINK_CONNECTION_TIMEOUT = 60  # Blink connection timeout in seconds
 
     # ========================================================================
     # API Limits and Batch Sizes

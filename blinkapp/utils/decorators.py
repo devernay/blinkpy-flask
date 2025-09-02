@@ -66,6 +66,8 @@ def error_context(
     except Exception as e:
         logger.error(f"Error during {operation}: {e}")
         logger.debug(f"Full traceback for {operation}: {traceback.format_exc()}")
+        # Also log the exception type and args for better debugging
+        logger.error(f"Exception type: {type(e).__name__}, args: {e.args}")
         if isinstance(e, BlinkError):
             raise
         raise reraise_as(f"Failed to {operation}: {str(e)}") from e

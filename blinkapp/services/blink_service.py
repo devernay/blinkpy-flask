@@ -54,10 +54,10 @@ def ensure_blink_initialized() -> Blink:
 
 
 def ensure_blink_connection_initialized() -> BlinkConnection:
-    """Ensure blink_connection is initialized.
+    """Ensure blink_connection is initialized and started.
 
     Returns:
-        Initialized blink_connection instance
+        Initialized and started blink_connection instance
 
     Raises:
         RuntimeError: If blink_connection hasn't been initialized
@@ -66,4 +66,9 @@ def ensure_blink_connection_initialized() -> BlinkConnection:
         raise RuntimeError(
             "Blink connection not initialized. Call initialize_blink() first."
         )
+
+    # Ensure connection is started
+    if not blink_connection._started:
+        blink_connection.start()
+
     return blink_connection
