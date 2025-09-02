@@ -24,45 +24,45 @@ def setup_system_routes(app: Flask) -> None:
 
         return get_systems()
 
-    @app.route("/api/systems/<network_id_str>")
+    @app.route("/api/systems/<network_id>")
     @ensure_blink_available
     @api_route_with_validation(
-        "get system details", validate_params={"network_id_str": NetworkId}
+        "get system details", validate_params={"network_id": NetworkId}
     )
     def get_system_details_route(
-        network_id_str: str,
+        network_id: NetworkId,
     ) -> JsonDict | tuple[JsonDict, int]:
         """Get system details route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import get_system_details
 
-        return get_system_details(network_id_str)
+        return get_system_details(str(network_id))
 
-    @app.route("/api/systems/<network_id_str>", methods=["PUT"])
+    @app.route("/api/systems/<network_id>", methods=["PUT"])
     @ensure_blink_available
     @api_route_with_validation(
-        "update system", validate_params={"network_id_str": NetworkId}
+        "update system", validate_params={"network_id": NetworkId}
     )
     def update_system_settings_route(
-        network_id_str: str,
+        network_id: NetworkId,
     ) -> JsonDict | tuple[JsonDict, int]:
         """Update system route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import update_system_settings
 
         body = request.get_json() or {}
-        return update_system_settings(network_id_str, body)
+        return update_system_settings(str(network_id), body)
 
-    @app.route("/api/systems/<network_id_str>/devices")
+    @app.route("/api/systems/<network_id>/devices")
     @ensure_blink_available
     @api_route_with_validation(
-        "get system devices", validate_params={"network_id_str": NetworkId}
+        "get system devices", validate_params={"network_id": NetworkId}
     )
     def get_system_devices_route(
-        network_id_str: str,
+        network_id: NetworkId,
     ) -> JsonDict | tuple[JsonDict, int]:
         """Get system devices route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import get_system_devices
 
-        return get_system_devices(network_id_str)
+        return get_system_devices(str(network_id))
 
     @app.route("/api/systems/cache", methods=["DELETE"])
     @ensure_blink_available

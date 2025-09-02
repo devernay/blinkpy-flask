@@ -24,13 +24,13 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
         "get camera thumbnail", validate_params={"camera_id": CameraId}
     )
     def get_camera_thumbnail_route(
-        camera_id: str,
+        camera_id: CameraId,
     ) -> Response | JsonDict | tuple[JsonDict, int]:
         """Get thumbnail route - thin wrapper around connexion handler."""
         from ..connexion_handlers.thumbnails import get_camera_thumbnail
 
         timestamp = request.args.get("timestamp", "").lower() == "true"
-        return get_camera_thumbnail(camera_id, timestamp)
+        return get_camera_thumbnail(str(camera_id), timestamp)
 
     @app.route("/api/cameras/<camera_id>/thumbnail", methods=["DELETE"])
     @ensure_blink_available
@@ -38,9 +38,9 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
         "refresh camera thumbnail", validate_params={"camera_id": CameraId}
     )
     def refresh_camera_thumbnail_route(
-        camera_id: str,
+        camera_id: CameraId,
     ) -> JsonDict | tuple[JsonDict, int]:
         """Refresh thumbnail route - thin wrapper around connexion handler."""
         from ..connexion_handlers.thumbnails import refresh_camera_thumbnail
 
-        return refresh_camera_thumbnail(camera_id)
+        return refresh_camera_thumbnail(str(camera_id))

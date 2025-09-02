@@ -16,35 +16,48 @@ def get_systems() -> JsonDict:
     return service_get_systems()
 
 
-def get_system_details(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
+def get_system_details(network_id: str) -> JsonDict | tuple[JsonDict, int]:
     """Get system details.
 
     Args:
-        network_id_str: Network ID string
+        network_id: Network ID string
 
     Returns:
         System details dictionary
     """
-    from ..services.system_service import get_system_details
+    from ..services.system_service import get_systems
 
     try:
-        network_id = NetworkId(network_id_str)
-        return get_system_details(network_id)
+        network_id_obj = NetworkId(network_id)
+        systems_response = get_systems()
+        
+        if not systems_response.get("success", False):
+            return systems_response
+            
+        systems = systems_response.get("data", {}).get("systems", [])
+        for system in systems:
+            if str(system.get("network_id")) == str(network_id_obj):
+                return {"success": True, "data": system}
+                
+        return {"success": False, "error": "System not found"}, 404
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
 
-def get_system_devices(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
+def get_system_devices(network_id: str) -> JsonDict | tuple[JsonDict, int]:
     """Get devices for a specific Blink system.
 
     Args:
-        network_id_str: Network ID as string from URL path
+        network_id: Network ID string
 
     Returns:
         Devices list dictionary
     """
+    from ..services.system_service import get_devices
+
     try:
-        network_id = NetworkId(network_id_str)
+        network_id_obj = NetworkId(network_id)
+        return get_devices(network_id_obj)
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
@@ -52,19 +65,19 @@ def get_system_devices(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
 
 
 def update_system_settings(
-    network_id_str: str, body: JsonDict
+    network_id: str, body: JsonDict
 ) -> JsonDict | tuple[JsonDict, int]:
     """Update a Blink system (arm/disarm).
 
     Args:
-        network_id_str: Network ID as string from URL path
+        network_id: Network ID string
         body: Request body containing system updates
 
     Returns:
         Update result dictionary
     """
     try:
-        network_id = NetworkId(network_id_str)
+        network_id_obj = NetworkId(network_id)
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
@@ -75,7 +88,7 @@ def update_system_settings(
     if not isinstance(armed, bool):
         return {"success": False, "error": "Field 'armed' must be boolean"}, 400
 
-    return arm_system(network_id, armed)
+    return arm_system(network_id_obj, armed)
 
 
 def clear_systems_cache() -> JsonDict:
