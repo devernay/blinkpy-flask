@@ -11,6 +11,7 @@ DO NOT add integration tests here - those belong in test_integration_*.py files.
 DO NOT add Flask app tests here - those belong in test_integration_api.py.
 """
 
+import logging
 import unittest
 from unittest.mock import Mock, patch
 

@@ -18,6 +18,7 @@ DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
 
 import subprocess
+import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
