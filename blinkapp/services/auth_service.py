@@ -254,9 +254,21 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         assert blink is not None, (
             "Blink instance must be initialized before 2FA verification"
         )
-        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+        from blinkapp.services.blink_service import blink_connection
 
-        blink_connection = ensure_blink_connection_initialized()
+        if blink_connection is None:
+            from blinkapp.services.blink_service import initialize_blink_objects
+
+            initialize_blink_objects()
+            from blinkapp.services.blink_service import blink_connection
+
+        if blink_connection is None:
+            raise RuntimeError("Failed to initialize blink connection")
+
+        # Ensure connection is started
+        if not blink_connection._started:
+            blink_connection.start()
+
         blink_connection.execute(blink.auth.send_auth_key(blink, tfa_key))
 
         # Complete the post-verification setup process
@@ -327,11 +339,21 @@ async def load_saved_blink() -> bool:
                 blink.auth = auth
 
                 # Attempt to start Blink system with saved credentials
-                from blinkapp.services.blink_service import (
-                    ensure_blink_connection_initialized,
-                )
+                from blinkapp.services.blink_service import blink_connection
 
-                blink_connection = ensure_blink_connection_initialized()
+                if blink_connection is None:
+                    from blinkapp.services.blink_service import initialize_blink_objects
+
+                    initialize_blink_objects()
+                    from blinkapp.services.blink_service import blink_connection
+
+                if blink_connection is None:
+                    raise RuntimeError("Failed to initialize blink connection")
+
+                # Ensure connection is started
+                if not blink_connection._started:
+                    blink_connection.start()
+
                 success = blink_connection.execute(blink.start())
                 if success is True:
                     logger.info("Blink system loaded from saved credentials")
@@ -372,9 +394,21 @@ def handle_login(username: str, password: str) -> JsonDict:
             return {"success": False, "error": "Invalid username or password format"}
 
         # Use blink_connection to run authentication
-        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+        from blinkapp.services.blink_service import blink_connection
 
-        blink_connection = ensure_blink_connection_initialized()
+        if blink_connection is None:
+            from blinkapp.services.blink_service import initialize_blink_objects
+
+            initialize_blink_objects()
+            from blinkapp.services.blink_service import blink_connection
+
+        if blink_connection is None:
+            return {"success": False, "error": "System not ready. Please try again."}
+
+        # Ensure connection is started
+        if not blink_connection._started:
+            blink_connection.start()
+
         result = blink_connection.execute(initialize_blink(username, password))
 
         if result is True:
@@ -414,9 +448,21 @@ def handle_2fa_verification(code: str) -> JsonDict:
             return {"success": False, "error": "Session expired. Please login again."}
 
         # Use blink_connection for 2FA verification
-        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+        from blinkapp.services.blink_service import blink_connection
 
-        blink_connection = ensure_blink_connection_initialized()
+        if blink_connection is None:
+            from blinkapp.services.blink_service import initialize_blink_objects
+
+            initialize_blink_objects()
+            from blinkapp.services.blink_service import blink_connection
+
+        if blink_connection is None:
+            return {"success": False, "error": "System not ready. Please try again."}
+
+        # Ensure connection is started
+        if not blink_connection._started:
+            blink_connection.start()
+
         result = blink_connection.execute(verify_2fa_and_save(username, password, code))
 
         if result:
