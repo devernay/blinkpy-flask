@@ -12,7 +12,6 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from .test_base import (
-    create_mock_camera,
     create_mock_camera_cache,
     create_mock_clips_cache,
 )
@@ -544,67 +543,6 @@ class TestBasicOperations(BaseTestCase):
         # Test datetime from timestamp
         converted = datetime.fromtimestamp(timestamp)
         self.assertIsInstance(converted, datetime)
-
-    def test_device_service_create_device_data(self) -> None:
-        """Test device data creation for UI display.
-
-        Why: Device data formatting is critical for camera status display in web interface.
-        What: Verifies proper transformation of camera objects into JSON-ready data.
-        How: Creates mock camera and validates all required fields are present and formatted.
-        """
-        from blinkapp.services.device_service import create_device_data
-
-        # Mock camera object
-        mock_camera = create_mock_camera(
-            camera_id="test_camera_boost",
-            name="Test Camera",
-            motion_enabled=True,
-            temperature=72,
-            battery="ok",
-            wifi_strength=4,
-            last_record={"created_at": "2023-01-01T00:00:00Z"},
-        )
-
-        current_ts = 1640995200  # 2022-01-01 00:00:00
-        cached_ts = 1640991600  # 2021-12-31 23:00:00
-
-        result = create_device_data(mock_camera, current_ts, cached_ts)
-
-        self.assertIsInstance(result, dict)
-        self.assertIn("name", result)
-        self.assertEqual(result["name"], "Test Camera")
-        self.assertEqual(result["id"], "test_camera_boost")
-
-    def test_stream_service_initialize_stream_manager(self) -> None:
-        """Test stream_service initialize_stream_manager function."""
-        from blinkapp.services.stream_service import initialize_stream_manager
-
-        # Should not raise exception
-        initialize_stream_manager()
-
-    def test_stream_service_ensure_stream_manager_initialized(self) -> None:
-        """Test stream_service ensure_stream_manager_initialized function."""
-        from blinkapp.services.stream_service import ensure_stream_manager_initialized
-
-        # Should not raise exception
-        result = ensure_stream_manager_initialized()
-        self.assertIsNotNone(result)
-
-    def test_stream_service_is_stream_active(self) -> None:
-        """Test stream_service is_stream_active function."""
-        from blinkapp.models.ids import CameraId
-        from blinkapp.services.stream_service import is_stream_active
-
-        camera_id = CameraId("test_camera")
-        result = is_stream_active(camera_id)
-        self.assertIsInstance(result, bool)
-
-    def test_auth_service_is_blink_authenticated(self) -> None:
-        """Test auth_service is_blink_authenticated function."""
-        from blinkapp.services.auth_service import is_blink_authenticated
-
-        result = is_blink_authenticated()
-        self.assertIsInstance(result, bool)
 
 
 if __name__ == "__main__":

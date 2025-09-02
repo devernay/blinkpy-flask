@@ -11,13 +11,10 @@ Complete test suite covering testable functions in blinkapp/services/:
 """
 
 import subprocess
-import time
 import unittest
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
-
-import requests
+from unittest.mock import Mock, patch
 
 from tests.test_base import BaseTestCase
 
@@ -199,6 +196,13 @@ class TestAuthService(BaseTestCase):
         self.assertEqual(result["username"], "test@example.com")
         self.assertEqual(result["password"], "password123")
 
+    def test_is_blink_authenticated_coverage(self) -> None:
+        """Test auth_service is_blink_authenticated function."""
+        from blinkapp.services.auth_service import is_blink_authenticated
+
+        result = is_blink_authenticated()
+        self.assertIsInstance(result, bool)
+
 
 class TestCacheService(BaseTestCase):
     """Test cache service functions."""
@@ -306,6 +310,31 @@ class TestDeviceService(BaseTestCase):
 
         result = format_device_temperature(None, "C")
         self.assertEqual(result, "N/A")
+
+    def test_create_device_data(self) -> None:
+        """Test device data creation for UI display."""
+        from blinkapp.services.device_service import create_device_data
+        from tests.test_base import create_mock_camera
+
+        mock_camera = create_mock_camera(
+            camera_id="test_camera_boost",
+            name="Test Camera",
+            motion_enabled=True,
+            temperature=72,
+            battery="ok",
+            wifi_strength=4,
+            last_record={"created_at": "2023-01-01T00:00:00Z"},
+        )
+
+        current_ts = 1640995200  # 2022-01-01 00:00:00
+        cached_ts = 1640991600  # 2021-12-31 23:00:00
+
+        result = create_device_data(mock_camera, current_ts, cached_ts)
+
+        self.assertIsInstance(result, dict)
+        self.assertIn("name", result)
+        self.assertEqual(result["name"], "Test Camera")
+        self.assertEqual(result["id"], "test_camera_boost")
 
 
 class TestHLSServicePureFunctions(BaseTestCase):
@@ -614,7 +643,7 @@ class TestHLSStreamConfig(BaseTestCase):
     def test_hls_stream_config_defaults(self) -> None:
         """Test HLS config uses defaults from Config."""
         from blinkapp.services.hls_service import HLSStreamConfig
-        
+
         config = HLSStreamConfig()
 
         # Should use Config defaults
@@ -626,7 +655,7 @@ class TestHLSStreamConfig(BaseTestCase):
     def test_hls_stream_config_custom_values(self) -> None:
         """Test HLS config with custom values."""
         from blinkapp.services.hls_service import HLSStreamConfig
-        
+
         config = HLSStreamConfig(
             segment_time=5, list_size=10, timeout=30, idle_timeout=60
         )
@@ -643,7 +672,7 @@ class TestFFmpegHelpers(BaseTestCase):
     def test_build_ffmpeg_command(self) -> None:
         """Test FFmpeg command building."""
         from blinkapp.services.hls_service import HLSStreamConfig, _build_ffmpeg_command
-        
+
         config = HLSStreamConfig(segment_time=4, list_size=5)
         output_path = Path("/tmp/test.m3u8")
         tcp_url = "tcp://127.0.0.1:8080"
@@ -672,7 +701,7 @@ class TestFFmpegHelpers(BaseTestCase):
     def test_create_ffmpeg_process_success(self) -> None:
         """Test successful FFmpeg process creation."""
         from blinkapp.services.hls_service import _create_ffmpeg_process
-        
+
         mock_process = Mock(spec=subprocess.Popen)
         mock_factory = Mock(return_value=mock_process)
 
@@ -690,7 +719,7 @@ class TestFFmpegHelpers(BaseTestCase):
     def test_create_ffmpeg_process_error(self) -> None:
         """Test FFmpeg process creation error."""
         from blinkapp.services.hls_service import _create_ffmpeg_process
-        
+
         mock_factory = Mock(side_effect=OSError("Command not found"))
 
         cmd = ["ffmpeg", "-version"]
@@ -701,7 +730,7 @@ class TestFFmpegHelpers(BaseTestCase):
     def test_create_ffmpeg_process_subprocess_error(self) -> None:
         """Test FFmpeg process creation subprocess error."""
         from blinkapp.services.hls_service import _create_ffmpeg_process
-        
+
         mock_factory = Mock(side_effect=subprocess.SubprocessError("Process error"))
 
         cmd = ["ffmpeg", "-version"]
@@ -712,7 +741,7 @@ class TestFFmpegHelpers(BaseTestCase):
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
         from blinkapp.services.hls_service import _create_ffmpeg_process
-        
+
         with patch("subprocess.Popen") as mock_popen:
             mock_process = Mock()
             mock_popen.return_value = mock_process
@@ -729,7 +758,7 @@ class TestHLSStream(BaseTestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         from blinkapp.services.hls_service import HLSStreamConfig
-        
+
         super().setUp()
         self.config = HLSStreamConfig(
             segment_time=2, list_size=3, timeout=10, idle_timeout=30
@@ -740,7 +769,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_init(self) -> None:
         """Test HLS stream initialization."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         self.assertEqual(stream.camera_id, self.camera_id)
@@ -759,7 +788,7 @@ class TestHLSStream(BaseTestCase):
     ) -> None:
         """Test successful HLS stream start."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         # Mock temporary directory
         mock_dir = Mock()
         mock_dir.name = "/tmp/hls_test_camera_123"
@@ -786,7 +815,7 @@ class TestHLSStream(BaseTestCase):
     ) -> None:
         """Test HLS stream start when process creation fails."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         mock_create_process.return_value = None
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -799,7 +828,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_stop(self) -> None:
         """Test HLS stream stop."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
@@ -812,7 +841,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_cleanup_with_process(self) -> None:
         """Test HLS stream cleanup with active process."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         # Mock process
@@ -835,7 +864,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_is_active_not_active(self) -> None:
         """Test is_active when stream is not active."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         self.assertFalse(stream.is_active())
@@ -843,7 +872,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_get_hls_url_no_temp_dir(self) -> None:
         """Test get_hls_url when no temp directory."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         self.assertIsNone(stream.get_hls_url())
@@ -851,7 +880,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_get_hls_url_success(self) -> None:
         """Test get_hls_url with temp directory."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream.temp_dir = Mock()
         stream.temp_dir.name = "/tmp/test"
@@ -864,7 +893,7 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_get_file_not_active(self) -> None:
         """Test get_file when stream not active."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         content, content_type = stream.get_file("test.m3u8")
@@ -879,7 +908,7 @@ class TestHLSStream(BaseTestCase):
     ) -> None:
         """Test get_file success with m3u8 file."""
         from blinkapp.services.hls_service import HLSStream
-        
+
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
@@ -904,7 +933,7 @@ class TestCloudClipProcessing(BaseTestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         from blinkapp.models.ids import ClipId
-        
+
         super().setUp()
         self.clip_id = ClipId("123456")
         self.clips_cache_dir = Path("/tmp/test_clips")
@@ -916,7 +945,7 @@ class TestCloudClipProcessing(BaseTestCase):
     ) -> None:
         """Test cloud clip processing when thumbnail already exists."""
         from blinkapp.services.clip_processing import process_cloud_clip_background
-        
+
         mock_exists.return_value = True
 
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
@@ -932,7 +961,7 @@ class TestCloudClipProcessing(BaseTestCase):
     def test_process_cloud_clip_background_no_blink(self, mock_exists: Mock) -> None:
         """Test cloud clip processing when blink is not available."""
         from blinkapp.services.clip_processing import process_cloud_clip_background
-        
+
         mock_exists.return_value = False
 
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
@@ -946,19 +975,21 @@ class TestCloudClipProcessing(BaseTestCase):
         """Test download thumbnail with local clip raises error."""
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
-        
+
         # Create a local clip ID that will return True for is_local()
         local_clip_id = ClipId.from_local("test_sync", 123456)
 
         with self.assertRaises(ValueError) as context:
-            download_and_cache_cloud_thumbnail(local_clip_id, "http://example.com/thumbnail.jpg")
+            download_and_cache_cloud_thumbnail(
+                local_clip_id, "http://example.com/thumbnail.jpg"
+            )
 
         self.assertIn("called on local clip", str(context.exception))
 
     def test_download_and_cache_cloud_thumbnail_no_url(self) -> None:
         """Test download thumbnail with no URL."""
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
-        
+
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
             result = download_and_cache_cloud_thumbnail(self.clip_id, "")
 
@@ -966,6 +997,103 @@ class TestCloudClipProcessing(BaseTestCase):
             mock_logger.error.assert_called_with(
                 f"No thumbnail URL provided for clip {self.clip_id}"
             )
+
+
+class TestStreamService(BaseTestCase):
+    """Test stream service functions."""
+
+    def test_ensure_stream_manager_initialized(self) -> None:
+        """Test ensure_stream_manager_initialized function."""
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
+
+        result = ensure_stream_manager_initialized()
+        self.assertIsNotNone(result)
+
+    def test_is_stream_active_false(self) -> None:
+        """Test is_stream_active when stream is not active."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import is_stream_active
+
+        camera_id = CameraId(12345)
+        result = is_stream_active(camera_id)
+        self.assertFalse(result)
+
+    def test_initialize_stream_manager(self) -> None:
+        """Test stream_service initialize_stream_manager function."""
+        from blinkapp.services.stream_service import initialize_stream_manager
+
+        # Should not raise exception
+        initialize_stream_manager()
+
+    def test_ensure_stream_manager_initialized_coverage(self) -> None:
+        """Test stream_service ensure_stream_manager_initialized function."""
+        from blinkapp.services.stream_service import ensure_stream_manager_initialized
+
+        # Should not raise exception
+        result = ensure_stream_manager_initialized()
+        self.assertIsNotNone(result)
+
+    def test_is_stream_active_coverage(self) -> None:
+        """Test stream_service is_stream_active function."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import is_stream_active
+
+        camera_id = CameraId("test_camera")
+        result = is_stream_active(camera_id)
+        self.assertIsInstance(result, bool)
+
+
+class TestSystemService(BaseTestCase):
+    """Test system service functions."""
+
+    @patch("blinkapp.services.blink_service.blink")
+    def test_get_systems_empty(self, mock_blink: Mock) -> None:
+        """Test get_systems when no systems available."""
+        from blinkapp.services.system_service import get_systems
+
+        mock_blink.sync = {}
+        result = get_systems()
+        self.assertEqual(result, {"systems": []})
+
+    @patch("blinkapp.services.blink_service.blink")
+    def test_get_systems_with_data(self, mock_blink: Mock) -> None:
+        """Test get_systems with mock data."""
+        from blinkapp.services.system_service import get_systems
+        from tests.test_base import create_mock_sync
+
+        mock_sync = create_mock_sync()
+        mock_sync.network_id = 12345
+        mock_sync.arm = False
+        mock_sync.online = True
+        mock_blink.sync = {"test": mock_sync}
+
+        result = get_systems()
+        self.assertIsInstance(result, dict)
+        self.assertIn("systems", result)
+
+
+class TestConnectionService(BaseTestCase):
+    """Test connection service functions."""
+
+    def test_initialize_connections(self) -> None:
+        """Test initialize_connections function."""
+        from blinkapp.services.connection_service import initialize_connections
+
+        initialize_connections()  # Should not raise exception
+
+    def test_ensure_executor_initialized(self) -> None:
+        """Test ensure_executor_initialized function."""
+        from blinkapp.services.connection_service import ensure_executor_initialized
+
+        result = ensure_executor_initialized()
+        self.assertIsNotNone(result)
+
+    def test_ensure_http_session_initialized(self) -> None:
+        """Test ensure_http_session_initialized function."""
+        from blinkapp.services.connection_service import ensure_http_session_initialized
+
+        result = ensure_http_session_initialized()
+        self.assertIsNotNone(result)
 
 
 if __name__ == "__main__":
