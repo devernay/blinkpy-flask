@@ -805,7 +805,7 @@ class TestAuthenticationFlows(FlaskTestCase):
         )
 
         response = self.client.post("/2fa", data={"key": "123456"})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         self.assertIn(b"2FA auth failed", response.data)
 
     @patch("blinkapp.services.blink_service.blink_connection")
@@ -1412,7 +1412,7 @@ class TestAsyncOperations(BaseTestCase):
         """Test that async functions exist and are callable."""
         import inspect
 
-        from blinkapp.routes.auth import initialize_blink, verify_2fa_and_save
+        from blinkapp.services.auth_service import initialize_blink, verify_2fa_and_save
 
         # Test functions exist and are async
         self.assertTrue(inspect.iscoroutinefunction(initialize_blink))
@@ -5776,7 +5776,7 @@ class TestCriticalPathCoverage(BaseTestCase):
         """Test that async functions exist."""
         import inspect
 
-        from blinkapp.routes.auth import initialize_blink, verify_2fa_and_save
+        from blinkapp.services.auth_service import initialize_blink, verify_2fa_and_save
 
         # Test that async functions exist and are async
         self.assertTrue(inspect.iscoroutinefunction(initialize_blink))
