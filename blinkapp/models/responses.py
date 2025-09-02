@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from blinkapp.config import Config
-from blinkapp.models.types import JsonDict
+from blinkapp.models.types import JsonDict, JsonValue
 
 # Explicitly define what this module exports
 __all__ = [
@@ -13,7 +13,7 @@ __all__ = [
 
 def create_api_response(
     success: bool = True,
-    data: object = None,
+    data: JsonValue = None,
     error: str | None = None,
     status_code: int = Config.HTTP_STATUS_OK,
 ) -> tuple["JsonDict", int]:

@@ -36,13 +36,11 @@ def get_camera_details(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Camera details dictionary
     """
-    from ..services.camera_service import (
-        get_camera_details as service_get_camera_details,
-    )
+    from ..services.camera_service import get_camera_details
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return service_get_camera_details(camera_id_obj)
+        return get_camera_details(camera_id_obj)
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
 

@@ -29,6 +29,9 @@ import logging
 import threading
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from blinkpy.camera import BlinkCamera
+
 from blinkapp.services.hls_service import (
     HLSStream,
     HLSStreamConfig,
@@ -342,7 +345,7 @@ def validate_tcp_url(tcp_url: str) -> bool:
 
 
 def init_camera_stream(
-    camera: object, camera_id: CameraId
+    camera: BlinkCamera, camera_id: CameraId
 ) -> tuple[object | None, str | None]:
     """Initialize camera stream and return stream object and HLS URL.
 

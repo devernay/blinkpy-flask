@@ -1,15 +1,10 @@
-"""Integration tests for connexion handlers.
+"""Unit tests for connexion handlers.
 
-INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_api.py
-
-This file contains integration tests for connexion-compatible handlers:
-- Handler function integration
+Tests connexion-compatible handlers including:
+- Handler function behavior
 - Request/response processing
-- Authentication integration
+- Authentication handling
 - API contract validation
-
-These tests should be moved to test_integration_api.py during reorganization.
-DO NOT add new tests to this file - add them to test_integration_api.py.
 """
 
 from typing import Any, cast

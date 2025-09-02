@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from blinkpy.camera import BlinkCamera
 
@@ -50,9 +50,9 @@ def initialize_caches(config: dict[str, object]) -> None:
     from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
     camera_thumbnail_cache = CameraThumbnailCache(
-        maxsize=cast(int, config.get("camera_thumbnail_cache_size") or 100)
+        maxsize=int(config.get("camera_thumbnail_cache_size") or 100)
     )
-    clips_cache = ClipsCache(maxsize=cast(int, config.get("clips_cache_size") or 50))
+    clips_cache = ClipsCache(maxsize=int(config.get("clips_cache_size") or 50))
 
     logger.info("Cache instances initialized successfully")
 
@@ -256,6 +256,7 @@ def load_camera_thumbnail_cache() -> None:
 
         # Remove invalid/old files in background
         def remove_files(files_list: list[Path]) -> None:
+            """Remove files from filesystem with error handling."""
             for file_path in files_list:
                 try:
                     file_path.unlink()
@@ -302,7 +303,7 @@ def initialize_cache_paths() -> None:
     Path(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
 
-def clear_all_caches() -> dict[str, str]:
+def clear_all_caches() -> dict[str, object]:
     """Clear all caches except credentials."""
     import os
     import shutil

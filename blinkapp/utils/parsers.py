@@ -59,8 +59,8 @@ def extract_thumbnail_timestamp(filename: str | None) -> int:
         return 0
 
 
-def parse_arguments(args_string: str | list[str]) -> argparse.Namespace:
-    """Parse command line arguments string into namespace object."""
+def parse_arguments(args_list: list[str]) -> argparse.Namespace:
+    """Parse command line arguments list into namespace object."""
     import argparse
 
     from blinkapp.config import Config
@@ -93,12 +93,6 @@ def parse_arguments(args_string: str | list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--dump-system", action="store_true", help="Dump system info and exit"
     )
-
-    # Handle both string and list inputs for backward compatibility
-    if isinstance(args_string, list):
-        args_list = args_string
-    else:
-        args_list = args_string.split() if args_string else []
 
     return parser.parse_args(args_list)
 

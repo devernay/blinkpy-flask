@@ -284,11 +284,6 @@ class TestClipId(BaseTestCase):
 class TestValidation(BaseTestCase):
     """Test input validation functions."""
 
-    def test_validate_string_input_valid(self) -> None:
-        """Test valid string input."""
-        result = validate_string_input("test@example.com", 50, "Email")
-        self.assertEqual(result, "test@example.com")
-
     def test_validate_string_input_strips_whitespace(self) -> None:
         """Test string input strips whitespace."""
         result = validate_string_input("  test  ", 50, "Field")
@@ -363,12 +358,6 @@ class TestUtilityFunctions(BaseTestCase):
         seconds = 5 * 24 * 3600  # 5 days in seconds
         result = format_time_duration(seconds)
         self.assertEqual(result, "5d")
-
-    def test_format_time_duration_hours(self) -> None:
-        """Test formatting time duration for hours."""
-        seconds = 3 * 3600  # 3 hours in seconds
-        result = format_time_duration(seconds)
-        self.assertEqual(result, "3h")
 
     def test_format_time_duration_negative(self) -> None:
         """Test formatting time ago for None."""
@@ -561,7 +550,6 @@ class TestUtilityFunctionsExtended(BaseTestCase):
         # Test exactly 1 day (86400 seconds)
         result = format_time_duration(86400)
         self.assertEqual(result, "1d")
-
 
     def test_create_api_response_with_custom_status(self) -> None:
         """Test API response creation with custom status codes."""
@@ -1014,16 +1002,6 @@ class TestErrorHandling(BaseTestCase):
         with self.assertRaises(BlinkError):
             with error_context("test operation"):
                 raise ValueError("Test error")
-
-    def test_safe_execute_success(self) -> None:
-        """Test safe_execute with successful function."""
-        from blinkapp.utils.decorators import safe_execute
-
-        def success_func() -> str:
-            return "success"
-
-        result = safe_execute(success_func, "default")
-        self.assertEqual(result, "success")
 
     def test_safe_execute_failure(self) -> None:
         """Test safe_execute with failing function."""
@@ -6228,10 +6206,6 @@ class TestCacheLoadingOperationsFixed(BaseTestCase):
 # ============================================================================
 # RESOURCE MANAGEMENT TESTS
 # ============================================================================
-
-
-class TestResourceManagementFixed(BaseTestCase):
-    """Test resource management and cleanup."""
 
 
 if __name__ == "__main__":

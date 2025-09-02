@@ -14,7 +14,9 @@ __all__ = [
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+
+from blinkapp.models.types import JsonDict
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import ClipId
@@ -143,7 +145,7 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
     logger.debug(f"Thumbnail ready for clip: {clip_id}")
 
 
-def get_camera_thumbnail_cache_stats() -> dict[str, Any]:
+def get_camera_thumbnail_cache_stats() -> JsonDict:
     """Get thumbnail cache statistics.
 
     Returns:

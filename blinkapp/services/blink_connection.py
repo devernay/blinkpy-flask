@@ -20,10 +20,13 @@ import concurrent.futures
 import logging
 import threading
 from collections.abc import Coroutine
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from blinkapp.config import Config
 from blinkapp.utils.errors import BlinkError
+
+if TYPE_CHECKING:
+    from blinkpy.blinkpy import Blink
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +66,9 @@ class BlinkConnection:
         )
         self.thread: threading.Thread | None = None
         self.loop: asyncio.AbstractEventLoop | None = None
-        self.blink: Any = None  # Blink instance from blinkpy library
+        self.blink: Blink | None = None  # Blink instance from blinkpy library
         self._started: bool = False
-        self._active_streams: dict[str, Any] = {}  # Track active video streams
+        self._active_streams: dict[str, object] = {}  # Track active video streams
 
     def start(self) -> None:
         """Start Blink thread and event loop."""
@@ -88,7 +91,9 @@ class BlinkConnection:
             time.sleep(0.1)
             self._started = True
 
-    def execute(self, coro: Coroutine[Any, Any, T], timeout: int | None = None) -> T:
+    def execute(
+        self, coro: Coroutine[object, object, T], timeout: int | None = None
+    ) -> T:
         """Execute async Blink operation in dedicated thread."""
         if not self._started:
             raise BlinkError("Connection not started - call start() first")

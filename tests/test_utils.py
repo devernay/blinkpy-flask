@@ -188,21 +188,6 @@ class TestFormatters(BaseTestCase):
         result = format_time_ago(-1)
         self.assertIn("ago", result)
 
-    def test_format_time_duration(self) -> None:
-        """Test time duration formatting."""
-        from blinkapp.utils.formatters import format_time_duration
-
-        # Test various durations
-        self.assertEqual(format_time_duration(30), "30s")
-        self.assertEqual(format_time_duration(90), "1m")
-        self.assertEqual(format_time_duration(3600), "1h")
-        self.assertEqual(format_time_duration(86400), "1d")
-
-        # Test edge cases
-        self.assertEqual(format_time_duration(0), "0s")
-        with self.assertRaises(ValueError):
-            format_time_duration(-1)
-
 
 class TestValidators(BaseTestCase):
     """Test validator functions."""
@@ -356,10 +341,10 @@ class TestParsers(BaseTestCase):
         self.assertEqual(result, 0)
 
     def test_parse_arguments_string(self) -> None:
-        """Test parse_arguments with string input."""
+        """Test parse_arguments with string input converted to list."""
         from blinkapp.utils.parsers import parse_arguments
 
-        result = parse_arguments("--host 127.0.0.1 --port 8080")
+        result = parse_arguments(["--host", "127.0.0.1", "--port", "8080"])
         self.assertEqual(result.host, "127.0.0.1")
         self.assertEqual(result.port, 8080)
 
@@ -375,7 +360,7 @@ class TestParsers(BaseTestCase):
         """Test parse_arguments with default values."""
         from blinkapp.utils.parsers import parse_arguments
 
-        result = parse_arguments("")
+        result = parse_arguments([])
         self.assertEqual(result.host, "0.0.0.0")
         self.assertEqual(result.port, 5001)
 

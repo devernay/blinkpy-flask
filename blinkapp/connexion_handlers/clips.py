@@ -42,22 +42,22 @@ def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int
 
 def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
     """Delete clip."""
-    from ..services.clip_service import delete_clip as service_delete_clip
+    from ..services.clip_service import delete_clip
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return service_delete_clip(clip_id_obj)
+        return delete_clip(clip_id_obj)
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
 
 
 def download_clip(clip_id: str) -> "Response | tuple[JsonDict, int]":
     """Download clip file."""
-    from ..services.clip_service import download_clip as service_download_clip
+    from ..services.clip_service import download_clip
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return service_download_clip(clip_id_obj)
+        return download_clip(clip_id_obj)
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
 
@@ -66,23 +66,21 @@ def get_clip_thumbnail(
     clip_id: str, check: bool = False
 ) -> "Response | JsonDict | tuple[JsonDict, int]":
     """Get clip thumbnail."""
-    from ..services.clip_service import get_clip_thumbnail as service_get_clip_thumbnail
+    from ..services.clip_service import get_clip_thumbnail
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return service_get_clip_thumbnail(clip_id_obj, check)
+        return get_clip_thumbnail(clip_id_obj, check)
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
 
 
 def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
     """Generate clip thumbnail."""
-    from ..services.clip_service import (
-        generate_clip_thumbnail as service_generate_thumbnail,
-    )
+    from ..services.clip_service import generate_clip_thumbnail
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return service_generate_thumbnail(clip_id_obj)
+        return generate_clip_thumbnail(clip_id_obj)
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400

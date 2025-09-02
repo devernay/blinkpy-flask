@@ -1,15 +1,10 @@
-"""Integration tests for Flask routes.
+"""Unit tests for Flask routes.
 
-INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_api.py
-
-This file contains integration tests for Flask route functionality:
-- Route endpoint testing
+Tests Flask route functionality including:
+- Route endpoint behavior
 - HTTP request/response handling
 - Route parameter validation
-- Authentication integration with routes
-
-These tests should be moved to test_integration_api.py during reorganization.
-DO NOT add new tests to this file - add them to test_integration_api.py.
+- Authentication requirements
 """
 
 from tests.test_base import FlaskTestCase
@@ -382,17 +377,3 @@ class TestSystemRoutes(FlaskTestCase):
         # Should have registered routes
         rules = list(app.url_map.iter_rules())
         self.assertGreater(len(rules), 0)
-
-
-class TestThumbnailsRoutes(FlaskTestCase):
-    """Test thumbnails route setup and registration."""
-
-    def test_setup_thumbnails_routes(self) -> None:
-        """Test thumbnails route setup if it exists."""
-        try:
-            from flask import Flask
-            # Skip this test since the function doesn't exist
-            self.skipTest("setup_thumbnails_routes function not implemented")
-        except ImportError:
-            # thumbnails.py might not have setup function
-            self.skipTest("setup_thumbnails_routes not found")

@@ -15,14 +15,17 @@ __all__ = [
     "is_valid_email_format",
     "extract_username_domain",
     "create_auth_config",
+    "handle_login",
+    "handle_2fa_verification",
 ]
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from aiohttp import ClientSession
 
+from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
 
@@ -311,7 +314,7 @@ async def load_saved_blink() -> bool:
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
             # Type ignore for mypy issue with blinkpy's json_load function
-            auth_data: dict[str, Any] | None = await json_load(CREDENTIALS_FILE)
+            auth_data: JsonDict | None = await json_load(CREDENTIALS_FILE)
 
             # Create new HTTP session and attempt authentication with saved data
             session_obj = ClientSession()
@@ -340,6 +343,122 @@ async def load_saved_blink() -> bool:
 
     # No credentials file found
     return False
+
+
+def handle_login(username: str, password: str) -> JsonDict:
+    """Handle user login attempt.
+
+    This function performs the actual Blink authentication by calling
+    initialize_blink asynchronously and handling the response.
+
+    Args:
+        username: User's email/username
+        password: User's password
+
+    Returns:
+        Dict with keys: success, requires_2fa, error
+    """
+    try:
+        # Validate credentials format
+        if not validate_credentials(username, password):
+            return {"success": False, "error": "Invalid username or password format"}
+
+        # Run async authentication in a new event loop
+        import asyncio
+
+        # Create new event loop for this thread
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is already running, we need a new one
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        try:
+            result = loop.run_until_complete(initialize_blink(username, password))
+
+            if result is True:
+                return {"success": True}
+            elif result == "2fa_required":
+                # Store credentials in Flask session for 2FA verification
+                from flask import session
+
+                session["pending_2fa"] = True
+                session["temp_username"] = username
+                session["temp_password"] = password
+                return {"success": False, "requires_2fa": True}
+            else:
+                return {"success": False, "error": "Authentication failed"}
+
+        finally:
+            # Clean up the event loop
+            try:
+                loop.close()
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return {"success": False, "error": "Authentication failed"}
+
+
+def handle_2fa_verification(code: str) -> JsonDict:
+    """Handle 2FA verification.
+
+    Args:
+        code: 2FA verification code
+
+    Returns:
+        Dict with keys: success, error
+    """
+    try:
+        from flask import session
+
+        username = session.get("temp_username")
+        password = session.get("temp_password")
+
+        if not username or not password:
+            return {"success": False, "error": "Session expired. Please login again."}
+
+        # Run async 2FA verification
+        import asyncio
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        try:
+            result = loop.run_until_complete(
+                verify_2fa_and_save(username, password, code)
+            )
+
+            if result:
+                # Clear temporary session data
+                session.pop("pending_2fa", None)
+                session.pop("temp_username", None)
+                session.pop("temp_password", None)
+                session["authenticated"] = True
+                return {"success": True}
+            else:
+                return {"success": False, "error": "Invalid 2FA code"}
+
+        finally:
+            try:
+                loop.close()
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.error(f"2FA verification error: {e}")
+        return {"success": False, "error": "2FA verification failed"}
 
 
 # Testability improvement functions - these provide injectable dependencies

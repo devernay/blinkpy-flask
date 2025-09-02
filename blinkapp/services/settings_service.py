@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 import blinkapp
 from blinkapp.config import Config
@@ -43,7 +43,7 @@ def get_app_config() -> JsonDict:
     }
 
 
-def get_user_settings() -> dict[str, Any]:
+def get_user_settings() -> JsonDict:
     """Load user settings from file or return defaults.
 
     Returns:

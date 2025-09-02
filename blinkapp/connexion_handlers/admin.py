@@ -9,9 +9,9 @@ def clear_all_caches() -> JsonDict:
     Returns:
         Cache clear result
     """
-    from ..services.cache_service import clear_all_caches as service_clear_all
+    from ..services.cache_service import clear_all_caches
 
-    return service_clear_all()
+    return clear_all_caches()
 
 
 def clear_thumbnail_cache() -> JsonDict:
@@ -20,11 +20,9 @@ def clear_thumbnail_cache() -> JsonDict:
     Returns:
         Cache clear result
     """
-    from ..services.cache_service import (
-        clear_thumbnail_cache as service_clear_thumbnails,
-    )
+    from ..services.cache_service import clear_camera_thumbnail_cache_files
 
-    return service_clear_thumbnails()
+    return clear_camera_thumbnail_cache_files()
 
 
 def clear_clips_cache() -> JsonDict:
@@ -33,6 +31,6 @@ def clear_clips_cache() -> JsonDict:
     Returns:
         Cache clear result
     """
-    from ..services.cache_service import clear_clips_cache as service_clear_clips
+    from ..services.cache_service import clear_clips_cache_files
 
-    return service_clear_clips()
+    return clear_clips_cache_files()

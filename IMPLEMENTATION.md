@@ -409,11 +409,11 @@ Check for any inconsistencies or duplicate code in the main app code.
 
 Check if the app API is still consistent with the API described in `api.json`. Update `api.json` if needed, and also fix the javascript code that uses this API.
 
-Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx moved to yyy", "xxx was moved to yyy", "xxx is now yyy" or "zzz for backward compatibility". Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
+Remove useless comments from the main code and tests that refer to previous versions of the code, such as "xxx moved to yyy", "xxx was moved to yyy", "xxx is now yyy", "zzz for backward compatibility", "merged from xxx and yyy", etc. Add comments in the code where the code itself is not self-explanatory. Make sure docstrings are complete and up-to-date.
 
 Make sure each python file/module explicitly defines what it exports, and only exports symbols that it implements.
 
-Now read carefully the contents of the blinkpy package (in the blinkpy directory).  Are there functionalities from blinkpy that we don't use in the flask app? are there things that appear in the blinkpy tests that are currently not handled by the flask app? For example, is there a way to fetch a thumbnail for a cloud clip without downloading the clip? Same question for a local clip.
+Now read carefully the contents of the blinkpy package (in the blinkpy-source directory).  Are there functionalities from blinkpy that we don't use in the flask app? are there things that appear in the blinkpy tests that are currently not handled by the flask app? For example, is there a way to fetch a thumbnail for a cloud clip without downloading the clip? Same question for a local clip.
 
 fix the pyright error. Fix as many pyright warnings, even if it means manually updating the blinkpy stubs (found in the blinkpy-stubs directory) with more detailed type hints. Make sure all functions in the python code and tests have type hints.
 
@@ -431,7 +431,7 @@ Next, we will write a full developer documentation detailing, not necessarily in
 - How the DOM utilities and selection (Javascript) work: DOM, DOMUtils, DOMBatch...
 - Any other helpful information that would help the developer understand the code and extend it.
 You can find some existing documentation in IMPLEMENTATIONS.md and in the various .md files your can find in this repository, but it is not well organized.
-The developper documentation should be in markdown format, in a fine called DOCUMENTATION.md.
+The developper documentation should be in markdown format, in a file called DOCUMENTATION.md.
 First, you should sketch the plan of the documentation, with sections and subsections, and after I approve you can continue filling in the details.
 
 

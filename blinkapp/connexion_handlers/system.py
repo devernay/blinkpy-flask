@@ -2,9 +2,8 @@
 
 from ..models.ids import NetworkId
 from ..models.types import JsonDict
-from ..services.system_service import arm_system
-from ..services.system_service import get_devices as service_get_devices
-from ..services.system_service import get_systems as service_get_systems
+from ..services.system_service import arm_system, get_devices
+from ..services.system_service import get_systems as get_systems_service
 
 
 def get_systems() -> JsonDict:
@@ -13,7 +12,7 @@ def get_systems() -> JsonDict:
     Returns:
         Systems list dictionary
     """
-    return service_get_systems()
+    return get_systems_service()
 
 
 def get_system_details(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
@@ -25,13 +24,11 @@ def get_system_details(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         System details dictionary
     """
-    from ..services.system_service import (
-        get_system_details as service_get_system_details,
-    )
+    from ..services.system_service import get_system_details
 
     try:
         network_id = NetworkId(network_id_str)
-        return service_get_system_details(network_id)
+        return get_system_details(network_id)
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
@@ -50,24 +47,7 @@ def get_system_devices(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
     except ValueError:
         return {"success": False, "error": "Invalid network ID"}, 400
 
-    return service_get_devices(network_id)
-
-
-def get_devices(network_id_str: str) -> JsonDict | tuple[JsonDict, int]:
-    """Get devices for a specific Blink system.
-
-    Args:
-        network_id_str: Network ID as string from URL path
-
-    Returns:
-        Devices list dictionary
-    """
-    try:
-        network_id = NetworkId(network_id_str)
-    except ValueError:
-        return {"success": False, "error": "Invalid network ID"}, 400
-
-    return service_get_devices(network_id)
+    return get_devices(network_id)
 
 
 def update_system_settings(

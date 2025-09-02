@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
-"""Integration tests for coverage improvement.
+"""Unit tests for coverage improvement.
 
-INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_features.py
-
-This file contains integration tests targeting specific functionality:
-- Feature workflow integration
+Tests targeting specific functionality including:
+- Feature workflow behavior
 - Edge case handling
-- Error path integration
-- Complex operation integration
-
-These tests should be moved to test_integration_features.py during reorganization.
-DO NOT add new tests to this file - add them to test_integration_features.py.
+- Error path coverage
+- Complex operation testing
 """
 
 import os
@@ -86,9 +81,6 @@ class TestCachePathValidation(BaseTestCase):
             ensure_cache_paths_initialized()
 
 
-class TestValidationClassMethods(BaseTestCase):
-    """Test validation class methods that are currently untested."""
-
 class TestConfigurationValues(BaseTestCase):
     """Test configuration values and constants."""
 
@@ -111,9 +103,6 @@ class TestConfigurationValues(BaseTestCase):
         self.assertEqual(format_time_duration(0), "0s")
         with self.assertRaises(ValueError):
             format_time_duration(-1)
-
-
-
 
     def test_config_regex_patterns(self) -> None:
         """Test Config regex patterns work correctly."""
@@ -297,13 +286,6 @@ class TestImportAndModuleLoading(BaseTestCase):
         # Test classes are callable
         self.assertTrue(callable(ids.CameraId))
         self.assertTrue(callable(ids.ClipId))
-
-
-class TestBasicOperations(BaseTestCase):
-    """Test basic operations that should increase coverage."""
-
-
-
 
 
 if __name__ == "__main__":

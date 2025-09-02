@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
-"""Integration tests for critical code paths.
+"""Unit tests for critical code paths.
 
-INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_core.py
-
-This file contains integration tests for critical application functionality:
-- Logging system integration
-- Cache system integration
-- Core app initialization paths
-- Error handling integration
-- Threading and concurrency integration
-
-These tests should be moved to test_integration_core.py during reorganization.
-DO NOT add new tests to this file - add them to test_integration_core.py.
+Tests critical application functionality including:
+- Logging system behavior
+- Cache system operations
+- Core app initialization
+- Error handling paths
+- Threading and concurrency
 """
 
 import logging

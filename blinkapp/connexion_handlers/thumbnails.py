@@ -13,25 +13,21 @@ def get_camera_thumbnail(
     camera_id: str, timestamp: bool = False
 ) -> "Response | JsonDict | tuple[JsonDict, int]":
     """Get camera thumbnail."""
-    from ..services.thumbnail_service import (
-        get_camera_thumbnail as service_get_thumbnail,
-    )
+    from ..services.thumbnail_service import get_camera_thumbnail
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return service_get_thumbnail(camera_id_obj, timestamp)
+        return get_camera_thumbnail(camera_id_obj, timestamp)
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
 
 
 def refresh_camera_thumbnail(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
     """Refresh camera thumbnail."""
-    from ..services.thumbnail_service import (
-        refresh_camera_thumbnail as service_refresh_thumbnail,
-    )
+    from ..services.thumbnail_service import refresh_camera_thumbnail
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return service_refresh_thumbnail(camera_id_obj)
+        return refresh_camera_thumbnail(camera_id_obj)
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
