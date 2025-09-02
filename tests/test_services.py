@@ -22,7 +22,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from unittest.mock import patch as original_patch
+from tests.test_base import BaseTestCase, original_patch
 
 from tests.test_base import BaseTestCase
 

@@ -46,15 +46,19 @@ class TestSystemHandlers(BaseTestCase):
         self.assertEqual(result, {"systems": []})
         mock_service.assert_called_once()
 
-    @patch("blinkapp.services.system_service.get_devices")
-    def test_get_system_devices_valid_id(self, mock_service: Mock) -> None:
+    @patch("blinkapp.services.blink_validators.require_sync_module")
+    def test_get_system_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_system_devices with valid network ID."""
-        mock_service.return_value = {"devices": []}
+        mock_sync = Mock()
+        mock_sync.cameras = {}  # Empty cameras dict
+        mock_sync.online = True
+        mock_sync.sync_id = 12345
+        mock_validator.return_value = (mock_sync, None)
 
         result = system.get_system_devices("12345")
 
-        self.assertEqual(result, {"devices": []})
-        mock_service.assert_called_once()
+        self.assertEqual(result, {"devices": [{"type": "sync_module", "name": "Sync Module", "online": True, "id": 12345}]})
+        mock_validator.assert_called_once()
 
     def test_get_system_devices_invalid_id(self) -> None:
         """Test get_system_devices with invalid network ID."""
@@ -66,19 +70,26 @@ class TestSystemHandlers(BaseTestCase):
         self.assertFalse(cast(JsonDict, data)["success"])
         self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
 
-    @patch("blinkapp.services.system_service.get_devices")
-    def test_get_devices_valid_id(self, mock_service: Mock) -> None:
+    @patch("blinkapp.services.blink_validators.require_sync_module")
+    def test_get_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_devices with valid network ID."""
-        mock_service.return_value = {"devices": []}
+        from blinkpy.sync_module import BlinkSyncModule
+        
+        mock_sync = Mock(spec=BlinkSyncModule)
+        mock_sync.cameras = {}
+        mock_sync.online = True
+        mock_sync.sync_id = 12345
+        mock_validator.return_value = (mock_sync, None)
 
         result = system.get_system_devices("12345")
 
-        self.assertEqual(result, {"devices": []})
-        mock_service.assert_called_once()
+        expected_devices = [{"type": "sync_module", "name": "Sync Module", "online": True, "id": 12345}]
+        self.assertEqual(result, {"devices": expected_devices})
+        mock_validator.assert_called_once()
 
     def test_get_devices_invalid_id(self) -> None:
         """Test get_devices with invalid network ID."""
-        result = system.get_devices("invalid")
+        result = system.get_system_devices("invalid")
 
         self.assertIsInstance(result, tuple)
         data, status = result
@@ -86,22 +97,32 @@ class TestSystemHandlers(BaseTestCase):
         self.assertFalse(cast(JsonDict, data)["success"])
         self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
 
-    @patch("blinkapp.services.system_service.arm_system")
-    def test_update_system_valid_request(self, mock_arm: Mock) -> None:
+    @patch("blinkapp.services.blink_service.blink_connection")
+    @patch("blinkapp.services.blink_validators.require_sync_module")
+    def test_update_system_valid_request(self, mock_validator: Mock, mock_connection: Mock) -> None:
         """Test update_system with valid request."""
-        mock_arm.return_value = {"success": True}
+        from blinkpy.sync_module import BlinkSyncModule
+        from blinkapp.services.blink_connection import BlinkConnection
+        
+        mock_sync = Mock(spec=BlinkSyncModule)
+        mock_sync.async_arm.return_value = Mock()  # Mock coroutine
+        mock_validator.return_value = (mock_sync, None)
+        
+        mock_connection.execute.return_value = None
+        
         body: JsonDict = {"armed": True}
 
-        result = system.update_system("12345", body)
+        result = system.update_system_settings("12345", body)
 
-        self.assertEqual(result, {"success": True})
-        mock_arm.assert_called_once()
+        self.assertEqual(result, {"armed": True})
+        mock_validator.assert_called_once()
+        mock_connection.execute.assert_called_once()
 
     def test_update_system_invalid_id(self) -> None:
         """Test update_system with invalid network ID."""
         body: JsonDict = {"armed": True}
 
-        result = system.update_system("invalid", body)
+        result = system.update_system_settings("invalid", body)
 
         self.assertIsInstance(result, tuple)
         data, status = result
@@ -113,7 +134,7 @@ class TestSystemHandlers(BaseTestCase):
         """Test update_system with missing armed field."""
         body: JsonDict = {}
 
-        result = system.update_system("12345", body)
+        result = system.update_system_settings("12345", body)
 
         self.assertIsInstance(result, tuple)
         data, status = result
@@ -127,7 +148,7 @@ class TestSystemHandlers(BaseTestCase):
         """Test update_system with invalid armed field type."""
         body: JsonDict = {"armed": "true"}  # String instead of boolean
 
-        result = system.update_system("12345", body)
+        result = system.update_system_settings("12345", body)
 
         self.assertIsInstance(result, tuple)
         data, status = result
