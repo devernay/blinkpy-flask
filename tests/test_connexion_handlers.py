@@ -102,13 +102,16 @@ class TestSystemHandlers(BaseTestCase):
     def test_update_system_valid_request(self, mock_validator: Mock, mock_connection: Mock) -> None:
         """Test update_system with valid request."""
         from blinkpy.sync_module import BlinkSyncModule
-        from blinkapp.services.blink_connection import BlinkConnection
+        from tests.test_base import create_mock_connection
         
         mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.async_arm.return_value = Mock()  # Mock coroutine
         mock_validator.return_value = (mock_sync, None)
         
-        mock_connection.execute.return_value = None
+        # Use factory for consistent connection mocking
+        connection_factory = create_mock_connection()
+        mock_connection.execute = connection_factory.execute
+        mock_connection.is_started = connection_factory.is_started
         
         body: JsonDict = {"armed": True}
 
