@@ -9,23 +9,7 @@ from .test_base import FlaskTestCase
 class TestMainApp(FlaskTestCase):
     """Test main app functions (currently 20% coverage)."""
 
-    def test_create_api_response_success(self) -> None:
-        """Test create_api_response with success."""
-        from blinkapp import create_api_response
 
-        response, status = create_api_response(success=True, data={"test": "data"})
-        self.assertEqual(status, 200)
-        self.assertTrue(response["success"])
-
-    def test_create_api_response_custom_status(self) -> None:
-        """Test create_api_response with custom status."""
-        from blinkapp import create_api_response
-
-        response, status = create_api_response(
-            success=False, error="Test error", status_code=500
-        )
-        self.assertEqual(status, 500)
-        self.assertFalse(response["success"])
 
 
 class TestValidators(FlaskTestCase):

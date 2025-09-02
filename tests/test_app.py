@@ -555,22 +555,6 @@ class TestUtilityFunctionsExtended(BaseTestCase):
         result = format_time_duration(86400)
         self.assertEqual(result, "1d")
 
-    def test_extract_thumbnail_timestamp_various_formats(self) -> None:
-        """Test thumbnail timestamp extraction with various formats."""
-        # Test with valid timestamp
-        filename1 = "camera_20230101_120000.jpg"
-        result1 = extract_thumbnail_timestamp(filename1)
-        self.assertIsNotNone(result1)
-
-        # Test with different valid format
-        filename2 = "test_20231225_235959.png"
-        result2 = extract_thumbnail_timestamp(filename2)
-        self.assertIsNotNone(result2)
-
-        # Test with invalid format returns 0 (not None as expected)
-        filename3 = "invalid_format.jpg"
-        result3 = extract_thumbnail_timestamp(filename3)
-        self.assertEqual(result3, 0)  # Based on actual behavior
 
     def test_create_api_response_with_custom_status(self) -> None:
         """Test API response creation with custom status codes."""

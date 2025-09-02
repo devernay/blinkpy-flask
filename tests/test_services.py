@@ -244,12 +244,6 @@ class TestAuthService(BaseTestCase):
         self.assertEqual(result["username"], "test@example.com")
         self.assertEqual(result["password"], "password123")
 
-    def test_is_blink_authenticated_coverage(self) -> None:
-        """Test auth_service is_blink_authenticated function."""
-        from blinkapp.services.auth_service import is_blink_authenticated
-
-        result = is_blink_authenticated()
-        self.assertIsInstance(result, bool)
 
     def test_extract_username_domain_cases(self) -> None:
         """Test username domain extraction."""

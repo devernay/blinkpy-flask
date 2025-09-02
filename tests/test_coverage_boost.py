@@ -295,28 +295,7 @@ class TestImportAndModuleLoading(BaseTestCase):
 class TestBasicOperations(BaseTestCase):
     """Test basic operations that should increase coverage."""
 
-    def test_list_operations(self) -> None:
-        """Test list operations used in the blinkapp."""
-        test_list = ["item1", "item2", "item3"]
 
-        # Test append
-        test_list.append("item4")
-        self.assertIn("item4", test_list)
-
-        # Test extend
-        test_list.extend(["item5", "item6"])
-        self.assertEqual(len(test_list), 6)
-
-    def test_path_operations(self) -> None:
-        """Test Path operations used in the blinkapp."""
-        # Test Path creation
-        test_path = Path("/tmp/test")
-        self.assertIsInstance(test_path, Path)
-
-        # Test path joining
-        joined_path = test_path / "subdir" / "file.txt"
-        self.assertIn("subdir", str(joined_path))
-        self.assertIn("file.txt", str(joined_path))
 
 
 
