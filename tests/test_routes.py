@@ -1,7 +1,15 @@
-"""Unit tests for Flask routes.
+"""Integration tests for Flask routes.
 
-These tests focus on verifying Flask routes exist and basic functionality.
-They are designed to be easily removable when migrating to connexion framework.
+INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_api.py
+
+This file contains integration tests for Flask route functionality:
+- Route endpoint testing
+- HTTP request/response handling
+- Route parameter validation
+- Authentication integration with routes
+
+These tests should be moved to test_integration_api.py during reorganization.
+DO NOT add new tests to this file - add them to test_integration_api.py.
 """
 
 from tests.test_base import FlaskTestCase

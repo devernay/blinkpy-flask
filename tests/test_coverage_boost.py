@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
-"""
-Coverage Boost Tests - Target specific untested lines with working implementations
-Focus on lines that can be easily tested to maximize coverage improvement.
+"""Integration tests for coverage improvement.
+
+INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_features.py
+
+This file contains integration tests targeting specific functionality:
+- Feature workflow integration
+- Edge case handling
+- Error path integration
+- Complex operation integration
+
+These tests should be moved to test_integration_features.py during reorganization.
+DO NOT add new tests to this file - add them to test_integration_features.py.
 """
 
 import os

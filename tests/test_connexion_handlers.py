@@ -1,7 +1,15 @@
-"""Unit tests for connexion handlers.
+"""Integration tests for connexion handlers.
 
-These tests verify the connexion-compatible handlers work correctly
-by testing them directly without Flask routing overhead.
+INTEGRATION TEST FILE - SHOULD BE MERGED INTO test_integration_api.py
+
+This file contains integration tests for connexion-compatible handlers:
+- Handler function integration
+- Request/response processing
+- Authentication integration
+- API contract validation
+
+These tests should be moved to test_integration_api.py during reorganization.
+DO NOT add new tests to this file - add them to test_integration_api.py.
 """
 
 from typing import Any, cast

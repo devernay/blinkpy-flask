@@ -1,8 +1,15 @@
-"""Comprehensive unit tests for all model classes and functions.
+"""Unit tests for model classes and functions.
 
-Complete test suite covering all classes and functions in blinkapp/models/:
+This file contains ONLY unit tests for blinkapp/models/ modules:
 - ID validation classes (BaseId, CameraId, NetworkId, ClipId)
 - Cache classes (ThreadSafeCache, ThreadSafeLRUCache, CameraThumbnailCache, ClipsCache)
+- Response models (create_api_response, Config, etc.)
+- Data model classes and validation
+
+These are pure unit tests with mocked dependencies.
+DO NOT add integration tests here - those belong in test_integration_*.py files.
+DO NOT add Flask route tests here - those belong in test_integration_api.py.
+"""
 - Response utilities (create_api_response)
 - Type definitions and data structures
 """

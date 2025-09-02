@@ -1,8 +1,16 @@
-"""Comprehensive unit tests for utility classes and functions.
+"""Unit tests for utility classes and functions.
 
-Complete test suite covering testable functions in blinkapp/utils/:
+This file contains ONLY unit tests for blinkapp/utils/ modules:
 - Decorators (decorators.py, route_decorators.py)
 - Formatters (formatters.py)
+- Validators (validators.py)
+- Parsers (parsers.py)
+- Other utility functions
+
+These are pure unit tests with mocked dependencies.
+DO NOT add integration tests here - those belong in test_integration_*.py files.
+DO NOT add Flask route tests here - those belong in test_integration_api.py.
+"""
 - Validators (validators.py)
 - Parsers (parsers.py)
 - Error classes (errors.py)

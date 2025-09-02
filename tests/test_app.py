@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
-"""Unit tests for Blink Flask application.
+"""Integration tests for Blink Flask application.
 
-Comprehensive test suite covering core functionality including:
-- ID validation classes
+LARGE INTEGRATION TEST FILE - NEEDS REORGANIZATION INTO:
+- test_integration_api.py (API endpoints, routes, HTTP handling)
+- test_integration_core.py (app initialization, core functionality)  
+- test_integration_features.py (streaming, clips, thumbnails, complex workflows)
+
+This file currently contains mixed integration tests that should be split:
+- Flask route integration tests (→ test_integration_api.py)
+- Core app functionality tests (→ test_integration_core.py)
+- Feature workflow tests (→ test_integration_features.py)
+- Authentication flow tests (→ test_integration_api.py)
+- Cache integration tests (→ test_integration_core.py)
+
+DO NOT add new tests to this file - add them to the appropriate test_integration_*.py file.
+"""
 - API endpoints
 - Cache operations
 - Error handling

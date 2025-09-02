@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Unit tests for blinkapp/__init__.py - app initialization and utility functions."""
+"""Unit tests for blinkapp/__init__.py - app initialization and utility functions.
+
+This file contains ONLY unit tests for app initialization functions:
+- clear_all_caches() function
+- setup_logging() function  
+- initialize_cache_paths() function
+- Other app-level utility functions
+
+DO NOT add integration tests here - those belong in test_integration_*.py files.
+DO NOT add Flask app tests here - those belong in test_integration_api.py.
+"""
 
 import unittest
 from pathlib import Path

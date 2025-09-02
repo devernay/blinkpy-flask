@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Unit tests for __main__.py module - CLI entry point functionality."""
+"""Unit tests for __main__.py module - CLI entry point functionality.
+
+This file contains ONLY unit tests for the CLI entry point module:
+- Argument parser creation and validation
+- Command-line argument handling
+- App runner function behavior
+- Logging configuration
+
+DO NOT add integration tests here - those belong in test_integration_*.py files.
+"""
 
 import argparse
 import logging

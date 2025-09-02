@@ -1,13 +1,21 @@
-"""Comprehensive unit tests for service classes and functions.
+"""Unit tests for service classes and functions.
 
-Complete test suite covering testable functions in blinkapp/services/:
+This file contains ONLY unit tests for blinkapp/services/ modules:
 - Time services (time_service.py)
-- File services (file_service.py)
+- File services (file_service.py) 
 - Authentication services (auth_service.py)
 - Cache services (cache_service.py)
 - Device services (device_service.py)
 - HLS services (hls_service.py)
 - Clip processing services (clip_processing.py)
+- Stream services (stream_service.py)
+- System services (system_service.py)
+- Connection services (connection_service.py)
+
+These are pure unit tests with mocked dependencies.
+DO NOT add integration tests here - those belong in test_integration_*.py files.
+DO NOT add Flask route tests here - those belong in test_integration_api.py.
+"""
 """
 
 import subprocess
