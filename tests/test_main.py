@@ -14,8 +14,6 @@ import argparse
 import logging
 from unittest.mock import Mock, patch
 
-import pytest
-
 from blinkapp.__main__ import (
     configure_logging,
     create_argument_parser,

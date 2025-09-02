@@ -12,7 +12,6 @@ DO NOT add Flask app tests here - those belong in test_integration_api.py.
 """
 
 import unittest
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from blinkapp import (
