@@ -147,8 +147,12 @@ def create_mock_blink_instance(
     """Create a mock blink instance with common methods."""
     from unittest.mock import Mock
 
+    from blinkpy.auth import Auth
+
     mock_blink = Mock(spec=Blink)
     mock_blink.available = available
+    mock_blink.auth = Mock(spec=Auth)
+    mock_blink.auth.token = "valid_token" if available else None
     mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
 
     # Create async mock for get_videos_metadata
@@ -167,7 +171,9 @@ def create_mock_blink_instance(
 
     # Create async mock for do_http_get
     async def mock_do_http_get(url: str) -> Mock:
-        mock_response = Mock()
+        from aiohttp import ClientResponse
+
+        mock_response = Mock(spec=ClientResponse)
 
         async def mock_read() -> bytes:
             return b"video_content"

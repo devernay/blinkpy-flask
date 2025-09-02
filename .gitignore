@@ -11,3 +11,4 @@ tests/.coverage
 
 # Prevent duplicate pytest configuration
 tests/pytest.ini
+.coverage

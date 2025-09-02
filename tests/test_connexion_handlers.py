@@ -7,6 +7,9 @@ by testing them directly without Flask routing overhead.
 from typing import Any, cast
 from unittest.mock import Mock, patch
 
+from blinkpy.blinkpy import Blink
+from blinkpy.camera import BlinkCamera
+
 from blinkapp.connexion_handlers import auth, camera, clips, system
 from blinkapp.models.types import JsonDict
 from tests.test_base import BaseTestCase
@@ -151,9 +154,12 @@ class TestCameraHandlers(BaseTestCase):
     ) -> None:
         """Test list_cameras with available cameras."""
         # Mock blink connection and cameras
-        mock_blink = Mock()
-        mock_blink.cameras = {"cam1": Mock(), "cam2": Mock()}
-        mock_connection = Mock()
+        mock_blink = Mock(spec=Blink)
+        mock_blink.cameras = {
+            "cam1": Mock(spec=BlinkCamera),
+            "cam2": Mock(spec=BlinkCamera),
+        }
+        mock_connection = Mock(spec=callable)
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
 
@@ -175,7 +181,7 @@ class TestCameraHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_list_cameras_no_blink(self, mock_ensure: Mock) -> None:
         """Test list_cameras when blink is None."""
-        mock_connection = Mock()
+        mock_connection = Mock(spec=callable)
         mock_connection.blink = None
         mock_ensure.return_value = mock_connection
 
@@ -187,8 +193,8 @@ class TestCameraHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_list_cameras_no_cameras_attribute(self, mock_ensure: Mock) -> None:
         """Test list_cameras when blink has no cameras attribute."""
-        mock_blink = Mock(spec=[])  # Mock without cameras attribute
-        mock_connection = Mock()
+        mock_blink = Mock(spec=Blink)  # Mock without cameras attribute
+        mock_connection = Mock(spec=callable)
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
 

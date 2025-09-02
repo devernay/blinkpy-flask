@@ -25,6 +25,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, mock_open, patch
 
 import requests
 from aiohttp import ClientResponse
+from blinkpy.blinkpy import Blink
 from blinkpy.livestream import BlinkLiveStream
 from flask.sessions import SessionMixin
 from flask.testing import FlaskClient
@@ -4226,7 +4227,9 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.services.blink_service.blink", new_callable=lambda: Mock())
+    @patch(
+        "blinkapp.services.blink_service.blink", new_callable=lambda: Mock(spec=Blink)
+    )
     def test_camera_thumbnail_cache_hit_optimization(self, mock_blink: Mock) -> None:
         """Test thumbnail cache hit optimization prevents unnecessary API calls.
 
