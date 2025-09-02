@@ -183,22 +183,21 @@ async def initialize_blink(
     with error_context("initialize Blink system", AuthenticationError):
         # Create new HTTP session for Blink API communication
         session_obj = _create_blink_session()
-        blink = _create_blink_instance(session_obj)
+
+        # Import blink_service to work directly with global instance
+        from blinkapp.services import blink_service
+
+        blink_service.blink = _create_blink_instance(session_obj)
 
         # Create authentication object with credentials
         auth = _create_auth_object(username, password, session_obj)
-        blink.auth = auth
+        blink_service.blink.auth = auth
 
         # Attempt to start Blink system and authenticate
-        await blink.start()
-
-        # Update global blink reference for use in route handlers
-        from blinkapp.services import blink_service
-
-        blink_service.blink = blink
+        await blink_service.blink.start()
 
         # Check if 2FA is required before proceeding
-        if blink.key_required:
+        if blink_service.blink.key_required:
             logger.info("2FA key required - check your email or SMS")
             return "2fa_required"
 
