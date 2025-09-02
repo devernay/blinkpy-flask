@@ -59,21 +59,6 @@ class TestSimpleCoverage(BaseTestCase):
         result = simple_test_function()
         self.assertEqual(result, "success")
 
-    def test_connection_service_basic(self) -> None:
-        """Test basic connection service."""
-        from blinkapp.services.blink_connection import get_blink_connection
-
-        # Should return None when not initialized
-        result = get_blink_connection()
-        self.assertIsNone(result)
-
-    def test_cache_service_stats(self) -> None:
-        """Test cache service stats."""
-        from blinkapp.services.cache_service import get_cache_stats
-
-        stats = get_cache_stats()
-        self.assertIsInstance(stats, dict)
-
 
 if __name__ == "__main__":
     import unittest

@@ -383,6 +383,20 @@ class TestCacheService(BaseTestCase):
         self.assertIsNone(clips_cache)
         self.assertIsNone(camera_thumbnail_cache)
 
+    def test_cache_service_stats(self) -> None:
+        """Test cache service stats."""
+        from blinkapp.services.cache_service import get_cache_stats, initialize_caches
+
+        # Initialize caches first
+        config: dict[str, object] = {
+            "CLIPS_CACHE_SIZE": 50,
+            "THUMBNAIL_CACHE_SIZE": 100,
+        }
+        initialize_caches(config)
+        
+        stats = get_cache_stats()
+        self.assertIsInstance(stats, dict)
+
 
 class TestDeviceService(BaseTestCase):
     """Test device service functions."""
@@ -975,6 +989,14 @@ class TestConnectionService(BaseTestCase):
 
         result = ensure_http_session_initialized()
         self.assertIsNotNone(result)
+
+    def test_connection_service_basic(self) -> None:
+        """Test basic connection service."""
+        from blinkapp.services.blink_connection import get_blink_connection
+
+        # Should return None when not initialized
+        result = get_blink_connection()
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":
