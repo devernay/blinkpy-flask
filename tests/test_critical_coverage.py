@@ -47,9 +47,8 @@ class TestLoggingSetup(BaseTestCase):
 
     @patch("logging.getLogger")
     @patch("logging.handlers.RotatingFileHandler")
-    @patch("logging.StreamHandler")
     def test_setup_logging_function(
-        self, mock_stream: Mock, mock_file: Mock, mock_logger: Mock
+        self, mock_file: Mock, mock_logger: Mock
     ) -> None:
         """Test logging system initialization with file rotation.
 
@@ -62,8 +61,6 @@ class TestLoggingSetup(BaseTestCase):
         mock_logger.return_value = mock_logger_instance
         mock_file_handler = Mock(spec=logging.Handler)
         mock_file.return_value = mock_file_handler
-        mock_stream_handler = Mock(spec=logging.Handler)
-        mock_stream.return_value = mock_stream_handler
 
         from blinkapp import initialize_cache_paths, setup_logging
 

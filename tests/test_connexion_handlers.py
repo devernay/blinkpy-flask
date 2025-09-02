@@ -21,7 +21,8 @@ from tests.test_base import BaseTestCase
 class TestAuthHandlers(BaseTestCase):
     """Test authentication connexion handlers."""
 
-    @patch("blinkapp.connexion_handlers.auth.render_template")
+    @patch("flask.session", {"authenticated": True})
+    @patch("flask.render_template")
     def test_main_page(self, mock_render: Mock) -> None:
         """Test main page handler returns rendered template."""
         mock_render.return_value = "<html>Main Page</html>"
@@ -45,7 +46,7 @@ class TestSystemHandlers(BaseTestCase):
         self.assertEqual(result, {"systems": []})
         mock_service.assert_called_once()
 
-    @patch("blinkapp.connexion_handlers.system.service_get_devices")
+    @patch("blinkapp.services.system_service.get_devices")
     def test_get_system_devices_valid_id(self, mock_service: Mock) -> None:
         """Test get_system_devices with valid network ID."""
         mock_service.return_value = {"devices": []}
@@ -65,12 +66,12 @@ class TestSystemHandlers(BaseTestCase):
         self.assertFalse(cast(JsonDict, data)["success"])
         self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
 
-    @patch("blinkapp.connexion_handlers.system.service_get_devices")
+    @patch("blinkapp.services.system_service.get_devices")
     def test_get_devices_valid_id(self, mock_service: Mock) -> None:
         """Test get_devices with valid network ID."""
         mock_service.return_value = {"devices": []}
 
-        result = system.get_devices("12345")
+        result = system.get_system_devices("12345")
 
         self.assertEqual(result, {"devices": []})
         mock_service.assert_called_once()
@@ -85,7 +86,7 @@ class TestSystemHandlers(BaseTestCase):
         self.assertFalse(cast(JsonDict, data)["success"])
         self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
 
-    @patch("blinkapp.connexion_handlers.system.arm_system")
+    @patch("blinkapp.services.system_service.arm_system")
     def test_update_system_valid_request(self, mock_arm: Mock) -> None:
         """Test update_system with valid request."""
         mock_arm.return_value = {"success": True}
