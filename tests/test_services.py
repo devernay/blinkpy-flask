@@ -56,6 +56,21 @@ class TestTimeService(BaseTestCase):
         result = get_current_time()
         self.assertIsInstance(result, datetime)
 
+    def test_seconds_since_now_from_datetime(self) -> None:
+        """Test calculating seconds since now from datetime."""
+        from datetime import UTC, datetime, timedelta
+
+        from blinkapp.services.time_service import seconds_since_now_from_datetime
+
+        # Test with a time 60 seconds ago with timezone
+        past_time = datetime.now(UTC) - timedelta(seconds=60)
+
+        result = seconds_since_now_from_datetime(past_time)
+
+        # Should be approximately 60 seconds (allow some tolerance)
+        self.assertGreater(result, 55)
+        self.assertLess(result, 65)
+
 
 class TestFileService(BaseTestCase):
     """Test file service functions."""
@@ -102,6 +117,39 @@ class TestFileService(BaseTestCase):
         result = create_directory_safely(Path("/test"), mock_creator)
         self.assertTrue(result)
         mock_creator.assert_called_once_with(Path("/test"))
+
+    def test_write_file_safely_error(self) -> None:
+        """Test writing file safely with error."""
+        from blinkapp.services.file_service import write_file_safely
+
+        mock_writer = Mock(spec=callable)
+        mock_writer.side_effect = OSError("Permission denied")
+
+        result = write_file_safely(Path("/tmp/test.txt"), b"test content", mock_writer)
+
+        self.assertFalse(result)
+
+    def test_read_file_safely_error(self) -> None:
+        """Test reading file safely with error."""
+        from blinkapp.services.file_service import read_file_safely
+
+        mock_reader = Mock(spec=callable)
+        mock_reader.side_effect = OSError("File not found")
+
+        result = read_file_safely(Path("/tmp/test.txt"), mock_reader)
+
+        self.assertIsNone(result)
+
+    def test_create_directory_safely_error(self) -> None:
+        """Test creating directory safely with error."""
+        from blinkapp.services.file_service import create_directory_safely
+
+        mock_creator = Mock(spec=callable)
+        mock_creator.side_effect = OSError("Permission denied")
+
+        result = create_directory_safely(Path("/tmp/test_dir"), mock_creator)
+
+        self.assertFalse(result)
 
 
 class TestAuthService(BaseTestCase):
@@ -202,6 +250,56 @@ class TestAuthService(BaseTestCase):
 
         result = is_blink_authenticated()
         self.assertIsInstance(result, bool)
+
+    def test_extract_username_domain_cases(self) -> None:
+        """Test username domain extraction."""
+        from blinkapp.services.auth_service import extract_username_domain
+
+        # With @ symbol
+        result = extract_username_domain("user@example.com")
+        self.assertEqual(result, "example.com")
+
+        # Without @ symbol - returns empty string based on actual implementation
+        result = extract_username_domain("username")
+        self.assertEqual(result, "")
+
+    def test_is_valid_email_format_comprehensive(self) -> None:
+        """Test email validation comprehensively."""
+        from blinkapp.services.auth_service import is_valid_email_format
+
+        # Valid emails
+        valid_emails = [
+            "test@example.com",
+            "user.name@domain.co.uk",
+            "user+tag@example.org",
+        ]
+        for email in valid_emails:
+            with self.subTest(email=email):
+                self.assertTrue(is_valid_email_format(email))
+
+        # Invalid emails - test the ones that definitely fail
+        self.assertFalse(is_valid_email_format(""))
+        self.assertFalse(is_valid_email_format("@domain.com"))
+
+    def test_validate_credentials_cases(self) -> None:
+        """Test credential validation."""
+        from blinkapp.services.auth_service import validate_credentials
+
+        # Empty credentials
+        self.assertFalse(validate_credentials("", ""))
+        self.assertFalse(validate_credentials("user@example.com", ""))
+        self.assertFalse(validate_credentials("", "password"))
+
+        # Valid credentials
+        self.assertTrue(validate_credentials("user@example.com", "password123"))
+
+    def test_create_auth_config_function(self) -> None:
+        """Test auth config creation."""
+        from blinkapp.services.auth_service import create_auth_config
+
+        result = create_auth_config("user@example.com", "password123")
+        expected = {"username": "user@example.com", "password": "password123"}
+        self.assertEqual(result, expected)
 
 
 class TestCacheService(BaseTestCase):
@@ -418,219 +516,6 @@ class TestHLSServicePureFunctions(BaseTestCase):
         # Custom base URL
         result = generate_hls_url("camera456", "http://example.com:9000")
         self.assertEqual(result, "http://example.com:9000/hls/camera456/playlist.m3u8")
-
-
-class TestAuthServicePureFunctions(BaseTestCase):
-    """Test auth service pure functions for coverage."""
-
-    def test_extract_username_domain_cases(self) -> None:
-        """Test username domain extraction."""
-        from blinkapp.services.auth_service import extract_username_domain
-
-        # With @ symbol
-        result = extract_username_domain("user@example.com")
-        self.assertEqual(result, "example.com")
-
-        # Without @ symbol - returns empty string based on actual implementation
-        result = extract_username_domain("username")
-        self.assertEqual(result, "")
-
-    def test_is_valid_email_format_comprehensive(self) -> None:
-        """Test email validation comprehensively."""
-        from blinkapp.services.auth_service import is_valid_email_format
-
-        # Valid emails
-        valid_emails = [
-            "test@example.com",
-            "user.name@domain.co.uk",
-            "user+tag@example.org",
-        ]
-        for email in valid_emails:
-            with self.subTest(email=email):
-                self.assertTrue(is_valid_email_format(email))
-
-        # Invalid emails - test the ones that definitely fail
-        self.assertFalse(is_valid_email_format(""))
-        self.assertFalse(is_valid_email_format("@domain.com"))
-
-    def test_validate_credentials_cases(self) -> None:
-        """Test credential validation."""
-        from blinkapp.services.auth_service import validate_credentials
-
-        # Empty credentials
-        self.assertFalse(validate_credentials("", ""))
-        self.assertFalse(validate_credentials("user@example.com", ""))
-        self.assertFalse(validate_credentials("", "password"))
-
-        # Valid credentials
-        self.assertTrue(validate_credentials("user@example.com", "password123"))
-
-    def test_create_auth_config_function(self) -> None:
-        """Test auth config creation."""
-        from blinkapp.services.auth_service import create_auth_config
-
-        result = create_auth_config("user@example.com", "password123")
-        expected = {"username": "user@example.com", "password": "password123"}
-        self.assertEqual(result, expected)
-
-
-class TestFileServiceCoverage(BaseTestCase):
-    """Test file service functions for coverage."""
-
-    def test_write_file_safely_success(self) -> None:
-        """Test writing file safely with success."""
-        from blinkapp.services.file_service import write_file_safely
-
-        mock_writer = Mock(spec=callable)
-
-        result = write_file_safely(Path("/tmp/test.txt"), b"test content", mock_writer)
-
-        self.assertTrue(result)
-        mock_writer.assert_called_once_with(Path("/tmp/test.txt"), b"test content")
-
-    def test_write_file_safely_error(self) -> None:
-        """Test writing file safely with error."""
-        from blinkapp.services.file_service import write_file_safely
-
-        mock_writer = Mock(spec=callable)
-        mock_writer.side_effect = OSError("Permission denied")
-
-        result = write_file_safely(Path("/tmp/test.txt"), b"test content", mock_writer)
-
-        self.assertFalse(result)
-
-    def test_read_file_safely_success(self) -> None:
-        """Test reading file safely with success."""
-        from blinkapp.services.file_service import read_file_safely
-
-        mock_reader = Mock(spec=callable)
-        mock_reader.return_value = b"file content"
-
-        result = read_file_safely(Path("/tmp/test.txt"), mock_reader)
-
-        self.assertEqual(result, b"file content")
-        mock_reader.assert_called_once_with(Path("/tmp/test.txt"))
-
-    def test_read_file_safely_error(self) -> None:
-        """Test reading file safely with error."""
-        from blinkapp.services.file_service import read_file_safely
-
-        mock_reader = Mock(spec=callable)
-        mock_reader.side_effect = OSError("File not found")
-
-        result = read_file_safely(Path("/tmp/test.txt"), mock_reader)
-
-        self.assertIsNone(result)
-
-    def test_check_file_exists_true(self) -> None:
-        """Test checking file exists - true case."""
-        from blinkapp.services.file_service import check_file_exists
-
-        mock_checker = Mock(spec=callable)
-        mock_checker.return_value = True
-
-        result = check_file_exists(Path("/tmp/test.txt"), mock_checker)
-
-        self.assertTrue(result)
-
-    def test_check_file_exists_false(self) -> None:
-        """Test checking file exists - false case."""
-        from blinkapp.services.file_service import check_file_exists
-
-        mock_checker = Mock(spec=callable)
-        mock_checker.return_value = False
-
-        result = check_file_exists(Path("/tmp/test.txt"), mock_checker)
-
-        self.assertFalse(result)
-
-    def test_create_directory_safely_success(self) -> None:
-        """Test creating directory safely with success."""
-        from blinkapp.services.file_service import create_directory_safely
-
-        mock_creator = Mock(spec=callable)
-
-        result = create_directory_safely(Path("/tmp/test_dir"), mock_creator)
-
-        self.assertTrue(result)
-        mock_creator.assert_called_once_with(Path("/tmp/test_dir"))
-
-    def test_create_directory_safely_error(self) -> None:
-        """Test creating directory safely with error."""
-        from blinkapp.services.file_service import create_directory_safely
-
-        mock_creator = Mock(spec=callable)
-        mock_creator.side_effect = OSError("Permission denied")
-
-        result = create_directory_safely(Path("/tmp/test_dir"), mock_creator)
-
-        self.assertFalse(result)
-
-
-class TestTimeServiceCoverage(BaseTestCase):
-    """Test time service functions for coverage."""
-
-    def test_get_current_timestamp_default(self) -> None:
-        """Test getting current timestamp with default provider."""
-        from blinkapp.services.time_service import get_current_timestamp
-
-        result = get_current_timestamp()
-
-        # Should return an integer timestamp
-        self.assertIsInstance(result, int)
-        self.assertGreater(result, 0)
-
-    def test_get_current_timestamp_custom_provider(self) -> None:
-        """Test getting current timestamp with custom provider."""
-        from blinkapp.services.time_service import get_current_timestamp
-
-        def custom_provider() -> int:
-            return 1234567890
-
-        result = get_current_timestamp(custom_provider)
-
-        self.assertEqual(result, 1234567890)
-
-    def test_get_current_time_default(self) -> None:
-        """Test getting current time with default provider."""
-        from datetime import datetime
-
-        from blinkapp.services.time_service import get_current_time
-
-        result = get_current_time()
-
-        # Should return a datetime object
-        self.assertIsInstance(result, datetime)
-
-    def test_get_current_time_custom_provider(self) -> None:
-        """Test getting current time with custom provider."""
-        from datetime import datetime
-
-        from blinkapp.services.time_service import get_current_time
-
-        test_time = datetime(2023, 1, 1, 12, 0, 0)
-
-        def custom_provider() -> datetime:
-            return test_time
-
-        result = get_current_time(custom_provider)
-
-        self.assertEqual(result, test_time)
-
-    def test_seconds_since_now_from_datetime(self) -> None:
-        """Test calculating seconds since now from datetime."""
-        from datetime import UTC, datetime, timedelta
-
-        from blinkapp.services.time_service import seconds_since_now_from_datetime
-
-        # Test with a time 60 seconds ago with timezone
-        past_time = datetime.now(UTC) - timedelta(seconds=60)
-
-        result = seconds_since_now_from_datetime(past_time)
-
-        # Should be approximately 60 seconds (allow some tolerance)
-        self.assertGreater(result, 55)
-        self.assertLess(result, 65)
 
 
 class TestHLSStreamConfig(BaseTestCase):
