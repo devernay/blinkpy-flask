@@ -653,6 +653,7 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
+        import subprocess
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         with patch("subprocess.Popen") as mock_popen:
