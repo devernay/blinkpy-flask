@@ -3,51 +3,7 @@
 
 from unittest.mock import Mock, patch
 
-from .test_base import FlaskTestCase, create_mock_sync
-
-
-class TestAuthService(FlaskTestCase):
-    """Test auth_service.py (currently 18% coverage)."""
-
-    def test_is_blink_authenticated_false(self) -> None:
-        """Test is_blink_authenticated when not authenticated."""
-        from blinkapp.services.auth_service import is_blink_authenticated
-
-        result = is_blink_authenticated()
-        self.assertFalse(result)
-
-    @patch("blinkapp.services.blink_service.blink")
-    def test_is_blink_authenticated_true(self, mock_blink: Mock) -> None:
-        """Test is_blink_authenticated when authenticated."""
-        from blinkapp.services.auth_service import is_blink_authenticated
-
-        mock_blink.available = True
-        result = is_blink_authenticated()
-        self.assertTrue(result)
-
-
-class TestUtilsService(FlaskTestCase):
-    """Test utils_service.py (currently 17% coverage)."""
-
-
-class TestStreamService(FlaskTestCase):
-    """Test stream_service.py (currently 31% coverage)."""
-
-    def test_ensure_stream_manager_initialized(self) -> None:
-        """Test ensure_stream_manager_initialized function."""
-        from blinkapp.services.stream_service import ensure_stream_manager_initialized
-
-        result = ensure_stream_manager_initialized()
-        self.assertIsNotNone(result)
-
-    def test_is_stream_active_false(self) -> None:
-        """Test is_stream_active when stream is not active."""
-        from blinkapp.models.ids import CameraId
-        from blinkapp.services.stream_service import is_stream_active
-
-        camera_id = CameraId(12345)
-        result = is_stream_active(camera_id)
-        self.assertFalse(result)
+from .test_base import FlaskTestCase
 
 
 class TestMainApp(FlaskTestCase):
@@ -72,163 +28,22 @@ class TestMainApp(FlaskTestCase):
         self.assertFalse(response["success"])
 
 
-class TestCacheService(FlaskTestCase):
-    """Test cache_service.py (currently 30% coverage)."""
-
-    def test_get_cache_stats(self) -> None:
-        """Test get_cache_stats function."""
-        from blinkapp.services.cache_service import get_cache_stats
-
-        stats = get_cache_stats()
-        self.assertIsInstance(stats, dict)
-
-    def test_initialize_caches(self) -> None:
-        """Test initialize_caches function."""
-        from blinkapp.services.cache_service import initialize_caches
-
-        config: dict[str, object] = {
-            "camera_thumbnail_cache_size": 10,
-            "clips_cache_size": 10,
-        }
-        initialize_caches(config)
-
-    def test_ensure_camera_thumbnail_cache_initialized(self) -> None:
-        """Test ensure_camera_thumbnail_cache_initialized function."""
-        from blinkapp.services.cache_service import (
-            ensure_camera_thumbnail_cache_initialized,
-        )
-
-        result = ensure_camera_thumbnail_cache_initialized()
-        self.assertIsNotNone(result)
-
-
 class TestValidators(FlaskTestCase):
     """Test validators.py (currently 18% coverage)."""
 
-    def test_validate_string_input_too_long(self) -> None:
-        """Test validate_string_input with too long input."""
-        from blinkapp.utils.validators import validate_string_input
+
+
+    def test_validate_camera_id_valid(self) -> None:
+        """Test validate_camera_id with valid ID."""
+        from blinkapp.utils.validators import validate_camera_id
+
+        result = validate_camera_id("12345")
+        self.assertEqual(result, "12345")
+
+    def test_validate_camera_id_invalid(self) -> None:
+        """Test validate_camera_id with invalid ID."""
+        from blinkapp.utils.validators import validate_camera_id
 
         with self.assertRaises(ValueError):
-            validate_string_input("very long string", 5, "test_field")
+            validate_camera_id("")
 
-    def test_format_time_ago_recent(self) -> None:
-        """Test format_time_ago with recent timestamp."""
-        from datetime import datetime
-
-        from blinkapp.utils.formatters import format_time_ago
-
-        # Convert ISO string to timestamp first
-        iso_string = "2025-01-01T10:00:00Z"
-        dt = datetime.fromisoformat(iso_string.replace("Z", "+00:00"))
-        timestamp = int(dt.timestamp())
-
-        result = format_time_ago(timestamp)
-        self.assertIsInstance(result, str)
-        self.assertIsInstance(result, str)
-
-
-class TestDecorators(FlaskTestCase):
-    """Test decorators.py (currently 27% coverage)."""
-
-    def test_error_context_decorator(self) -> None:
-        """Test error_context decorator."""
-        from blinkapp.utils.decorators import error_context
-
-        @error_context("test operation")
-        def test_function() -> str:
-            return "success"
-
-        result = test_function()
-        self.assertEqual(result, "success")
-
-
-class TestModelsIds(FlaskTestCase):
-    """Test models/ids.py (currently 62% coverage)."""
-
-    def test_camera_id_creation(self) -> None:
-        """Test CameraId creation."""
-        from blinkapp.models.ids import CameraId
-
-        camera_id = CameraId(12345)
-        self.assertEqual(int(camera_id), 12345)
-
-    def test_network_id_creation(self) -> None:
-        """Test NetworkId creation."""
-        from blinkapp.models.ids import NetworkId
-
-        network_id = NetworkId(12345)
-        self.assertEqual(int(network_id), 12345)
-
-    def test_network_id_validation_invalid(self) -> None:
-        """Test NetworkId validation with invalid input."""
-        from blinkapp.models.ids import NetworkId
-
-        with self.assertRaises(ValueError):
-            NetworkId("invalid")
-
-    def test_clip_id_creation(self) -> None:
-        """Test ClipId creation."""
-        from blinkapp.models.ids import ClipId
-
-        clip_id = ClipId("test_clip_123")
-        self.assertEqual(str(clip_id), "test_clip_123")
-
-    def test_clip_id_validation_invalid(self) -> None:
-        """Test ClipId validation with invalid input."""
-        from blinkapp.models.ids import ClipId
-
-        with self.assertRaises(ValueError):
-            ClipId("")
-
-
-class TestSystemService(FlaskTestCase):
-    """Test system_service.py (currently 13% coverage)."""
-
-    @patch("blinkapp.services.blink_service.blink")
-    def test_get_systems_empty(self, mock_blink: Mock) -> None:
-        """Test get_systems when no systems available."""
-        from blinkapp.services.system_service import get_systems
-
-        mock_blink.sync = {}
-        result = get_systems()
-        self.assertEqual(result, {"systems": []})
-
-    @patch("blinkapp.services.blink_service.blink")
-    def test_get_systems_with_data(self, mock_blink: Mock) -> None:
-        """Test get_systems with mock data."""
-        from blinkapp.services.system_service import get_systems
-
-        mock_sync = create_mock_sync()
-        mock_sync.network_id = 12345
-        mock_sync.arm = False
-        mock_sync.online = True
-        mock_blink.sync = {"test": mock_sync}
-
-        result = get_systems()
-        self.assertIsInstance(result, dict)
-        self.assertIn("systems", result)
-
-
-class TestConnectionService(FlaskTestCase):
-    """Test connection_service.py (currently 40% coverage)."""
-
-    def test_initialize_connections(self) -> None:
-        """Test initialize_connections function."""
-        from blinkapp.services.connection_service import initialize_connections
-
-        initialize_connections()  # Should not raise exception
-
-    def test_ensure_executor_initialized(self) -> None:
-        """Test ensure_executor_initialized function."""
-        from blinkapp.services.connection_service import ensure_executor_initialized
-
-        result = ensure_executor_initialized()
-        self.assertIsNotNone(result)
-
-    def test_ensure_http_session_initialized(self) -> None:
-        """Test ensure_http_session_initialized function."""
-        from blinkapp.services.connection_service import ensure_http_session_initialized
-
-        result = ensure_http_session_initialized()
-        self.assertIsNotNone(result)

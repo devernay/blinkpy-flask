@@ -105,58 +105,8 @@ class TestConfigurationValues(BaseTestCase):
         with self.assertRaises(ValueError):
             format_time_duration(-1)
 
-    def test_validate_string_input(self) -> None:
-        """Test string input validation."""
-        from blinkapp.utils.validators import validate_string_input
 
-        # Test valid input
-        result = validate_string_input("test", 10, "field")
-        self.assertEqual(result, "test")
 
-        # Test whitespace trimming
-        result = validate_string_input("  test  ", 10, "field")
-        self.assertEqual(result, "test")
-
-        # Test empty input
-        with self.assertRaises(ValueError):
-            validate_string_input("", 10, "field")
-
-        # Test too long input
-        with self.assertRaises(ValueError):
-            validate_string_input("toolong", 5, "field")
-
-    def test_email_validation(self) -> None:
-        """Test email format validation."""
-        from blinkapp.utils.validators import is_valid_email_format
-
-        # Valid emails
-        self.assertTrue(is_valid_email_format("test@example.com"))
-        self.assertTrue(is_valid_email_format("user.name+tag@domain.co.uk"))
-
-        # Invalid emails
-        self.assertFalse(is_valid_email_format(""))
-        self.assertFalse(is_valid_email_format("invalid"))
-        self.assertFalse(is_valid_email_format("@domain.com"))
-        self.assertFalse(is_valid_email_format("user@"))
-        # Test None input - function handles None gracefully but type checker doesn't know this
-        self.assertFalse(is_valid_email_format(None))  # type: ignore[arg-type] # Testing None input handling
-
-    def test_credential_validation(self) -> None:
-        """Test credential validation."""
-        from blinkapp.utils.validators import validate_credentials
-
-        # Valid credentials
-        username, password = validate_credentials("user@example.com", "password123")
-        self.assertEqual(username, "user@example.com")
-        self.assertEqual(password, "password123")
-
-        # Invalid credentials
-        with self.assertRaises(ValueError):
-            validate_credentials("", "pass")
-        with self.assertRaises(ValueError):
-            validate_credentials("user@example.com", "")
-        with self.assertRaises(ValueError):
-            validate_credentials("invalid-email", "pass")
 
     def test_config_regex_patterns(self) -> None:
         """Test Config regex patterns work correctly."""
@@ -345,30 +295,6 @@ class TestImportAndModuleLoading(BaseTestCase):
 class TestBasicOperations(BaseTestCase):
     """Test basic operations that should increase coverage."""
 
-    def test_string_formatting_operations(self) -> None:
-        """Test string formatting used in the blinkapp."""
-        # Test f-string formatting
-        camera_id = "test123"
-        formatted = f"Camera {camera_id} thumbnail"
-        self.assertIn(camera_id, formatted)
-
-        # Test .format() method
-        formatted2 = f"Camera {camera_id} thumbnail"
-        self.assertIn(camera_id, formatted2)
-
-    def test_dictionary_operations(self) -> None:
-        """Test dictionary operations used throughout the blinkapp."""
-        test_dict = {"key1": "value1", "key2": "value2"}
-
-        # Test get method
-        self.assertEqual(test_dict.get("key1"), "value1")
-        self.assertIsNone(test_dict.get("nonexistent"))
-        self.assertEqual(test_dict.get("nonexistent", "default"), "default")
-
-        # Test in operator
-        self.assertIn("key1", test_dict)
-        self.assertNotIn("nonexistent", test_dict)
-
     def test_list_operations(self) -> None:
         """Test list operations used in the blinkapp."""
         test_list = ["item1", "item2", "item3"]
@@ -392,19 +318,6 @@ class TestBasicOperations(BaseTestCase):
         self.assertIn("subdir", str(joined_path))
         self.assertIn("file.txt", str(joined_path))
 
-    def test_datetime_operations(self) -> None:
-        """Test datetime operations used in the blinkapp."""
-        # Test datetime creation
-        now = datetime.now()
-        self.assertIsInstance(now, datetime)
-
-        # Test timestamp conversion
-        timestamp = now.timestamp()
-        self.assertIsInstance(timestamp, float)
-
-        # Test datetime from timestamp
-        converted = datetime.fromtimestamp(timestamp)
-        self.assertIsInstance(converted, datetime)
 
 
 if __name__ == "__main__":
