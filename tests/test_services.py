@@ -19,19 +19,6 @@ from unittest.mock import Mock, mock_open, patch
 
 import requests
 
-from blinkapp.models.ids import ClipId
-from blinkapp.services.clip_processing import (
-    download_and_cache_cloud_thumbnail,
-    process_cloud_clip_background,
-    process_cloud_clip_thumbnail_only,
-    process_local_clip_background,
-)
-from blinkapp.services.hls_service import (
-    HLSStream,
-    HLSStreamConfig,
-    _build_ffmpeg_command,
-    _create_ffmpeg_process,
-)
 from tests.test_base import BaseTestCase
 
 
@@ -626,6 +613,8 @@ class TestHLSStreamConfig(BaseTestCase):
 
     def test_hls_stream_config_defaults(self) -> None:
         """Test HLS config uses defaults from Config."""
+        from blinkapp.services.hls_service import HLSStreamConfig
+        
         config = HLSStreamConfig()
 
         # Should use Config defaults
@@ -636,6 +625,8 @@ class TestHLSStreamConfig(BaseTestCase):
 
     def test_hls_stream_config_custom_values(self) -> None:
         """Test HLS config with custom values."""
+        from blinkapp.services.hls_service import HLSStreamConfig
+        
         config = HLSStreamConfig(
             segment_time=5, list_size=10, timeout=30, idle_timeout=60
         )
@@ -651,6 +642,8 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_build_ffmpeg_command(self) -> None:
         """Test FFmpeg command building."""
+        from blinkapp.services.hls_service import HLSStreamConfig, _build_ffmpeg_command
+        
         config = HLSStreamConfig(segment_time=4, list_size=5)
         output_path = Path("/tmp/test.m3u8")
         tcp_url = "tcp://127.0.0.1:8080"
@@ -678,6 +671,8 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_success(self) -> None:
         """Test successful FFmpeg process creation."""
+        from blinkapp.services.hls_service import _create_ffmpeg_process
+        
         mock_process = Mock(spec=subprocess.Popen)
         mock_factory = Mock(return_value=mock_process)
 
@@ -694,6 +689,8 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_error(self) -> None:
         """Test FFmpeg process creation error."""
+        from blinkapp.services.hls_service import _create_ffmpeg_process
+        
         mock_factory = Mock(side_effect=OSError("Command not found"))
 
         cmd = ["ffmpeg", "-version"]
@@ -703,6 +700,8 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_subprocess_error(self) -> None:
         """Test FFmpeg process creation subprocess error."""
+        from blinkapp.services.hls_service import _create_ffmpeg_process
+        
         mock_factory = Mock(side_effect=subprocess.SubprocessError("Process error"))
 
         cmd = ["ffmpeg", "-version"]
@@ -712,6 +711,8 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
+        from blinkapp.services.hls_service import _create_ffmpeg_process
+        
         with patch("subprocess.Popen") as mock_popen:
             mock_process = Mock()
             mock_popen.return_value = mock_process
@@ -727,6 +728,8 @@ class TestHLSStream(BaseTestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        from blinkapp.services.hls_service import HLSStreamConfig
+        
         super().setUp()
         self.config = HLSStreamConfig(
             segment_time=2, list_size=3, timeout=10, idle_timeout=30
@@ -736,6 +739,8 @@ class TestHLSStream(BaseTestCase):
 
     def test_hls_stream_init(self) -> None:
         """Test HLS stream initialization."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         self.assertEqual(stream.camera_id, self.camera_id)
@@ -753,6 +758,8 @@ class TestHLSStream(BaseTestCase):
         self, mock_sleep: Mock, mock_temp_dir: Mock, mock_create_process: Mock
     ) -> None:
         """Test successful HLS stream start."""
+        from blinkapp.services.hls_service import HLSStream
+        
         # Mock temporary directory
         mock_dir = Mock()
         mock_dir.name = "/tmp/hls_test_camera_123"
@@ -778,6 +785,8 @@ class TestHLSStream(BaseTestCase):
         self, mock_create_process: Mock
     ) -> None:
         """Test HLS stream start when process creation fails."""
+        from blinkapp.services.hls_service import HLSStream
+        
         mock_create_process.return_value = None
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -789,6 +798,8 @@ class TestHLSStream(BaseTestCase):
 
     def test_hls_stream_stop(self) -> None:
         """Test HLS stream stop."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
@@ -800,6 +811,8 @@ class TestHLSStream(BaseTestCase):
 
     def test_hls_stream_cleanup_with_process(self) -> None:
         """Test HLS stream cleanup with active process."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         # Mock process
@@ -821,18 +834,24 @@ class TestHLSStream(BaseTestCase):
 
     def test_hls_stream_is_active_not_active(self) -> None:
         """Test is_active when stream is not active."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         self.assertFalse(stream.is_active())
 
     def test_hls_stream_get_hls_url_no_temp_dir(self) -> None:
         """Test get_hls_url when no temp directory."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         self.assertIsNone(stream.get_hls_url())
 
     def test_hls_stream_get_hls_url_success(self) -> None:
         """Test get_hls_url with temp directory."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream.temp_dir = Mock()
         stream.temp_dir.name = "/tmp/test"
@@ -844,6 +863,8 @@ class TestHLSStream(BaseTestCase):
 
     def test_hls_stream_get_file_not_active(self) -> None:
         """Test get_file when stream not active."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
 
         content, content_type = stream.get_file("test.m3u8")
@@ -857,6 +878,8 @@ class TestHLSStream(BaseTestCase):
         self, mock_exists: Mock, mock_open: Mock
     ) -> None:
         """Test get_file success with m3u8 file."""
+        from blinkapp.services.hls_service import HLSStream
+        
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
@@ -880,6 +903,8 @@ class TestCloudClipProcessing(BaseTestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
+        from blinkapp.models.ids import ClipId
+        
         super().setUp()
         self.clip_id = ClipId("123456")
         self.clips_cache_dir = Path("/tmp/test_clips")
@@ -890,6 +915,8 @@ class TestCloudClipProcessing(BaseTestCase):
         self, mock_exists: Mock
     ) -> None:
         """Test cloud clip processing when thumbnail already exists."""
+        from blinkapp.services.clip_processing import process_cloud_clip_background
+        
         mock_exists.return_value = True
 
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
@@ -904,6 +931,8 @@ class TestCloudClipProcessing(BaseTestCase):
     @patch("blinkapp.services.blink_service.blink", None)
     def test_process_cloud_clip_background_no_blink(self, mock_exists: Mock) -> None:
         """Test cloud clip processing when blink is not available."""
+        from blinkapp.services.clip_processing import process_cloud_clip_background
+        
         mock_exists.return_value = False
 
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
@@ -915,6 +944,9 @@ class TestCloudClipProcessing(BaseTestCase):
 
     def test_download_and_cache_cloud_thumbnail_local_clip_error(self) -> None:
         """Test download thumbnail with local clip raises error."""
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+        
         # Create a local clip ID that will return True for is_local()
         local_clip_id = ClipId.from_local("test_sync", 123456)
 
@@ -925,6 +957,8 @@ class TestCloudClipProcessing(BaseTestCase):
 
     def test_download_and_cache_cloud_thumbnail_no_url(self) -> None:
         """Test download thumbnail with no URL."""
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+        
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
             result = download_and_cache_cloud_thumbnail(self.clip_id, "")
 
