@@ -58,7 +58,7 @@ def twofa_page() -> "Response":
     if not session.get("pending_2fa"):
         return redirect(url_for("login_page_route"))
 
-    return render_template("auth.html", show_2fa=True)
+    return render_template("auth.html", is_2fa=True)
 
 
 def verify_twofa() -> "Response":
