@@ -49,6 +49,7 @@
     <div id="clips-storage-selector" class="clips-storage-selector" style="display: none;">
         <button class="storage-btn active" onclick="selectStorage('cloud')">Cloud storage</button>
         <button class="storage-btn" onclick="selectStorage('local')">Local storage</button>
+        <button class="update-clips-btn" onclick="updateLocalClips()" style="display: none;">Update 0 Clips</button>
     </div>
 
     <!-- Settings View -->
@@ -140,7 +141,7 @@
                 </div>
             </div>
             <div id="motion-status" style="font-size: 12px; color: #666; margin-top: 5px;">
-                <!-- Status will be updated dynamically -->
+                On (System Armed)
             </div>
         </div>
 

@@ -165,7 +165,7 @@ CACHE_DIR=cache  # Default cache directory
 - **Clip Thumbnail Size**: Small/Medium/Large display options
 
 ### Cache Settings
-- **Clips cache**: 50 items (configurable)
+- **Clips cache**: 100 items (configurable)
 - **Thumbnail cache**: Persistent with timestamp tracking
 - **Settings cache**: Persistent across sessions
 

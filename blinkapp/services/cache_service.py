@@ -50,9 +50,9 @@ def initialize_caches(config: dict[str, object]) -> None:
     from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
     camera_thumbnail_cache = CameraThumbnailCache(
-        maxsize=int(config.get("camera_thumbnail_cache_size") or 100)
+        maxsize=int(config.get("camera_thumbnail_cache_size") or "100")
     )
-    clips_cache = ClipsCache(maxsize=int(config.get("clips_cache_size") or 50))
+    clips_cache = ClipsCache(maxsize=int(config.get("clips_cache_size") or "100"))
 
     logger.info("Cache instances initialized successfully")
 
