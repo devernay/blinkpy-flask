@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "Blink Flask Web Interface API",
-    "description": "Professional-grade RESTful API for comprehensive Blink camera system management including live streaming, clip management, thumbnail generation, and user settings. Provides 20+ endpoints for programmatic access to multi-system Blink deployments with thread-safe operations and intelligent caching.",
+    "title": "Blink Camera Flask Web Interface API",
+    "description": "Professional-grade RESTful API for comprehensive Blink camera system management including live streaming, clip management, thumbnail generation, and user settings. Provides 20+ endpoints for programmatic access to multi-system Blink deployments with thread-safe operations and intelligent caching.\n\n## Features\n- **Multi-system support** - Manage multiple Blink systems\n- **Real-time camera thumbnails** with intelligent caching and age tracking\n- **Live streaming** - TCP to HLS transcoding with FFmpeg using Blink's init_livestream()\n- **Clip management** - Download and view cloud/local storage clips with thumbnail generation\n- **2FA authentication** - Full two-factor authentication support with unified login flow\n- **RESTful API** - 20+ endpoints for programmatic access\n- **Thread-safe operations** - Concurrent request handling with background processing\n- **Intelligent caching** - 80% performance improvement with configurable retention\n- **Settings management** - Persistent user preferences (temperature units, clip retention, thumbnail sizes)\n\n## Authentication\nAll API endpoints require session-based authentication. Users must first authenticate via the web interface at `/login` and complete 2FA if required. The session cookie is then used for API access.\n\n## Response Format\nAll API endpoints return standardized JSON responses with the following structure:\n```json\n{\n  \"success\": true,\n  \"data\": {...},\n  \"timestamp\": \"2025-01-27T...\"\n}\n```\n\nError responses include an `error` field:\n```json\n{\n  \"success\": false,\n  \"error\": \"Error message\",\n  \"timestamp\": \"2025-01-27T...\"\n}\n```\n\n## Live Streaming Implementation\nLive streaming uses blinkpy PR [#1078](https://github.com/fronzbot/blinkpy/pull/1078) with MPEG-TS to HLS transcoding via FFmpeg. The camera's `init_livestream()` method creates a local TCP proxy server that streams MPEG-TS data, which is then transcoded to HLS segments for web browser compatibility.\n\n## Cache Management\nThe application implements intelligent caching with configurable retention:\n- **Thumbnail cache**: Persistent with timestamp tracking\n- **Clips cache**: 50 items (configurable) with FIFO management\n- **Settings cache**: Persistent across sessions\n- **Systems cache**: Refreshable via API endpoints",
     "version": "2.0.0",
     "license": {
       "name": "MIT",
@@ -29,13 +29,51 @@
       "sessionAuth": []
     }
   ],
+  "tags": [
+    {
+      "name": "Web Interface",
+      "description": "Main web interface endpoints for HTML pages"
+    },
+    {
+      "name": "Authentication",
+      "description": "User authentication and session management"
+    },
+    {
+      "name": "System Management",
+      "description": "Blink system operations (arm/disarm, device listing)"
+    },
+    {
+      "name": "Camera Management",
+      "description": "Camera operations, status, and recording controls"
+    },
+    {
+      "name": "Live Streaming",
+      "description": "Real-time video streaming via TCP to HLS transcoding"
+    },
+    {
+      "name": "Clip Management",
+      "description": "Cloud and local clip operations, downloads, and thumbnails"
+    },
+    {
+      "name": "Thumbnail Management",
+      "description": "Camera and clip thumbnail operations with caching"
+    },
+    {
+      "name": "Settings Management",
+      "description": "User preferences and application configuration"
+    },
+    {
+      "name": "Cache Management",
+      "description": "Cache operations for performance optimization"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "sessionAuth": {
         "type": "apiKey",
         "in": "cookie",
         "name": "session",
-        "description": "Flask session-based authentication using secure cookies"
+        "description": "Flask session-based authentication using secure cookies. Users must authenticate via /login endpoint first and complete 2FA if required. The session cookie is automatically included in subsequent requests."
       }
     },
     "schemas": {
@@ -159,11 +197,143 @@
         }
       }
     },
+    "/login": {
+      "get": {
+        "summary": "Login page",
+        "description": "Display login form for user authentication. Shows unified login interface with email/password fields.",
+        "operationId": "login_page",
+        "tags": ["Authentication", "Web Interface"],
+        "responses": {
+          "200": {
+            "description": "Login form HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "HTML content for the login form"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Authenticate user",
+        "description": "Process login credentials and initiate authentication. May redirect to 2FA page if two-factor authentication is required.",
+        "operationId": "authenticate_user",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Blink account email address",
+                    "format": "email",
+                    "example": "user@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Blink account password",
+                    "format": "password"
+                  }
+                },
+                "required": ["username", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful - redirect to main page"
+          },
+          "302": {
+            "description": "2FA required - redirect to /2fa page"
+          },
+          "400": {
+            "description": "Invalid credentials or authentication failed"
+          }
+        }
+      }
+    },
+    "/2fa": {
+      "get": {
+        "summary": "2FA verification page",
+        "description": "Display two-factor authentication form for entering verification code sent via email or SMS.",
+        "operationId": "twofa_page",
+        "tags": ["Authentication", "Web Interface"],
+        "responses": {
+          "200": {
+            "description": "2FA form HTML page",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string",
+                  "description": "HTML content for the 2FA verification form"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Verify 2FA code",
+        "description": "Process two-factor authentication code received via email or SMS.",
+        "operationId": "verify_twofa",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "2FA verification code from email/SMS",
+                    "pattern": "^[0-9]{6}$",
+                    "example": "123456"
+                  }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "2FA verification successful - redirect to main page"
+          },
+          "400": {
+            "description": "Invalid 2FA code or verification failed"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "Logout user",
+        "description": "Logout user and clear session credentials. Invalidates the current session and redirects to login page.",
+        "operationId": "logout_user",
+        "tags": ["Authentication"],
+        "security": [{"sessionAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Logout successful - redirect to login page"
+          }
+        }
+      }
+    },
     "/api/systems": {
       "get": {
         "summary": "List all Blink systems",
         "description": "Retrieves a comprehensive list of all available Blink sync modules and their network information. Each system includes network ID, name, armed status, and associated cameras.",
         "operationId": "get_systems",
+        "tags": ["System Management"],
+        "security": [{"sessionAuth": []}],
         "tags": ["System Management"],
         "responses": {
           "200": {
@@ -268,6 +438,8 @@
         "summary": "Update system",
         "description": "Update system settings (arm/disarm)",
         "operationId": "update_system_settings",
+        "tags": ["System Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "network_id_str",
@@ -305,6 +477,8 @@
         "summary": "Get system devices",
         "description": "Get all devices (cameras, sync modules) for a specific system",
         "operationId": "get_system_devices",
+        "tags": ["System Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "network_id_str",
@@ -328,6 +502,8 @@
         "summary": "Clear systems cache",
         "operationId": "clear_systems_cache",
         "description": "Clear cached system information to force refresh",
+        "tags": ["System Management", "Cache Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "Systems cache cleared"
@@ -340,6 +516,8 @@
         "summary": "List all cameras",
         "description": "Get list of all available cameras across all systems",
         "operationId": "list_cameras",
+        "tags": ["Camera Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "List of cameras",
@@ -376,6 +554,8 @@
         "summary": "Get camera details",
         "description": "Get detailed information about a specific camera",
         "operationId": "get_camera_details",
+        "tags": ["Camera Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -399,6 +579,8 @@
         "summary": "Get camera thumbnail",
         "description": "Get current thumbnail image for a camera",
         "operationId": "get_camera_thumbnail",
+        "tags": ["Camera Management", "Thumbnail Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -427,6 +609,8 @@
         "summary": "Refresh camera thumbnail",
         "description": "Clear thumbnail cache and trigger refresh from camera",
         "operationId": "refresh_camera_thumbnail",
+        "tags": ["Camera Management", "Thumbnail Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -450,6 +634,8 @@
         "summary": "Start recording",
         "description": "Start recording a clip on the camera",
         "operationId": "start_camera_recording",
+        "tags": ["Camera Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -473,6 +659,8 @@
         "summary": "Start live stream",
         "operationId": "start_live_stream",
         "description": "Start live streaming from camera using TCP to HLS transcoding",
+        "tags": ["Live Streaming"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -506,6 +694,8 @@
         "summary": "Stop live stream",
         "operationId": "stop_live_stream",
         "description": "Stop active live stream for camera",
+        "tags": ["Live Streaming"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -529,6 +719,8 @@
         "summary": "Get HLS stream segments",
         "description": "Get HLS playlist or video segments for live streaming",
         "operationId": "get_hls_stream_segments",
+        "tags": ["Live Streaming"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "camera_id",
@@ -558,6 +750,8 @@
         "summary": "List clips",
         "description": "Get list of clips from cloud or local storage",
         "operationId": "get_clips",
+        "tags": ["Clip Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "storage",
@@ -607,6 +801,8 @@
         "summary": "Delete clip",
         "operationId": "delete_clip",
         "description": "Delete a clip from storage",
+        "tags": ["Clip Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "clip_id",
@@ -630,6 +826,8 @@
         "summary": "Download clip",
         "operationId": "download_clip",
         "description": "Download clip file",
+        "tags": ["Clip Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "clip_id",
@@ -661,6 +859,8 @@
         "summary": "Get clip thumbnail",
         "operationId": "get_clip_thumbnail",
         "description": "Get thumbnail image for a clip",
+        "tags": ["Clip Management", "Thumbnail Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "clip_id",
@@ -689,6 +889,8 @@
         "summary": "Generate clip thumbnail",
         "operationId": "generate_clip_thumbnail",
         "description": "Generate thumbnail for a clip",
+        "tags": ["Clip Management", "Thumbnail Management"],
+        "security": [{"sessionAuth": []}],
         "parameters": [
           {
             "name": "clip_id",
@@ -709,6 +911,8 @@
         "summary": "Get application configuration",
         "operationId": "get_app_config",
         "description": "Get current application configuration and status",
+        "tags": ["Settings Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "Application configuration",
@@ -742,6 +946,8 @@
         "summary": "Get user settings",
         "operationId": "get_user_settings",
         "description": "Get current user preferences and settings",
+        "tags": ["Settings Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "User settings",
@@ -778,6 +984,8 @@
         "summary": "Update user settings",
         "description": "Update user preferences and settings",
         "operationId": "update_user_settings",
+        "tags": ["Settings Management"],
+        "security": [{"sessionAuth": []}],
         "requestBody": {
           "required": true,
           "content": {
@@ -812,6 +1020,8 @@
         "summary": "Clear all caches",
         "operationId": "clear_all_caches",
         "description": "Clear all application caches (thumbnails, clips, systems)",
+        "tags": ["Cache Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "All caches cleared"
@@ -824,6 +1034,8 @@
         "summary": "Clear thumbnail cache",
         "operationId": "clear_thumbnail_cache",
         "description": "Clear only the thumbnail cache",
+        "tags": ["Cache Management", "Thumbnail Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "Thumbnail cache cleared"
@@ -836,6 +1048,8 @@
         "summary": "Clear clips cache",
         "operationId": "clear_clips_cache",
         "description": "Clear only the clips cache",
+        "tags": ["Cache Management", "Clip Management"],
+        "security": [{"sessionAuth": []}],
         "responses": {
           "200": {
             "description": "Clips cache cleared"
