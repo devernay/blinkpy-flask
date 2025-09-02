@@ -336,6 +336,49 @@ class TestDeviceService(BaseTestCase):
         self.assertEqual(result["name"], "Test Camera")
         self.assertEqual(result["id"], "test_camera_boost")
 
+    def test_format_device_temperature_celsius_coverage(self) -> None:
+        """Test temperature formatting in Celsius."""
+        from blinkapp.services.device_service import format_device_temperature
+
+        # The function appears to do temperature conversion, so test actual behavior
+        result = format_device_temperature(77.0, "C")  # 77F = 25C
+        self.assertIn("°C", result)
+
+    def test_format_device_temperature_fahrenheit_coverage(self) -> None:
+        """Test temperature formatting in Fahrenheit."""
+        from blinkapp.services.device_service import format_device_temperature
+
+        result = format_device_temperature(25.0, "F")  # 25C = 77F
+        self.assertIn("°F", result)
+
+    def test_format_device_temperature_none_coverage(self) -> None:
+        """Test temperature formatting with None value."""
+        from blinkapp.services.device_service import format_device_temperature
+
+        result = format_device_temperature(None, "C")
+        self.assertEqual(result, "N/A")
+
+    def test_create_device_data_basic(self) -> None:
+        """Test creating device data."""
+        from blinkapp.services.device_service import create_device_data
+        from tests.test_base import create_mock_camera
+
+        mock_camera = create_mock_camera(
+            camera_id="test_id",
+            name="Test Camera",
+            motion_enabled=True,
+            temperature=25,
+            battery_voltage=110,
+            wifi_strength=-50,
+        )
+
+        result = create_device_data(mock_camera, 1234567890, 1234567800)
+
+        self.assertIn("name", result)
+        self.assertIn("motion_enabled", result)
+        self.assertIn("temperature", result)
+        self.assertEqual(result["name"], "Test Camera")
+
 
 class TestHLSServicePureFunctions(BaseTestCase):
     """Test HLS service pure functions for coverage."""
@@ -588,53 +631,6 @@ class TestTimeServiceCoverage(BaseTestCase):
         # Should be approximately 60 seconds (allow some tolerance)
         self.assertGreater(result, 55)
         self.assertLess(result, 65)
-
-
-class TestDeviceServiceCoverage(BaseTestCase):
-    """Test device service functions for coverage."""
-
-    def test_format_device_temperature_celsius(self) -> None:
-        """Test temperature formatting in Celsius."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        # The function appears to do temperature conversion, so test actual behavior
-        result = format_device_temperature(77.0, "C")  # 77F = 25C
-        self.assertIn("°C", result)
-
-    def test_format_device_temperature_fahrenheit(self) -> None:
-        """Test temperature formatting in Fahrenheit."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        result = format_device_temperature(25.0, "F")  # 25C = 77F
-        self.assertIn("°F", result)
-
-    def test_format_device_temperature_none_coverage(self) -> None:
-        """Test temperature formatting with None value."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        result = format_device_temperature(None, "C")
-        self.assertEqual(result, "N/A")
-
-    def test_create_device_data_basic(self) -> None:
-        """Test creating device data."""
-        from blinkapp.services.device_service import create_device_data
-        from tests.test_base import create_mock_camera
-
-        mock_camera = create_mock_camera(
-            camera_id="test_id",
-            name="Test Camera",
-            motion_enabled=True,
-            temperature=25,
-            battery_voltage=110,
-            wifi_strength=-50,
-        )
-
-        result = create_device_data(mock_camera, 1234567890, 1234567800)
-
-        self.assertIn("name", result)
-        self.assertIn("motion_enabled", result)
-        self.assertIn("temperature", result)
-        self.assertEqual(result["name"], "Test Camera")
 
 
 class TestHLSStreamConfig(BaseTestCase):
