@@ -20,9 +20,9 @@ def get_user_settings() -> JsonDict:
     Returns:
         User settings
     """
-    from ..services.settings_service import get_settings
+    from ..services.settings_service import get_user_settings
 
-    return get_settings()
+    return get_user_settings()
 
 
 def update_user_settings(body: JsonDict) -> JsonDict | tuple[JsonDict, int]:

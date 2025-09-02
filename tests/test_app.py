@@ -1153,10 +1153,11 @@ class TestAPIEndpoints(FlaskTestCase):
             response.status_code, [200, 400, 500]
         )  # Accept any reasonable response
 
+    @with_blink_auth
     def test_clear_cache_success(self) -> None:
         """Test successful cache clearing."""
-        with patch("blinkapp.clear_all_caches") as mock_clear:
-            mock_clear.return_value = {"cleared": True}
+        with patch("blinkapp.connexion_handlers.admin.clear_all_caches") as mock_clear:
+            mock_clear.return_value = {"success": True, "data": {"cleared": True}}
 
             response = self.client.delete("/api/cache")
             self.assertEqual(response.status_code, 200)

@@ -15,6 +15,22 @@ if TYPE_CHECKING:
     from flask import Flask
 
 
+def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
+    """Update camera thumbnail if current timestamp is newer than cached.
+
+    Args:
+        camera: BlinkCamera instance
+        current_ts: Current timestamp from camera
+        cached_ts: Cached timestamp
+    """
+    from ..services.thumbnail_service import _download_camera_thumbnail
+
+    if current_ts > cached_ts:
+        camera_id = CameraId(str(camera.camera_id))
+        if hasattr(camera, "thumbnail") and camera.thumbnail:
+            _download_camera_thumbnail(camera_id, camera.thumbnail, current_ts)
+
+
 def setup_camera_thumbnail_routes(app: Flask) -> None:
     """Register thumbnail routes with the Flask app."""
 
