@@ -51,6 +51,10 @@ def strict_patch(target: str, *args, **kwargs) -> Any:
     return original_patch(target, *args, **kwargs)
 
 
+# Add object method to strict_patch to handle patch.object calls
+strict_patch.object = original_patch.object
+
+
 def enable_strict_patching() -> None:
     """Enable strict patching that respects __all__ exports."""
     import unittest.mock
