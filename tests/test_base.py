@@ -16,20 +16,21 @@ import sys
 import unittest
 from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, ParamSpec, TypeVar
-from unittest.mock import MagicMock, Mock
+from typing import ParamSpec, TypeVar
+from unittest.mock import MagicMock, Mock, _patch
 from unittest.mock import patch as original_patch
 
 from blinkpy.blinkpy import Blink
 from blinkpy.camera import BlinkCamera
 from blinkpy.livestream import BlinkLiveStream
 from blinkpy.sync_module import BlinkSyncModule
+from requests.structures import CaseInsensitiveDict
 
 from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
 
 
-def strict_patch_func(target: str, *args, **kwargs) -> Any:
+def strict_patch_func(target: str, *args, **kwargs) -> _patch:
     """Patch function that only allows patching symbols in __all__."""
     if "." not in target:
         return original_patch(target, *args, **kwargs)
@@ -97,7 +98,7 @@ __all__ = [
 
 
 def create_mock_cache_instance(
-    initial_data: dict[str, dict[str, Any]] | None = None,
+    initial_data: dict[str, dict[str, str | int]] | None = None,
 ) -> Mock:
     """Create a mock cache instance that behaves like the real cache.
 
@@ -109,21 +110,21 @@ def create_mock_cache_instance(
     """
     cache_data = initial_data.copy() if initial_data else {}
 
-    def mock_get(key: Any) -> Any:
+    def mock_get(key: str) -> dict[str, str | int] | None:
         """Mock cache.get() method - returns copy to allow in-place modifications."""
         str_key = str(key)
         original = cache_data.get(str_key)
         return original.copy() if original and isinstance(original, dict) else original
 
-    def mock_setitem(self_param: Any, key: Any, value: Any) -> None:
+    def mock_setitem(self_param: Mock, key: str, value: dict[str, str | int]) -> None:
         """Mock cache.__setitem__() method."""
         cache_data[str(key)] = value
 
-    def mock_getitem(key: Any) -> Any:
+    def mock_getitem(key: str) -> dict[str, str | int]:
         """Mock cache.__getitem__() method."""
         return cache_data[str(key)]
 
-    def mock_contains(key: Any) -> bool:
+    def mock_contains(key: str) -> bool:
         """Mock cache.__contains__() method."""
         return str(key) in cache_data
 
@@ -151,7 +152,7 @@ def create_mock_camera(
     wifi_strength: int | None = -45,
     motion_enabled: bool = True,
     thumbnail: str | None = None,
-    last_record: Any = None,
+    last_record: dict[str, str | int] | None = None,
     updated_at: str | None = None,
     temperature_calibrated: float | None = None,
     battery_voltage: int | None = None,
@@ -194,13 +195,13 @@ def create_mock_camera(
 
 def create_mock_blink_instance(
     available: bool = True,
-    sync_data: dict[str, Any] | None = None,
-    networks: dict[str, Any] | None = None,
-    cameras: dict[int | str, Any] | None = None,
-    refresh: Callable[[], Any] | None = None,
-    start: Callable[[], Any] | None = None,
-    save: Callable[[], Any] | None = None,
-    videos: dict[str, list[Any]] | None = None,
+    sync_data: dict[str, str | int] | None = None,
+    networks: list[dict[str, str | int]] | None = None,
+    cameras: CaseInsensitiveDict[Mock] | None = None,
+    refresh: Callable[[], None] | None = None,
+    start: Callable[[], None] | None = None,
+    save: Callable[[], None] | None = None,
+    videos: CaseInsensitiveDict[list[dict[str, str | int]]] | None = None,
     key_required: bool = False,
 ) -> Mock:
     """Create a mock blink instance with common methods."""
@@ -216,7 +217,7 @@ def create_mock_blink_instance(
     mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
 
     # Create async mock for get_videos_metadata
-    async def mock_get_videos_metadata(stop: int = 25) -> list[dict[str, Any]]:
+    async def mock_get_videos_metadata(stop: int = 25) -> list[dict[str, str | int]]:
         # Return metadata that includes the test clip ID
         return [
             {
@@ -256,10 +257,10 @@ def create_mock_blink_instance(
 
 
 def create_mock_stream_manager(
-    active_streams: dict[str, Any] | None = None,
+    active_streams: dict[str, Mock] | None = None,
     cleanup_on_exit: bool = True,
     stream_id: str | None = None,
-    created_at: Any = None,
+    created_at: str | int | None = None,
     size: int | None = None,
 ) -> Mock:
     """Create a mock StreamManager with common attributes."""
@@ -334,12 +335,12 @@ def create_mock_sync(
     network_id: int = 12345,
     armed: bool = False,
     online: bool = True,
-    cameras: dict[str, Any] | None = None,
+    cameras: CaseInsensitiveDict[Mock] | None = None,
     local_storage: bool = False,
     local_storage_manifest_ready: bool = False,
     name: str | None = None,
-    refresh: Callable[[], Any] | None = None,
-    _local_storage: dict[str, Any] | None = None,
+    refresh: Callable[[], None] | None = None,
+    _local_storage: dict[str, list[Mock]] | None = None,
 ) -> Mock:
     """Create a mock sync module with common attributes."""
     from unittest.mock import Mock
@@ -365,7 +366,7 @@ def create_mock_sync(
 
 def create_mock_clip_item(
     clip_id: str | int = "123",
-    created_at: Any = None,
+    created_at: str | int | None = None,
     name: str = "Test Camera",
     size: int | None = None,
     url: str | None = None,
@@ -400,12 +401,12 @@ def create_mock_clip_item(
 
 
 def create_mock_clip_cache_entry(
-    clip_data: Any = None,
+    clip_data: dict[str, str | int] | None = None,
     cached_at: float | None = None,
     access_count: int = 0,
     last_accessed: float | None = None,
-    filepath: Any = None,
-    thumbnail: Any = None,
+    filepath: str | None = None,
+    thumbnail: str | None = None,
     cloud_thumbnail_url: str | None = None,
 ) -> Mock:
     """Create a mock ClipCacheEntry with proper spec."""
@@ -431,9 +432,9 @@ def create_mock_clip_cache_entry(
 
 
 def create_mock_blink_connection(
-    execute_return_value: Any = None,
-    execute_side_effect: Any = None,
-    blink: Any = None,
+    execute_return_value: str | list[dict[str, str | int]] | None = None,
+    execute_side_effect: Exception | list[str] | None = None,
+    blink: Mock | None = None,
 ) -> Mock:
     """Create a mock BlinkConnection with common methods."""
     from unittest.mock import Mock
