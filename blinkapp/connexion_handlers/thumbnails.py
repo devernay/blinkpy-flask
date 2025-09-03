@@ -12,7 +12,14 @@ if TYPE_CHECKING:
 def get_camera_thumbnail(
     camera_id: str, timestamp: bool = False
 ) -> "Response | JsonDict | tuple[JsonDict, int]":
-    """Get camera thumbnail."""
+    """Get camera thumbnail.
+
+    Args:
+        camera_id: ID of the camera to get thumbnail for.
+
+    Returns:
+        Thumbnail file response or error tuple.
+    """
     from ..services.thumbnail_service import get_camera_thumbnail
 
     try:

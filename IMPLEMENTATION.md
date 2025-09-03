@@ -171,6 +171,7 @@ The server should provide comprehensive API documentation through an OpenAPI 3.1
 
 The development environment should include modern tooling for code quality:
 - Pre-commit hooks for automated code formatting and linting
+- Never bypass the pre-commit hooks ("git commit --no-verify")
 - Type safety with comprehensive type hints throughout the codebase
 - Automated testing with a comprehensive test suite covering core functionality
 - Code formatting with ruff and type checking with pyright

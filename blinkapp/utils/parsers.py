@@ -60,7 +60,14 @@ def extract_thumbnail_timestamp(filename: str | None) -> int:
 
 
 def parse_arguments(args_list: list[str]) -> argparse.Namespace:
-    """Parse command line arguments list into namespace object."""
+    """Parse command line arguments list into namespace object.
+
+    Args:
+        args: List of command line arguments to parse.
+
+    Returns:
+        Parsed arguments namespace object.
+    """
     import argparse
 
     from blinkapp.config import Config

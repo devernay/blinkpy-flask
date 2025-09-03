@@ -165,6 +165,7 @@ class TestBaseId(BaseTestCase):
 
     def test_base_id_get_pattern_not_implemented(self) -> None:
         """Test BaseId abstract method enforcement."""
+
         # Test that a subclass without _get_type_name raises NotImplementedError
         class IncompleteTestId1(BaseId):
             @classmethod
@@ -180,6 +181,7 @@ class TestBaseId(BaseTestCase):
 
     def test_base_id_get_type_name_not_implemented(self) -> None:
         """Test BaseId._get_type_name raises NotImplementedError."""
+
         # Test through subclass that implements _get_pattern but not _get_type_name
         class TestId(BaseId):
             @classmethod

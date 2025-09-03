@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Literal
 from aiohttp import ClientSession
 
 from blinkapp.models.types import JsonDict
+from blinkapp.services.blink_service import get_blink_instance
 from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
 
@@ -212,10 +213,12 @@ async def initialize_blink(
         blink_service.ensure_blink_initialized().auth = auth
 
         # Attempt to start Blink system and authenticate
-        await blink_service.blink.start()
+        blink_instance = get_blink_instance()
+        assert blink_instance is not None, "Blink instance must be initialized"
+        await blink_instance.start()
 
         # Check if 2FA is required before proceeding
-        if blink_service.blink.key_required:
+        if blink_instance.key_required:
             logger.info("2FA key required - check your email or SMS")
             return "2fa_required"
 
@@ -261,19 +264,20 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         # Send 2FA key using the same session/thread that created the Blink instance
         # This is critical to maintain authentication state
         logger.debug("Sending 2FA key...")
-        assert blink is not None, (
+        blink_instance = get_blink_instance()
+        assert blink_instance is not None, (
             "Blink instance must be initialized before 2FA verification"
         )
-        await blink.auth.send_auth_key(blink, tfa_key)
+        await blink_instance.auth.send_auth_key(blink_instance, tfa_key)
 
         # Complete the post-verification setup process
         logger.debug("Setting up post verification...")
-        await blink.setup_post_verify()
+        await blink_instance.setup_post_verify()
 
         # Save encrypted credentials to disk for future sessions
         logger.debug("Saving credentials...")
         assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
-        await blink.save(CREDENTIALS_FILE)
+        await blink_instance.save(CREDENTIALS_FILE)
 
         logger.info("2FA verification and save completed successfully")
         return True

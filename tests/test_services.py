@@ -652,10 +652,12 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
+        import subprocess
+
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         with patch("subprocess.Popen") as mock_popen:
-            mock_process = Mock()
+            mock_process = Mock(spec=subprocess.Popen)
             mock_process.poll.return_value = None
             mock_process.terminate = Mock()
             mock_process.kill = Mock()
@@ -702,17 +704,21 @@ class TestHLSStream(BaseTestCase):
         self, mock_sleep: Mock, mock_temp_dir: Mock, mock_create_process: Mock
     ) -> None:
         """Test successful HLS stream start."""
+        # Mock temporary directory
+        import tempfile
+
         from blinkapp.services.hls_service import HLSStream
 
-        # Mock temporary directory
-        mock_dir = Mock()
+        mock_dir = Mock(spec=tempfile.TemporaryDirectory)
         mock_dir.name = "/tmp/hls_test_camera_123"
         mock_dir.__enter__ = Mock(return_value=mock_dir)
         mock_dir.__exit__ = Mock(return_value=None)
         mock_temp_dir.return_value = mock_dir
 
         # Mock FFmpeg process
-        mock_process = Mock()
+        import subprocess
+
+        mock_process = Mock(spec=subprocess.Popen)
         mock_process.poll.return_value = None  # Process is running
         mock_create_process.return_value = mock_process
 
@@ -834,7 +840,9 @@ class TestHLSStream(BaseTestCase):
         stream.temp_dir = mock_temp_dir
 
         mock_exists.return_value = True
-        mock_file = Mock()
+        from io import BufferedReader
+
+        mock_file = Mock(spec=BufferedReader)
         mock_file.read.return_value = b"playlist content"
         mock_open.return_value.__enter__.return_value = mock_file
 

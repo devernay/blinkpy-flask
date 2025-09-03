@@ -81,7 +81,17 @@ def validate_string_input(value: str, max_length: int, field_name: str) -> str:
 
 
 def validate_camera_id(camera_id: str) -> str:
-    """Validate camera ID format."""
+    """Validate camera ID format.
+
+    Args:
+        camera_id: Camera ID to validate.
+
+    Returns:
+        Validated camera ID string.
+
+    Raises:
+        ValidationError: If camera ID format is invalid.
+    """
     if not camera_id or not isinstance(camera_id, str):
         raise ValueError("Invalid camera ID")
 
@@ -97,7 +107,17 @@ def validate_camera_id(camera_id: str) -> str:
 
 
 def validate_tcp_url(url: str) -> str:
-    """Validate TCP URL format."""
+    """Validate TCP URL format.
+
+    Args:
+        url: TCP URL to validate.
+
+    Returns:
+        Validated TCP URL string.
+
+    Raises:
+        ValidationError: If URL format is invalid.
+    """
     if not url or not isinstance(url, str):
         raise ValueError("Invalid TCP URL")
 
@@ -109,7 +129,14 @@ def validate_tcp_url(url: str) -> str:
 
 
 def is_valid_email_format(email: str) -> bool:
-    """Check if email has valid format."""
+    """Check if email has valid format.
+
+    Args:
+        email: Email address to validate.
+
+    Returns:
+        True if email format is valid.
+    """
     if not email or not isinstance(email, str):
         return False
 
@@ -119,7 +146,15 @@ def is_valid_email_format(email: str) -> bool:
 
 
 def validate_credentials(username: str, password: str) -> tuple[str, str]:
-    """Validate login credentials."""
+    """Validate login credentials.
+
+    Args:
+        username: Username to validate.
+        password: Password to validate.
+
+    Returns:
+        True if credentials are valid format.
+    """
     if not username or not password:
         raise ValueError("Username and password are required")
 

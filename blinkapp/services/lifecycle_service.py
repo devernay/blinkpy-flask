@@ -200,6 +200,7 @@ def cleanup_resources() -> None:
         blink_instance = None
         try:
             from blinkapp.services.blink_service import get_blink_instance
+
             blink_instance = get_blink_instance()
         except Exception:
             pass
@@ -212,6 +213,7 @@ def cleanup_resources() -> None:
         ):
             try:
                 from blinkapp.services.blink_service import cleanup_blink_session
+
                 blink_connection.execute(cleanup_blink_session())
             except (RuntimeError, ConnectionError, TimeoutError) as e:
                 logger.debug(f"Error during Blink session cleanup: {e}")
@@ -240,8 +242,8 @@ async def cleanup_blink_session() -> None:
 
     blink_instance = get_blink_instance()
     if blink_instance is not None:
-        if hasattr(blink_instance, 'auth') and blink_instance.auth:
-            if hasattr(blink_instance.auth, 'session') and blink_instance.auth.session:
+        if hasattr(blink_instance, "auth") and blink_instance.auth:
+            if hasattr(blink_instance.auth, "session") and blink_instance.auth.session:
                 try:
                     await blink_instance.auth.session.close()
                 except Exception as e:

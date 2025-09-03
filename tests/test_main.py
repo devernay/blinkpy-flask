@@ -64,9 +64,7 @@ class TestRunApp:
 
         with patch("blinkapp.app.run") as mock_run:
             run_app(args)
-            mock_run.assert_called_once_with(
-                host="127.0.0.1", port=5001, debug=False
-            )
+            mock_run.assert_called_once_with(host="127.0.0.1", port=5001, debug=False)
 
 
 class TestLogging:

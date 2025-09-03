@@ -49,7 +49,15 @@ class CacheProtocol(Protocol):
 def _get_template_operation_name(
     func: Callable[..., TemplateResult], operation_name: str | None = None
 ) -> str:
-    """Get operation name for template functions."""
+    """Get operation name for template functions.
+
+    Args:
+        func: Template function to get name for.
+        operation_name: Optional override name.
+
+    Returns:
+        Operation name string.
+    """
     return operation_name or func.__name__.replace("_", " ").title()
 
 

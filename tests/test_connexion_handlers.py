@@ -126,7 +126,9 @@ class TestSystemHandlers(BaseTestCase):
         mock_validator.return_value = (mock_sync, None)
 
         # Mock the connection object returned by ensure_blink_connection_initialized
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.return_value = None
         mock_connection_init.return_value = mock_connection
 
@@ -269,7 +271,9 @@ class TestClipsHandlers(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         # Setup mock connection
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.return_value = [{"id": "clip1"}]
         mock_connection_init.return_value = mock_connection
 
@@ -300,7 +304,9 @@ class TestClipsHandlers(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         # Setup mock connection
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.return_value = [{"id": "clip1"}]
         mock_connection_init.return_value = mock_connection
 

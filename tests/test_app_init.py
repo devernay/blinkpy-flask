@@ -37,11 +37,12 @@ class TestAppInitialization(unittest.TestCase):
 
     def test_setup_logging_with_mock(self) -> None:
         """Test setup_logging with mocked logging."""
-        with patch("logging.basicConfig") as mock_basic_config, \
-             patch("logging.getLogger") as mock_get_logger:
-            
+        with (
+            patch("logging.basicConfig"),
+            patch("logging.getLogger") as mock_get_logger,
+        ):
             mock_get_logger.return_value = Mock(spec=logging.Logger)
-            
+
             # Should not raise exception
             try:
                 setup_logging()

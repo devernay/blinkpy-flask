@@ -47,9 +47,7 @@ class TestLoggingSetup(BaseTestCase):
 
     @patch("logging.getLogger")
     @patch("logging.handlers.RotatingFileHandler")
-    def test_setup_logging_function(
-        self, mock_file: Mock, mock_logger: Mock
-    ) -> None:
+    def test_setup_logging_function(self, mock_file: Mock, mock_logger: Mock) -> None:
         """Test logging system initialization with file rotation.
 
         Why: Proper logging is critical for debugging production issues and monitoring.
