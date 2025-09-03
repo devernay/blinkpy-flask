@@ -227,7 +227,14 @@ class Config:
 
 
 def validate_cache_directory(cache_dir: str) -> bool:
-    """Validate cache directory - pure function for better testability."""
+    """Validate cache directory - pure function for better testability.
+
+    Args:
+        cache_dir: Path to the cache directory to validate.
+
+    Returns:
+        True if directory exists or parent directory exists for creation.
+    """
     from pathlib import Path
 
     cache_path = Path(cache_dir)
@@ -235,7 +242,12 @@ def validate_cache_directory(cache_dir: str) -> bool:
 
 
 def ensure_cache_directory(cache_dir: str, validator=None) -> None:
-    """Ensure cache directory exists with injectable validator for testing."""
+    """Ensure cache directory exists with injectable validator for testing.
+
+    Args:
+        cache_dir: Path to the cache directory to create.
+        validator: Optional validator function for testing. Defaults to validate_cache_directory.
+    """
     from pathlib import Path
 
     if validator is None:

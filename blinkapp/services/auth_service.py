@@ -54,14 +54,28 @@ def is_blink_authenticated(blink_instance=None) -> bool:
 
 
 def extract_username_domain(username: str) -> str:
-    """Extract domain from username - pure function."""
+    """Extract domain from username - pure function.
+
+    Args:
+        username: Username to extract domain from.
+
+    Returns:
+        Domain portion of the username.
+    """
     if "@" in username:
         return username.split("@")[1]
     return ""
 
 
 def is_valid_email_format(email: str) -> bool:
-    """Validate email format - pure function."""
+    """Validate email format - pure function.
+
+    Args:
+        email: Email address to validate.
+
+    Returns:
+        True if email format is valid.
+    """
     if not email or not isinstance(email, str):
         return False
 
@@ -85,7 +99,15 @@ def is_valid_email_format(email: str) -> bool:
 
 
 def validate_credentials(username: str, password: str) -> bool:
-    """Validate credentials format - pure function."""
+    """Validate credentials format - pure function.
+
+    Args:
+        username: Username to validate.
+        password: Password to validate.
+
+    Returns:
+        True if credentials format is valid.
+    """
     if not username or not password:
         return False
 
@@ -101,7 +123,15 @@ def validate_credentials(username: str, password: str) -> bool:
 
 
 def create_auth_config(username: str, password: str) -> dict[str, str]:
-    """Create auth configuration - pure function."""
+    """Create auth configuration - pure function.
+
+    Args:
+        username: Username for authentication.
+        password: Password for authentication.
+
+    Returns:
+        Dictionary containing auth configuration.
+    """
     return {"username": username, "password": password}
 
 

@@ -11,7 +11,14 @@ if TYPE_CHECKING:
 
 
 def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int]:
-    """Get clips from cloud or local storage."""
+    """Get clips from cloud or local storage.
+
+    Args:
+        storage: Storage type filter ('cloud' or 'local'). None returns all clips.
+
+    Returns:
+        ClipsResponse with organized clip data or error tuple.
+    """
     from ..services.blink_service import (
         ensure_blink_connection_initialized,
         ensure_blink_initialized,
@@ -45,7 +52,14 @@ def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int
 
 
 def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
-    """Delete clip."""
+    """Delete clip.
+
+    Args:
+        clip_id: ID of the clip to delete.
+
+    Returns:
+        Success response or error tuple.
+    """
     from ..services.clip_service import delete_clip
 
     try:
@@ -56,7 +70,14 @@ def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
 
 
 def download_clip(clip_id: str) -> "Response | tuple[JsonDict, int]":
-    """Download clip file."""
+    """Download clip file.
+
+    Args:
+        clip_id: ID of the clip to download.
+
+    Returns:
+        File response for download or error tuple.
+    """
     from ..services.clip_service import download_clip
 
     try:
@@ -69,7 +90,15 @@ def download_clip(clip_id: str) -> "Response | tuple[JsonDict, int]":
 def get_clip_thumbnail(
     clip_id: str, check: bool = False
 ) -> "Response | JsonDict | tuple[JsonDict, int]":
-    """Get clip thumbnail."""
+    """Get clip thumbnail.
+
+    Args:
+        clip_id: ID of the clip to get thumbnail for.
+        check: If True, return availability info instead of file.
+
+    Returns:
+        Thumbnail file response, availability info, or error tuple.
+    """
     from flask import send_file
 
     from ..models.ids import ClipId
@@ -115,7 +144,14 @@ def get_clip_thumbnail(
 
 
 def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
-    """Generate clip thumbnail."""
+    """Generate clip thumbnail.
+
+    Args:
+        clip_id: ID of the clip to generate thumbnail for.
+
+    Returns:
+        Success response or error tuple.
+    """
     from ..services.clip_service import generate_clip_thumbnail
 
     try:

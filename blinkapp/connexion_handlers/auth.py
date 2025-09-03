@@ -7,7 +7,11 @@ if TYPE_CHECKING:
 
 
 def main_page() -> "Response":
-    """Main application interface."""
+    """Main application interface.
+
+    Returns:
+        Redirect to login page if not authenticated, otherwise renders main interface.
+    """
     from flask import redirect, render_template, session, url_for
 
     if not session.get("authenticated"):
@@ -17,7 +21,11 @@ def main_page() -> "Response":
 
 
 def login_page() -> "Response":
-    """Login page."""
+    """Login page.
+
+    Returns:
+        Rendered authentication template.
+    """
     from flask import render_template
 
     return render_template("auth.html")
@@ -52,7 +60,11 @@ def authenticate_user() -> "Response":
 
 
 def twofa_page() -> "Response":
-    """2FA verification page."""
+    """2FA verification page.
+
+    Returns:
+        Redirect to main page if already authenticated, otherwise renders 2FA template.
+    """
     from flask import redirect, render_template, session, url_for
 
     if not session.get("pending_2fa"):
@@ -91,7 +103,11 @@ def verify_twofa() -> "Response":
 
 
 def logout_user() -> "Response":
-    """Logout user."""
+    """Logout user.
+
+    Returns:
+        Redirect to login page after clearing session.
+    """
     from flask import redirect, url_for
 
     from ..services.auth_service import handle_logout

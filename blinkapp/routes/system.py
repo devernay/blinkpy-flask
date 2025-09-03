@@ -13,7 +13,11 @@ from blinkapp.utils.route_decorators import (
 
 
 def setup_system_routes(app: Flask) -> None:
-    """Set up system management routes."""
+    """Set up system management routes.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/api/systems")
     @ensure_blink_available

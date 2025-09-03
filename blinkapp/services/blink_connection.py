@@ -71,7 +71,11 @@ class BlinkConnection:
         self._active_streams: dict[str, object] = {}  # Track active video streams
 
     def start(self) -> None:
-        """Start Blink thread and event loop."""
+        """Start Blink thread and event loop.
+
+        Raises:
+            RuntimeError: If thread is already running.
+        """
         if not self.thread or not self.thread.is_alive():
 
             def run_loop() -> None:
@@ -111,7 +115,10 @@ class BlinkConnection:
             raise BlinkError(f"Blink operation failed: {str(e)}") from e
 
     def cleanup_active_streams(self) -> None:
-        """Clean up all active livestreams."""
+        """Clean up all active livestreams.
+
+        Stops all active streams and clears the stream manager.
+        """
         if not self._active_streams:
             return
 
@@ -126,7 +133,10 @@ class BlinkConnection:
         self._active_streams.clear()
 
     def shutdown(self) -> None:
-        """Shutdown Blink connection and clean up resources."""
+        """Shutdown Blink connection and clean up resources.
+
+        Stops the event loop and joins the thread.
+        """
         self.cleanup_active_streams()
 
         if self.blink is not None:

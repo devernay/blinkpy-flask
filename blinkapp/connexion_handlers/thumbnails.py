@@ -23,7 +23,14 @@ def get_camera_thumbnail(
 
 
 def refresh_camera_thumbnail(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
-    """Refresh camera thumbnail."""
+    """Refresh camera thumbnail.
+
+    Args:
+        camera_id: ID of the camera to refresh thumbnail for.
+
+    Returns:
+        Refresh response or error tuple.
+    """
     from ..services.thumbnail_service import refresh_camera_thumbnail
 
     try:

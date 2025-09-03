@@ -10,7 +10,14 @@ if TYPE_CHECKING:
 
 
 def start_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
-    """Start live stream for camera."""
+    """Start live stream for camera.
+
+    Args:
+        camera_id: ID of the camera to start streaming.
+
+    Returns:
+        Stream start response or error tuple.
+    """
     from ..services.camera_service import find_camera_by_id
     from ..services.stream_service import init_camera_stream
 
@@ -34,7 +41,14 @@ def start_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
 
 
 def stop_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
-    """Stop live stream for camera."""
+    """Stop live stream for camera.
+
+    Args:
+        camera_id: ID of the camera to stop streaming.
+
+    Returns:
+        Stream stop response or error tuple.
+    """
     from ..services.stream_service import stop_camera_stream
 
     try:
@@ -47,7 +61,15 @@ def stop_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
 def get_hls_stream_segments(
     camera_id: str, filename: str
 ) -> "Response | tuple[JsonDict, int]":
-    """Get HLS stream segments."""
+    """Get HLS stream segments.
+
+    Args:
+        camera_id: ID of the camera streaming.
+        filename: Name of the HLS segment file.
+
+    Returns:
+        HLS segment file response or error tuple.
+    """
     from ..services.stream_service import get_hls_file
 
     try:

@@ -11,7 +11,11 @@ if TYPE_CHECKING:
 
 
 def register_auth_routes(app: Flask) -> None:
-    """Register authentication routes with the Flask app."""
+    """Register authentication routes with the Flask app.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/")
     def main_page_route() -> ResponseReturnValue:
@@ -61,5 +65,9 @@ def register_auth_routes(app: Flask) -> None:
 
 
 def setup_auth_routes(app: Flask) -> None:
-    """Alias for register_auth_routes for compatibility."""
+    """Alias for register_auth_routes for compatibility.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
     register_auth_routes(app)

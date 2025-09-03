@@ -21,7 +21,19 @@ __all__ = [
 
 
 def validate_string_input(value: str, max_length: int, field_name: str) -> str:
-    """Validate string input for length and basic safety."""
+    """Validate string input for length and basic safety.
+
+    Args:
+        value: String value to validate.
+        max_length: Maximum allowed length.
+        field_name: Name of the field for error messages.
+
+    Returns:
+        Validated string value.
+
+    Raises:
+        ValidationError: If validation fails.
+    """
     value = value.strip()
     if not value:
         raise ValueError(f"{field_name} cannot be empty")

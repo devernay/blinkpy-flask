@@ -20,7 +20,14 @@ __all__ = [
 
 
 def format_clips_by_day(clips: list[ClipData]) -> list[ClipDayGroup]:
-    """Format clips grouped by day."""
+    """Format clips grouped by day.
+
+    Args:
+        clips: List of clip data to group by day.
+
+    Returns:
+        List of clip day groups organized by date.
+    """
     if not clips:
         return []
 
