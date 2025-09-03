@@ -46,9 +46,13 @@ class TestSystemHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_system_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_system_devices with valid network ID."""
+        from requests.structures import CaseInsensitiveDict
+
         from tests.test_base import create_mock_sync
 
-        mock_sync = create_mock_sync(network_id=12345, cameras={}, online=True)
+        mock_sync = create_mock_sync(
+            network_id=12345, sync_id=67890, cameras=CaseInsensitiveDict(), online=True
+        )
         mock_validator.return_value = (mock_sync, None)
 
         result = system.get_system_devices("12345")
@@ -61,7 +65,7 @@ class TestSystemHandlers(BaseTestCase):
                         "type": "sync_module",
                         "name": "Sync Module",
                         "online": True,
-                        "id": 12345,
+                        "id": 67890,  # Uses sync_id, not network_id
                     }
                 ]
             },
@@ -81,16 +85,24 @@ class TestSystemHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_devices with valid network ID."""
+        from requests.structures import CaseInsensitiveDict
 
         from tests.test_base import create_mock_sync
 
-        mock_sync = create_mock_sync(network_id=12345, cameras={}, online=True)
+        mock_sync = create_mock_sync(
+            network_id=12345, sync_id=67890, cameras=CaseInsensitiveDict(), online=True
+        )
         mock_validator.return_value = (mock_sync, None)
 
         result = system.get_system_devices("12345")
 
         expected_devices = [
-            {"type": "sync_module", "name": "Sync Module", "online": True, "id": 12345}
+            {
+                "type": "sync_module",
+                "name": "Sync Module",
+                "online": True,
+                "id": 67890,
+            }  # Uses sync_id
         ]
         self.assertEqual(result, {"devices": expected_devices})
         mock_validator.assert_called_once()

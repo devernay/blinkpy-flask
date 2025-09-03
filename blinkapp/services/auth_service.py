@@ -109,6 +109,8 @@ def validate_credentials(username: str, password: str) -> bool:
     Returns:
         True if credentials format is valid.
     """
+    from ..config import Config
+
     if not username or not password:
         return False
 
@@ -117,6 +119,18 @@ def validate_credentials(username: str, password: str) -> bool:
 
     # Validate email format for username
     if not is_valid_email_format(username):
+        return False
+
+    # Check for XSS patterns
+    xss_patterns = ["<script", "</script", "javascript:", "onload=", "onerror="]
+    if any(
+        pattern in username.lower() or pattern in password.lower()
+        for pattern in xss_patterns
+    ):
+        return False
+
+    # Check password length
+    if len(password) > Config.MAX_PASSWORD_LENGTH:
         return False
 
     # Basic validation - non-empty strings

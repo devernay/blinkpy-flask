@@ -662,15 +662,14 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
-        import subprocess
 
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         with patch("subprocess.Popen") as mock_popen:
-            mock_process = Mock(spec=subprocess.Popen)
+            mock_process = Mock()
             mock_process.poll.return_value = None
-            mock_process.terminate = Mock(spec=subprocess.Popen.terminate)
-            mock_process.kill = Mock(spec=subprocess.Popen.kill)
+            mock_process.terminate = Mock()
+            mock_process.kill = Mock()
             mock_popen.return_value = mock_process
 
             cmd = ["echo", "test"]
@@ -715,18 +714,13 @@ class TestHLSStream(BaseTestCase):
     ) -> None:
         """Test successful HLS stream start."""
         # Mock temporary directory
-        import tempfile
 
         from blinkapp.services.hls_service import HLSStream
 
-        mock_dir = Mock(spec=tempfile.TemporaryDirectory)
+        mock_dir = Mock()
         mock_dir.name = "/tmp/hls_test_camera_123"
-        mock_dir.__enter__ = Mock(
-            spec=tempfile.TemporaryDirectory.__enter__, return_value=mock_dir
-        )
-        mock_dir.__exit__ = Mock(
-            spec=tempfile.TemporaryDirectory.__exit__, return_value=None
-        )
+        mock_dir.__enter__ = Mock(return_value=mock_dir)
+        mock_dir.__exit__ = Mock(return_value=None)
         mock_temp_dir.return_value = mock_dir
 
         # Mock FFmpeg process

@@ -339,12 +339,14 @@ def create_mock_sync(
     name: str | None = None,
     refresh: Callable[[], None] | None = None,
     _local_storage: dict[str, list[Mock]] | None = None,
+    sync_id: int | None = None,
 ) -> Mock:
     """Create a mock sync module with common attributes."""
     from unittest.mock import Mock
 
     mock_sync = Mock(spec=BlinkSyncModule)
     mock_sync.network_id = network_id
+    mock_sync.sync_id = sync_id or (network_id + 100000)  # Different from network_id
     mock_sync.arm = armed
     mock_sync.online = online
     mock_sync.cameras = cameras or {}
