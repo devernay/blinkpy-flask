@@ -159,9 +159,6 @@ setup_settings_routes(app)
 # Set up admin routes
 register_admin_routes(app)
 
-# Register additional auth routes (index)
-# register_auth_routes(app)  # Already called via setup_auth_routes
-
 # ============================================================================
 # Global Application State
 # ============================================================================
