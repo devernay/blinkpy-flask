@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 def _get_blink_instance() -> Blink | None:
     """Get Blink instance - extracted for testability."""
-    from blinkapp.services.blink_service import blink
 
     return blink
 
@@ -262,7 +261,9 @@ def download_local_clip(
                 return None, f"Error downloading local clip: {e}"
 
         # Execute the async download
-        filepath, error = blink_connection.execute(download_local_clip_async())
+        filepath, error = ensure_blink_connection_initialized().execute(
+            download_local_clip_async()
+        )
 
         if error:
             logger.error(f"Error downloading local clip {clip_id}: {error}")

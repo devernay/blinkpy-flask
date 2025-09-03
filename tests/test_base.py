@@ -58,12 +58,14 @@ strict_patch.object = original_patch.object
 def enable_strict_patching() -> None:
     """Enable strict patching that respects __all__ exports."""
     import unittest.mock
+
     unittest.mock.patch = strict_patch
 
 
 def disable_strict_patching() -> None:
     """Disable strict patching and restore original behavior."""
     import unittest.mock
+
     unittest.mock.patch = original_patch
 
 
@@ -428,15 +430,10 @@ def initialize_for_testing() -> None:
     except Exception:
         import blinkapp.services.cache_service as cache_service
 
-        if (
-            not hasattr(cache_service, "clips_cache")
-            or cache_service.clips_cache is None
-        ):
+        assert cache_service is not None
+        if cache_service.clips_cache is None:
             cache_service.clips_cache = MagicMock(spec=ClipsCache)
-        if (
-            not hasattr(cache_service, "camera_thumbnail_cache")
-            or cache_service.camera_thumbnail_cache is None
-        ):
+        if cache_service.camera_thumbnail_cache is None:
             cache_service.camera_thumbnail_cache = MagicMock(spec=CameraThumbnailCache)
 
 
@@ -465,9 +462,13 @@ def with_blink_auth(test_func):
     from unittest.mock import patch
 
     @functools.wraps(test_func)
-    @patch("blinkapp.services.blink_service.blink", create_mock_blink_instance())
     def wrapper(*args, **kwargs):
-        return test_func(*args, **kwargs)
+        with patch(
+            "blinkapp.services.blink_service.ensure_blink_initialized"
+        ) as mock_ensure_blink:
+            # Set up the mock to return a properly configured blink instance
+            mock_ensure_blink.return_value = create_mock_blink_instance()
+            return test_func(*args, **kwargs)
 
     return wrapper
 
@@ -483,16 +484,32 @@ class BaseTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         """Clean up global state after each test."""
         try:
+            import asyncio
+
             from blinkapp.services import blink_service, connection_service
             from blinkapp.services.cache_service import reset_global_caches
 
-            # Reset Blink objects
-            blink_service.blink = None
-            blink_service.blink_connection = None
+            # Clean up Blink session properly using public interface
+            try:
+                asyncio.run(blink_service.cleanup_blink_session())
+            except Exception:
+                # Fallback to manual cleanup if asyncio fails
+                blink_instance = blink_service.get_blink_instance()
+                if blink_instance is not None and blink_instance.auth is not None:
+                    if blink_instance.auth.session is not None:
+                        session = blink_instance.auth.session
+                        if session and not session.closed:
+                            try:
+                                asyncio.run(session.close())
+                            except Exception:
+                                pass
+
+            # Reset Blink objects using public interface
+            blink_service.reset_blink_instances()
 
             # Reset connection service
-            if hasattr(connection_service, "executor"):
-                connection_service.executor = None
+            assert connection_service is not None
+            connection_service.executor = None
 
             # Reset global caches to avoid test interference
             reset_global_caches()

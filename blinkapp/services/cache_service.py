@@ -170,7 +170,9 @@ def load_camera_thumbnail_cache() -> None:
 
     import blinkapp
     from blinkapp.models.ids import CameraId
-    from blinkapp.services.blink_service import blink
+    from blinkapp.services.blink_service import ensure_blink_initialized
+
+    blink = ensure_blink_initialized()
 
     # Ensure thumbnail cache is initialized
     camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from flask import Response, request
@@ -13,6 +14,8 @@ from ..utils.route_decorators import api_route_with_validation
 
 if TYPE_CHECKING:
     from flask import Flask
+
+logger = logging.getLogger(__name__)
 
 
 def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
@@ -28,10 +31,12 @@ def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
 
     if current_ts > cached_ts:
         camera_id = CameraId(str(camera.camera_id))
-        if hasattr(camera, "thumbnail") and camera.thumbnail:
+        if camera is not None and camera.thumbnail:
             # Submit to executor for background processing
             executor = ensure_executor_initialized()
-            executor.submit(_download_camera_thumbnail, camera_id, camera.thumbnail, current_ts)
+            executor.submit(
+                _download_camera_thumbnail, camera_id, camera.thumbnail, current_ts
+            )
 
 
 def setup_camera_thumbnail_routes(app: Flask) -> None:

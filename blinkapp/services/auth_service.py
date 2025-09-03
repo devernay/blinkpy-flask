@@ -32,7 +32,6 @@ from blinkapp.utils.errors import AuthenticationError
 
 if TYPE_CHECKING:
     from blinkpy.auth import Auth
-    from blinkpy.blinkpy import Blink
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +46,9 @@ def is_blink_authenticated(blink_instance=None) -> bool:
         True if authenticated with Blink API and startup complete, False otherwise
     """
     if blink_instance is None:
-        from blinkapp.services.blink_service import blink
+        from blinkapp.services.blink_service import ensure_blink_initialized
 
-        blink_instance = blink
+        blink_instance = ensure_blink_initialized()
 
     return blink_instance is not None and blink_instance.auth.token is not None
 
@@ -137,18 +136,6 @@ def _create_auth_object(
     )
 
 
-def _create_blink_instance(
-    session_obj: ClientSession, blink_factory: type[Blink] | None = None
-) -> Blink:
-    """Create Blink instance with injectable factory."""
-    if blink_factory is None:
-        from blinkpy.blinkpy import Blink
-
-        blink_factory = Blink
-
-    return blink_factory(session=session_obj)
-
-
 async def initialize_blink(
     username: str, password: str
 ) -> bool | Literal["2fa_required"]:
@@ -188,11 +175,11 @@ async def initialize_blink(
         # Import blink_service to work directly with global instance
         from blinkapp.services import blink_service
 
-        blink_service.blink = _create_blink_instance(session_obj)
+        blink_service.initialize_blink_instance(session_obj)
 
         # Create authentication object with credentials
         auth = _create_auth_object(username, password, session_obj)
-        blink_service.blink.auth = auth
+        blink_service.ensure_blink_initialized().auth = auth
 
         # Attempt to start Blink system and authenticate
         await blink_service.blink.start()
@@ -237,7 +224,6 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
     """
     # Import here to avoid circular imports during module initialization
     from blinkapp import CREDENTIALS_FILE
-    from blinkapp.services.blink_service import blink
 
     with error_context("verify 2FA and save credentials", AuthenticationError):
         logger.debug(f"Starting 2FA verification with key: {tfa_key[:2]}***")
@@ -289,7 +275,6 @@ async def load_saved_blink() -> bool:
     """
     # Import here to avoid circular imports during module initialization
     from blinkapp import CREDENTIALS_FILE
-    from blinkapp.services.blink_service import blink
 
     assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
     cred_file = Path(CREDENTIALS_FILE)

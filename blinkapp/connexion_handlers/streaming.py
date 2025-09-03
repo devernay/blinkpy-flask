@@ -11,11 +11,24 @@ if TYPE_CHECKING:
 
 def start_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
     """Start live stream for camera."""
-    from ..services.stream_service import start_camera_stream
+    from ..services.camera_service import find_camera_by_id
+    from ..services.stream_service import init_camera_stream
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return start_camera_stream(camera_id_obj)
+
+        # Find the camera object
+        camera = find_camera_by_id(camera_id_obj)
+        if not camera:
+            return {"success": False, "error": "Camera not found"}, 404
+
+        # Initialize the stream
+        stream_obj, hls_url = init_camera_stream(camera, camera_id_obj)
+        if hls_url:
+            return {"success": True, "stream_url": hls_url, "playlist_url": hls_url}
+        else:
+            return {"success": False, "error": "Failed to start stream"}, 500
+
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
 

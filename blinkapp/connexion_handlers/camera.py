@@ -16,7 +16,7 @@ def list_cameras() -> JsonDict:
     blink_connection = ensure_blink_connection_initialized()
     blink = blink_connection.blink
 
-    if blink is None or not hasattr(blink, "cameras"):
+    if blink is None or blink.cameras is None:
         return {"cameras": []}
 
     cameras = []

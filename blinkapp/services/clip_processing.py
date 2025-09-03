@@ -47,10 +47,15 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             logger.debug(f"Thumbnail already cached for clip {clip_id}")
             return
 
-        from blinkapp.services.blink_service import blink
+        from blinkapp.services.blink_service import ensure_blink_initialized
 
-        blink_instance = blink
-        if not blink_instance or not blink_instance.available:
+        try:
+            blink_instance = ensure_blink_initialized()
+        except RuntimeError:
+            logger.warning(f"Blink not available for processing clip {clip_id}")
+            return
+
+        if not blink_instance.available:
             logger.warning(f"Blink not available for processing clip {clip_id}")
             return
 
@@ -124,10 +129,15 @@ def process_local_clip_background(
             logger.debug(f"Thumbnail already cached for local clip {clip_id}")
             return
 
-        from blinkapp.services.blink_service import blink
+        from blinkapp.services.blink_service import ensure_blink_initialized
 
-        blink_instance = blink
-        if not blink_instance or not blink_instance.available:
+        try:
+            blink_instance = ensure_blink_initialized()
+        except RuntimeError:
+            logger.warning(f"Blink not available for processing local clip {clip_id}")
+            return
+
+        if not blink_instance.available:
             logger.warning(f"Blink not available for processing local clip {clip_id}")
             return
 

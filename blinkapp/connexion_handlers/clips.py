@@ -12,7 +12,10 @@ if TYPE_CHECKING:
 
 def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int]:
     """Get clips from cloud or local storage."""
-    from ..services.blink_service import blink, blink_connection
+    from ..services.blink_service import (
+        ensure_blink_connection_initialized,
+        ensure_blink_initialized,
+    )
     from ..services.clip_service import process_cloud_clips, process_local_clips
     from ..utils.decorators import error_context
 
@@ -25,7 +28,8 @@ def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int
             "error": "Invalid storage type. Must be 'cloud' or 'local'",
         }, 400
 
-    assert blink is not None
+    blink = ensure_blink_initialized()
+    blink_connection = ensure_blink_connection_initialized()
 
     with error_context(f"get {storage} clips"):
         if storage == "cloud":
@@ -66,11 +70,46 @@ def get_clip_thumbnail(
     clip_id: str, check: bool = False
 ) -> "Response | JsonDict | tuple[JsonDict, int]":
     """Get clip thumbnail."""
-    from ..services.clip_service import get_clip_thumbnail
+    from flask import send_file
+
+    from ..models.ids import ClipId
+    from ..services.cache_service import ensure_clips_cache_initialized
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return get_clip_thumbnail(clip_id_obj, check)
+        clips_cache = ensure_clips_cache_initialized()
+
+        # If check=true, always return 200 with availability info
+        if check:
+            if clip_id_obj in clips_cache:
+                clip_entry = clips_cache[clip_id_obj]
+                if (
+                    clip_entry is not None
+                    and clip_entry.thumbnail
+                    and clip_entry.thumbnail.exists()
+                ):
+                    return {"success": True, "exists": True, "available": True}
+                else:
+                    return {"success": True, "exists": False, "available": False}
+            else:
+                return {"success": True, "exists": False, "available": False}
+
+        # For non-check requests, return the actual file or 404
+        if clip_id_obj not in clips_cache:
+            return {"success": False, "error": "Clip not found"}, 404
+
+        clip_entry = clips_cache[clip_id_obj]
+
+        # Return the thumbnail file if it exists
+        if (
+            clip_entry is not None
+            and clip_entry.thumbnail
+            and clip_entry.thumbnail.exists()
+        ):
+            return send_file(clip_entry.thumbnail, mimetype="image/jpeg")
+        else:
+            return {"success": False, "error": "Thumbnail not found"}, 404
+
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
 

@@ -30,11 +30,13 @@ def setup_camera_routes(app: Flask) -> None:
     @api_route_with_validation(
         "get camera details", validate_params={"camera_id_str": CameraId}
     )
-    def get_camera_details_route(camera_id_str: str) -> JsonDict | tuple[JsonDict, int]:
+    def get_camera_details_route(
+        camera_id: CameraId,
+    ) -> JsonDict | tuple[JsonDict, int]:
         """Get camera details route - thin wrapper around connexion handler."""
         from ..connexion_handlers.camera import get_camera_details
 
-        return get_camera_details(camera_id_str)
+        return get_camera_details(str(camera_id))
 
     @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])
     @ensure_blink_available
@@ -42,9 +44,9 @@ def setup_camera_routes(app: Flask) -> None:
         "start camera recording", validate_params={"camera_id_str": CameraId}
     )
     def start_camera_recording_route(
-        camera_id_str: str,
+        camera_id: CameraId,
     ) -> JsonDict | tuple[JsonDict, int]:
         """Start recording route - thin wrapper around connexion handler."""
         from ..connexion_handlers.camera import start_camera_recording
 
-        return start_camera_recording(camera_id_str)
+        return start_camera_recording(str(camera_id))

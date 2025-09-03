@@ -10,6 +10,7 @@ from __future__ import annotations
 __all__ = [
     "process_cloud_clips",
     "process_local_clips",
+    "download_clip",
 ]
 
 import logging
@@ -26,6 +27,7 @@ from blinkapp.utils.formatters import format_clips_by_day
 if TYPE_CHECKING:
     from blinkpy.blinkpy import Blink
 
+    from blinkapp.models.types import ResponseReturnValue
     from blinkapp.services.blink_connection import BlinkConnection
 
 
@@ -45,10 +47,28 @@ class VideoMetadata(TypedDict):
 logger = logging.getLogger(__name__)
 
 
+def download_clip(clip_id: ClipId) -> ResponseReturnValue:
+    """Download clip file by ID.
+
+    This function serves as a bridge between the route handlers and the
+    actual download implementation in clip_download service.
+    """
+    from ..services.cache_service import ensure_clips_cache_initialized
+    from ..services.clip_download import download_clip_common
+
+    # Check if clip exists in cache
+    clips_cache = ensure_clips_cache_initialized()
+    if clip_id in clips_cache:
+        clip_entry = clips_cache[clip_id]
+        return download_clip_common(clip_entry.file_path, clip_id)
+    else:
+        # Return 404 for missing clips
+        return {"success": False, "error": "Clip not found"}, 404
+
+
 def process_cloud_clips(
     videos_metadata: list[dict[str, str | int | bool | None]],
 ) -> list[ClipDayGroup]:
-    """Process cloud clips from video metadata."""
     """Process cloud storage clips into day-grouped format.
 
     Takes raw video metadata from the Blink API and organizes it into
@@ -181,10 +201,11 @@ def process_local_clips(
     """
     # Use injected dependencies or defaults
     if blink_instance is None or blink_connection_instance is None:
-        from blinkapp.services.blink_service import blink, blink_connection
+        from blinkapp.services.blink_connection import blink_connection
+        from blinkapp.services.blink_service import ensure_blink_initialized
 
         if blink_instance is None:
-            blink_instance = blink
+            blink_instance = ensure_blink_initialized()
         if blink_connection_instance is None:
             blink_connection_instance = blink_connection
 

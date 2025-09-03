@@ -23,7 +23,6 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
-from tests.test_base import BaseTestCase
 
 from tests.test_base import BaseTestCase
 
@@ -252,7 +251,6 @@ class TestAuthService(BaseTestCase):
         self.assertIn("password", result)
         self.assertEqual(result["username"], "test@example.com")
         self.assertEqual(result["password"], "password123")
-
 
     def test_extract_username_domain_cases(self) -> None:
         """Test username domain extraction."""
@@ -654,11 +652,13 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
-        import subprocess
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         with patch("subprocess.Popen") as mock_popen:
-            mock_process = Mock(spec=subprocess.Popen)
+            mock_process = Mock()
+            mock_process.poll.return_value = None
+            mock_process.terminate = Mock()
+            mock_process.kill = Mock()
             mock_popen.return_value = mock_process
 
             cmd = ["echo", "test"]
@@ -705,12 +705,14 @@ class TestHLSStream(BaseTestCase):
         from blinkapp.services.hls_service import HLSStream
 
         # Mock temporary directory
-        mock_dir = Mock(spec=tempfile.TemporaryDirectory)
+        mock_dir = Mock()
         mock_dir.name = "/tmp/hls_test_camera_123"
+        mock_dir.__enter__ = Mock(return_value=mock_dir)
+        mock_dir.__exit__ = Mock(return_value=None)
         mock_temp_dir.return_value = mock_dir
 
         # Mock FFmpeg process
-        mock_process = Mock(spec=subprocess.Popen)
+        mock_process = Mock()
         mock_process.poll.return_value = None  # Process is running
         mock_create_process.return_value = mock_process
 
@@ -832,7 +834,7 @@ class TestHLSStream(BaseTestCase):
         stream.temp_dir = mock_temp_dir
 
         mock_exists.return_value = True
-        mock_file = Mock(spec=object)  # File-like object
+        mock_file = Mock()
         mock_file.read.return_value = b"playlist content"
         mock_open.return_value.__enter__.return_value = mock_file
 
@@ -872,12 +874,15 @@ class TestCloudClipProcessing(BaseTestCase):
 
     @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     @patch("pathlib.Path.exists")
-    @patch("blinkapp.services.blink_service.blink", None)
-    def test_process_cloud_clip_background_no_blink(self, mock_exists: Mock) -> None:
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    def test_process_cloud_clip_background_no_blink(
+        self, mock_ensure_blink: Mock, mock_exists: Mock
+    ) -> None:
         """Test cloud clip processing when blink is not available."""
         from blinkapp.services.clip_processing import process_cloud_clip_background
 
         mock_exists.return_value = False
+        mock_ensure_blink.side_effect = RuntimeError("Blink not initialized")
 
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
             process_cloud_clip_background(self.clip_id)

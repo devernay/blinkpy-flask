@@ -113,9 +113,9 @@ def startup() -> None:
         load_clips_cache()
 
         # Start the async Blink connection thread
-        from blinkapp.services.blink_service import blink_connection
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
 
-        assert blink_connection is not None
+        blink_connection = ensure_blink_connection_initialized()
         blink_connection.start()
 
         try:
@@ -186,19 +186,32 @@ def cleanup_resources() -> None:
             pass
 
         # Clean up active livestreams
-        from blinkapp.services.blink_service import blink, blink_connection
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
+        try:
+            blink_connection = ensure_blink_connection_initialized()
+        except RuntimeError:
+            blink_connection = None
 
         if blink_connection is not None:
             blink_connection.cleanup_active_streams()
 
         # Clean up Blink session only if connection is active
+        blink_instance = None
+        try:
+            from blinkapp.services.blink_service import get_blink_instance
+            blink_instance = get_blink_instance()
+        except Exception:
+            pass
+
         if (
-            blink
+            blink_instance is not None
             and blink_connection is not None
             and blink_connection.loop
             and blink_connection.loop.is_running()
         ):
             try:
+                from blinkapp.services.blink_service import cleanup_blink_session
                 blink_connection.execute(cleanup_blink_session())
             except (RuntimeError, ConnectionError, TimeoutError) as e:
                 logger.debug(f"Error during Blink session cleanup: {e}")
@@ -223,14 +236,16 @@ def cleanup_resources() -> None:
 
 async def cleanup_blink_session() -> None:
     """Clean up Blink aiohttp session."""
-    from blinkapp.services.blink_service import blink_connection
+    from blinkapp.services.blink_service import get_blink_instance
 
-    if blink_connection and blink_connection.blink:
-        blink = blink_connection.blink
-        try:
-            blink_connection.execute(blink.auth.session.close())
-        except Exception as e:
-            logger.debug(f"Error closing Blink session: {e}")
+    blink_instance = get_blink_instance()
+    if blink_instance is not None:
+        if hasattr(blink_instance, 'auth') and blink_instance.auth:
+            if hasattr(blink_instance.auth, 'session') and blink_instance.auth.session:
+                try:
+                    await blink_instance.auth.session.close()
+                except Exception as e:
+                    logger.debug(f"Error closing Blink session: {e}")
 
 
 # Function is imported at top of file

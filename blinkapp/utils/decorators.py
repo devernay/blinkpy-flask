@@ -121,9 +121,11 @@ def ensure_blink_available(
             return jsonify(response), status_code
 
         # Import blink here to avoid circular imports
-        from blinkapp.services.blink_service import blink
+        from blinkapp.services.blink_service import ensure_blink_initialized
 
-        assert blink is not None  # Help type checkers understand this
+        blink = (
+            ensure_blink_initialized()
+        )  # This will raise RuntimeError if not initialized
         assert blink.available  # Additional assertion for Pylance
 
         return func(*args, **kwargs)
@@ -139,11 +141,13 @@ def check_blink_availability() -> ApiResponse | None:
     """
     # Import here to avoid circular imports
     import blinkapp
-    from blinkapp.services.blink_service import blink
+    from blinkapp.services.blink_service import ensure_blink_initialized
 
     create_api_response = blinkapp.create_api_response
 
-    if blink is None:
+    try:
+        blink = ensure_blink_initialized()
+    except RuntimeError:
         return create_api_response(
             success=False,
             error=Config.ErrorMessages.SYSTEM_NOT_INITIALIZED,

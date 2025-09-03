@@ -43,14 +43,14 @@ def get_app_config() -> JsonDict:
     }
 
 
-def update_settings(settings_data: JsonDict) -> JsonDict:
+def update_settings(settings_data: JsonDict) -> JsonDict | tuple[JsonDict, int]:
     """Update user settings.
 
     Args:
         settings_data: Dictionary containing settings to update
 
     Returns:
-        Updated settings dictionary
+        Updated settings dictionary or error response
     """
     import json
     from pathlib import Path
@@ -59,26 +59,26 @@ def update_settings(settings_data: JsonDict) -> JsonDict:
 
     try:
         if not blinkapp.SETTINGS_FILE:
-            return {"success": False, "error": "Settings file not configured"}
+            return {"success": False, "error": "Settings file not configured"}, 500
 
         settings_path = Path(blinkapp.SETTINGS_FILE)
 
         # Load existing settings or use defaults
-        current_settings = get_user_settings()["data"]
+        current_settings = get_user_settings()
 
         # Update with new settings
         current_settings.update(settings_data)
 
         # Save to file
         settings_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(settings_path, 'w') as f:
+        with open(settings_path, "w") as f:
             json.dump(current_settings, f, indent=2)
 
         return {"success": True, "data": current_settings}
 
     except Exception as e:
         logger.error(f"Error updating settings: {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": str(e)}, 500
 
 
 def get_user_settings() -> JsonDict:

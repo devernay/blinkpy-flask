@@ -15,7 +15,7 @@ from blinkpy.camera import BlinkCamera
 
 from blinkapp.connexion_handlers import auth, camera, clips, system
 from blinkapp.models.types import JsonDict
-from tests.test_base import BaseTestCase
+from tests.test_base import BaseTestCase, create_mock_blink_instance
 
 
 class TestAuthHandlers(BaseTestCase):
@@ -50,7 +50,7 @@ class TestSystemHandlers(BaseTestCase):
     def test_get_system_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_system_devices with valid network ID."""
         from blinkpy.sync_module import BlinkSyncModule
-        
+
         mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.cameras = {}  # Empty cameras dict
         mock_sync.online = True
@@ -59,7 +59,19 @@ class TestSystemHandlers(BaseTestCase):
 
         result = system.get_system_devices("12345")
 
-        self.assertEqual(result, {"devices": [{"type": "sync_module", "name": "Sync Module", "online": True, "id": 12345}]})
+        self.assertEqual(
+            result,
+            {
+                "devices": [
+                    {
+                        "type": "sync_module",
+                        "name": "Sync Module",
+                        "online": True,
+                        "id": 12345,
+                    }
+                ]
+            },
+        )
         mock_validator.assert_called_once()
 
     def test_get_system_devices_invalid_id(self) -> None:
@@ -76,7 +88,7 @@ class TestSystemHandlers(BaseTestCase):
     def test_get_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_devices with valid network ID."""
         from blinkpy.sync_module import BlinkSyncModule
-        
+
         mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.cameras = {}
         mock_sync.online = True
@@ -85,7 +97,9 @@ class TestSystemHandlers(BaseTestCase):
 
         result = system.get_system_devices("12345")
 
-        expected_devices = [{"type": "sync_module", "name": "Sync Module", "online": True, "id": 12345}]
+        expected_devices = [
+            {"type": "sync_module", "name": "Sync Module", "online": True, "id": 12345}
+        ]
         self.assertEqual(result, {"devices": expected_devices})
         mock_validator.assert_called_once()
 
@@ -99,18 +113,23 @@ class TestSystemHandlers(BaseTestCase):
         self.assertFalse(cast(JsonDict, data)["success"])
         self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
 
-    @patch("blinkapp.services.blink_service.blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.blink_validators.require_sync_module")
-    def test_update_system_valid_request(self, mock_validator: Mock, mock_connection: Mock) -> None:
+    def test_update_system_valid_request(
+        self, mock_validator: Mock, mock_connection_init: Mock
+    ) -> None:
         """Test update_system with valid request."""
         from blinkpy.sync_module import BlinkSyncModule
-        
+
         mock_sync = Mock(spec=BlinkSyncModule)
         mock_sync.async_arm.return_value = Mock(spec=object)
         mock_validator.return_value = (mock_sync, None)
-        
+
+        # Mock the connection object returned by ensure_blink_connection_initialized
+        mock_connection = Mock()
         mock_connection.execute.return_value = None
-        
+        mock_connection_init.return_value = mock_connection
+
         body: JsonDict = {"armed": True}
 
         result = system.update_system_settings("12345", body)
@@ -233,21 +252,27 @@ class TestCameraHandlers(BaseTestCase):
 class TestClipsHandlers(BaseTestCase):
     """Test clips management connexion handlers."""
 
-    @patch("blinkapp.services.blink_service.blink")
-    @patch("blinkapp.services.blink_service.blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.clip_service.process_cloud_clips")
     @patch("blinkapp.utils.decorators.error_context")
     def test_get_clips_cloud_default(
         self,
         mock_context: Mock,
         mock_process: Mock,
-        mock_connection: Mock,
-        mock_blink: Mock,
+        mock_connection_init: Mock,
+        mock_blink_init: Mock,
     ) -> None:
         """Test get_clips with default (cloud) storage."""
-        # Setup mocks
-        mock_blink.__bool__ = Mock(return_value=True)
+        # Setup mock blink instance
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_init.return_value = mock_blink_instance
+
+        # Setup mock connection
+        mock_connection = Mock()
         mock_connection.execute.return_value = [{"id": "clip1"}]
+        mock_connection_init.return_value = mock_connection
+
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
         mock_context.return_value.__enter__ = Mock(return_value=None)
         mock_context.return_value.__exit__ = Mock(return_value=None)
@@ -258,21 +283,27 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection.execute.assert_called_once()
         mock_process.assert_called_once_with([{"id": "clip1"}])
 
-    @patch("blinkapp.services.blink_service.blink")
-    @patch("blinkapp.services.blink_service.blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.clip_service.process_cloud_clips")
     @patch("blinkapp.utils.decorators.error_context")
     def test_get_clips_cloud_explicit(
         self,
         mock_context: Mock,
         mock_process: Mock,
-        mock_connection: Mock,
-        mock_blink: Mock,
+        mock_connection_init: Mock,
+        mock_blink_init: Mock,
     ) -> None:
         """Test get_clips with explicit cloud storage."""
-        # Setup mocks
-        mock_blink.__bool__ = Mock(return_value=True)
+        # Setup mock blink instance
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_init.return_value = mock_blink_instance
+
+        # Setup mock connection
+        mock_connection = Mock()
         mock_connection.execute.return_value = [{"id": "clip1"}]
+        mock_connection_init.return_value = mock_connection
+
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
         mock_context.return_value.__enter__ = Mock(return_value=None)
         mock_context.return_value.__exit__ = Mock(return_value=None)
@@ -283,15 +314,22 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection.execute.assert_called_once()
         mock_process.assert_called_once_with([{"id": "clip1"}])
 
-    @patch("blinkapp.services.blink_service.blink")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.clip_service.process_local_clips")
     @patch("blinkapp.utils.decorators.error_context")
     def test_get_clips_local(
-        self, mock_context: Mock, mock_process: Mock, mock_blink: Mock
+        self,
+        mock_context: Mock,
+        mock_process: Mock,
+        mock_connection: Mock,
+        mock_blink_init: Mock,
     ) -> None:
         """Test get_clips with local storage."""
         # Setup mocks
-        mock_blink.__bool__ = Mock(return_value=True)
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_init.return_value = mock_blink_instance
+        mock_connection.return_value = None
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
         mock_context.return_value.__enter__ = Mock(return_value=None)
         mock_context.return_value.__exit__ = Mock(return_value=None)
@@ -311,16 +349,25 @@ class TestClipsHandlers(BaseTestCase):
         self.assertFalse(cast(JsonDict, data)["success"])
         self.assertIn("Invalid storage type", cast(str, cast(JsonDict, data)["error"]))
 
-    @patch("blinkapp.services.blink_service.blink")
-    @patch("blinkapp.services.blink_service.blink_connection", None)
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch(
+        "blinkapp.services.blink_service.ensure_blink_connection_initialized",
+        return_value=None,
+    )
     @patch("blinkapp.services.clip_service.process_cloud_clips")
     @patch("blinkapp.utils.decorators.error_context")
     def test_get_clips_no_connection(
-        self, mock_context: Mock, mock_process: Mock, mock_blink: Mock
+        self,
+        mock_context: Mock,
+        mock_process: Mock,
+        mock_connection_init: Mock,
+        mock_blink_init: Mock,
     ) -> None:
         """Test get_clips when blink_connection is None."""
-        # Setup mocks
-        mock_blink.__bool__ = Mock(return_value=True)
+        # Setup mock blink instance
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_init.return_value = mock_blink_instance
+
         mock_process.return_value = []
         mock_context.return_value.__enter__ = Mock(return_value=None)
         mock_context.return_value.__exit__ = Mock(return_value=None)

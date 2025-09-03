@@ -272,8 +272,7 @@ class TestImportAndModuleLoading(BaseTestCase):
         from blinkapp.services import connection_service
 
         self.assertTrue(hasattr(connection_service, "http_session"))
-        if hasattr(blinkapp, "Path"):
-            self.assertTrue(hasattr(blinkapp, "Path"))
+        self.assertTrue(hasattr(blinkapp, "Path"))
 
     def test_custom_class_imports(self) -> None:
         """Test custom class availability."""

@@ -46,7 +46,9 @@ def require_sync_module(
         ...     return error
         >>> # Use sync_module safely
     """
-    from blinkapp.services.blink_service import blink
+    from blinkapp.services.blink_service import ensure_blink_initialized
+
+    blink = ensure_blink_initialized()
 
     if not blink or not blink.available:
         logger.warning(f"Blink not available for network {network_id}")

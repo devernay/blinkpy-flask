@@ -37,9 +37,9 @@ def get_systems() -> JsonDict:
     Returns:
         Dictionary with list of systems
     """
-    from blinkapp.services.blink_service import blink
+    from blinkapp.services.blink_service import ensure_blink_initialized
 
-    assert blink is not None, "Blink must be initialized"
+    blink = ensure_blink_initialized()
 
     logger.debug(f"Getting systems - sync count: {len(blink.sync)}")
     systems: list[SystemDict] = []
@@ -138,7 +138,7 @@ def arm_system(network_id: NetworkId, armed: bool) -> JsonDict:
     Returns:
         Dictionary with operation result
     """
-    from blinkapp.services.blink_service import blink_connection
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
     from blinkapp.services.blink_validators import require_sync_module
     from blinkapp.utils.decorators import error_context
     from blinkapp.utils.errors import ValidationError
@@ -153,8 +153,9 @@ def arm_system(network_id: NetworkId, armed: bool) -> JsonDict:
         raise ValidationError(str(error_message), status_code)
 
     with error_context("arm/disarm system"):
-        if sync_module is not None and blink_connection:
-            blink_connection.execute(sync_module.async_arm(armed))
+        if sync_module is not None:
+            blink_conn = ensure_blink_connection_initialized()
+            blink_conn.execute(sync_module.async_arm(armed))
         return {"armed": armed}
 
 
@@ -166,15 +167,19 @@ def refresh_system() -> JsonDict:
     """
     from blinkapp.config import Config
     from blinkapp.models.responses import create_api_response
-    from blinkapp.services.blink_service import blink, blink_connection
+    from blinkapp.services.blink_service import (
+        ensure_blink_connection_initialized,
+        ensure_blink_initialized,
+    )
 
-    assert blink is not None, "Blink must be initialized"
+    blink = ensure_blink_initialized()
 
     logger.debug("Refreshing all Blink systems")
 
-    if blink_connection:
-        success = blink_connection.execute(blink.refresh(force=True))
-    else:
+    try:
+        blink_conn = ensure_blink_connection_initialized()
+        success = blink_conn.execute(blink.refresh(force=True))
+    except RuntimeError:
         success = False
 
     if success is not True:

@@ -10,8 +10,10 @@ __all__ = [
     "initialize_blink_objects",
     "ensure_blink_initialized",
     "ensure_blink_connection_initialized",
-    "blink",
-    "blink_connection",
+    "initialize_blink_instance",
+    "cleanup_blink_session",
+    "get_blink_instance",
+    "reset_blink_instances",
 ]
 
 import logging
@@ -24,19 +26,53 @@ from blinkpy.blinkpy import Blink
 
 logger = logging.getLogger(__name__)
 
-# Global Blink instances
-blink: Blink | None = None
-blink_connection: BlinkConnection | None = None
+# Private module-level instances
+_blink: Blink | None = None
+_blink_connection: BlinkConnection | None = None
+
+
+async def cleanup_blink_session() -> None:
+    """Clean up the Blink session and close aiohttp connections."""
+    global _blink
+    if _blink is not None and _blink.auth is not None:
+        if _blink.auth.session is not None:
+            session = _blink.auth.session
+            if not session.closed:
+                await session.close()
+                logger.debug("Closed Blink aiohttp session")
+
+
+def get_blink_instance() -> Blink | None:
+    """Get the current blink instance, or None if not initialized."""
+    return _blink
+
+
+def reset_blink_instances() -> None:
+    """Reset blink instances to None for testing."""
+    global _blink, _blink_connection
+    _blink = None
+    _blink_connection = None
+
+
+def initialize_blink_instance(
+    session_obj, blink_factory: type[Blink] | None = None
+) -> Blink:
+    """Create and set the global blink instance."""
+    global _blink
+    if blink_factory is None:
+        blink_factory = Blink
+    _blink = blink_factory(session=session_obj)
+    return _blink
 
 
 def initialize_blink_objects() -> None:
     """Initialize the global Blink objects."""
-    global blink_connection
+    global _blink_connection
     from blinkapp.config import Config
     from blinkapp.services.blink_connection import BlinkConnection
 
     # Initialize async Blink connection manager for API operations
-    blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
+    _blink_connection = BlinkConnection(timeout=Config.BLINK_CONNECTION_TIMEOUT)
 
 
 def ensure_blink_initialized() -> Blink:
@@ -48,9 +84,9 @@ def ensure_blink_initialized() -> Blink:
     Raises:
         RuntimeError: If blink hasn't been initialized
     """
-    if blink is None:
+    if _blink is None:
         raise RuntimeError("Blink not initialized. Call initialize_blink() first.")
-    return blink
+    return _blink
 
 
 def ensure_blink_connection_initialized() -> BlinkConnection:
@@ -62,13 +98,13 @@ def ensure_blink_connection_initialized() -> BlinkConnection:
     Raises:
         RuntimeError: If blink_connection hasn't been initialized
     """
-    if blink_connection is None:
+    if _blink_connection is None:
         raise RuntimeError(
             "Blink connection not initialized. Call initialize_blink() first."
         )
 
     # Ensure connection is started
-    if not blink_connection._started:
-        blink_connection.start()
+    if not _blink_connection._started:
+        _blink_connection.start()
 
-    return blink_connection
+    return _blink_connection

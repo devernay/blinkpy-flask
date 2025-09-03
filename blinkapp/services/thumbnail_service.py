@@ -181,21 +181,21 @@ def get_camera_thumbnail(
 
         # Extract timestamp from camera thumbnail URL
         current_ts = None
-        if hasattr(camera, "thumbnail") and camera.thumbnail:
+        if camera is not None and camera.thumbnail:
             # Extract ts parameter from URL like ?ts=1742459551&ext=
             ts_match = re.search(r"[?&]ts=(\d+)", camera.thumbnail)
             if ts_match:
                 current_ts = int(ts_match.group(1))
 
         if timestamp:
-            # Return timestamp information
+            # Return timestamp information directly
             if cached_entry:
                 return {
                     "success": True,
-                    "data": {"timestamp": cached_entry["timestamp"]},
+                    "timestamp": cached_entry["timestamp"],
                 }
             elif current_ts:
-                return {"success": True, "data": {"timestamp": current_ts}}
+                return {"success": True, "timestamp": current_ts}
             else:
                 return {"success": False, "error": "No timestamp available"}, 404
 
@@ -259,7 +259,7 @@ def refresh_camera_thumbnail(camera_id: CameraId) -> JsonDict | tuple[JsonDict, 
             del cache[camera_id]
 
         # Extract current timestamp and download new thumbnail
-        if hasattr(camera, "thumbnail") and camera.thumbnail:
+        if camera is not None and camera.thumbnail:
             ts_match = re.search(r"[?&]ts=(\d+)", camera.thumbnail)
             if ts_match:
                 current_ts = int(ts_match.group(1))
@@ -301,8 +301,29 @@ def _download_camera_thumbnail(
         if not blinkapp.THUMBNAIL_CACHE_DIR:
             return
 
+        # Check for race condition - another thread may have updated the cache
+        cache = ensure_camera_thumbnail_cache_initialized()
+        current_cached = cache.get(camera_id)
+        if current_cached and timestamp <= current_cached["timestamp"]:
+            # Another thread already updated with newer or same timestamp
+            logger.debug(
+                f"Skipping thumbnail update for camera {camera_id} due to race condition"
+            )
+            return
+
         cache_dir = Path(blinkapp.THUMBNAIL_CACHE_DIR)
         cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Clean up old thumbnail file if it exists
+        if current_cached and current_cached["filename"]:
+            old_file_path = cache_dir / current_cached["filename"]
+            try:
+                if old_file_path.exists():
+                    old_file_path.unlink()
+            except OSError as e:
+                logger.warning(
+                    f"Failed to remove old thumbnail file {old_file_path}: {e}"
+                )
 
         # Generate filename: camera_id_timestamp.jpg
         filename = f"{camera_id}_{timestamp}.jpg"
@@ -317,16 +338,11 @@ def _download_camera_thumbnail(
             f.write(response.content)
 
         # Update cache entry
-        cache = ensure_camera_thumbnail_cache_initialized()
         cache[camera_id] = CameraThumbnailCacheEntry(
             timestamp=timestamp, filename=filename
         )
 
-        from blinkapp import logger
-
         logger.info(f"Downloaded and cached thumbnail for camera {camera_id}")
 
     except Exception as e:
-        from blinkapp import logger
-
         logger.error(f"Error downloading thumbnail for camera {camera_id}: {e}")

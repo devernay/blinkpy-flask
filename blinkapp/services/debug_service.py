@@ -43,7 +43,9 @@ def dump_blink_system_info() -> None:
     import json
 
     from blinkapp import logger
-    from blinkapp.services.blink_service import blink
+    from blinkapp.services.blink_service import ensure_blink_initialized
+
+    blink = ensure_blink_initialized()
 
     if not blink or not blink.available:
         logger.error("Blink system not available")
@@ -94,7 +96,6 @@ def handle_dump_system(
     from blinkapp import CREDENTIALS_FILE, Config, initialize_cache_paths, logger
     from blinkapp.services.auth_service import load_saved_blink
     from blinkapp.services.blink_connection import blink_connection
-    from blinkapp.services.blink_service import blink
     from blinkapp.services.lifecycle_service import cleanup_blink_session
 
     initialize_cache_paths()
@@ -114,16 +115,18 @@ def handle_dump_system(
     assert blink_connection is not None
     blink_connection.start()
     try:
-        success = blink_connection.execute(load_saved_blink())
+        success = ensure_blink_connection_initialized().execute(load_saved_blink())
         if success:
             assert blink is not None
             for _, sync in blink.sync.items():
                 if sync.local_storage:
                     assert blink_connection is not None
-                    blink_connection.execute(sync.update_local_storage_manifest())
+                    ensure_blink_connection_initialized().execute(
+                        sync.update_local_storage_manifest()
+                    )
 
             assert blink_connection is not None
-            videos = blink_connection.execute(
+            videos = ensure_blink_connection_initialized().execute(
                 blink.get_videos_metadata(stop=Config.MAX_VIDEOS_METADATA)
             )
 
@@ -139,7 +142,7 @@ def handle_dump_system(
     finally:
         if blink is not None:
             assert blink_connection is not None
-            blink_connection.execute(cleanup_blink_session())
+            ensure_blink_connection_initialized().execute(cleanup_blink_session())
         logger.removeHandler(console_handler)
         assert blink_connection is not None
         blink_connection.shutdown()
