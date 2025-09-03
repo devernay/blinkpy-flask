@@ -46,12 +46,9 @@ class TestSystemHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_system_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_system_devices with valid network ID."""
-        from blinkpy.sync_module import BlinkSyncModule
+        from tests.test_base import create_mock_sync
 
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.cameras = {}  # Empty cameras dict
-        mock_sync.online = True
-        mock_sync.sync_id = 12345
+        mock_sync = create_mock_sync(network_id=12345, cameras={}, online=True)
         mock_validator.return_value = (mock_sync, None)
 
         result = system.get_system_devices("12345")
@@ -84,12 +81,10 @@ class TestSystemHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_devices_valid_id(self, mock_validator: Mock) -> None:
         """Test get_devices with valid network ID."""
-        from blinkpy.sync_module import BlinkSyncModule
 
-        mock_sync = Mock(spec=BlinkSyncModule)
-        mock_sync.cameras = {}
-        mock_sync.online = True
-        mock_sync.sync_id = 12345
+        from tests.test_base import create_mock_sync
+
+        mock_sync = create_mock_sync(network_id=12345, cameras={}, online=True)
         mock_validator.return_value = (mock_sync, None)
 
         result = system.get_system_devices("12345")
@@ -116,9 +111,9 @@ class TestSystemHandlers(BaseTestCase):
         self, mock_validator: Mock, mock_connection_init: Mock
     ) -> None:
         """Test update_system with valid request."""
-        from blinkpy.sync_module import BlinkSyncModule
+        from tests.test_base import create_mock_sync
 
-        mock_sync = Mock(spec=BlinkSyncModule)
+        mock_sync = create_mock_sync()
         mock_sync.async_arm.return_value = Mock(spec=object)
         mock_validator.return_value = (mock_sync, None)
 

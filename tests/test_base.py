@@ -256,7 +256,11 @@ def create_mock_blink_instance(
 
 
 def create_mock_stream_manager(
-    active_streams: dict[str, Any] | None = None, cleanup_on_exit: bool = True
+    active_streams: dict[str, Any] | None = None,
+    cleanup_on_exit: bool = True,
+    stream_id: str | None = None,
+    created_at: Any = None,
+    size: int | None = None,
 ) -> Mock:
     """Create a mock StreamManager with common attributes."""
     from unittest.mock import Mock
@@ -265,6 +269,15 @@ def create_mock_stream_manager(
     mock_manager.active_streams = active_streams or {}
     mock_manager.cleanup_on_exit = cleanup_on_exit
     mock_manager.cleanup = Mock(spec=callable)
+
+    # Add attributes for when used as manifest item
+    if stream_id:
+        mock_manager.id = stream_id
+    if created_at:
+        mock_manager.created_at = created_at
+    if size:
+        mock_manager.size = size
+
     return mock_manager
 
 
