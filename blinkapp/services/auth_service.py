@@ -47,9 +47,12 @@ def is_blink_authenticated(blink_instance=None) -> bool:
         True if authenticated with Blink API and startup complete, False otherwise
     """
     if blink_instance is None:
-        from blinkapp.services.blink_service import ensure_blink_initialized
+        try:
+            from blinkapp.services.blink_service import ensure_blink_initialized
 
-        blink_instance = ensure_blink_initialized()
+            blink_instance = ensure_blink_initialized()
+        except RuntimeError:
+            return False
 
     return blink_instance is not None and blink_instance.auth.token is not None
 

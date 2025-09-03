@@ -982,26 +982,32 @@ class TestStreamService(BaseTestCase):
 class TestSystemService(BaseTestCase):
     """Test system service functions."""
 
-    @patch("blinkapp.services.blink_service.blink")
-    def test_get_systems_empty(self, mock_blink: Mock) -> None:
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    def test_get_systems_empty(self, mock_ensure_blink: Mock) -> None:
         """Test get_systems when no systems available."""
         from blinkapp.services.system_service import get_systems
+        from tests.test_base import create_mock_blink_instance
 
+        mock_blink = create_mock_blink_instance()
         mock_blink.sync = {}
+        mock_ensure_blink.return_value = mock_blink
         result = get_systems()
         self.assertEqual(result, {"systems": []})
 
-    @patch("blinkapp.services.blink_service.blink")
-    def test_get_systems_with_data(self, mock_blink: Mock) -> None:
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    def test_get_systems_with_data(self, mock_ensure_blink: Mock) -> None:
         """Test get_systems with mock data."""
         from blinkapp.services.system_service import get_systems
-        from tests.test_base import create_mock_sync
+        from tests.test_base import create_mock_blink_instance, create_mock_sync
 
         mock_sync = create_mock_sync()
         mock_sync.network_id = 12345
         mock_sync.arm = False
         mock_sync.online = True
+
+        mock_blink = create_mock_blink_instance()
         mock_blink.sync = {"test": mock_sync}
+        mock_ensure_blink.return_value = mock_blink
 
         result = get_systems()
         self.assertIsInstance(result, dict)

@@ -708,27 +708,18 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     def test_login_unexpected_error(self) -> None:
         """Test login with unexpected error."""
-        # Mock blink_connection to raise an exception
+        # Mock ensure_blink_connection_initialized to raise an exception
         with patch(
-            "blinkapp.services.blink_connection.blink_connection"
-        ) as mock_connection:
-            mock_connection.start = Mock(spec=callable)
-
-            T = TypeVar("T")
-
-            def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
-                # Close the coroutine to prevent warnings
-                coro.close()
-                raise Exception("Unexpected error")
-
-            mock_connection.execute = Mock(side_effect=mock_execute)
+            "blinkapp.services.auth_service.ensure_blink_connection_initialized"
+        ) as mock_connection_init:
+            mock_connection_init.side_effect = RuntimeError("Connection failed")
 
             response = self.client.post(
                 "/login",
                 data={"username": "test@example.com", "password": "password123"},
             )
             self.assertEqual(response.status_code, 400)  # Auth error returns 400
-            self.assertIn(b"Authentication failed", response.data)
+            self.assertIn(b"System not ready", response.data)
 
     def test_2fa_get_without_session(self) -> None:
         """Test accessing 2FA page without proper session."""
@@ -2207,7 +2198,7 @@ class TestLocalClipOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.utils.decorators.ensure_blink_initialized")
     @patch("blinkapp.services.blink_connection.blink_connection")
     def test_get_local_clips_with_manifest(
         self, mock_connection: Mock, mock_blink: Mock
@@ -2230,7 +2221,12 @@ class TestLocalClipOperations(BaseTestCase):
         )
 
         mock_sync._local_storage = {"manifest": [mock_item1, mock_item2]}
-        mock_blink.sync = {"test_sync": mock_sync}
+
+        # Create mock blink instance and set it up properly
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_instance.sync = {"test_sync": mock_sync}
+        mock_blink.return_value = mock_blink_instance
+
         mock_connection.execute.return_value = None
 
         response = self.client.get("/api/clips?storage=local")
@@ -2241,6 +2237,7 @@ class TestLocalClipOperations(BaseTestCase):
         self.assertIsInstance(data["data"]["clips"], list)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.utils.decorators.ensure_blink_initialized")
     @patch("blinkapp.services.blink_connection.blink_connection")
     def test_get_local_clips_no_manifest(
         self, mock_connection: Mock, mock_blink: Mock
@@ -2252,7 +2249,11 @@ class TestLocalClipOperations(BaseTestCase):
         )
         mock_sync.refresh = Mock(spec=callable)
 
-        mock_blink.sync = {"test_sync": mock_sync}
+        # Create mock blink instance and set it up properly
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_instance.sync = {"test_sync": mock_sync}
+        mock_blink.return_value = mock_blink_instance
+
         mock_connection.execute.return_value = None
 
         response = self.client.get("/api/clips?storage=local")
@@ -2263,7 +2264,7 @@ class TestLocalClipOperations(BaseTestCase):
         # Should return empty data when manifest not ready
         self.assertEqual(data["data"]["clips"], [])
 
-    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.utils.decorators.ensure_blink_initialized")
     @patch("blinkapp.services.blink_connection.blink_connection")
     def test_get_local_clips_sync_error(
         self, mock_connection: Mock, mock_blink: Mock
@@ -2273,7 +2274,11 @@ class TestLocalClipOperations(BaseTestCase):
         mock_sync = create_mock_sync(cameras={})
         mock_sync.refresh.side_effect = Exception("Sync error")
 
-        mock_blink.sync = {"test_sync": mock_sync}
+        # Create mock blink instance and set it up properly
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink_instance.sync = {"test_sync": mock_sync}
+        mock_blink.return_value = mock_blink_instance
+
         mock_connection.execute.side_effect = Exception("Sync error")
 
         response = self.client.get("/api/clips?storage=local")
@@ -2719,13 +2724,14 @@ class TestCacheLoadingOperations(BaseTestCase):
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
         # Mock blink system with cameras
-        with patch("blinkapp.services.blink_connection.blink_connection") as mock_blink:
+        with patch(
+            "blinkapp.services.cache_service.ensure_blink_initialized"
+        ) as mock_ensure_blink:
             mock_blink_instance = create_mock_blink_instance()
-
-            mock_blink.return_value = mock_blink_instance
+            mock_ensure_blink.return_value = mock_blink_instance
 
             mock_sync = create_mock_sync(cameras={})
-            mock_blink.sync = {"sync1": mock_sync}
+            mock_blink_instance.sync = {"sync1": mock_sync}
 
             # Mock thumbnail files with proper naming format
             mock_file1 = Mock(spec=Path)
@@ -2796,8 +2802,15 @@ class TestCacheLoadingOperations(BaseTestCase):
                         "blinkapp.services.cache_service.ensure_clips_cache_initialized",
                         return_value={},
                     ):
-                        # Should handle missing directories gracefully
-                        load_camera_thumbnail_cache()
+                        with patch(
+                            "blinkapp.services.cache_service.ensure_blink_initialized"
+                        ) as mock_ensure_blink:
+                            mock_blink_instance = create_mock_blink_instance()
+                            mock_blink_instance.sync = {}
+                            mock_ensure_blink.return_value = mock_blink_instance
+
+                            # Should handle missing directories gracefully
+                            load_camera_thumbnail_cache()
                         load_clips_cache()
 
                         # Should log the error or handle gracefully
