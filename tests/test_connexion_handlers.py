@@ -118,10 +118,9 @@ class TestSystemHandlers(BaseTestCase):
         mock_validator.return_value = (mock_sync, None)
 
         # Mock the connection object returned by ensure_blink_connection_initialized
-        from blinkapp.services.blink_connection import BlinkConnection
+        from tests.test_base import create_mock_blink_connection
 
-        mock_connection = Mock(spec=BlinkConnection)
-        mock_connection.execute.return_value = None
+        mock_connection = create_mock_blink_connection(execute_return_value=None)
         mock_connection_init.return_value = mock_connection
 
         body: JsonDict = {"armed": True}
@@ -268,10 +267,11 @@ class TestClipsHandlers(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         # Setup mock connection
-        from blinkapp.services.blink_connection import BlinkConnection
+        from tests.test_base import create_mock_blink_connection
 
-        mock_connection = Mock(spec=BlinkConnection)
-        mock_connection.execute.return_value = [{"id": "clip1"}]
+        mock_connection = create_mock_blink_connection(
+            execute_return_value=[{"id": "clip1"}]
+        )
         mock_connection_init.return_value = mock_connection
 
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
@@ -301,10 +301,11 @@ class TestClipsHandlers(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         # Setup mock connection
-        from blinkapp.services.blink_connection import BlinkConnection
+        from tests.test_base import create_mock_blink_connection
 
-        mock_connection = Mock(spec=BlinkConnection)
-        mock_connection.execute.return_value = [{"id": "clip1"}]
+        mock_connection = create_mock_blink_connection(
+            execute_return_value=[{"id": "clip1"}]
+        )
         mock_connection_init.return_value = mock_connection
 
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]

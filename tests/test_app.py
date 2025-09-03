@@ -1740,11 +1740,12 @@ class TestAdvancedEndpoints(BaseTestCase):
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             from pathlib import Path
 
-            from blinkapp.models.cache import ClipCacheEntry
+            from tests.test_base import create_mock_clip_cache_entry
 
             # Create a mock cache entry with thumbnail
-            mock_cache_entry = Mock(spec=ClipCacheEntry)
-            mock_cache_entry.thumbnail = Path("/tmp/test_thumb.jpg")
+            mock_cache_entry = create_mock_clip_cache_entry(
+                thumbnail=Path("/tmp/test_thumb.jpg")
+            )
 
             # Mock the cache to contain our test clip
             mock_cache.__contains__ = Mock(return_value=True)

@@ -399,6 +399,57 @@ def create_mock_clip_item(
     return mock_item
 
 
+def create_mock_clip_cache_entry(
+    clip_data: Any = None,
+    cached_at: float | None = None,
+    access_count: int = 0,
+    last_accessed: float | None = None,
+    filepath: Any = None,
+    thumbnail: Any = None,
+    cloud_thumbnail_url: str | None = None,
+) -> Mock:
+    """Create a mock ClipCacheEntry with proper spec."""
+    from unittest.mock import Mock
+
+    from blinkapp.models.cache import ClipCacheEntry
+
+    mock_entry = Mock(spec=ClipCacheEntry)
+    if clip_data:
+        mock_entry.clip_data = clip_data
+    if cached_at:
+        mock_entry.cached_at = cached_at
+    mock_entry.access_count = access_count
+    if last_accessed:
+        mock_entry.last_accessed = last_accessed
+    if filepath:
+        mock_entry.filepath = filepath
+    if thumbnail:
+        mock_entry.thumbnail = thumbnail
+    if cloud_thumbnail_url:
+        mock_entry.cloud_thumbnail_url = cloud_thumbnail_url
+    return mock_entry
+
+
+def create_mock_blink_connection(
+    execute_return_value: Any = None,
+    execute_side_effect: Any = None,
+    blink: Any = None,
+) -> Mock:
+    """Create a mock BlinkConnection with common methods."""
+    from unittest.mock import Mock
+
+    from blinkapp.services.blink_connection import BlinkConnection
+
+    mock_connection = Mock(spec=BlinkConnection)
+    if execute_side_effect:
+        mock_connection.execute.side_effect = execute_side_effect
+    else:
+        mock_connection.execute.return_value = execute_return_value
+    if blink:
+        mock_connection.blink = blink
+    return mock_connection
+
+
 # Test constants
 class TestData:
     """Centralized test data constants."""
