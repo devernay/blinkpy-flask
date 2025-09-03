@@ -1276,7 +1276,9 @@ class TestClipManagement(BaseTestCase):
         mock_blink.return_value = create_mock_blink_instance()
 
         # Mock the connection to return empty list
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=[])
         mock_connection_func.return_value = mock_connection
 
@@ -1501,7 +1503,9 @@ class TestAsyncOperations(BaseTestCase):
         mock_blink.return_value = mock_blink_instance
 
         # Create mock connection that returns success
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.return_value = True
         mock_connection_init.return_value = mock_connection
 
@@ -1731,14 +1735,13 @@ class TestAdvancedEndpoints(BaseTestCase):
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             from pathlib import Path
 
-            from blinkapp.models.ids import ClipId
+            from blinkapp.models.cache import ClipCacheEntry
 
             # Create a mock cache entry with thumbnail
-            mock_cache_entry = Mock()
+            mock_cache_entry = Mock(spec=ClipCacheEntry)
             mock_cache_entry.thumbnail = Path("/tmp/test_thumb.jpg")
 
             # Mock the cache to contain our test clip
-            test_clip_id = ClipId("test_clip")
             mock_cache.__contains__ = Mock(return_value=True)
             mock_cache.__getitem__ = Mock(return_value=mock_cache_entry)
 
@@ -1792,7 +1795,9 @@ class TestAdvancedEndpoints(BaseTestCase):
         with patch(
             "blinkapp.services.blink_service.ensure_blink_connection_initialized"
         ) as mock_connection_func:
-            mock_connection = Mock()
+            from blinkapp.services.blink_connection import BlinkConnection
+
+            mock_connection = Mock(spec=BlinkConnection)
             mock_connection.execute.return_value = []
             mock_connection_func.return_value = mock_connection
 
@@ -2097,7 +2102,7 @@ class TestClipDownloadOperations(BaseTestCase):
                     ) as mock_download_core,
                     patch(
                         "blinkapp.services.clip_processing.process_cloud_clip_background"
-                    ) as mock_bg_process,
+                    ),
                 ):
                     # Mock successful download - create the file
                     def create_file(*args, **kwargs):
@@ -3670,7 +3675,9 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
     ) -> None:
         """Test refresh camera thumbnail when camera is not found."""
         # Mock blink available
-        mock_blink_instance = Mock()
+        from blinkpy.blinkpy import Blink
+
+        mock_blink_instance = Mock(spec=Blink)
         mock_blink_instance.available = True
         mock_blink.return_value = mock_blink_instance
 
@@ -4140,7 +4147,9 @@ class TestAdvancedSystemOperations(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         # Create mock connection
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.return_value = None
         mock_connection_init.return_value = mock_connection
 
@@ -4196,7 +4205,9 @@ class TestAdvancedSystemOperations(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         # Create mock connection that fails
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.side_effect = Exception("Arm failed")
         mock_connection_init.return_value = mock_connection
 
@@ -4821,7 +4832,10 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         # Mock successful stream initialization
         with patch("blinkapp.services.stream_service.init_camera_stream") as mock_init:
             # init_camera_stream returns a tuple of (stream_obj, hls_url)
-            mock_init.return_value = (Mock(), "http://localhost:8080/stream.m3u8")
+            from blinkapp.services.hls_service import HLSStream
+
+            mock_stream = Mock(spec=HLSStream)
+            mock_init.return_value = (mock_stream, "http://localhost:8080/stream.m3u8")
 
             response = self.client.post("/api/cameras/12345/streams")
 
@@ -5338,7 +5352,9 @@ class TestComplexErrorScenarios(BaseTestCase):
         mock_blink.return_value = mock_blink_instance
 
         # Mock connection that returns empty clips
-        mock_connection = Mock()
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        mock_connection = Mock(spec=BlinkConnection)
         mock_connection.execute.return_value = []
         mock_connection_init.return_value = mock_connection
 

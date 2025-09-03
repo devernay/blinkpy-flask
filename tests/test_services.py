@@ -32,9 +32,11 @@ class TestTimeService(BaseTestCase):
 
     def test_get_current_timestamp_with_provider(self) -> None:
         """Test get current timestamp with custom provider."""
+        from collections.abc import Callable
+
         from blinkapp.services.time_service import get_current_timestamp
 
-        mock_provider = Mock(return_value=1234567890)
+        mock_provider = Mock(spec=Callable[[], int], return_value=1234567890)
         result = get_current_timestamp(mock_provider)
         self.assertEqual(result, 1234567890)
         mock_provider.assert_called_once()
@@ -49,10 +51,12 @@ class TestTimeService(BaseTestCase):
 
     def test_get_current_time_with_provider(self) -> None:
         """Test get current time with custom provider."""
+        from collections.abc import Callable
+
         from blinkapp.services.time_service import get_current_time
 
         mock_time = datetime(2024, 1, 1, 12, 0, 0)
-        mock_provider = Mock(return_value=mock_time)
+        mock_provider = Mock(spec=Callable[[], datetime], return_value=mock_time)
         result = get_current_time(mock_provider)
         self.assertEqual(result, mock_time)
         mock_provider.assert_called_once()
@@ -94,26 +98,32 @@ class TestFileService(BaseTestCase):
 
     def test_read_file_safely_success(self) -> None:
         """Test successful file read."""
+        from collections.abc import Callable
+
         from blinkapp.services.file_service import read_file_safely
 
-        mock_reader = Mock(return_value=b"data")
+        mock_reader = Mock(spec=Callable[[Path], bytes], return_value=b"data")
         result = read_file_safely(Path("/test"), mock_reader)
         self.assertEqual(result, b"data")
         mock_reader.assert_called_once_with(Path("/test"))
 
     def test_check_file_exists_true(self) -> None:
         """Test file exists check returns true."""
+        from collections.abc import Callable
+
         from blinkapp.services.file_service import check_file_exists
 
-        mock_checker = Mock(return_value=True)
+        mock_checker = Mock(spec=Callable[[Path], bool], return_value=True)
         result = check_file_exists(Path("/test"), mock_checker)
         self.assertTrue(result)
 
     def test_check_file_exists_false(self) -> None:
         """Test file exists check returns false."""
+        from collections.abc import Callable
+
         from blinkapp.services.file_service import check_file_exists
 
-        mock_checker = Mock(return_value=False)
+        mock_checker = Mock(spec=Callable[[Path], bool], return_value=False)
         result = check_file_exists(Path("/test"), mock_checker)
         self.assertFalse(result)
 
@@ -659,8 +669,8 @@ class TestFFmpegHelpers(BaseTestCase):
         with patch("subprocess.Popen") as mock_popen:
             mock_process = Mock(spec=subprocess.Popen)
             mock_process.poll.return_value = None
-            mock_process.terminate = Mock()
-            mock_process.kill = Mock()
+            mock_process.terminate = Mock(spec=subprocess.Popen.terminate)
+            mock_process.kill = Mock(spec=subprocess.Popen.kill)
             mock_popen.return_value = mock_process
 
             cmd = ["echo", "test"]
@@ -711,8 +721,12 @@ class TestHLSStream(BaseTestCase):
 
         mock_dir = Mock(spec=tempfile.TemporaryDirectory)
         mock_dir.name = "/tmp/hls_test_camera_123"
-        mock_dir.__enter__ = Mock(return_value=mock_dir)
-        mock_dir.__exit__ = Mock(return_value=None)
+        mock_dir.__enter__ = Mock(
+            spec=tempfile.TemporaryDirectory.__enter__, return_value=mock_dir
+        )
+        mock_dir.__exit__ = Mock(
+            spec=tempfile.TemporaryDirectory.__exit__, return_value=None
+        )
         mock_temp_dir.return_value = mock_dir
 
         # Mock FFmpeg process

@@ -278,8 +278,8 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection_init.return_value = mock_connection
 
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
-        mock_context.return_value.__enter__ = Mock(return_value=None)
-        mock_context.return_value.__exit__ = Mock(return_value=None)
+        mock_context.return_value.__enter__ = Mock(spec=lambda: None, return_value=None)
+        mock_context.return_value.__exit__ = Mock(spec=lambda: None, return_value=None)
 
         result = clips.get_clips()
 
@@ -311,8 +311,8 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection_init.return_value = mock_connection
 
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
-        mock_context.return_value.__enter__ = Mock(return_value=None)
-        mock_context.return_value.__exit__ = Mock(return_value=None)
+        mock_context.return_value.__enter__ = Mock(spec=lambda: None, return_value=None)
+        mock_context.return_value.__exit__ = Mock(spec=lambda: None, return_value=None)
 
         result = clips.get_clips("cloud")
 
@@ -337,8 +337,8 @@ class TestClipsHandlers(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
         mock_connection.return_value = None
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
-        mock_context.return_value.__enter__ = Mock(return_value=None)
-        mock_context.return_value.__exit__ = Mock(return_value=None)
+        mock_context.return_value.__enter__ = Mock(spec=lambda: None, return_value=None)
+        mock_context.return_value.__exit__ = Mock(spec=lambda: None, return_value=None)
 
         result = clips.get_clips("local")
 
@@ -375,8 +375,8 @@ class TestClipsHandlers(BaseTestCase):
         mock_blink_init.return_value = mock_blink_instance
 
         mock_process.return_value = []
-        mock_context.return_value.__enter__ = Mock(return_value=None)
-        mock_context.return_value.__exit__ = Mock(return_value=None)
+        mock_context.return_value.__enter__ = Mock(spec=lambda: None, return_value=None)
+        mock_context.return_value.__exit__ = Mock(spec=lambda: None, return_value=None)
 
         result = clips.get_clips("cloud")
 

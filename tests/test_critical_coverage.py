@@ -20,8 +20,6 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
-from requests import Response
-
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -96,12 +94,16 @@ class TestBlinkInitialization(BaseTestCase):
         mock_session_instance = Mock(spec=object)
         mock_session.return_value = mock_session_instance
 
-        mock_blink_instance = Mock(spec=object)
+        from blinkpy.blinkpy import Blink
+
+        mock_blink_instance = Mock(spec=Blink)
         mock_blink_instance.key_required = False
-        mock_blink_instance.start = AsyncMock(None)
+        mock_blink_instance.start = AsyncMock(spec=Blink.start, return_value=None)
         mock_blink.return_value = mock_blink_instance
 
-        mock_auth_instance = Mock(spec=object)
+        from blinkpy.auth import Auth
+
+        mock_auth_instance = Mock(spec=Auth)
         mock_auth.return_value = mock_auth_instance
 
         from blinkapp.services.auth_service import initialize_blink
@@ -134,9 +136,11 @@ class TestBlinkInitialization(BaseTestCase):
         mock_session_instance = Mock(spec=object)
         mock_session.return_value = mock_session_instance
 
-        mock_blink_instance = Mock(spec=object)
+        from blinkpy.blinkpy import Blink
+
+        mock_blink_instance = Mock(spec=Blink)
         mock_blink_instance.key_required = True
-        mock_blink_instance.start = AsyncMock(None)
+        mock_blink_instance.start = AsyncMock(spec=Blink.start, return_value=None)
         mock_blink.return_value = mock_blink_instance
 
         try:
@@ -173,9 +177,11 @@ class TestCameraThumbnailCacheUpdate(BaseTestCase):
         """Test camera thumbnail cache update."""
         # Setup mocks
         mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
-        mock_response = Mock(spec=Response)
+        from aiohttp import ClientResponse
+
+        mock_response = Mock(spec=ClientResponse)
         mock_response.status = 200
-        mock_response.read = Mock(return_value=b"image_data")
+        mock_response.read = Mock(spec=ClientResponse.read, return_value=b"image_data")
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         try:
