@@ -3257,10 +3257,11 @@ class TestLiveStreamOperations(BaseTestCase):
         mock_blink_instance.sync = {"test_sync": mock_sync}
 
         # Mock stream object
-        mock_stream = Mock(spec=IOBase)
-        mock_stream.url = "tcp://localhost:8080"
-        mock_stream.start = Mock(spec=callable)
-        mock_stream.feed = Mock(spec=callable)
+        from tests.test_base import create_mock_live_stream
+
+        mock_stream = create_mock_live_stream(
+            stream_id="12345", url="tcp://localhost:8080"
+        )
 
         # Mock async execution
         async def mock_init_stream():
@@ -3675,10 +3676,9 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
     ) -> None:
         """Test refresh camera thumbnail when camera is not found."""
         # Mock blink available
-        from blinkpy.blinkpy import Blink
+        from tests.test_base import create_mock_blink_instance
 
-        mock_blink_instance = Mock(spec=Blink)
-        mock_blink_instance.available = True
+        mock_blink_instance = create_mock_blink_instance(available=True)
         mock_blink.return_value = mock_blink_instance
 
         # Mock camera not found

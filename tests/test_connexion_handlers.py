@@ -10,9 +10,6 @@ Tests connexion-compatible handlers including:
 from typing import Any, cast
 from unittest.mock import Mock, patch
 
-from blinkpy.blinkpy import Blink
-from blinkpy.camera import BlinkCamera
-
 from blinkapp.connexion_handlers import auth, camera, clips, system
 from blinkapp.models.types import JsonDict
 from tests.test_base import BaseTestCase, create_mock_blink_instance
@@ -201,11 +198,14 @@ class TestCameraHandlers(BaseTestCase):
     ) -> None:
         """Test list_cameras with available cameras."""
         # Mock blink connection and cameras
-        mock_blink = Mock(spec=Blink)
-        mock_blink.cameras = {
-            "cam1": Mock(spec=BlinkCamera),
-            "cam2": Mock(spec=BlinkCamera),
-        }
+        from tests.test_base import create_mock_blink_instance, create_mock_camera
+
+        mock_blink = create_mock_blink_instance(
+            cameras={
+                "cam1": create_mock_camera(camera_id="cam1", name="Camera 1"),
+                "cam2": create_mock_camera(camera_id="cam2", name="Camera 2"),
+            }
+        )
         mock_connection = Mock(spec=callable)
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
@@ -240,7 +240,9 @@ class TestCameraHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_list_cameras_no_cameras_attribute(self, mock_ensure: Mock) -> None:
         """Test list_cameras when blink has no cameras attribute."""
-        mock_blink = Mock(spec=Blink)  # Mock without cameras attribute
+        from tests.test_base import create_mock_blink_instance
+
+        mock_blink = create_mock_blink_instance(cameras=None)
         mock_connection = Mock(spec=callable)
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection

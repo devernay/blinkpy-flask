@@ -29,7 +29,7 @@ from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
 
 
-def strict_patch(target: str, *args, **kwargs) -> Any:
+def strict_patch_func(target: str, *args, **kwargs) -> Any:
     """Patch function that only allows patching symbols in __all__."""
     if "." not in target:
         return original_patch(target, *args, **kwargs)
@@ -51,8 +51,19 @@ def strict_patch(target: str, *args, **kwargs) -> Any:
     return original_patch(target, *args, **kwargs)
 
 
-# Add object method to strict_patch to handle patch.object calls
-strict_patch.object = original_patch.object
+# Create a wrapper class to properly handle patch.object calls
+class StrictPatch:
+    """Wrapper for patch that enforces __all__ exports."""
+
+    def __init__(self, patch_func):
+        self._patch = patch_func
+        self.object = original_patch.object
+
+    def __call__(self, *args, **kwargs):
+        return self._patch(*args, **kwargs)
+
+
+strict_patch = StrictPatch(strict_patch_func)
 
 
 def enable_strict_patching() -> None:
@@ -190,6 +201,7 @@ def create_mock_blink_instance(
     start: Callable[[], Any] | None = None,
     save: Callable[[], Any] | None = None,
     videos: dict[str, list[Any]] | None = None,
+    key_required: bool = False,
 ) -> Mock:
     """Create a mock blink instance with common methods."""
     from unittest.mock import Mock
@@ -198,6 +210,7 @@ def create_mock_blink_instance(
 
     mock_blink = Mock(spec=Blink)
     mock_blink.available = available
+    mock_blink.key_required = key_required
     mock_blink.auth = Mock(spec=Auth)
     mock_blink.auth.token = "valid_token" if available else None
     mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
@@ -256,14 +269,16 @@ def create_mock_stream_manager(
 
 
 def create_mock_live_stream(
-    stream_id: str = "test_stream", stop_error: Exception | None = None
+    stream_id: str = "test_stream",
+    stop_error: Exception | None = None,
+    url: str | None = None,
 ) -> Mock:
     """Create a mock BlinkLiveStream with common attributes."""
     from unittest.mock import Mock
 
     mock_stream = Mock(spec=BlinkLiveStream)
     mock_stream.id = stream_id
-    mock_stream.url = f"tcp://localhost:8080/{stream_id}"
+    mock_stream.url = url or f"tcp://localhost:8080/{stream_id}"
 
     # Mock start() to return a simple value, not a coroutine
     mock_stream.start = Mock(return_value=None)
