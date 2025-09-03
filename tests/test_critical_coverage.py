@@ -101,9 +101,9 @@ class TestBlinkInitialization(BaseTestCase):
         )
         mock_blink.return_value = mock_blink_instance
 
-        from blinkpy.auth import Auth
+        from tests.test_base import create_mock_auth
 
-        mock_auth_instance = Mock(spec=Auth)
+        mock_auth_instance = create_mock_auth()
         mock_auth.return_value = mock_auth_instance
 
         from blinkapp.services.auth_service import initialize_blink

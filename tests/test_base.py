@@ -207,12 +207,10 @@ def create_mock_blink_instance(
     """Create a mock blink instance with common methods."""
     from unittest.mock import Mock
 
-    from blinkpy.auth import Auth
-
     mock_blink = Mock(spec=Blink)
     mock_blink.available = available
     mock_blink.key_required = key_required
-    mock_blink.auth = Mock(spec=Auth)
+    mock_blink.auth = create_mock_auth()
     mock_blink.auth.token = "valid_token" if available else None
     mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
 
@@ -449,6 +447,26 @@ def create_mock_blink_connection(
     if blink:
         mock_connection.blink = blink
     return mock_connection
+
+
+def create_mock_auth(
+    startup: Callable[[], None] | None = None,
+    validate_login: Callable[[], bool] | None = None,
+    check_key_required: Callable[[], bool] | None = None,
+) -> Mock:
+    """Create a mock Auth with common methods."""
+    from unittest.mock import Mock
+
+    from blinkpy.auth import Auth
+
+    mock_auth = Mock(spec=Auth)
+    if startup:
+        mock_auth.startup = startup
+    if validate_login:
+        mock_auth.validate_login = validate_login
+    if check_key_required:
+        mock_auth.check_key_required = check_key_required
+    return mock_auth
 
 
 # Test constants
