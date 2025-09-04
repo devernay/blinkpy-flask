@@ -8,12 +8,12 @@ import os
 import unittest
 import warnings
 
-from connexion import AsyncApp
-
 # Suppress connexion's internal jsonschema deprecation warnings
 warnings.filterwarnings(
     "ignore", category=DeprecationWarning, module="connexion.json_schema"
 )
+
+from connexion import AsyncApp  # noqa: E402
 
 
 class TestConnexionIntegration(unittest.TestCase):
