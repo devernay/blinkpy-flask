@@ -52,3 +52,24 @@ line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["blinkapp", "blink_connection", "stream_manager"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["blinkpy-source", ".git", "__pycache__", ".pytest_cache"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+timeout = 10
+timeout_method = "signal"
+addopts = "--timeout=10 --tb=short --cov=blinkapp --cov-report=term-missing --cov-config=tests/.coveragerc --ignore=blinkpy-source"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "core: Core application tests (test_app.py)",
+    "critical: Critical coverage tests (test_critical_coverage.py)",
+    "boost: Coverage boost tests (test_coverage_boost.py)",
+    "advanced: Advanced coverage tests"
+]
+filterwarnings = [
+    'ignore:configuration option "asyncio_default_fixture_loop_scope" is unset',
+]

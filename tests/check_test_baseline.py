@@ -8,17 +8,25 @@ from pathlib import Path
 
 def get_current_passing_tests():
     """Get list of currently passing tests."""
+    # Get project root (parent of tests directory)
+    project_root = Path(__file__).parent.parent
+    tests_dir_name = Path(__file__).parent.name
+
     result = subprocess.run(
-        ["python", "-m", "pytest", "--tb=no", "-v"],
+        ["python", "-m", "pytest", "--tb=no", "-v", "--no-cov"],
         capture_output=True,
         text=True,
-        cwd=Path(__file__).parent,
+        cwd=project_root,
     )
 
     passing_tests = []
     for line in result.stdout.split("\n"):
         if "PASSED" in line:
             test_name = line.split()[0]
+            # Remove tests directory prefix if present
+            prefix = f"{tests_dir_name}/"
+            if test_name.startswith(prefix):
+                test_name = test_name[len(prefix) :]
             passing_tests.append(test_name)
 
     return sorted(passing_tests)
@@ -48,17 +56,21 @@ def main():
     regressions = baseline_tests - current_tests
     if regressions:
         print(f"❌ REGRESSIONS DETECTED: {len(regressions)} tests now failing:")
-        for test in sorted(regressions):
+        for test in sorted(regressions)[:10]:  # Show first 10
             print(f"   - {test}")
+        if len(regressions) > 10:
+            print(f"   ... and {len(regressions) - 10} more")
         return 1
 
     # Check for new tests
     new_tests = current_tests - baseline_tests
     if new_tests:
-        print(f"✅ NEW TESTS: {len(new_tests)} tests added:")
-        for test in sorted(new_tests):
+        print(f"⚠️ NEW TESTS ADDED: {len(new_tests)} new passing tests:")
+        for test in sorted(new_tests)[:10]:  # Show first 10
             print(f"   + {test}")
-        print("💡 Run 'python update_test_baseline.py' to update baseline")
+        if len(new_tests) > 10:
+            print(f"   ... and {len(new_tests) - 10} more")
+        print("💡 Run update_test_baseline.py to update the baseline")
 
     if not regressions and not new_tests:
         print("✅ NO CHANGES: All tests match baseline")

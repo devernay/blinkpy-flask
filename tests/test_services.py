@@ -319,9 +319,9 @@ class TestCacheService(BaseTestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         # Reset global caches before each test
-        from blinkapp.services.cache_service import reset_global_caches
+        from blinkapp.services.cache_service import cleanup_global_caches
 
-        reset_global_caches()
+        cleanup_global_caches()
 
     def test_initialize_caches(self) -> None:
         """Test cache initialization."""
@@ -371,11 +371,11 @@ class TestCacheService(BaseTestCase):
         cache = ensure_camera_thumbnail_cache_initialized()
         self.assertIsNotNone(cache)
 
-    def test_reset_global_caches(self) -> None:
-        """Test resetting global caches."""
+    def test_cleanup_global_caches(self) -> None:
+        """Test cleaning up global caches."""
         from blinkapp.services.cache_service import (
+            cleanup_global_caches,
             initialize_caches,
-            reset_global_caches,
         )
 
         # Initialize caches
@@ -386,7 +386,7 @@ class TestCacheService(BaseTestCase):
         initialize_caches(config)
 
         # Reset caches
-        reset_global_caches()
+        cleanup_global_caches()
 
         # Verify caches are reset
         from blinkapp.services.cache_service import camera_thumbnail_cache, clips_cache
@@ -637,7 +637,20 @@ class TestFFmpegHelpers(BaseTestCase):
         # Should return a process if ffmpeg is available, None if not
         if result is not None:
             self.assertIsInstance(result, subprocess.Popen)
-            result.terminate()  # Clean up the process
+            try:
+                result.terminate()  # Clean up the process
+                result.wait(timeout=1)  # Wait for process to actually terminate
+            except subprocess.TimeoutExpired:
+                result.kill()  # Force kill if it doesn't terminate
+                result.wait()
+            finally:
+                # Ensure all pipes are closed
+                if result.stdout:
+                    result.stdout.close()
+                if result.stderr:
+                    result.stderr.close()
+                if result.stdin:
+                    result.stdin.close()
         else:
             # ffmpeg not available in test environment
             self.assertIsNone(result)
@@ -663,15 +676,17 @@ class TestFFmpegHelpers(BaseTestCase):
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
 
+        import subprocess
+
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
-        with patch("subprocess.Popen") as mock_popen:
-            mock_process = Mock()
-            mock_process.poll.return_value = None
-            mock_process.terminate = Mock()
-            mock_process.kill = Mock()
-            mock_popen.return_value = mock_process
+        # Use real Popen class as spec since it's not patched at import time
+        mock_process = Mock(spec=subprocess.Popen)
+        mock_process.poll.return_value = None
+        mock_process.terminate = Mock(spec=callable)
+        mock_process.kill = Mock(spec=callable)
 
+        with patch("subprocess.Popen", return_value=mock_process):
             cmd = ["echo", "test"]
             result = _create_ffmpeg_process(cmd)
 
@@ -707,36 +722,36 @@ class TestHLSStream(BaseTestCase):
         self.assertIsNotNone(stream.lock)  # Just check it exists
 
     @patch("blinkapp.services.hls_service._create_ffmpeg_process")
-    @patch("tempfile.TemporaryDirectory")
     @patch("time.sleep")
     def test_hls_stream_start_success(
-        self, mock_sleep: Mock, mock_temp_dir: Mock, mock_create_process: Mock
+        self, mock_sleep: Mock, mock_create_process: Mock
     ) -> None:
         """Test successful HLS stream start."""
-        # Mock temporary directory
+        import tempfile
 
         from blinkapp.services.hls_service import HLSStream
 
-        mock_dir = Mock()
+        # Use real TemporaryDirectory class as spec
+        mock_dir = Mock(spec=tempfile.TemporaryDirectory)
         mock_dir.name = "/tmp/hls_test_camera_123"
         mock_dir.__enter__ = Mock(return_value=mock_dir)
         mock_dir.__exit__ = Mock(return_value=None)
-        mock_temp_dir.return_value = mock_dir
 
-        # Mock FFmpeg process
-        import subprocess
+        with patch("tempfile.TemporaryDirectory", return_value=mock_dir):
+            # Mock FFmpeg process
+            import subprocess
 
-        mock_process = Mock(spec=subprocess.Popen)
-        mock_process.poll.return_value = None  # Process is running
-        mock_create_process.return_value = mock_process
+            mock_process = Mock(spec=subprocess.Popen)
+            mock_process.poll.return_value = None  # Process is running
+            mock_create_process.return_value = mock_process
 
-        stream = HLSStream(self.camera_id, self.tcp_url, self.config)
-        hls_url, error = stream.start()
+            stream = HLSStream(self.camera_id, self.tcp_url, self.config)
+            hls_url, error = stream.start()
 
-        self.assertIsNotNone(hls_url)
-        self.assertIsNone(error)
-        self.assertTrue(stream._active)
-        self.assertEqual(stream.process, mock_process)
+            self.assertIsNotNone(hls_url)
+            self.assertIsNone(error)
+            self.assertTrue(stream._active)
+            self.assertEqual(stream.process, mock_process)
         self.assertEqual(stream.temp_dir, mock_dir)
         mock_sleep.assert_called_once_with(2)
 

@@ -35,7 +35,9 @@ def setup_logging() -> None:
     root_logger.setLevel(logging.INFO)
 
     # Clear any existing handlers to avoid duplicates
-    root_logger.handlers.clear()
+    for handler in root_logger.handlers[:]:
+        handler.close()
+        root_logger.removeHandler(handler)
 
     # Create formatters for different log types
     detailed_formatter = logging.Formatter(

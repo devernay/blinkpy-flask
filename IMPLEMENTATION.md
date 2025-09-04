@@ -167,7 +167,7 @@ The settings should be saved in a settings.json file in the cache. settings.json
 
 ### API Documentation and Development Tools
 
-The server should provide comprehensive API documentation through an OpenAPI 3.1.1 specification file (`api.json`) that documents all available endpoints, request/response schemas, and authentication requirements. This enables developers to integrate with the Blink camera system programmatically.
+The server should provide comprehensive API documentation through an OpenAPI 3.0.3 specification file (`api.json`) that documents all available endpoints, request/response schemas, and authentication requirements. This enables developers to integrate with the Blink camera system programmatically.
 
 The development environment should include modern tooling for code quality:
 - Pre-commit hooks for automated code formatting and linting

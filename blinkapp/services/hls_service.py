@@ -166,6 +166,10 @@ class HLSStream:
                 # Start FFmpeg process
                 self.process = _create_ffmpeg_process(cmd)
                 if self.process is None:
+                    # Clean up temp directory if process creation failed
+                    if self.temp_dir is not None:
+                        self.temp_dir.cleanup()
+                        self.temp_dir = None
                     return None, "Failed to create FFmpeg process"
 
                 # Wait a moment for stream to start

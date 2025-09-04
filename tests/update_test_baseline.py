@@ -10,12 +10,16 @@ def main():
     """Update baseline with current test results."""
     print("🔄 Updating test baseline...")
 
-    # Run tests and capture passing test names
+    # Get project root (parent of tests directory)
+    project_root = Path(__file__).parent.parent
+    tests_dir_name = Path(__file__).parent.name
+
+    # Run tests from project root and capture passing test names
     result = subprocess.run(
-        ["python", "-m", "pytest", "--tb=no", "-v"],
+        ["python", "-m", "pytest", "--tb=no", "-v", "--no-cov"],
         capture_output=True,
         text=True,
-        cwd=Path(__file__).parent,
+        cwd=project_root,
     )
 
     # Extract passing test names
@@ -23,23 +27,27 @@ def main():
     for line in result.stdout.split("\n"):
         if "PASSED" in line:
             test_name = line.split()[0]
+            # Remove tests directory prefix if present
+            prefix = f"{tests_dir_name}/"
+            if test_name.startswith(prefix):
+                test_name = test_name[len(prefix) :]
             passing_tests.append(test_name)
 
     if not passing_tests:
         print("❌ No passing tests found")
         return 1
 
-    # Sort and write to baseline file
+    # Sort tests for consistent baseline
     passing_tests.sort()
-    baseline_file = Path(__file__).parent / "test_results_baseline.txt"
 
+    # Write baseline file
+    baseline_file = Path(__file__).parent / "test_results_baseline.txt"
     with open(baseline_file, "w") as f:
         for test in passing_tests:
             f.write(f"{test}\n")
 
-    print(f"✅ Baseline updated with {len(passing_tests)} tests")
-    print(f"   File: {baseline_file}")
-
+    print(f"✅ Updated baseline with {len(passing_tests)} passing tests")
+    print(f"📁 Baseline saved to: {baseline_file}")
     return 0
 
 

@@ -231,6 +231,16 @@ def cleanup_resources() -> None:
             except (AttributeError, RuntimeError) as e:
                 logger.debug(f"Error closing HTTP session: {e}")
 
+        # Reset global instances for clean shutdown
+        try:
+            from blinkapp.services.blink_service import cleanup_blink_instances
+            from blinkapp.services.cache_service import cleanup_global_caches
+
+            cleanup_blink_instances()
+            cleanup_global_caches()
+        except Exception as e:
+            logger.debug(f"Error during global cleanup: {e}")
+
         logger.info("Resource cleanup completed")
     except (AttributeError, RuntimeError) as e:
         logger.warning(f"Error during resource cleanup: {e}")

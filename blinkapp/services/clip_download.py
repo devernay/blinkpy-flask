@@ -10,8 +10,6 @@ __all__ = [
     "download_cloud_clip",
     "download_local_clip",
     "download_clip_common",
-    "_get_blink_instance",
-    "_get_clips_cache_dir",
     "_download_cloud_clip_core",
     "_download_cloud_clip_core_sync",
 ]
@@ -34,19 +32,6 @@ from blinkapp.models.responses import create_api_response
 logger = logging.getLogger(__name__)
 
 
-def _get_blink_instance() -> Blink | None:
-    """Get Blink instance - extracted for testability."""
-
-    return blink
-
-
-def _get_clips_cache_dir() -> str:
-    """Get clips cache directory - extracted for testability."""
-    from blinkapp import CLIPS_CACHE_DIR
-
-    return CLIPS_CACHE_DIR
-
-
 def _download_cloud_clip_core_sync(
     clip_id: ClipId,
     blink_instance: Blink | None,
@@ -54,17 +39,13 @@ def _download_cloud_clip_core_sync(
 ) -> tuple[Path | None, str | None]:
     """Synchronous wrapper for _download_cloud_clip_core for testing."""
     if blink_instance is None:
-        try:
-            # Intentionally call method on None to trigger AttributeError for testing error handling
-            # This tests the error handling path when blink_instance is None
-            blink_instance.get_clip_url(clip_id)  # type: ignore[union-attr] # Intentional None access for testing
-        except AttributeError as e:
-            return None, f"Error downloading cloud clip {clip_id}: {e}"
+        return (
+            None,
+            f"Error downloading cloud clip {clip_id}: Blink instance not available",
+        )
 
     import asyncio
 
-    # At this point blink_instance is guaranteed to be non-None
-    assert blink_instance is not None
     return asyncio.run(
         _download_cloud_clip_core(clip_id, blink_instance, clips_cache_dir)
     )
@@ -118,7 +99,9 @@ async def _download_cloud_clip_core(
 def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
     """Download a cloud clip and return it as a file response."""
     try:
-        blink_instance = _get_blink_instance()
+        from blinkapp.services.blink_service import get_blink_instance
+
+        blink_instance = get_blink_instance()
         if not blink_instance or not blink_instance.available:
             return create_api_response(
                 success=False,
@@ -126,7 +109,9 @@ def download_cloud_clip(clip_id: ClipId) -> ResponseReturnValue:
                 status_code=503,
             )
 
-        clips_cache_dir = Path(_get_clips_cache_dir())
+        from blinkapp import CLIPS_CACHE_DIR
+
+        clips_cache_dir = Path(CLIPS_CACHE_DIR)
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if already cached
@@ -176,7 +161,9 @@ def download_local_clip(
 ) -> ResponseReturnValue:
     """Download a local clip using blinkpy LocalStorageMediaItem API."""
     try:
-        blink_instance = _get_blink_instance()
+        from blinkapp.services.blink_service import get_blink_instance
+
+        blink_instance = get_blink_instance()
         if not blink_instance or not blink_instance.available:
             return create_api_response(
                 success=False,
@@ -223,7 +210,9 @@ def download_local_clip(
             )
 
         # Check if clip is already cached
-        clips_cache_dir = Path(_get_clips_cache_dir())
+        from blinkapp import CLIPS_CACHE_DIR
+
+        clips_cache_dir = Path(CLIPS_CACHE_DIR)
         cache_filename = f"local_{sync_name}_{item_id_str}_{local_item.name}_{local_item.created_at.strftime('%Y%m%d_%H%M%S')}.mp4"
         cached_filepath = clips_cache_dir / cache_filename
 
@@ -239,7 +228,7 @@ def download_local_clip(
         # Download the clip using LocalStorageMediaItem API
         from blinkapp.services.blink_service import ensure_blink_connection_initialized
 
-        blink_connection = ensure_blink_connection_initialized()
+        ensure_blink_connection_initialized()
 
         async def download_local_clip_async() -> tuple[Path | None, str]:
             """Download local clip asynchronously."""

@@ -343,7 +343,6 @@ async def load_saved_blink() -> bool:
             assert CREDENTIALS_FILE is not None
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
-            # Type ignore for mypy issue with blinkpy's json_load function
             auth_data: JsonDict | None = await json_load(CREDENTIALS_FILE)
 
             # Create new HTTP session and attempt authentication with saved data

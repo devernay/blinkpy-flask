@@ -22,7 +22,7 @@ __all__ = [
     "clips_cache",
     "ensure_cache_directory",
     "validate_cache_directory",
-    "reset_global_caches",
+    "cleanup_global_caches",
 ]
 
 import logging
@@ -50,15 +50,15 @@ def initialize_caches(config: dict[str, object]) -> None:
     from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
     camera_thumbnail_cache = CameraThumbnailCache(
-        maxsize=int(config.get("camera_thumbnail_cache_size") or "100")
+        maxsize=int(str(config.get("camera_thumbnail_cache_size") or "100"))
     )
-    clips_cache = ClipsCache(maxsize=int(config.get("clips_cache_size") or "100"))
+    clips_cache = ClipsCache(maxsize=int(str(config.get("clips_cache_size") or "100")))
 
     logger.info("Cache instances initialized successfully")
 
 
-def reset_global_caches() -> None:
-    """Reset global cache instances to None for testing."""
+def cleanup_global_caches() -> None:
+    """Reset global cache instances to None for cleanup/testing."""
     global camera_thumbnail_cache, clips_cache
     camera_thumbnail_cache = None
     clips_cache = None

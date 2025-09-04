@@ -13,7 +13,7 @@ __all__ = [
     "initialize_blink_instance",
     "cleanup_blink_session",
     "get_blink_instance",
-    "reset_blink_instances",
+    "cleanup_blink_instances",
 ]
 
 import logging
@@ -47,8 +47,8 @@ def get_blink_instance() -> Blink | None:
     return _blink
 
 
-def reset_blink_instances() -> None:
-    """Reset blink instances to None for testing."""
+def cleanup_blink_instances() -> None:
+    """Reset blink instances to None for cleanup/testing."""
     global _blink, _blink_connection
     _blink = None
     _blink_connection = None

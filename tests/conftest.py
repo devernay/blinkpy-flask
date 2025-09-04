@@ -7,9 +7,9 @@ from tests.test_base import disable_strict_patching, enable_strict_patching
 
 
 def pytest_configure(config):
-    """Configure pytest with optional strict patching."""
-    # Enable strict patching if environment variable is set
-    if os.environ.get("STRICT_PATCHING", "").lower() in ("1", "true", "yes"):
+    """Configure pytest with strict patching enabled by default."""
+    # Enable strict patching by default, disable only if explicitly set to false
+    if os.environ.get("STRICT_PATCHING", "").lower() not in ("0", "false", "no"):
         enable_strict_patching()
         print("✅ Strict patching enabled - only __all__ exports can be patched")
 
