@@ -177,6 +177,19 @@ The development environment should include modern tooling for code quality:
 - Code formatting with ruff and type checking with pyright
 - Complete google-style docstrings in the app code
 
+The code must use type hints everywhere, and avoid usage of "Any", "object", "getattr", "hasattr", "cast", "# type: ignore" and other constructs that affect negatively strong typing.
+When checking and fixing code quality fix those issue in that order:
+1. fix "ruff check" errors and warnings in the main code and the test code
+2. fix "pyright" errors in the main code
+3. fix "pyright" warnings in the main code
+4. run pytest on the full test suite and fix errors
+5. fix "pyright" errors in the test code
+6. fix "pyright" warnings in the test code
+7. run pytest on the full test suite and fix errors and warnings
+Don't forget that the application API is described in api.json, and the Blink API is described in blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol.
+
+Verify again that blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol are consistent and describe the same API. blink-api.json should have as much detail as possible, including documentation. Since blinkpy does not implement everything in ../BlinkMonitorProtocol, you should consider ../BlinkMonitorProtocol as the source of truth for completing blink-api.json. Also add examples from BlinkMonitorProtocol to blink-api.json, and make sure that there are no changes to blink-api.json that are just reformating the JSON (e.g. single-line lists become multi-line). Be careful that there may be the same endpoints in blinkpy and BlinkMonitorProtocol with different parameter names (in which case you should keep the BlinkMonitorProtocol version). There may be some obsolete APIs in blinkpy that BlinkMonitorProtocol has marked as obsoleted or deprecated (like /api/v2/videos/count), but blinkpy still implements them for backward compatibility. Also add these to blink-api.json, but make sure that they use parameter names that look more like the BlinkMonitorProtocol parameters (i.e. camelCase, not snake_case), and clearly mark them as deprecated if BlinkMonitorProtocol says they are obsoleted or deprecated. The blinkpy source may have more information than BlinkMonitorProtocol on response content and status codes.
+
 ### Advanced Caching and Performance
 
 The application should implement intelligent caching strategies beyond basic thumbnail caching:
