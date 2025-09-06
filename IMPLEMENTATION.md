@@ -206,6 +206,8 @@ Look in the code where these calls happen, the function name is probably explici
 
 Do a final check of all paths in blink-api.json. Are there paths that look suspicious, and *maybe* shouldn't be there? Don't remove these paths. write a report on those suspicious paths and what action should be taken on each. those with query parameters in the URL may just have to be cleaned up.
 
+now investigate on the first unsolved case in "Incomplete Fragment Paths". don't remove obsolete endpoints if they have an implementation in blinkpy, but make sure they have correct parameter names and documentation, even if deprecated or obsolete according to BlinkMonitorProtocol
+
 ### Advanced Caching and Performance
 
 The application should implement intelligent caching strategies beyond basic thumbnail caching:
