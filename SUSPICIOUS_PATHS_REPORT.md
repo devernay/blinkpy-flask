@@ -86,11 +86,13 @@ Total paths analyzed: **40 paths**
 ## 📋 DEPRECATED/OBSOLETE ENDPOINTS
 
 ### 5. **Marked Deprecated**
-- **Path**: `/api/v2/videos`
-- **Status**: `"deprecated": true` in blink-api.json
-- **BlinkMonitorProtocol**: Marked obsolete
-- **Action**: Consider removal
-- **Priority**: 🟡 REVIEW
+- **Path**: `/api/v2/videos` ✅ ENHANCED
+- **Status**: `"deprecated": true` in blink-api.json - kept as deprecated
+- **Investigation**: Referenced in blinkpy helpers/util.py as video_url base
+- **BlinkMonitorProtocol**: Related v2/videos endpoints marked as obsolete
+- **blinkpy usage**: Used as base URL for video operations in util.py
+- **Action**: ✅ Enhanced documentation, kept deprecated (still referenced in blinkpy)
+- **Priority**: ✅ RESOLVED
 
 - **Path**: `/api/v2/videos/count`
 - **Status**: `"deprecated": true` in blink-api.json
@@ -277,6 +279,18 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
      - ✅ Added operationId: `getCameraUsage`
      - ✅ Added proper response schema and example
      - ✅ Tagged appropriately for organization
+
+11. **Investigated and enhanced `/api/v2/videos`**:
+   - **Analysis**: Deprecated endpoint still referenced in blinkpy helpers/util.py
+   - **BlinkMonitorProtocol**: Related v2/videos endpoints marked as obsolete
+   - **blinkpy usage**: Used as video_url base in helpers/util.py for video operations
+   - **Documentation**: Enhanced from generic 'videos' to comprehensive description
+   - **Enhancements**:
+     - ✅ Added descriptive summary: "Get Videos"
+     - ✅ Added comprehensive description noting obsolete status but blinkpy usage
+     - ✅ Added operationId: `getVideos`
+     - ✅ Added proper response schema with videos array structure
+     - ✅ Kept deprecated status per BlinkMonitorProtocol
 
 
 

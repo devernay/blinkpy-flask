@@ -210,6 +210,8 @@ Do a final check of all paths in blink-api.json. Are there paths that look suspi
 
 Now investigate on the first unsolved case in "Incomplete Fragment Paths". don't remove obsolete endpoints if they have an implementation in blinkpy, but make sure they have correct parameter names and documentation, even if deprecated or obsolete according to BlinkMonitorProtocol
 
+Now investigate on the first unsolved case in "Marked Deprecated". don't remove obsolete or deprecated endpoints if they have an implementation in blinkpy or described in BlinkMonitorProtocol, but make sure they have correct parameter names and documentation, even if deprecated or obsolete according to BlinkMonitorProtocol
+
 ### Advanced Caching and Performance
 
 The application should implement intelligent caching strategies beyond basic thumbnail caching:

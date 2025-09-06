@@ -2190,22 +2190,35 @@
     },
     "/api/v2/videos": {
       "get": {
-        "summary": "videos",
-        "description": "videos (deprecated)",
+        "summary": "Get Videos",
+        "description": "Retrieve video information. Note: BlinkMonitorProtocol marks related v2/videos endpoints as obsolete (replaced by Get Video Events) but still referenced in blinkpy implementation.",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Video information retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "videos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "Video information"
+                      }
+                    }
+                  }
                 }
               }
             }
           }
         },
-        "deprecated": true
+        "deprecated": true,
+        "operationId": "getVideos",
+        "tags": [
+          "Videos"
+        ]
       }
     },
     "/api/v1/accounts/{AccountID}/networks/{NetworkID}/owls/{CameraID}/config": {
