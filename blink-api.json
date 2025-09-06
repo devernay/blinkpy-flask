@@ -2136,35 +2136,6 @@
         "operationId": "accountOptions"
       }
     },
-    "/events/network/{network}": {
-      "get": {
-        "summary": "{network}",
-        "description": "{network}",
-        "parameters": [
-          {
-            "name": "network",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The network"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v2/videos/count": {
       "get": {
         "summary": "count",
@@ -2202,26 +2173,6 @@
             }
           }
         }
-      }
-    },
-    "/events/network": {
-      "get": {
-        "summary": "network",
-        "description": "network (deprecated)",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true
       }
     },
     "/network": {
@@ -2400,6 +2351,37 @@
             }
           }
         }
+      }
+    },
+    "/events/network/{NetworkID}": {
+      "get": {
+        "summary": "Get Network Events",
+        "description": "Request events from sync module. Note: Marked as obsolete in BlinkMonitorProtocol (replaced by Get Video Events) but still actively used by blinkpy implementation.",
+        "parameters": [
+          {
+            "name": "NetworkID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Sync module network ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getSyncEvents",
+        "deprecated": true
       }
     }
   },

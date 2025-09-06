@@ -58,10 +58,13 @@ Total paths analyzed: **40 paths**
 - **Action**: ✅ Removed (functionality handled by complete path)
 - **Priority**: ✅ RESOLVED
 
-- **Path**: `/events/network`
-- **Issue**: Incomplete path, missing network ID
-- **Action**: Verify against BlinkMonitorProtocol (marked obsolete)
-- **Priority**: 🟡 INVESTIGATE
+- **Path**: `/events/network` ✅ FIXED
+- **Issue**: Incomplete path fragment, missing network ID parameter
+- **Investigation**: Fragment removed, complete path `/events/network/{NetworkID}` enhanced
+- **BlinkMonitorProtocol**: Marked obsolete (replaced by Get Video Events)
+- **blinkpy implementation**: Actively used by `request_sync_events()` function
+- **Action**: ✅ Removed fragment, enhanced complete path with proper documentation
+- **Priority**: ✅ RESOLVED
 
 - **Path**: `/network`
 - **Issue**: Root path fragment
@@ -222,6 +225,18 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
    - **blinkpy usage**: Source code builds complete URLs with account_id, network_id, product_type, camera_id
    - **Conclusion**: Fragment is parsing artifact, complete path handles all functionality
    - **Action**: ✅ Removed fragment, kept functional complete path
+
+7. **Investigated and fixed `/events/network`**:
+   - **Fragment analysis**: `/events/network` was incomplete path fragment
+   - **Complete path**: `/events/network/{network}` → `/events/network/{NetworkID}`
+   - **BlinkMonitorProtocol**: Marked as obsolete, replaced by Get Video Events
+   - **blinkpy implementation**: Still actively used by `request_sync_events()` function
+   - **Resolution**:
+     - ✅ Removed incomplete fragment path
+     - ✅ Enhanced complete path with proper documentation
+     - ✅ Fixed parameter naming: `network` → `NetworkID`
+     - ✅ Added operationId: `getSyncEvents`
+     - ✅ Marked as deprecated per BlinkMonitorProtocol but kept functional
 
 
 
