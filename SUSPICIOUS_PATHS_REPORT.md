@@ -96,11 +96,13 @@ Total paths analyzed: **40 paths**
 - **Action**: ✅ Fixed API structure to match actual endpoints
 - **Priority**: ✅ RESOLVED
 
-- **Path**: `/api/v2/videos/count`
-- **Status**: `"deprecated": true` in blink-api.json
-- **BlinkMonitorProtocol**: Marked obsolete
-- **Action**: Consider removal
-- **Priority**: 🟡 REVIEW
+- **Path**: `/api/v2/videos/count` ✅ ENHANCED
+- **Status**: `"deprecated": true` in blink-api.json - kept as deprecated
+- **Investigation**: Already enhanced in previous v2/videos endpoints correction
+- **BlinkMonitorProtocol**: Marked as obsolete (replaced by Get Video Events)
+- **blinkpy implementation**: Actively used by `request_video_count()` function
+- **Action**: ✅ Enhanced documentation, proper operationId, response schema
+- **Priority**: ✅ RESOLVED
 
 ### 6. **Questionable Endpoints**
 - **Path**: `/api/v1/camera/usage` ✅ VERIFIED
