@@ -51,10 +51,12 @@ Total paths analyzed: **40 paths**
 - **Action**: ✅ Removed (was deprecated with no functionality)
 - **Priority**: ✅ RESOLVED
 
-- **Path**: `/api/v3/media/accounts/`
+- **Path**: `/api/v3/media/accounts/` ✅ REMOVED
 - **Issue**: Incomplete path fragment
-- **Action**: Investigate if represents actual endpoint or remove
-- **Priority**: 🟡 INVESTIGATE
+- **Investigation**: Deprecated artifact - complete path exists for thumbnail functionality
+- **Complete path**: `/api/v3/media/accounts/{AccountID}/networks/{NetworkID}/{ProductType}/{CameraID}/thumbnail/thumbnail.jpg`
+- **Action**: ✅ Removed (functionality handled by complete path)
+- **Priority**: ✅ RESOLVED
 
 - **Path**: `/events/network`
 - **Issue**: Incomplete path, missing network ID
@@ -212,6 +214,14 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
    - **Real endpoints**: All use `/api/v1/accounts/{AccountID}/...` pattern
    - **Conclusion**: Confirmed as parsing artifact with no functionality
    - **Action**: ✅ Removed from API specification
+
+6. **Investigated and removed `/api/v3/media/accounts/`**:
+   - **Analysis**: Incomplete path fragment for media/thumbnail functionality
+   - **Status**: GET method marked as deprecated with empty description
+   - **Complete path exists**: `/api/v3/media/accounts/{AccountID}/networks/{NetworkID}/{ProductType}/{CameraID}/thumbnail/thumbnail.jpg`
+   - **blinkpy usage**: Source code builds complete URLs with account_id, network_id, product_type, camera_id
+   - **Conclusion**: Fragment is parsing artifact, complete path handles all functionality
+   - **Action**: ✅ Removed fragment, kept functional complete path
 
 
 

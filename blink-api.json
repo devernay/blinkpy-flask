@@ -2204,26 +2204,6 @@
         }
       }
     },
-    "/api/v3/media/accounts/": {
-      "get": {
-        "summary": "",
-        "description": " (deprecated)",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true
-      }
-    },
     "/events/network": {
       "get": {
         "summary": "network",
