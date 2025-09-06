@@ -467,7 +467,7 @@
     "/networks": {
       "get": {
         "summary": "Get all networks information",
-        "description": "Retrieve information about all networks associated with the authenticated account. This endpoint is deprecated in favor of the homescreen endpoint.",
+        "description": "Retrieve information about all networks associated with the authenticated account. Note: BlinkMonitorProtocol marks this as obsolete (replaced by homescreen endpoint) but still actively used by blinkpy implementation.",
         "operationId": "getNetworks",
         "tags": [
           "Networks"

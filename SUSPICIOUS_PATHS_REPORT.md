@@ -249,6 +249,15 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
    - **Conclusion**: Fragment is parsing artifact with no implementation
    - **Action**: ✅ Removed artifact, preserved all functional network endpoints
 
+9. **Investigated and verified `/networks`**:
+   - **Analysis**: Root path that is actually a complete, functional endpoint
+   - **Status**: Already well-documented with proper summary, operationId, and schema
+   - **BlinkMonitorProtocol**: Marked as obsolete, replaced by homescreen endpoint
+   - **blinkpy implementation**: `request_networks()` function actively uses this endpoint
+   - **Documentation**: Already comprehensive with Network schema references and error handling
+   - **Conclusion**: Not a fragment - this is a complete, functional endpoint
+   - **Action**: ✅ Enhanced description to clarify obsolete status but active usage
+
 
 
 
