@@ -108,11 +108,14 @@ Total paths analyzed: **40 paths**
 - **Action**: ✅ Enhanced with proper documentation, operationId, and response schema
 - **Priority**: ✅ RESOLVED
 
-- **Path**: `/events/network/{network}`
-- **Issue**: Uses `{network}` instead of `{NetworkID}`
-- **BlinkMonitorProtocol**: Not documented
-- **Action**: Verify parameter naming consistency
-- **Priority**: 🟡 INVESTIGATE
+- **Path**: `/events/network/{network}` ✅ FIXED
+- **Issue**: Used `{network}` instead of `{NetworkID}` - parameter naming inconsistency
+- **Investigation**: Already resolved in previous incomplete fragment path investigation
+- **Resolution**: Path updated to `/events/network/{NetworkID}` with proper parameter naming
+- **BlinkMonitorProtocol**: Not documented (marked obsolete, replaced by Get Video Events)
+- **blinkpy implementation**: Still actively used by `request_sync_events()` function
+- **Action**: ✅ Fixed parameter naming, enhanced documentation, marked as deprecated
+- **Priority**: ✅ RESOLVED
 
 ---
 
