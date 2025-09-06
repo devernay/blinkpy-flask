@@ -127,15 +127,18 @@ Total paths analyzed: **40 paths**
 
 ## ❗ MISSING CRITICAL ENDPOINTS
 
-### 7. **Owl Camera Endpoints (MISSING)**
-Based on blinkpy source analysis, these endpoints are missing:
+### 7. **Owl Camera Endpoints** ✅ ALREADY EXIST
+Based on blinkpy source analysis, these endpoints were thought missing but already exist:
 
-- **Missing**: `/api/v1/accounts/{AccountID}/networks/{NetworkID}/owls/{CameraID}/config`
-- **Function**: `request_get_config()` and `request_update_config()`
-- **Purpose**: Get/Update configuration for Owl camera type
-- **Source**: `blinkpy-source/blinkpy/api.py` lines with `product_type == "owl"`
-- **Action**: ADD these endpoints
-- **Priority**: 🔴 MISSING
+- **Path**: `/api/v1/accounts/{AccountID}/networks/{NetworkID}/owls/{CameraID}/config` ✅ EXISTS
+- **Methods**: GET (request_get_config) and POST (request_update_config)
+- **Purpose**: Get/Update configuration for Owl camera type (product_type="owl")
+- **Documentation**: Comprehensive with proper parameters, examples, and schemas
+- **Product Types**: Both "owl" and "catalina" product types are covered:
+  - Owl: `/api/v1/accounts/{AccountID}/networks/{NetworkID}/owls/{CameraID}/config`
+  - Catalina: `/network/{NetworkID}/camera/{CameraID}/config`
+- **Action**: ✅ Already properly implemented and documented
+- **Priority**: ✅ RESOLVED
 
 ---
 
