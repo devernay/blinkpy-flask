@@ -983,12 +983,8 @@
     },
     "/api/v1/accounts/{AccountID}/media/changed": {
       "get": {
-        "summary": "Get videos/clips since timestamp",
-        "description": "Get Media (Generally video) events since the given timestamp in the query parameter.",
-        "operationId": "getVideoEvents",
-        "tags": [
-          "Videos"
-        ],
+        "summary": "Get Video Events",
+        "description": "Get Video Events",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountId"
@@ -996,43 +992,41 @@
           {
             "name": "since",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string",
-              "pattern": "^[0-9]+$"
+              "type": "string"
             },
-            "description": "Timestamp in epoch seconds (Unix timestamp)",
-            "example": "1640995200"
+            "description": "Timestamp to get media changes since"
           },
           {
             "name": "page",
             "in": "query",
+            "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0
+              "type": "integer"
             },
-            "description": "Page number for pagination (0-based)",
-            "example": 0
+            "description": "Page number for pagination"
           }
         ],
         "responses": {
           "200": {
-            "description": "Media events array with pagination information",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "media": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/VideoClip"
-                      }
-                    },
                     "limit": {
-                      "type": "integer",
-                      "description": "Maximum items per page"
+                      "type": "integer"
+                    },
+                    "purge_id": {
+                      "type": "integer"
+                    },
+                    "refresh_count": {
+                      "type": "integer"
+                    },
+                    "media": {
+                      "type": "array"
                     }
                   }
                 },
@@ -1050,7 +1044,7 @@
                       "device_id": 1234567,
                       "device_name": "The Device Name",
                       "network_id": 1234,
-                      "network_name": "The Network Name",
+                      "network_name": "The Netork Name",
                       "type": "video",
                       "source": "pir",
                       "watched": true,
@@ -1064,11 +1058,9 @@
                 }
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
           }
-        }
+        },
+        "operationId": "getVideoEvents"
       }
     },
     "/api/v2/accounts/{AccountID}/media/clip/{filename}": {
@@ -1621,33 +1613,43 @@
     },
     "/regions": {
       "get": {
-        "summary": "Get valid regions for locale",
-        "description": "Get valid region info for a locale. Authentication is not required. Specific use for results is unknown.",
-        "operationId": "regions",
-        "tags": [
-          "System"
-        ],
-        "security": [],
+        "summary": "Get Regions",
+        "description": "Get Regions",
         "parameters": [
+          {
+            "name": "Two Character Country Locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The Two Character Country Locale"
+          },
           {
             "name": "locale",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string",
-              "pattern": "^[A-Z]{2}$"
+              "type": "string"
             },
-            "description": "Two character country code",
-            "example": "US"
+            "description": "Two character country locale"
           }
         ],
         "responses": {
           "200": {
-            "description": "Region information with preferred region and available regions list",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RegionsResponse"
+                  "type": "object",
+                  "properties": {
+                    "preferred": {
+                      "type": "string"
+                    },
+                    "regions": {
+                      "type": "object"
+                    }
+                  }
                 },
                 "example": {
                   "preferred": "usu019",
@@ -1664,10 +1666,22 @@
                       "friendly_name": "United States - EAST",
                       "registration": true
                     },
+                    "usu015": {
+                      "display_order": 3,
+                      "dns": "u015",
+                      "friendly_name": "United States - WEST",
+                      "registration": true
+                    },
                     "e002": {
                       "display_order": 4,
                       "dns": "e002",
                       "friendly_name": "Europe",
+                      "registration": true
+                    },
+                    "sg": {
+                      "display_order": 5,
+                      "dns": "prsg",
+                      "friendly_name": "Southeast Asia",
                       "registration": true
                     }
                   }
@@ -1675,7 +1689,8 @@
               }
             }
           }
-        }
+        },
+        "operationId": "regions"
       }
     },
     "/network/{NetworkID}/camera/{CameraID}/config": {
@@ -2080,167 +2095,6 @@
           }
         },
         "operationId": "getThumbnail"
-      }
-    },
-    "/api/v1/accounts/{AccountID}/media/changed?since={timestamp}&page={PageNumber}": {
-      "get": {
-        "summary": "Get Video Events",
-        "description": "Get Video Events",
-        "parameters": [
-          {
-            "name": "AccountID",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The AccountID"
-          },
-          {
-            "name": "timestamp",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The timestamp"
-          },
-          {
-            "name": "PageNumber",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The PageNumber"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "limit": {
-                      "type": "integer"
-                    },
-                    "purge_id": {
-                      "type": "integer"
-                    },
-                    "refresh_count": {
-                      "type": "integer"
-                    },
-                    "media": {
-                      "type": "array"
-                    }
-                  }
-                },
-                "example": {
-                  "limit": 25,
-                  "purge_id": 1234567890,
-                  "refresh_count": 0,
-                  "media": [
-                    {
-                      "id": 1234567890,
-                      "created_at": "2020-08-06T01:30:59+00:00",
-                      "updated_at": "2020-08-06T01:37:12+00:00",
-                      "deleted": false,
-                      "device": "camera",
-                      "device_id": 1234567,
-                      "device_name": "The Device Name",
-                      "network_id": 1234,
-                      "network_name": "The Netork Name",
-                      "type": "video",
-                      "source": "pir",
-                      "watched": true,
-                      "partial": false,
-                      "thumbnail": "/api/v2/accounts/1234/media/thumb/mediathumbnailname",
-                      "media": "/api/v2/accounts/1234/media/clip/mediavideoname.mp4",
-                      "additional_devices": [],
-                      "time_zone": "America/Chicago"
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "operationId": "getVideoEvents"
-      }
-    },
-    "/regions?locale={Two Character Country Locale}": {
-      "get": {
-        "summary": "Get Regions",
-        "description": "Get Regions",
-        "parameters": [
-          {
-            "name": "Two Character Country Locale",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The Two Character Country Locale"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "preferred": {
-                      "type": "string"
-                    },
-                    "regions": {
-                      "type": "object"
-                    }
-                  }
-                },
-                "example": {
-                  "preferred": "usu019",
-                  "regions": {
-                    "usu019": {
-                      "display_order": 1,
-                      "dns": "u019",
-                      "friendly_name": "United States - CENTRAL",
-                      "registration": true
-                    },
-                    "usu023": {
-                      "display_order": 2,
-                      "dns": "u023",
-                      "friendly_name": "United States - EAST",
-                      "registration": true
-                    },
-                    "usu015": {
-                      "display_order": 3,
-                      "dns": "u015",
-                      "friendly_name": "United States - WEST",
-                      "registration": true
-                    },
-                    "e002": {
-                      "display_order": 4,
-                      "dns": "e002",
-                      "friendly_name": "Europe",
-                      "registration": true
-                    },
-                    "sg": {
-                      "display_order": 5,
-                      "dns": "prsg",
-                      "friendly_name": "Southeast Asia",
-                      "registration": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "operationId": "regions"
       }
     },
     "/api/v1/account/options": {

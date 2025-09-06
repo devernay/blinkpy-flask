@@ -30,18 +30,18 @@ Total paths analyzed: **40 paths**
 
 ## ⚠️ CLEANUP REQUIRED
 
-### 3. **Query Parameters in URL Path**
+### 3. **Query Parameters in URL Path** ✅ FIXED
 - **Path**: `/api/v1/accounts/{AccountID}/media/changed?since={timestamp}&page={PageNumber}`
 - **Issue**: Query parameters embedded in path instead of OpenAPI parameters
 - **Action**: Move `since` and `page` to OpenAPI parameters array
 - **BlinkMonitorProtocol**: `GET /api/v1/accounts/{AccountID}/media/changed?since={timestamp}&page={PageNumber}`
-- **Priority**: 🟡 CLEANUP
+- **Priority**: ✅ FIXED
 
 - **Path**: `/regions?locale={Two Character Country Locale}`
 - **Issue**: Query parameter embedded in path
 - **Action**: Move `locale` to OpenAPI parameters array
 - **BlinkMonitorProtocol**: `GET /regions?locale={Two Character Country Locale}`
-- **Priority**: 🟡 CLEANUP
+- **Priority**: ✅ FIXED
 
 ### 4. **Incomplete Fragment Paths**
 - **Path**: `/api/v1/accounts/`
@@ -141,7 +141,7 @@ Based on blinkpy source analysis, these endpoints are missing:
 | ✅ **FIXED** | Syntax Errors | 2 | ✅ Fixed |
 | ✅ **FIXED** | Parameter Inconsistency | 1 | ✅ Fixed |
 | 🔴 **MISSING** | Owl Camera Endpoints | 2+ | Add missing endpoints |
-| 🟡 **CLEANUP** | Query Parameters | 2 | Move to OpenAPI parameters |
+| ✅ **FIXED** | Query Parameters | 2 | ✅ Fixed |
 | 🟡 **INVESTIGATE** | Fragment Paths | 5 | Verify/remove |
 | 🟡 **REVIEW** | Deprecated | 4 | Consider removal |
 | ✅ **VALID** | Legitimate Endpoints | 30+ | Enhance documentation |
@@ -194,5 +194,14 @@ Based on blinkpy source analysis, these endpoints are missing:
 3. **Fixed parameter inconsistency**: `/api/v1/accounts/{AccountId}/networks/{NetworkId}/sync_modules/{SyncId}` → `/api/v1/accounts/{AccountID}/networks/{NetworkID}/sync_modules/{SyncID}`
 
 All critical syntax errors have been resolved. The API specification now has consistent parameter naming and valid OpenAPI 3.1.1 syntax.
+
+### ✅ **Query Parameter Issues Resolved**
+4. **Fixed embedded query parameters**:
+   - `/api/v1/accounts/{AccountID}/media/changed?since={timestamp}&page={PageNumber}` → `/api/v1/accounts/{AccountID}/media/changed` (with proper OpenAPI query parameters)
+   - `/regions?locale={Two Character Country Locale}` → `/regions` (with proper OpenAPI query parameter)
+
+All query parameters are now properly defined in OpenAPI parameters arrays instead of being embedded in URL paths.
+
+
 
 *End of Report*
