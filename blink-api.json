@@ -2154,6 +2154,9 @@
                       "description": "Total number of videos"
                     }
                   }
+                },
+                "example": {
+                  "count": 42
                 }
               }
             }
@@ -2357,7 +2360,44 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "camera_id": {
+                            "type": "integer"
+                          },
+                          "camera_name": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "events": [
+                    {
+                      "id": 123456,
+                      "created_at": "2025-01-27T10:30:00Z",
+                      "camera_id": 5678,
+                      "camera_name": "Front Door",
+                      "type": "motion"
+                    }
+                  ]
                 }
               }
             }
