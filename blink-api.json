@@ -2138,22 +2138,32 @@
     },
     "/api/v2/videos/count": {
       "get": {
-        "summary": "count",
-        "description": "count (deprecated)",
+        "summary": "Get Video Count",
+        "description": "Request total video count. Note: BlinkMonitorProtocol marks this as obsolete (replaced by Get Video Events) but still actively used by blinkpy request_video_count() function.",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Video count retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "description": "Total number of videos"
+                    }
+                  }
                 }
               }
             }
           }
         },
-        "deprecated": true
+        "deprecated": true,
+        "operationId": "getVideoCount",
+        "tags": [
+          "Videos"
+        ]
       }
     },
     "/api/v1/camera/usage": {
@@ -2185,39 +2195,6 @@
         "operationId": "getCameraUsage",
         "tags": [
           "Cameras"
-        ]
-      }
-    },
-    "/api/v2/videos": {
-      "get": {
-        "summary": "Get Videos",
-        "description": "Retrieve video information. Note: BlinkMonitorProtocol marks related v2/videos endpoints as obsolete (replaced by Get Video Events) but still referenced in blinkpy implementation.",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Video information retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "videos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "description": "Video information"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true,
-        "operationId": "getVideos",
-        "tags": [
-          "Videos"
         ]
       }
     },
@@ -2388,6 +2365,81 @@
         },
         "operationId": "getSyncEvents",
         "deprecated": true
+      }
+    },
+    "/api/v2/videos/page/{PageNumber}": {
+      "get": {
+        "summary": "Get Video Info by Page",
+        "description": "Get video information by page number. Note: BlinkMonitorProtocol marks this as obsolete (replaced by Get Video Events) but documented in blinkpy API.md.",
+        "operationId": "getVideosByPage",
+        "tags": [
+          "Videos"
+        ],
+        "deprecated": true,
+        "parameters": [
+          {
+            "name": "PageNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number to retrieve videos from"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video page information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "videos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Array of video objects for the page"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/videos/unwatched": {
+      "get": {
+        "summary": "Get Unwatched Videos",
+        "description": "Get unwatched video information. Note: BlinkMonitorProtocol marks this as obsolete (replaced by Get Video Events) but documented in blinkpy API.md.",
+        "operationId": "getUnwatchedVideos",
+        "tags": [
+          "Videos"
+        ],
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "Unwatched videos retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "videos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      },
+                      "description": "Array of unwatched video objects"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },

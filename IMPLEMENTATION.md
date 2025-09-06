@@ -212,6 +212,12 @@ Now investigate on the first unsolved case in "Incomplete Fragment Paths". don't
 
 Now investigate on the first unsolved case in "Marked Deprecated". don't remove obsolete or deprecated endpoints if they have an implementation in blinkpy or described in BlinkMonitorProtocol, but make sure they have correct parameter names and documentation, even if deprecated or obsolete according to BlinkMonitorProtocol
 
+The BlinkMonitorProtocal described:
+../BlinkMonitorProtocol/README.md:* ~~Get Video Count (obsolete) - `GET /api/v2/videos/count`~~
+../BlinkMonitorProtocol/README.md:* ~~Get Video Info by Page (obsolete) - `GET /api/v2/videos/page/{PageNumber}`~~
+../BlinkMonitorProtocol/README.md:* ~~Get Unwatched Videos (obsolete) - `GET /api/v2/videos/unwatched`~~
+Thus it seems like /api/v2/videos is just a prefix, and there are actually 3 endpoints with complete paths. analyze the blinkpy source to find out more, investigate, and update the endpoints with their description in blink-api.json
+
 ### Advanced Caching and Performance
 
 The application should implement intelligent caching strategies beyond basic thumbnail caching:
