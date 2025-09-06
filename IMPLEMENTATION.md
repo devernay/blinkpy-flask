@@ -190,6 +190,22 @@ Don't forget that the application API is described in api.json, and the Blink AP
 
 Verify again that blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol are consistent and describe the same API. blink-api.json should have as much detail as possible, including documentation. Since blinkpy does not implement everything in ../BlinkMonitorProtocol, you should consider ../BlinkMonitorProtocol as the source of truth for completing blink-api.json. Also add examples from BlinkMonitorProtocol to blink-api.json, and make sure that there are no changes to blink-api.json that are just reformating the JSON (e.g. single-line lists become multi-line). Be careful that there may be the same endpoints in blinkpy and BlinkMonitorProtocol with different parameter names (in which case you should keep the BlinkMonitorProtocol version). There may be some obsolete APIs in blinkpy that BlinkMonitorProtocol has marked as obsoleted or deprecated (like /api/v2/videos/count), but blinkpy still implements them for backward compatibility. Also add these to blink-api.json, but make sure that they use parameter names that look more like the BlinkMonitorProtocol parameters (i.e. camelCase, not snake_case), and clearly mark them as deprecated if BlinkMonitorProtocol says they are obsoleted or deprecated. The blinkpy source may have more information than BlinkMonitorProtocol on response content and status codes.
 
+../BlinkMonitorProtocol had better documentation and specification, for example `POST /network/{NetworkID}/camera/{CameraID}/clip` specified the response as "A command object.  See example.  This call is asynchronous and is monitored by the [Command Status](../network/command.md) API call using the returned Command Id." and gave a complete example. fetch documentation and examples from ../BlinkMonitorProtocol and put them in blink-api.json. Do it for all endpoints, fetching the proper examples from blinkpy-source and ../BlinkMonitorProtocol. Also set operationId to the basename of the file describing the entry point, for example recordClip for the entry point described in recordClip.md.
+
+Check again that you extracted all information. Proceed endpoint by endpoint and verify BlinkMonitorProtocal and blink-api.json. Don't do a script to batch process the endpoints, analyze and fix each endpoint one-by-one from the files in blinkpy-source and ../BlinkMonitorProtocol. There may be duplicate routes in the blink-api.json, with different parameter names. Compare the route names without the parameter names to find these. After each modification of blink-api.json, check that the JSON is syntactically correct and follows the OpenAPI 3.1.1 schema.
+
+Several routes are missing parameters, which are replaced by fixed series of digits, as in "/api/v1/accounts/10111213/networks/1234/sync_modules/1234/local_storage/". Can you identify these in blink-api.json? Where do they come from?
+
+There are several routes that contain a "{blink.account_id}" parameter, and they don't have any documentation. Can you tell me where they come from and are these actual routes? I can see that they are actual entry pouints, look more closely at the blinkpy source code. for example, the following code is building the PATH "/api/v1/accounts/{blink.account_id}/networks/{network}/owls/{camera_id}/config", which is an entry point for owl cameras:
+    if product_type == "owl":
+        url = (
+            f"{blink.urls.base_url}/api/v1/accounts/{blink.account_id}"
+            f"/networks/{network}/owls/{camera_id}/config"
+        )
+Look in the code where these calls happen, the function name is probably explicit and will tell you what it's doing.  There is also documentation in blinkpy source.
+
+Do a final check of all paths in blink-api.json. Are there paths that look suspicious, and *maybe* shouldn't be there? Don't remove these paths. write a report on those suspicious paths and what action should be taken on each. those with query parameters in the URL may just have to be cleaned up.
+
 ### Advanced Caching and Performance
 
 The application should implement intelligent caching strategies beyond basic thumbnail caching:
