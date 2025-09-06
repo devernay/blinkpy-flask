@@ -984,7 +984,7 @@
     "/api/v1/accounts/{AccountID}/media/changed": {
       "get": {
         "summary": "Get Video Events",
-        "description": "Get Video Events",
+        "description": "Get Media (Generally video) events since the given timestamp in the query parameter.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountId"
@@ -994,23 +994,27 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "date-time"
             },
-            "description": "Timestamp to get media changes since"
+            "description": "A timestamp to return events since. e.g. 2020-08-03T16:50:24+0000. The official mobile client seems to use the epoch to return all available events - i.e. 1970-01-01T00:00:00+0000",
+            "example": "2020-07-31T09:58:14+0000"
           },
           {
             "name": "page",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "minimum": 1
             },
-            "description": "Page number for pagination"
+            "description": "Page number for multiple pages of results",
+            "example": 1
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Media events array with pagination info",
             "content": {
               "application/json": {
                 "schema": {
@@ -1044,7 +1048,7 @@
                       "device_id": 1234567,
                       "device_name": "The Device Name",
                       "network_id": 1234,
-                      "network_name": "The Netork Name",
+                      "network_name": "The Network Name",
                       "type": "video",
                       "source": "pir",
                       "watched": true,
@@ -1614,7 +1618,7 @@
     "/regions": {
       "get": {
         "summary": "Get Regions",
-        "description": "Get Regions",
+        "description": "Get valid region info for a locale. Authentication is not required. Specific use for results is unknown.",
         "parameters": [
           {
             "name": "Two Character Country Locale",
@@ -1630,14 +1634,16 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
             },
-            "description": "Two character country locale"
+            "description": "A Two Character country code e.g. US",
+            "example": "US"
           }
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Region information with preferred region and available regions",
             "content": {
               "application/json": {
                 "schema": {
@@ -1690,7 +1696,8 @@
             }
           }
         },
-        "operationId": "regions"
+        "operationId": "regions",
+        "security": []
       }
     },
     "/network/{NetworkID}/camera/{CameraID}/config": {
