@@ -98,9 +98,7 @@
                 "type": "object",
                 "required": [
                   "email",
-                  "password",
-                  "unique_id",
-                  "device_identifier"
+                  "password"
                 ],
                 "properties": {
                   "email": {
@@ -117,23 +115,18 @@
                   },
                   "unique_id": {
                     "type": "string",
-                    "description": "Unique device identifier (UUID format recommended)",
+                    "description": "UUID generated and identifying the client. Pass a consistent value here to avoid repeated client verification PIN requests. Format: NAME_00000000-0000-0000-0000-000000000000",
                     "example": "12345678-1234-1234-1234-123456789012"
-                  },
-                  "device_identifier": {
-                    "type": "string",
-                    "description": "Device identifier string",
-                    "example": "iPhone 15.0 | 3.0 | 300"
                   },
                   "client_name": {
                     "type": "string",
                     "default": "Computer",
-                    "description": "Human-readable client name"
+                    "description": "Display name in the blink app of the client"
                   },
                   "reauth": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Whether this is a re-authentication request"
+                    "description": "Should be set to true if the client is already verified. Otherwise blink keeps sending verification PINs."
                   }
                 }
               }
@@ -337,7 +330,7 @@
     "/api/v3/accounts/{AccountID}/homescreen": {
       "get": {
         "summary": "HomeScreen",
-        "description": "Retrieve Client 'home screen' data. Returns detailed information about the Account including Network, Synch Module, and Camera Info.",
+        "description": "Retrieve Client \"home screen\" data. Returns detailed information about the Account including Network, Synch Module, and Camera Info.",
         "parameters": [
           {
             "name": "AccountID",
@@ -413,6 +406,28 @@
                         "temp": 68,
                         "battery": 3
                       }
+                    },
+                    {
+                      "id": 123456,
+                      "created_at": "2017-04-30T16:31:24+00:00",
+                      "updated_at": "2020-07-31T11:32:14+00:00",
+                      "name": "Camera Name",
+                      "serial": "123456789",
+                      "fw_version": "2.151",
+                      "type": "xt",
+                      "enabled": true,
+                      "thumbnail": "/media/production/account/1234/network/5678/camera/123456/clip_name",
+                      "status": "offline",
+                      "battery": "low",
+                      "usage_rate": false,
+                      "network_id": 5678,
+                      "issues": [],
+                      "signals": {
+                        "lfr": 5,
+                        "wifi": 1,
+                        "temp": 75,
+                        "battery": 3
+                      }
                     }
                   ],
                   "sirens": [],
@@ -436,6 +451,10 @@
                     "owl": 10,
                     "siren": 5,
                     "total_devices": 20
+                  },
+                  "whats_new": {
+                    "updated_at": 20200622,
+                    "url": "https://blinkforhome.com/blogs/updates"
                   }
                 }
               }
@@ -482,7 +501,7 @@
     "/api/v1/accounts/{AccountID}/networks/{NetworkID}/state/arm": {
       "post": {
         "summary": "Arm System",
-        "description": "Arm the given network - that is, start recording/reporting motion events for enabled cameras. When this call returns, it does not mean the arm request is complete, the client must gather the command ID from the response and poll for the status of the command.",
+        "description": "Arm system to detect motion on cameras. This call is asynchronous and is monitored by the Command Status API call using the returned Command Id.",
         "parameters": [
           {
             "name": "AccountID",
@@ -512,24 +531,18 @@
                   "type": "object"
                 },
                 "example": {
-                  "id": 123456789,
-                  "network_id": 1234,
+                  "id": 1234567890,
+                  "created_at": "2020-08-22T12:50:31+00:00",
+                  "updated_at": "2020-08-22T12:50:31+00:00",
+                  "execute_time": "2020-08-22T12:50:31+00:00",
                   "command": "arm",
-                  "state": "new",
-                  "commands": [
-                    {
-                      "id": 123456780,
-                      "network_id": 1234,
-                      "command": "config_lfr",
-                      "state": "running"
-                    },
-                    {
-                      "id": 123456781,
-                      "network_id": 1234,
-                      "command": "config_lfr",
-                      "state": "running"
-                    }
-                  ]
+                  "state_stage": "rest",
+                  "state_condition": "new",
+                  "target": "sync_module",
+                  "target_id": 123456,
+                  "network_id": 1234,
+                  "account_id": 1234,
+                  "sync_module_id": 123456
                 }
               }
             }
@@ -541,8 +554,8 @@
     "/api/v1/accounts/{AccountID}/networks/{NetworkID}/state/disarm": {
       "post": {
         "summary": "Disarm the security system",
-        "description": "Disarm the given network - that is, stop recording/reporting motion events for enabled cameras. When this call returns, it does not mean the disarm request is complete, the client must gather the command ID from the response and poll for the status of the command.",
-        "operationId": "disarmSystem",
+        "description": "Disarm system to stop motion detection. This call is asynchronous and is monitored by the Command Status API call using the returned Command Id.",
+        "operationId": "disarm",
         "tags": [
           "Networks"
         ],
@@ -563,18 +576,18 @@
                   "$ref": "#/components/schemas/CommandResponse"
                 },
                 "example": {
-                  "id": 123456789,
-                  "network_id": 1234,
+                  "id": 1234567890,
+                  "created_at": "2020-08-22T12:50:31+00:00",
+                  "updated_at": "2020-08-22T12:50:31+00:00",
+                  "execute_time": "2020-08-22T12:50:31+00:00",
                   "command": "disarm",
-                  "state": "new",
-                  "commands": [
-                    {
-                      "id": 123456780,
-                      "network_id": 1234,
-                      "command": "config_lfr",
-                      "state": "running"
-                    }
-                  ]
+                  "state_stage": "rest",
+                  "state_condition": "new",
+                  "target": "sync_module",
+                  "target_id": 123456,
+                  "network_id": 1234,
+                  "account_id": 1234,
+                  "sync_module_id": 123456
                 }
               }
             }
@@ -598,7 +611,7 @@
     "/network/{NetworkID}/command/{CommandID}": {
       "get": {
         "summary": "Command Status",
-        "description": "Return the status of the given command. Most Camera and System/Module APIs make a call from the Blink Server to your local Synch Module. These calls are asynchronous and return a command object. Use the returned command id in these calls to poll for completion of the command using this API until the complete flag is true in the response.",
+        "description": "Get status of command. Commands are used to check the status of requests like arm, disarm, thumbnail creation, and video recording.",
         "parameters": [
           {
             "name": "NetworkID",
@@ -628,14 +641,27 @@
                   "type": "object"
                 },
                 "example": {
-                  "complete": true,
-                  "status": 0,
-                  "status_msg": "Command succeeded",
-                  "status_code": 908,
-                  "commands": [
-                    "<<the original command object>>"
-                  ],
-                  "media_id": null
+                  "id": 1234567890,
+                  "created_at": "2020-08-22T12:50:31+00:00",
+                  "updated_at": "2020-08-22T12:50:31+00:00",
+                  "execute_time": "2020-08-22T12:50:31+00:00",
+                  "command": "arm",
+                  "state_stage": "vs",
+                  "stage_rest": "2020-08-22T12:50:31+00:00",
+                  "stage_cs_db": "2020-08-22T12:50:32+00:00",
+                  "stage_cs_sent": "2020-08-22T12:50:32+00:00",
+                  "stage_sm": "2020-08-22T12:50:33+00:00",
+                  "stage_dev": "2020-08-22T12:50:34+00:00",
+                  "stage_is": "2020-08-22T12:50:35+00:00",
+                  "stage_lv": "2020-08-22T12:50:36+00:00",
+                  "stage_vs": "2020-08-22T12:50:37+00:00",
+                  "state_condition": "done",
+                  "sm_ack": "2020-08-22T12:50:33+00:00",
+                  "target": "sync_module",
+                  "target_id": 123456,
+                  "network_id": 1234,
+                  "account_id": 1234,
+                  "sync_module_id": 123456
                 }
               }
             }
@@ -647,7 +673,7 @@
     "/network/{NetworkID}/camera/{CameraID}/enable": {
       "post": {
         "summary": "Enable Motion Detection",
-        "description": "Enable motion detection for the given Camera. Note: No motion detection or video recording will take place unless the system is armed.",
+        "description": "Enable motion detection for camera. Note that this does not arm the system.",
         "parameters": [
           {
             "name": "NetworkID",
@@ -677,16 +703,16 @@
                   "type": "object"
                 },
                 "example": {
-                  "id": 123456789,
-                  "created_at": "2020-08-09T22:20:16+00:00",
-                  "updated_at": "2020-08-09T22:20:16+00:00",
-                  "execute_time": "2020-08-09T22:20:16+00:00",
-                  "command": "config_lfr",
+                  "id": 1234567890,
+                  "created_at": "2020-08-22T12:50:31+00:00",
+                  "updated_at": "2020-08-22T12:50:31+00:00",
+                  "execute_time": "2020-08-22T12:50:31+00:00",
+                  "command": "enable",
                   "state_stage": "rest",
                   "state_condition": "new",
                   "target": "camera",
-                  "target_id": 5678,
-                  "camera_id": 5678,
+                  "target_id": 123456,
+                  "camera_id": 123456,
                   "network_id": 1234,
                   "account_id": 1234,
                   "sync_module_id": 123456
@@ -701,7 +727,7 @@
     "/network/{NetworkID}/camera/{CameraID}/disable": {
       "post": {
         "summary": "Disable Motion Detection",
-        "description": "Disable motion detection for the given Camera.",
+        "description": "Disable motion detection for camera",
         "parameters": [
           {
             "name": "NetworkID",
@@ -731,14 +757,19 @@
                   "type": "object"
                 },
                 "example": {
-                  "id": 123456789,
-                  "created_at": "2020-08-09T22:20:16+00:00",
-                  "command": "config_lfr",
+                  "id": 1234567890,
+                  "created_at": "2020-08-22T12:50:31+00:00",
+                  "updated_at": "2020-08-22T12:50:31+00:00",
+                  "execute_time": "2020-08-22T12:50:31+00:00",
+                  "command": "disable",
+                  "state_stage": "rest",
                   "state_condition": "new",
                   "target": "camera",
-                  "camera_id": 5678,
+                  "target_id": 123456,
+                  "camera_id": 123456,
                   "network_id": 1234,
-                  "account_id": 1234
+                  "account_id": 1234,
+                  "sync_module_id": 123456
                 }
               }
             }
@@ -750,7 +781,7 @@
     "/network/{NetworkID}/camera/{CameraID}/thumbnail": {
       "post": {
         "summary": "Create New Thumbnail",
-        "description": "Set the thumbnail by taking a snapshot of the current view of the camera.",
+        "description": "Set the thumbnail by taking a snapshot of the current view of the camera. This call is asynchronous and is monitored by the Command Status API call using the returned Command Id.",
         "parameters": [
           {
             "name": "NetworkID",
@@ -804,7 +835,7 @@
     "/network/{NetworkID}/camera/{CameraID}/clip": {
       "post": {
         "summary": "Record Video Clip from Camera",
-        "description": "Record Video Clip from Camera",
+        "description": "Record a video clip from the camera. This call is asynchronous and is monitored by the Command Status API call using the returned Command Id.",
         "parameters": [
           {
             "name": "NetworkID",
@@ -882,7 +913,10 @@
                   "execute_time": "2020-08-23T11:29:35+00:00",
                   "command": "clip",
                   "state_stage": "rest",
+                  "stage_rest": "2020-08-23T11:29:35+00:00",
                   "state_condition": "new",
+                  "target": "camera",
+                  "target_id": 123456,
                   "camera_id": 123456,
                   "network_id": 1234,
                   "account_id": 1234,
@@ -898,7 +932,7 @@
     "/api/v5/accounts/{AccountID}/networks/{NetworkID}/cameras/{CameraID}/liveview": {
       "post": {
         "summary": "Liveview",
-        "description": "Ask for a live video stream of the given camera",
+        "description": "Ask for live video stream from camera. Returns RTSP URL for streaming.",
         "parameters": [
           {
             "name": "AccountID",
@@ -937,17 +971,21 @@
                   "type": "object"
                 },
                 "example": {
-                  "command_id": 1234567890,
-                  "join_available": true,
-                  "join_state": "available",
-                  "server": "rtsps://<URL>",
-                  "duration": 300,
-                  "continue_interval": 30,
-                  "continue_warning": 10,
-                  "submit_logs": true,
-                  "new_command": true,
-                  "media_id": null,
-                  "options": {}
+                  "id": 1234567890,
+                  "created_at": "2020-08-22T13:09:00+00:00",
+                  "updated_at": "2020-08-22T13:09:00+00:00",
+                  "execute_time": "2020-08-22T13:09:00+00:00",
+                  "command": "lv_relay",
+                  "state_stage": "rest",
+                  "state_condition": "new",
+                  "target": "camera",
+                  "target_id": 123456,
+                  "camera_id": 123456,
+                  "network_id": 1234,
+                  "account_id": 1234,
+                  "sync_module_id": 123456,
+                  "server": "rtsps://liveview.immedia-semi.com/liveview/12345678901234567890123456789012?x-amz-algorithm=...",
+                  "duration": 30
                 }
               }
             }
@@ -960,7 +998,7 @@
       "get": {
         "summary": "Get videos/clips since timestamp",
         "description": "Get Media (Generally video) events since the given timestamp in the query parameter.",
-        "operationId": "getVideos",
+        "operationId": "getVideoEvents",
         "tags": [
           "Videos"
         ],
@@ -1431,9 +1469,7 @@
                     "temperature": true,
                     "doorbell": true,
                     "wifi": true,
-                    "lfr": true,
-                    "bandwidth": true,
-                    "battery_dead": true
+                    "lfr": true
                   }
                 }
               }
@@ -1444,7 +1480,7 @@
       },
       "post": {
         "summary": "Set Notification Flags",
-        "description": "Set Account Notification Flags",
+        "description": "Flag status for various notifications",
         "parameters": [
           {
             "name": "AccountID",
@@ -1470,13 +1506,24 @@
                   }
                 },
                 "example": {
-                  "message": "Client Notification Configure Update Successful"
+                  "notifications": {
+                    "low_battery": true,
+                    "camera_offline": true,
+                    "camera_usage": true,
+                    "scheduling": true,
+                    "motion": true,
+                    "sync_module_offline": true,
+                    "temperature": true,
+                    "doorbell": true,
+                    "wifi": true,
+                    "lfr": true
+                  }
                 }
               }
             }
           }
         },
-        "operationId": "setNotifications"
+        "operationId": "getNotifications"
       }
     },
     "/api/v1/accounts/{AccountID}/networks/{NetworkID}/cameras/{CameraID}/snooze": {
@@ -1519,6 +1566,9 @@
               "application/json": {
                 "schema": {
                   "type": "object"
+                },
+                "example": {
+                  "message": "Camera snoozed successfully"
                 }
               }
             }
@@ -1586,7 +1636,7 @@
       "get": {
         "summary": "Get valid regions for locale",
         "description": "Get valid region info for a locale. Authentication is not required. Specific use for results is unknown.",
-        "operationId": "getRegions",
+        "operationId": "regions",
         "tags": [
           "System"
         ],
@@ -1829,10 +1879,10 @@
                   "type": "object",
                   "properties": {
                     "valid": {
-                      "type": "integer"
+                      "type": "boolean"
                     },
                     "require_new_pin": {
-                      "type": "integer"
+                      "type": "boolean"
                     },
                     "message": {
                       "type": "string"
@@ -1852,13 +1902,33 @@
             }
           }
         },
-        "operationId": "verifyPin"
+        "operationId": "verifyPin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pin"
+                ],
+                "properties": {
+                  "pin": {
+                    "type": "string",
+                    "description": "PIN provided in email",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/accounts/{AccountID}/clients/{ClientID}/options": {
       "get": {
         "summary": "Get Client Options",
-        "description": "Get client specific options. Details unknown.",
+        "description": "Get client specific options",
         "parameters": [
           {
             "name": "AccountID",
@@ -1893,13 +1963,18 @@
                   }
                 },
                 "example": {
-                  "options": "A_LONG_ALPHANUMERIC_STRING"
+                  "client": {
+                    "id": 1234567,
+                    "name": "",
+                    "client_type": "ios",
+                    "client_specifier": " |  | 6.0.13 (8528) #df463ac0"
+                  }
                 }
               }
             }
           }
         },
-        "operationId": "options"
+        "operationId": "getClientOptions"
       }
     },
     "/client/{ClientID}/update": {
@@ -2258,7 +2333,7 @@
     "/api/v1/account/options": {
       "get": {
         "summary": "Account Options",
-        "description": "Account Options",
+        "description": "Some misc account specific flags",
         "parameters": [],
         "responses": {
           "200": {
@@ -2490,6 +2565,95 @@
           }
         },
         "deprecated": true
+      }
+    },
+    "/api/v1/accounts/{AccountID}/networks/{NetworkID}/owls/{CameraID}/config": {
+      "get": {
+        "summary": "Get Owl Camera Configuration",
+        "description": "Get camera configuration for Owl camera type (product_type=\"owl\")",
+        "operationId": "getOwlCameraConfig",
+        "tags": [
+          "Cameras"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owl camera configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "camera": {
+                    "id": 123456,
+                    "name": "Owl Camera",
+                    "network_id": 1234,
+                    "enabled": true,
+                    "battery": "ok",
+                    "signals": {
+                      "lfr": 5,
+                      "wifi": 4,
+                      "temp": 72,
+                      "battery": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update Owl Camera Configuration",
+        "description": "Update camera configuration for Owl camera type (product_type=\"owl\")",
+        "operationId": "updateOwlCameraConfig",
+        "tags": [
+          "Cameras"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/NetworkId"
+          },
+          {
+            "$ref": "#/components/parameters/CameraId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration update result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },

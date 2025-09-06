@@ -96,6 +96,7 @@ def handle_dump_system(
     from blinkapp import CREDENTIALS_FILE, Config, initialize_cache_paths, logger
     from blinkapp.services.auth_service import load_saved_blink
     from blinkapp.services.blink_connection import blink_connection
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
     from blinkapp.services.lifecycle_service import cleanup_blink_session
 
     initialize_cache_paths()
@@ -115,7 +116,8 @@ def handle_dump_system(
     assert blink_connection is not None
     blink_connection.start()
     try:
-        success = ensure_blink_connection_initialized().execute(load_saved_blink())
+        blink = load_saved_blink()
+        success = ensure_blink_connection_initialized().execute(blink)
         if success:
             assert blink is not None
             for _, sync in blink.sync.items():
