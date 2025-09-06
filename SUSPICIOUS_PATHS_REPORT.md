@@ -66,10 +66,12 @@ Total paths analyzed: **40 paths**
 - **Action**: ✅ Removed fragment, enhanced complete path with proper documentation
 - **Priority**: ✅ RESOLVED
 
-- **Path**: `/network`
-- **Issue**: Root path fragment
-- **Action**: Verify if represents actual endpoint
-- **Priority**: 🟡 INVESTIGATE
+- **Path**: `/network` ✅ REMOVED
+- **Issue**: Root path fragment with no functionality
+- **Investigation**: Deprecated artifact - no implementation in blinkpy or BlinkMonitorProtocol
+- **Complete paths**: 8 functional endpoints with `/network/{NetworkID}/...` pattern remain
+- **Action**: ✅ Removed artifact (no functionality, all real endpoints use NetworkID parameter)
+- **Priority**: ✅ RESOLVED
 
 - **Path**: `/networks`
 - **Issue**: Root path fragment
@@ -237,6 +239,15 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
      - ✅ Fixed parameter naming: `network` → `NetworkID`
      - ✅ Added operationId: `getSyncEvents`
      - ✅ Marked as deprecated per BlinkMonitorProtocol but kept functional
+
+8. **Investigated and removed `/network`**:
+   - **Analysis**: Root path fragment with no specific functionality
+   - **Status**: GET method marked as deprecated with generic description
+   - **BlinkMonitorProtocol**: No bare `/network` endpoint documented
+   - **blinkpy implementation**: All references use complete paths like `/network/{network}/...`
+   - **Complete paths**: 8 functional endpoints remain (command, camera operations, etc.)
+   - **Conclusion**: Fragment is parsing artifact with no implementation
+   - **Action**: ✅ Removed artifact, preserved all functional network endpoints
 
 
 

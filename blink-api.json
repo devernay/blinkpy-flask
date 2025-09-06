@@ -2175,26 +2175,6 @@
         }
       }
     },
-    "/network": {
-      "get": {
-        "summary": "network",
-        "description": "network (deprecated)",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true
-      }
-    },
     "/api/v2/videos": {
       "get": {
         "summary": "videos",
