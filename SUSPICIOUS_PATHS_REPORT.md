@@ -86,12 +86,14 @@ Total paths analyzed: **40 paths**
 ## 📋 DEPRECATED/OBSOLETE ENDPOINTS
 
 ### 5. **Marked Deprecated**
-- **Path**: `/api/v2/videos` ✅ ENHANCED
-- **Status**: `"deprecated": true` in blink-api.json - kept as deprecated
-- **Investigation**: Referenced in blinkpy helpers/util.py as video_url base
-- **BlinkMonitorProtocol**: Related v2/videos endpoints marked as obsolete
-- **blinkpy usage**: Used as base URL for video operations in util.py
-- **Action**: ✅ Enhanced documentation, kept deprecated (still referenced in blinkpy)
+- **Path**: `/api/v2/videos` ✅ CORRECTED
+- **Status**: Was generic prefix endpoint - corrected based on BlinkMonitorProtocol analysis
+- **Investigation**: BlinkMonitorProtocol documents 3 specific obsolete endpoints, not generic prefix
+- **Correction**: Removed prefix, added proper endpoints:
+  - ✅ Enhanced `/api/v2/videos/count` (blinkpy request_video_count())
+  - ✅ Added `/api/v2/videos/page/{PageNumber}` (documented in API.md)
+  - ✅ Added `/api/v2/videos/unwatched` (documented in API.md)
+- **Action**: ✅ Fixed API structure to match actual endpoints
 - **Priority**: ✅ RESOLVED
 
 - **Path**: `/api/v2/videos/count`
@@ -280,17 +282,15 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
      - ✅ Added proper response schema and example
      - ✅ Tagged appropriately for organization
 
-11. **Investigated and enhanced `/api/v2/videos`**:
-   - **Analysis**: Deprecated endpoint still referenced in blinkpy helpers/util.py
-   - **BlinkMonitorProtocol**: Related v2/videos endpoints marked as obsolete
-   - **blinkpy usage**: Used as video_url base in helpers/util.py for video operations
-   - **Documentation**: Enhanced from generic 'videos' to comprehensive description
-   - **Enhancements**:
-     - ✅ Added descriptive summary: "Get Videos"
-     - ✅ Added comprehensive description noting obsolete status but blinkpy usage
-     - ✅ Added operationId: `getVideos`
-     - ✅ Added proper response schema with videos array structure
-     - ✅ Kept deprecated status per BlinkMonitorProtocol
+11. **Corrected `/api/v2/videos` endpoints based on BlinkMonitorProtocol**:
+   - **Analysis**: `/api/v2/videos` was just a prefix, not a complete endpoint
+   - **BlinkMonitorProtocol**: Documents 3 specific obsolete endpoints
+   - **Correction**: Removed generic prefix, added proper endpoints:
+     - ✅ Enhanced `/api/v2/videos/count` (blinkpy request_video_count())
+     - ✅ Added `/api/v2/videos/page/{PageNumber}` with proper parameter
+     - ✅ Added `/api/v2/videos/unwatched` endpoint
+   - **Documentation**: All endpoints marked deprecated with proper schemas
+   - **Result**: API now accurately represents actual v2/videos structure
 
 
 
