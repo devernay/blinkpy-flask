@@ -2158,21 +2158,34 @@
     },
     "/api/v1/camera/usage": {
       "get": {
-        "summary": "usage",
-        "description": "usage",
+        "summary": "Get Camera Usage",
+        "description": "Request camera status and usage information for all cameras in the account. This is a blinkpy-specific endpoint not documented in BlinkMonitorProtocol.",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Camera usage information retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "cameras": {
+                      "type": "string",
+                      "description": "Camera usage information"
+                    }
+                  }
+                },
+                "example": {
+                  "cameras": "1111"
                 }
               }
             }
           }
-        }
+        },
+        "operationId": "getCameraUsage",
+        "tags": [
+          "Cameras"
+        ]
       }
     },
     "/api/v2/videos": {

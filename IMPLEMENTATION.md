@@ -188,6 +188,8 @@ When checking and fixing code quality fix those issue in that order:
 7. run pytest on the full test suite and fix errors and warnings
 Don't forget that the application API is described in api.json, and the Blink API is described in blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol.
 
+### blink-api.json consolidation
+
 Verify again that blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol are consistent and describe the same API. blink-api.json should have as much detail as possible, including documentation. Since blinkpy does not implement everything in ../BlinkMonitorProtocol, you should consider ../BlinkMonitorProtocol as the source of truth for completing blink-api.json. Also add examples from BlinkMonitorProtocol to blink-api.json, and make sure that there are no changes to blink-api.json that are just reformating the JSON (e.g. single-line lists become multi-line). Be careful that there may be the same endpoints in blinkpy and BlinkMonitorProtocol with different parameter names (in which case you should keep the BlinkMonitorProtocol version). There may be some obsolete APIs in blinkpy that BlinkMonitorProtocol has marked as obsoleted or deprecated (like /api/v2/videos/count), but blinkpy still implements them for backward compatibility. Also add these to blink-api.json, but make sure that they use parameter names that look more like the BlinkMonitorProtocol parameters (i.e. camelCase, not snake_case), and clearly mark them as deprecated if BlinkMonitorProtocol says they are obsoleted or deprecated. The blinkpy source may have more information than BlinkMonitorProtocol on response content and status codes.
 
 ../BlinkMonitorProtocol had better documentation and specification, for example `POST /network/{NetworkID}/camera/{CameraID}/clip` specified the response as "A command object.  See example.  This call is asynchronous and is monitored by the [Command Status](../network/command.md) API call using the returned Command Id." and gave a complete example. fetch documentation and examples from ../BlinkMonitorProtocol and put them in blink-api.json. Do it for all endpoints, fetching the proper examples from blinkpy-source and ../BlinkMonitorProtocol. Also set operationId to the basename of the file describing the entry point, for example recordClip for the entry point described in recordClip.md.
@@ -206,7 +208,7 @@ Look in the code where these calls happen, the function name is probably explici
 
 Do a final check of all paths in blink-api.json. Are there paths that look suspicious, and *maybe* shouldn't be there? Don't remove these paths. write a report on those suspicious paths and what action should be taken on each. those with query parameters in the URL may just have to be cleaned up.
 
-now investigate on the first unsolved case in "Incomplete Fragment Paths". don't remove obsolete endpoints if they have an implementation in blinkpy, but make sure they have correct parameter names and documentation, even if deprecated or obsolete according to BlinkMonitorProtocol
+Now investigate on the first unsolved case in "Incomplete Fragment Paths". don't remove obsolete endpoints if they have an implementation in blinkpy, but make sure they have correct parameter names and documentation, even if deprecated or obsolete according to BlinkMonitorProtocol
 
 ### Advanced Caching and Performance
 

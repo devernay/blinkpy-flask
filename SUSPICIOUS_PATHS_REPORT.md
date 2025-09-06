@@ -99,11 +99,14 @@ Total paths analyzed: **40 paths**
 - **Priority**: 🟡 REVIEW
 
 ### 6. **Questionable Endpoints**
-- **Path**: `/api/v1/camera/usage`
-- **Issue**: Generic camera usage without context (no network/camera ID)
-- **Source**: Unknown, not in BlinkMonitorProtocol
-- **Action**: Verify if legitimate blinkpy endpoint
-- **Priority**: 🟡 INVESTIGATE
+- **Path**: `/api/v1/camera/usage` ✅ VERIFIED
+- **Issue**: Generic camera usage without context - investigated and confirmed as legitimate
+- **Investigation**: Active blinkpy endpoint for getting camera status/usage information
+- **blinkpy implementation**: `request_camera_usage()` function actively uses this endpoint
+- **Purpose**: Gets camera status for all cameras in account (no specific camera ID needed)
+- **Source**: blinkpy-specific endpoint, not documented in BlinkMonitorProtocol
+- **Action**: ✅ Enhanced with proper documentation, operationId, and response schema
+- **Priority**: ✅ RESOLVED
 
 - **Path**: `/events/network/{network}`
 - **Issue**: Uses `{network}` instead of `{NetworkID}`
@@ -259,6 +262,18 @@ All query parameters are now properly defined in OpenAPI parameters arrays inste
    - **Documentation**: Already comprehensive with Network schema references and error handling
    - **Conclusion**: Not a fragment - this is a complete, functional endpoint
    - **Action**: ✅ Enhanced description to clarify obsolete status but active usage
+
+10. **Investigated and enhanced `/api/v1/camera/usage`**:
+   - **Analysis**: Legitimate blinkpy endpoint for camera status/usage information
+   - **blinkpy implementation**: `request_camera_usage()` function actively uses this endpoint
+   - **Purpose**: Gets camera status for all cameras in account (account-level endpoint)
+   - **Documentation**: Enhanced from generic 'usage' to proper description
+   - **Enhancements**:
+     - ✅ Added descriptive summary: "Get Camera Usage"
+     - ✅ Added comprehensive description noting blinkpy-specific nature
+     - ✅ Added operationId: `getCameraUsage`
+     - ✅ Added proper response schema and example
+     - ✅ Tagged appropriately for organization
 
 
 
