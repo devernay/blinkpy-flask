@@ -11,6 +11,7 @@ from ..models.ids import CameraId
 from ..models.types import JsonDict
 from ..utils.decorators import ensure_blink_available
 from ..utils.route_decorators import api_route_with_validation
+from ..utils.validation_helpers import validate_camera_id
 
 if TYPE_CHECKING:
     from flask import Flask
@@ -45,7 +46,7 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id>/thumbnail")
     @ensure_blink_available
     @api_route_with_validation(
-        "get camera thumbnail", validate_params={"camera_id": CameraId}
+        "get camera thumbnail", validate_params={"camera_id": validate_camera_id}
     )
     def get_camera_thumbnail_route(
         camera_id: CameraId,
@@ -59,7 +60,7 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id>/thumbnail", methods=["DELETE"])
     @ensure_blink_available
     @api_route_with_validation(
-        "refresh camera thumbnail", validate_params={"camera_id": CameraId}
+        "refresh camera thumbnail", validate_params={"camera_id": validate_camera_id}
     )
     def refresh_camera_thumbnail_route(
         camera_id: CameraId,

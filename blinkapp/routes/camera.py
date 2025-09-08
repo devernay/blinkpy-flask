@@ -8,6 +8,7 @@ from blinkapp.models.ids import CameraId
 from blinkapp.models.types import JsonDict
 from blinkapp.utils.decorators import ensure_blink_available
 from blinkapp.utils.route_decorators import api_route_with_validation
+from blinkapp.utils.validation_helpers import validate_camera_id
 
 if TYPE_CHECKING:
     from flask import Flask
@@ -28,7 +29,7 @@ def setup_camera_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id_str>")
     @ensure_blink_available
     @api_route_with_validation(
-        "get camera details", validate_params={"camera_id_str": CameraId}
+        "get camera details", validate_params={"camera_id_str": validate_camera_id}
     )
     def get_camera_details_route(
         camera_id: CameraId,
@@ -41,7 +42,7 @@ def setup_camera_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])
     @ensure_blink_available
     @api_route_with_validation(
-        "start camera recording", validate_params={"camera_id_str": CameraId}
+        "start camera recording", validate_params={"camera_id_str": validate_camera_id}
     )
     def start_camera_recording_route(
         camera_id: CameraId,

@@ -6,6 +6,7 @@ from blinkapp.models.ids import ClipId
 from blinkapp.models.types import ClipsResponse, JsonDict
 from blinkapp.utils.decorators import ensure_blink_available
 from blinkapp.utils.route_decorators import api_route, api_route_with_validation
+from blinkapp.utils.validation_helpers import validate_clip_id
 
 
 def setup_clips_routes(app: Flask) -> None:
@@ -23,7 +24,7 @@ def setup_clips_routes(app: Flask) -> None:
 
     @app.route("/api/clips/<clip_id_str>", methods=["DELETE"])
     @ensure_blink_available
-    @api_route_with_validation("delete clip", validate_params={"clip_id_str": ClipId})
+    @api_route_with_validation("delete clip", validate_params={"clip_id_str": validate_clip_id})
     def delete_clip_route(clip_id: ClipId) -> JsonDict | tuple[JsonDict, int]:
         """Delete clip route - thin wrapper around connexion handler."""
         from ..connexion_handlers.clips import delete_clip
@@ -32,7 +33,7 @@ def setup_clips_routes(app: Flask) -> None:
 
     @app.route("/api/clips/<clip_id_str>/download")
     @ensure_blink_available
-    @api_route_with_validation("download clip", validate_params={"clip_id_str": ClipId})
+    @api_route_with_validation("download clip", validate_params={"clip_id_str": validate_clip_id})
     def download_clip_route(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
         """Download clip route - thin wrapper around connexion handler."""
         from ..connexion_handlers.clips import download_clip
@@ -42,7 +43,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips/<clip_id_str>/thumbnail")
     @ensure_blink_available
     @api_route_with_validation(
-        "get clip thumbnail", validate_params={"clip_id_str": ClipId}
+        "get clip thumbnail", validate_params={"clip_id_str": validate_clip_id}
     )
     def get_clip_thumbnail_route(
         clip_id: ClipId,
@@ -56,7 +57,7 @@ def setup_clips_routes(app: Flask) -> None:
     @app.route("/api/clips/<clip_id_str>/thumbnail", methods=["POST"])
     @ensure_blink_available
     @api_route_with_validation(
-        "generate clip thumbnail", validate_params={"clip_id_str": ClipId}
+        "generate clip thumbnail", validate_params={"clip_id_str": validate_clip_id}
     )
     def generate_clip_thumbnail_route(
         clip_id: ClipId,

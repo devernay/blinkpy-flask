@@ -11,6 +11,7 @@ from ..models.ids import CameraId
 from ..models.types import JsonDict
 from ..utils.decorators import ensure_blink_available
 from ..utils.route_decorators import api_route_with_validation
+from ..utils.validation_helpers import validate_camera_id
 
 if TYPE_CHECKING:
     from flask import Flask

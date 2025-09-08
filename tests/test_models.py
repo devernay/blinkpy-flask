@@ -428,7 +428,7 @@ class TestClipId(BaseTestCase):
 
     def test_cloud_clip_creation(self) -> None:
         """Test cloud clip ID creation."""
-        clip_id = ClipId.from_cloud(456)
+        clip_id = ClipId("456")  # Direct construction instead of from_cloud
         self.assertEqual(str(clip_id), "456")
         self.assertFalse(clip_id.is_local())
 

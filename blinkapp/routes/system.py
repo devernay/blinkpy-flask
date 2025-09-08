@@ -10,6 +10,7 @@ from blinkapp.utils.route_decorators import (
     api_route_with_validation,
     simple_success_response,
 )
+from blinkapp.utils.validation_helpers import validate_network_id
 
 
 def setup_system_routes(app: Flask) -> None:
@@ -31,7 +32,7 @@ def setup_system_routes(app: Flask) -> None:
     @app.route("/api/systems/<network_id>")
     @ensure_blink_available
     @api_route_with_validation(
-        "get system details", validate_params={"network_id": NetworkId}
+        "get system details", validate_params={"network_id": validate_network_id}
     )
     def get_system_details_route(
         network_id: NetworkId,
@@ -44,7 +45,7 @@ def setup_system_routes(app: Flask) -> None:
     @app.route("/api/systems/<network_id>", methods=["PUT"])
     @ensure_blink_available
     @api_route_with_validation(
-        "update system", validate_params={"network_id": NetworkId}
+        "update system", validate_params={"network_id": validate_network_id}
     )
     def update_system_settings_route(
         network_id: NetworkId,
@@ -58,7 +59,7 @@ def setup_system_routes(app: Flask) -> None:
     @app.route("/api/systems/<network_id>/devices")
     @ensure_blink_available
     @api_route_with_validation(
-        "get system devices", validate_params={"network_id": NetworkId}
+        "get system devices", validate_params={"network_id": validate_network_id}
     )
     def get_system_devices_route(
         network_id: NetworkId,

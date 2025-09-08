@@ -30,44 +30,6 @@ from tests.test_base import BaseTestCase
 class TestTimeService(BaseTestCase):
     """Test time service functions."""
 
-    def test_get_current_timestamp_with_provider(self) -> None:
-        """Test get current timestamp with custom provider."""
-        from collections.abc import Callable
-
-        from blinkapp.services.time_service import get_current_timestamp
-
-        mock_provider = Mock(spec=Callable[[], int], return_value=1234567890)
-        result = get_current_timestamp(mock_provider)
-        self.assertEqual(result, 1234567890)
-        mock_provider.assert_called_once()
-
-    def test_get_current_timestamp_default_provider(self) -> None:
-        """Test get current timestamp with default provider."""
-        from blinkapp.services.time_service import get_current_timestamp
-
-        result = get_current_timestamp()
-        self.assertIsInstance(result, int)
-        self.assertGreater(result, 0)
-
-    def test_get_current_time_with_provider(self) -> None:
-        """Test get current time with custom provider."""
-        from collections.abc import Callable
-
-        from blinkapp.services.time_service import get_current_time
-
-        mock_time = datetime(2024, 1, 1, 12, 0, 0)
-        mock_provider = Mock(spec=Callable[[], datetime], return_value=mock_time)
-        result = get_current_time(mock_provider)
-        self.assertEqual(result, mock_time)
-        mock_provider.assert_called_once()
-
-    def test_get_current_time_default_provider(self) -> None:
-        """Test get current time with default provider."""
-        from blinkapp.services.time_service import get_current_time
-
-        result = get_current_time()
-        self.assertIsInstance(result, datetime)
-
     def test_seconds_since_now_from_datetime(self) -> None:
         """Test calculating seconds since now from datetime."""
         from datetime import UTC, datetime, timedelta

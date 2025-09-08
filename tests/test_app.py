@@ -1838,9 +1838,6 @@ class TestDataTypes(BaseTestCase):
         from blinkapp.models.ids import ClipId
 
         # Test ClipId creation methods
-        cloud_id = ClipId.from_cloud(12345)
-        self.assertIsInstance(cloud_id, ClipId)
-
         local_id = ClipId.from_local("sync1", 123)
         self.assertIsInstance(local_id, ClipId)
 
@@ -5467,10 +5464,6 @@ class TestCriticalPathCoverage(BaseTestCase):
     def test_clip_id_basic_functionality(self) -> None:
         """Test ClipId basic functionality."""
         from blinkapp.models.ids import ClipId
-
-        # Test cloud clip ID creation
-        cloud_id = ClipId.from_cloud(123456)
-        self.assertIsInstance(cloud_id, ClipId)
 
         # Test local clip ID creation
         local_id = ClipId.from_local("sync1", 123)
