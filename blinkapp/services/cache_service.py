@@ -305,7 +305,7 @@ def initialize_cache_paths() -> None:
     Path(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
 
-def clear_all_caches() -> dict[str, object]:
+def clear_all_caches() -> dict[str, str]:
     """Clear all caches except credentials."""
     import os
     import shutil

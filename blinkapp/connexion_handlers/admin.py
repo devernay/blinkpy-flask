@@ -12,9 +12,8 @@ def clear_all_caches() -> JsonDict:
     from ..services.cache_service import clear_all_caches
 
     result = clear_all_caches()
-    # Extract the message as string to ensure JsonDict compatibility
-    message = str(result.get("message", "All caches cleared"))
-    return {"success": True, "message": message}
+    # Service returns {"status": "success", "message": "All caches cleared successfully"}
+    return {"success": True, "message": result["message"]}
 
 
 def clear_thumbnail_cache() -> JsonDict:
