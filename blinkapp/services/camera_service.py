@@ -9,6 +9,7 @@ from __future__ import annotations
 __all__ = [
     "find_camera_by_id",
     "require_camera",
+    "get_camera_details",
 ]
 
 import logging
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
 
     from blinkapp.models.ids import CameraId
+    from blinkapp.models.types import JsonDict
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +64,39 @@ def find_camera_by_id(
     return None
 
 
+def get_camera_details(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
+    """Get detailed information about a specific camera.
+
+    Args:
+        camera_id: Validated camera ID to get details for
+
+    Returns:
+        Camera details dictionary or error response tuple
+    """
+    from blinkapp.models.responses import create_api_response
+
+    camera, error = require_camera(camera_id)
+    if error:
+        return error
+
+    # Camera is guaranteed to be non-None here due to require_camera logic
+    assert camera is not None
+
+    return create_api_response(
+        success=True,
+        data={
+            "id": str(camera.camera_id),
+            "name": camera.name,
+            "battery": camera.battery,
+            "temperature": camera.temperature,
+            "wifi_strength": camera.wifi_strength,
+        },
+    )
+
+
 def require_camera(
     camera_id: CameraId,
-) -> tuple[BlinkCamera, None] | tuple[None, tuple[dict[str, object], int]]:
+) -> tuple[BlinkCamera, None] | tuple[None, tuple[JsonDict, int]]:
     """Find camera by ID, return error response if not found.
 
     This is a convenience function for API endpoints that need to find

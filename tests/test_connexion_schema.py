@@ -82,13 +82,17 @@ class TestConnexionSchemaValidation(unittest.TestCase):
         from blinkapp.connexion_handlers.camera import list_cameras
 
         with (
+            patch("blinkapp.services.blink_service.ensure_blink_initialized"),
             patch(
-                "blinkapp.services.blink_service.ensure_blink_initialized"
-            ) as mock_blink,
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ) as mock_connection,
             patch("blinkapp.services.device_service.create_device_data") as mock_device,
         ):
-            mock_blink.return_value = Mock()
-            mock_blink.return_value.cameras = {}
+            # Mock blink connection
+            mock_blink_obj = Mock()
+            mock_blink_obj.cameras = {}
+            mock_connection.return_value = Mock()
+            mock_connection.return_value.blink = mock_blink_obj
             mock_device.return_value = {"id": "cam1", "name": "Camera 1"}
 
             # Get expected schema
@@ -187,7 +191,13 @@ class TestConnexionSchemaValidation(unittest.TestCase):
         """Test clips endpoints return responses matching OpenAPI schema."""
         from blinkapp.connexion_handlers.clips import get_clips
 
-        with patch("blinkapp.services.clip_service.process_local_clips") as mock_clips:
+        with (
+            patch("blinkapp.services.clip_service.process_local_clips") as mock_clips,
+            patch("blinkapp.services.blink_service.ensure_blink_initialized"),
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ),
+        ):
             mock_clips.return_value = []
 
             # Get expected schema
