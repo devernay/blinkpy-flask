@@ -22,9 +22,13 @@ def setup_streaming_routes(app: Flask) -> None:
     """Register streaming routes with the Flask app."""
 
     @app.route("/api/cameras/<camera_id_str>/streams", methods=["POST"])
+    def validate_camera_id_param(value: str) -> CameraId:
+        """Validate camera ID parameter."""
+        return CameraId(value)
+
     @ensure_blink_available
     @api_route_with_validation(
-        "start live stream", validate_params={"camera_id_str": CameraId}
+        "start live stream", validate_params={"camera_id_str": validate_camera_id_param}
     )
     def start_live_stream_route(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
         """Start stream route - thin wrapper around connexion handler."""
@@ -35,7 +39,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id_str>/streams", methods=["DELETE"])
     @ensure_blink_available
     @api_route_with_validation(
-        "stop live stream", validate_params={"camera_id_str": CameraId}
+        "stop live stream", validate_params={"camera_id_str": validate_camera_id_param}
     )
     def stop_live_stream_route(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
         """Stop stream route - thin wrapper around connexion handler."""
@@ -46,7 +50,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id_str>/streams/<path:filename>")
     @ensure_blink_available
     @api_route_with_validation(
-        "get HLS segments", validate_params={"camera_id_str": CameraId}
+        "get HLS segments", validate_params={"camera_id_str": validate_camera_id_param}
     )
     def get_hls_stream_segments_route(
         camera_id: CameraId, filename: str

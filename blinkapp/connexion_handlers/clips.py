@@ -156,12 +156,23 @@ def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Success response or error tuple.
     """
-    from ..services.clip_processing import process_local_clip_background
+    from ..services.clip_processing import process_cloud_clip_thumbnail_only, process_local_clip_background
 
     try:
         clip_id_obj = ClipId(clip_id)
-        # Launch background thumbnail generation for the clip
-        process_local_clip_background(clip_id_obj)
+        
+        if clip_id_obj.is_local():
+            # It's a local clip - get sync_name and filename
+            sync_name, item_id = clip_id_obj.get_local_parts()
+            # For local clips, we need the filename - use item_id as filename for now
+            filename = str(item_id)
+            process_local_clip_background(clip_id_obj, sync_name, filename)
+        else:
+            # It's a cloud clip
+            process_cloud_clip_thumbnail_only(clip_id_obj)
+            
         return {"success": True, "message": f"Thumbnail generation started for clip {clip_id}"}, 200
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
+    except Exception as e:
+        return {"success": False, "error": f"Failed to generate thumbnail: {str(e)}"}, 500
