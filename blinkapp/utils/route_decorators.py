@@ -158,7 +158,7 @@ def _validate_parameters(
     ValidationFunctions are used to convert string URL parameters into validated
     objects. They take a string input and return a validated object (e.g., CameraId).
     If validation fails, they should raise ValueError or TypeError.
-    
+
     The validation process:
     1. Takes string parameter from URL (e.g., "camera_id_str": "12345")
     2. Calls validation function: validator("12345") -> CameraId("12345")
@@ -175,7 +175,7 @@ def _validate_parameters(
 
     Side Effects:
         Modifies kwargs in place, replacing validated parameters
-        
+
     Example:
         Input kwargs: {"camera_id_str": "12345"}
         Validation: {"camera_id_str": CameraId}

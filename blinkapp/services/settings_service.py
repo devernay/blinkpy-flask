@@ -66,13 +66,14 @@ def update_settings(settings_data: JsonDict) -> JsonDict | tuple[JsonDict, int]:
         # Load existing settings or use defaults
         current_settings = get_user_settings()
 
-        # Update with new settings
-        current_settings.update(settings_data)
+        # Update with new settings - convert to dict first
+        settings_dict = dict(current_settings)
+        settings_dict.update(settings_data)
 
         # Save to file
         settings_path.parent.mkdir(parents=True, exist_ok=True)
         with open(settings_path, "w") as f:
-            json.dump(current_settings, f, indent=2)
+            json.dump(settings_dict, f, indent=2)
 
         return {"success": True, "data": current_settings}
 

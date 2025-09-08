@@ -65,7 +65,9 @@ def download_clip(clip_id: ClipId) -> ResponseReturnValue:
     clips_cache = ensure_clips_cache_initialized()
     if clip_id in clips_cache:
         clip_entry = clips_cache[clip_id]
-        return download_clip_common(clip_entry.filepath, clip_id)
+        if "filepath" not in clip_entry:
+            return {"success": False, "error": "Clip file not cached"}, 404
+        return download_clip_common(clip_entry["filepath"], clip_id)
     else:
         # Return 404 for missing clips
         return {"success": False, "error": "Clip not found"}, 404
@@ -344,10 +346,9 @@ async def delete_clip(clip_id: ClipId) -> tuple[JsonDict, int]:
 
         # Remove from local cache regardless of Blink deletion result
         clips_cache = ensure_clips_cache_initialized()
-        clip_id_obj = ClipId(clip_id)
 
-        if clip_id_obj in clips_cache:
-            del clips_cache[clip_id_obj]
+        if clip_id in clips_cache:
+            del clips_cache[clip_id]
             logger.info(f"Removed clip {clip_id} from local cache")
 
         # Prepare response based on results
