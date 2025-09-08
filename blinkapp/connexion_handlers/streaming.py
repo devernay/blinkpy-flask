@@ -53,7 +53,8 @@ def stop_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return stop_camera_stream(camera_id_obj)
+        success = stop_camera_stream(camera_id_obj)
+        return {"success": success, "message": f"Stream {'stopped' if success else 'stop failed'} for camera {camera_id}"}
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
 
