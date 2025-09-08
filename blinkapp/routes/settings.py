@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import flask
+from flask import request
 
 from ..models.types import JsonDict
 from ..utils.decorators import ensure_blink_available
@@ -43,5 +43,5 @@ def setup_settings_routes(app: Flask) -> None:
         from ..connexion_handlers.settings import update_user_settings
 
         # Flask 3.x get_json() - use getattr to bypass pyright LocalProxy limitation
-        body = getattr(flask.request, 'get_json')() or {}
+        body = getattr(request, 'get_json')() or {}
         return update_user_settings(body)
