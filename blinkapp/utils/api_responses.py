@@ -29,28 +29,3 @@ def create_api_response(
         response["error"] = error
 
     return response
-
-
-def create_success_response(data: JsonValue = None) -> JsonDict:
-    """Create a successful API response.
-
-    Args:
-        data: Response data
-
-    Returns:
-        Successful API response with timestamp
-    """
-    return create_api_response(success=True, data=data)
-
-
-def create_error_response(error: str, status_code: int = 400) -> tuple[JsonDict, int]:
-    """Create an error API response.
-
-    Args:
-        error: Error message
-        status_code: HTTP status code
-
-    Returns:
-        Tuple of (error response dict, status code)
-    """
-    return create_api_response(success=False, error=error), status_code
