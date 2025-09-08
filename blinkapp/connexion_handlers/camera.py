@@ -55,9 +55,10 @@ def start_camera_recording(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
         Recording start result
     """
     from ..services.camera_service import record_camera
+    import asyncio
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return record_camera(camera_id_obj)
+        return asyncio.run(record_camera(camera_id_obj))
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400

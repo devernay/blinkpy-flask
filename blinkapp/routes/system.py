@@ -1,6 +1,12 @@
 """System management routes for the Blink Flask application."""
 
-from flask import Flask, request
+from typing import TYPE_CHECKING
+
+from flask import Flask
+import flask
+
+if TYPE_CHECKING:
+    pass
 
 from blinkapp.models.ids import NetworkId
 from blinkapp.models.types import JsonDict
@@ -53,7 +59,7 @@ def setup_system_routes(app: Flask) -> None:
         """Update system route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import update_system_settings
 
-        body = request.get_json() or {}
+        body = flask.request.get_json() or {}
         return update_system_settings(str(network_id), body)
 
     @app.route("/api/systems/<network_id>/devices")

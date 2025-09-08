@@ -290,7 +290,7 @@ def process_local_clips(
     return format_clips_by_day(clips_list)
 
 
-async def delete_clip(clip_id: "ClipId") -> tuple[dict[str, str], int]:
+async def delete_clip(clip_id: "ClipId") -> tuple[JsonDict, int]:
     """Delete a clip from both Blink system and local storage.
     
     Args:
@@ -306,7 +306,6 @@ async def delete_clip(clip_id: "ClipId") -> tuple[dict[str, str], int]:
     try:
         # Use shared BlinkConnection to access Blink system
         blink_conn = ensure_blink_connection_initialized()
-        blink = await blink_conn.get_blink()
         
         # Find the video object by iterating through videos metadata
         videos_found = False
@@ -314,8 +313,9 @@ async def delete_clip(clip_id: "ClipId") -> tuple[dict[str, str], int]:
         
         async def find_and_delete_video():
             nonlocal videos_found, video_deleted
+            blink = blink_conn.blink
             # Get videos metadata to find the clip
-            videos_metadata = await blink.get_videos_metadata()
+            videos_metadata = blink.get_videos_metadata()
             
             for video_data in videos_metadata:
                 if str(video_data.get("id")) == str(clip_id):
@@ -325,7 +325,7 @@ async def delete_clip(clip_id: "ClipId") -> tuple[dict[str, str], int]:
                         for video_item in sync_module.videos:
                             if hasattr(video_item, 'clip') and video_item.clip.get("id") == video_data.get("id"):
                                 # Delete from Blink system using sync module video item
-                                success = await video_item.delete_video(blink)
+                                success = video_item.delete_video(blink)
                                 if success:
                                     video_deleted = True
                                     logger.info(f"Successfully deleted clip {clip_id} from Blink system")
@@ -335,7 +335,7 @@ async def delete_clip(clip_id: "ClipId") -> tuple[dict[str, str], int]:
                     break
         
         # Execute deletion through BlinkConnection thread
-        await blink_conn.run_in_thread(find_and_delete_video)
+        await blink_conn.execute(find_and_delete_video())
         
         # Remove from local cache regardless of Blink deletion result
         clips_cache = ensure_clips_cache_initialized()

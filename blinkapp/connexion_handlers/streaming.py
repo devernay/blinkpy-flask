@@ -74,6 +74,10 @@ def get_hls_stream_segments(
 
     try:
         camera_id_obj = CameraId(camera_id)
-        return get_hls_file(camera_id_obj, filename)
-    except ValueError:
-        return {"success": False, "error": "Invalid camera ID"}, 400
+        result = get_hls_file(camera_id_obj, filename)
+        
+        # Type narrowing with assert
+        assert result[0] is not None and result[1] is not None, "HLS file not found"
+        return result
+    except (ValueError, AssertionError):
+        return {"success": False, "error": "Invalid camera ID or HLS file not found"}, 400

@@ -11,16 +11,28 @@ __all__ = [
 ]
 
 
-def validate_camera_id(value: str) -> CameraId:
-    """Validate and convert string to CameraId."""
-    return CameraId(value)
+def validate_camera_id(value: str) -> bool:
+    """Validate if string can be converted to CameraId."""
+    try:
+        CameraId(value)
+        return True
+    except ValueError:
+        return False
 
 
-def validate_clip_id(value: str) -> ClipId:
-    """Validate and convert string to ClipId."""
-    return ClipId(value)
+def validate_clip_id(value: str) -> bool:
+    """Validate if string can be converted to ClipId."""
+    try:
+        ClipId(value)
+        return True
+    except ValueError:
+        return False
 
 
-def validate_network_id(value: str) -> NetworkId:
-    """Validate and convert string to NetworkId."""
-    return NetworkId(value)
+def validate_network_id(value: str) -> bool:
+    """Validate if string can be converted to NetworkId."""
+    try:
+        NetworkId(value)
+        return True
+    except ValueError:
+        return False

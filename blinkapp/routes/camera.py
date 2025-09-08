@@ -32,11 +32,12 @@ def setup_camera_routes(app: Flask) -> None:
         "get camera details", validate_params={"camera_id_str": validate_camera_id}
     )
     def get_camera_details_route(
-        camera_id: CameraId,
+        camera_id_str: str,
     ) -> JsonDict | tuple[JsonDict, int]:
         """Get camera details route - thin wrapper around connexion handler."""
         from ..connexion_handlers.camera import get_camera_details
 
+        camera_id = CameraId(camera_id_str)
         return get_camera_details(str(camera_id))
 
     @app.route("/api/cameras/<camera_id_str>/record", methods=["POST"])

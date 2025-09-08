@@ -22,7 +22,8 @@ def clear_thumbnail_cache() -> JsonDict:
     """
     from ..services.cache_service import clear_camera_thumbnail_cache_files
 
-    return clear_camera_thumbnail_cache_files()
+    clear_camera_thumbnail_cache_files()
+    return {"success": True, "message": "Camera thumbnail cache cleared"}
 
 
 def clear_clips_cache() -> JsonDict:
@@ -33,4 +34,5 @@ def clear_clips_cache() -> JsonDict:
     """
     from ..services.cache_service import clear_clips_cache_files
 
-    return clear_clips_cache_files()
+    clear_clips_cache_files()
+    return {"success": True, "message": "Clips cache cleared"}

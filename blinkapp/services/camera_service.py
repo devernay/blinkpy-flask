@@ -130,7 +130,7 @@ def require_camera(
     return camera, None
 
 
-async def record_camera(camera_id: "CameraId") -> tuple[dict[str, str], int]:
+async def record_camera(camera_id: "CameraId") -> tuple[JsonDict, int]:
     """Start recording on a camera.
     
     Args:
@@ -147,7 +147,10 @@ async def record_camera(camera_id: "CameraId") -> tuple[dict[str, str], int]:
         blink_conn = ensure_blink_connection_initialized()
         
         # Find camera through shared connection
-        camera = await blink_conn.run_in_thread(find_camera_by_id, camera_id)
+        async def get_camera():
+            return find_camera_by_id(camera_id)
+        
+        camera = await blink_conn.execute(get_camera())
         if camera is None:
             response, status_code = create_api_response(
                 success=False, 
@@ -157,7 +160,10 @@ async def record_camera(camera_id: "CameraId") -> tuple[dict[str, str], int]:
             return response, status_code
         
         # Start recording through shared connection thread
-        await blink_conn.run_in_thread(camera.record)
+        async def do_record():
+            return camera.record()
+        
+        await blink_conn.execute(do_record())
         
         response, status_code = create_api_response(
             success=True, 

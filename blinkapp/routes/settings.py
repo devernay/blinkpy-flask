@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flask import request
+import flask
 
 from ..models.types import JsonDict
 from ..utils.decorators import ensure_blink_available
@@ -42,5 +42,5 @@ def setup_settings_routes(app: Flask) -> None:
         """Update settings route - thin wrapper around connexion handler."""
         from ..connexion_handlers.settings import update_user_settings
 
-        body = request.get_json() or {}
+        body = flask.request.get_json() or {}  # type: ignore[attr-defined]
         return update_user_settings(body)
