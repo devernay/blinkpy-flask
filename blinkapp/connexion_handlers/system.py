@@ -31,12 +31,22 @@ def get_system_details(network_id: str) -> JsonDict | tuple[JsonDict, int]:
         network_id_obj = NetworkId(network_id)
         systems_response = get_systems()
 
+        # Type narrowing: ensure response is a dict
+        if not isinstance(systems_response, dict):
+            return {"success": False, "error": "Invalid systems response"}, 500
+
         if not systems_response.get("success", False):
             return systems_response
 
-        systems = systems_response.get("data", {}).get("systems", [])
+        # Type narrowing: ensure data is a dict
+        data = systems_response.get("data", {})
+        if not isinstance(data, dict):
+            return {"success": False, "error": "Invalid systems data"}, 500
+
+        systems = data.get("systems", [])
         for system in systems:
-            if str(system.get("network_id")) == str(network_id_obj):
+            # Type narrowing: ensure system is a dict
+            if isinstance(system, dict) and str(system.get("network_id")) == str(network_id_obj):
                 return {"success": True, "data": system}
 
         return {"success": False, "error": "System not found"}, 404
