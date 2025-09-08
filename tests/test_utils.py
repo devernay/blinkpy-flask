@@ -14,7 +14,6 @@ DO NOT add integration tests here - those belong in test_integration_*.py files.
 DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
 
-import time
 import unittest
 
 from tests.test_base import BaseTestCase

@@ -22,6 +22,9 @@ import threading
 from collections.abc import Coroutine
 from typing import TYPE_CHECKING, TypeVar
 
+if TYPE_CHECKING:
+    from blinkapp.services.hls_service import HLSStream
+
 from blinkapp.config import Config
 from blinkapp.utils.errors import BlinkError
 
@@ -68,7 +71,7 @@ class BlinkConnection:
         self.loop: asyncio.AbstractEventLoop | None = None
         self.blink: Blink | None = None  # Blink instance from blinkpy library
         self._started: bool = False
-        self._active_streams: dict[str, object] = {}  # Track active video streams
+        self._active_streams: dict[str, HLSStream] = {}  # Track active video streams
 
     def start(self) -> None:
         """Start Blink thread and event loop.
@@ -140,14 +143,21 @@ class BlinkConnection:
         self.cleanup_active_streams()
 
         if self.blink is not None:
-            try:
-                if self.loop and self.loop.is_running():
-                    future = asyncio.run_coroutine_threadsafe(
-                        self.blink.close(), self.loop
-                    )
-                    future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
-            except (TimeoutError, RuntimeError, OSError) as e:
-                logger.debug(f"Session cleanup: {e}")
+            # Close the aiohttp session if it exists
+            if (self.blink.auth is not None 
+                and hasattr(self.blink.auth, 'session') 
+                and self.blink.auth.session is not None):
+                try:
+                    if self.loop and self.loop.is_running():
+                        future = asyncio.run_coroutine_threadsafe(
+                            self.blink.auth.session.close(), self.loop
+                        )
+                        future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
+                except (TimeoutError, RuntimeError, OSError) as e:
+                    logger.debug(f"Session cleanup: {e}")
+            
+            # Clear the Blink reference (proper teardown per blinkpy tests)
+            self.blink = None
 
         if self.loop and self.loop.is_running():
             try:

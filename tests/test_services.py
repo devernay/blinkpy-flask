@@ -32,7 +32,7 @@ class TestTimeService(BaseTestCase):
 
     def test_seconds_since_now_from_datetime(self) -> None:
         """Test calculating seconds since now from datetime."""
-        from datetime import UTC, datetime, timedelta
+        from datetime import UTC, timedelta
 
         from blinkapp.services.time_service import seconds_since_now_from_datetime
 
