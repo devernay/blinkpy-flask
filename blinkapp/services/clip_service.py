@@ -7,6 +7,11 @@ dedicated modules for better separation of concerns.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from blinkapp.models.types import JsonDict
+
 __all__ = [
     "process_cloud_clips",
     "process_local_clips",
@@ -290,33 +295,33 @@ def process_local_clips(
     return format_clips_by_day(clips_list)
 
 
-async def delete_clip(clip_id: "ClipId") -> tuple[JsonDict, int]:
+async def delete_clip(clip_id: ClipId) -> tuple[JsonDict, int]:
     """Delete a clip from both Blink system and local storage.
-    
+
     Args:
         clip_id: The clip ID to delete
-        
+
     Returns:
         Tuple of (response_dict, status_code)
     """
     from blinkapp.models.responses import create_api_response
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
     from blinkapp.services.cache_service import ensure_clips_cache_initialized
-    
+
     try:
         # Use shared BlinkConnection to access Blink system
         blink_conn = ensure_blink_connection_initialized()
-        
+
         # Find the video object by iterating through videos metadata
         videos_found = False
         video_deleted = False
-        
+
         async def find_and_delete_video():
             nonlocal videos_found, video_deleted
             blink = blink_conn.blink
             # Get videos metadata to find the clip
             videos_metadata = blink.get_videos_metadata()
-            
+
             for video_data in videos_metadata:
                 if str(video_data.get("id")) == str(clip_id):
                     videos_found = True
@@ -333,18 +338,18 @@ async def delete_clip(clip_id: "ClipId") -> tuple[JsonDict, int]:
                                     logger.warning(f"Failed to delete clip {clip_id} from Blink system")
                                 return
                     break
-        
+
         # Execute deletion through BlinkConnection thread
         await blink_conn.execute(find_and_delete_video())
-        
+
         # Remove from local cache regardless of Blink deletion result
         clips_cache = ensure_clips_cache_initialized()
         clip_id_obj = ClipId(clip_id)
-        
+
         if clip_id_obj in clips_cache:
             del clips_cache[clip_id_obj]
             logger.info(f"Removed clip {clip_id} from local cache")
-        
+
         # Prepare response based on results
         if videos_found and video_deleted:
             message = f"Clip {clip_id} deleted from Blink system and local cache"
@@ -352,18 +357,18 @@ async def delete_clip(clip_id: "ClipId") -> tuple[JsonDict, int]:
             message = f"Clip {clip_id} found but failed to delete from Blink system, removed from local cache"
         else:
             message = f"Clip {clip_id} not found in Blink system, removed from local cache"
-        
+
         response, status_code = create_api_response(
-            success=True, 
+            success=True,
             data={"message": message, "deleted_from_blink": video_deleted}
         )
         return response, status_code
-        
+
     except Exception as e:
         logger.error(f"Failed to delete clip {clip_id}: {e}")
         response, status_code = create_api_response(
-            success=False, 
-            error=f"Failed to delete clip: {str(e)}", 
+            success=False,
+            error=f"Failed to delete clip: {str(e)}",
             status_code=500
         )
         return response, status_code

@@ -6,7 +6,7 @@ from blinkapp.models.ids import CameraId, ClipId, NetworkId
 
 __all__ = [
     "validate_camera_id",
-    "validate_clip_id", 
+    "validate_clip_id",
     "validate_network_id",
 ]
 

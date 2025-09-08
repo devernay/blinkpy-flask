@@ -130,51 +130,51 @@ def require_camera(
     return camera, None
 
 
-async def record_camera(camera_id: "CameraId") -> tuple[JsonDict, int]:
+async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
     """Start recording on a camera.
-    
+
     Args:
         camera_id: The camera ID to start recording
-        
+
     Returns:
         Tuple of (response_dict, status_code)
     """
     from blinkapp.models.responses import create_api_response
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
-    
+
     try:
         # Use shared BlinkConnection instance
         blink_conn = ensure_blink_connection_initialized()
-        
+
         # Find camera through shared connection
         async def get_camera():
             return find_camera_by_id(camera_id)
-        
+
         camera = await blink_conn.execute(get_camera())
         if camera is None:
             response, status_code = create_api_response(
-                success=False, 
-                error="Camera not found", 
+                success=False,
+                error="Camera not found",
                 status_code=404
             )
             return response, status_code
-        
+
         # Start recording through shared connection thread
         async def do_record():
             return camera.record()
-        
+
         await blink_conn.execute(do_record())
-        
+
         response, status_code = create_api_response(
-            success=True, 
+            success=True,
             data={"message": f"Recording started for camera {camera_id}"}
         )
         return response, status_code
     except Exception as e:
         logger.error(f"Failed to start recording for camera {camera_id}: {e}")
         response, status_code = create_api_response(
-            success=False, 
-            error=f"Failed to start recording: {str(e)}", 
+            success=False,
+            error=f"Failed to start recording: {str(e)}",
             status_code=500
         )
         return response, status_code

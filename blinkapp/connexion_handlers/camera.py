@@ -54,8 +54,9 @@ def start_camera_recording(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Recording start result
     """
-    from ..services.camera_service import record_camera
     import asyncio
+
+    from ..services.camera_service import record_camera
 
     try:
         camera_id_obj = CameraId(camera_id)

@@ -75,7 +75,7 @@ def get_hls_stream_segments(
     try:
         camera_id_obj = CameraId(camera_id)
         result = get_hls_file(camera_id_obj, filename)
-        
+
         # Type narrowing with assert
         assert result[0] is not None and result[1] is not None, "HLS file not found"
         return result

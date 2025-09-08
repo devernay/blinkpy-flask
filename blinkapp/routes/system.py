@@ -2,8 +2,8 @@
 
 from typing import TYPE_CHECKING
 
-from flask import Flask
 import flask
+from flask import Flask
 
 if TYPE_CHECKING:
     pass
