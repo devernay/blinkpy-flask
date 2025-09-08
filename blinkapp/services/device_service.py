@@ -19,6 +19,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from blinkapp.models.types import DeviceDict
+
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
 
@@ -33,7 +35,7 @@ __all__ = ["create_device_data"]
 
 def create_device_data(
     camera: BlinkCamera, current_ts: int = 0, cached_ts: int = 0
-) -> dict[str, object]:
+) -> DeviceDict:
     """Create comprehensive device data dictionary for a Blink camera.
 
     Aggregates camera information including status, battery level, temperature,

@@ -115,6 +115,7 @@ def handle_dump_system(
 
     assert blink_connection is not None
     blink_connection.start()
+    blink = None
     try:
         blink = load_saved_blink()
         success = ensure_blink_connection_initialized().execute(blink)
