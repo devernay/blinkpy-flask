@@ -60,11 +60,12 @@ def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Success response or error tuple.
     """
-    from ..services.clip_service import delete_clip
+    import asyncio
+    from ..services.clip_service import delete_clip as delete_clip_service
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return delete_clip(clip_id_obj)
+        return asyncio.run(delete_clip_service(clip_id_obj))
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
 
@@ -154,10 +155,12 @@ def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Success response or error tuple.
     """
-    from ..services.clip_service import generate_clip_thumbnail
+    from ..services.clip_processing import process_local_clip_background
 
     try:
         clip_id_obj = ClipId(clip_id)
-        return generate_clip_thumbnail(clip_id_obj)
+        # Launch background thumbnail generation for the clip
+        process_local_clip_background(clip_id_obj)
+        return {"success": True, "message": f"Thumbnail generation started for clip {clip_id}"}, 200
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400

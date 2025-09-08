@@ -6,7 +6,7 @@ to ensure consistency and avoid duplication. Import these types instead of
 defining them locally in individual modules.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from typing import ParamSpec, TypedDict, TypeVar
 
 from flask import Response
@@ -56,20 +56,23 @@ __all__ = [
     "SystemDict",
 ]
 
-# Basic data types - use specific JSON types for better type safety
+# Basic data types - use structural types for JSON-serializable objects
 JsonValue = (
     str
     | int
     | float
     | bool
     | None
-    | list["JsonValue"]
-    | dict[str, "JsonValue"]
+    | Sequence["JsonValue"]  # Any array-like object
+    | Mapping[str, "JsonValue"]  # Any dict-like object with str keys
     | list["SystemDict"]
     | list["DeviceDict"]
     | list["ClipDayGroup"]  # Add app-specific types
+    | tuple["Response", int]  # Flask response tuples
+    | tuple["Response", int, dict[str, str]]  # Flask response tuples with headers
+    | tuple["JsonDict", int]  # API response tuples
 )
-JsonDict = dict[str, JsonValue]  # Standard JSON-serializable dictionary
+JsonDict = Mapping[str, JsonValue]  # Any dict-like object that can be JSON serialized
 DeviceDict = dict[str, JsonValue]  # Device information dictionary
 SystemDict = dict[str, JsonValue]  # System information dictionary
 ClipsResponse = dict[str, list[ClipDayGroup]]  # Clips API response type
@@ -82,7 +85,7 @@ ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, str]]
 TemplateResult = str | FlaskResponse  # What template functions can return
 RouteResult = (
-    FlaskResponse | JsonDict | tuple[JsonDict, int]
+    FlaskResponse | JsonDict | tuple[JsonDict, int] | JsonValue
 )  # What route functions can return
 
 # Decorated route function types

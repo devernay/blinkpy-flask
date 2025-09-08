@@ -10,6 +10,7 @@ __all__ = [
     "find_camera_by_id",
     "require_camera",
     "get_camera_details",
+    "record_camera",
 ]
 
 import logging
@@ -127,3 +128,47 @@ def require_camera(
         )
         return None, error_response
     return camera, None
+
+
+async def record_camera(camera_id: "CameraId") -> tuple[dict[str, str], int]:
+    """Start recording on a camera.
+    
+    Args:
+        camera_id: The camera ID to start recording
+        
+    Returns:
+        Tuple of (response_dict, status_code)
+    """
+    from blinkapp.models.responses import create_api_response
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    
+    try:
+        # Use shared BlinkConnection instance
+        blink_conn = ensure_blink_connection_initialized()
+        
+        # Find camera through shared connection
+        camera = await blink_conn.run_in_thread(find_camera_by_id, camera_id)
+        if camera is None:
+            response, status_code = create_api_response(
+                success=False, 
+                error="Camera not found", 
+                status_code=404
+            )
+            return response, status_code
+        
+        # Start recording through shared connection thread
+        await blink_conn.run_in_thread(camera.record)
+        
+        response, status_code = create_api_response(
+            success=True, 
+            data={"message": f"Recording started for camera {camera_id}"}
+        )
+        return response, status_code
+    except Exception as e:
+        logger.error(f"Failed to start recording for camera {camera_id}: {e}")
+        response, status_code = create_api_response(
+            success=False, 
+            error=f"Failed to start recording: {str(e)}", 
+            status_code=500
+        )
+        return response, status_code

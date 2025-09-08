@@ -279,14 +279,20 @@ def _create_base_decorator(
                 if skip_response_formatting:
                     # For file responses and method dispatch, the function should return FlaskResponse
                     # Type assertion: when skip_response_formatting=True, result must be FlaskResponse
-                    if isinstance(result, Response | tuple):
+                    if isinstance(result, (Response, tuple)):
                         return result
                     else:
                         # This should not happen with proper usage, but handle gracefully
                         logger.warning(
                             f"Expected FlaskResponse but got {type(result)} in {op_name}"
                         )
-                        return _handle_response_formatting(result)
+                        # Convert object to RouteResult through type narrowing
+                        if isinstance(result, (dict, str, int, float, bool)) or result is None:
+                            route_result: RouteResult = result
+                        else:
+                            # For other types, convert to dict
+                            route_result = {"result": str(result)}
+                        return _handle_response_formatting(route_result)
                 else:
                     return _handle_response_formatting(result)
 
