@@ -149,16 +149,16 @@ class TestRouteIntegration(FlaskTestCase):
 class TestAdminRoutes(FlaskTestCase):
     """Test admin route setup and registration."""
 
-    def test_register_admin_routes(self) -> None:
-        """Test register_admin_routes function."""
+    def test_setup_admin_routes(self) -> None:
+        """Test setup_admin_routes function."""
         from flask import Flask
 
-        from blinkapp.routes.admin import register_admin_routes
+        from blinkapp.routes.admin import setup_admin_routes
 
         app = Flask(__name__)
 
         # Should not raise exception
-        register_admin_routes(app)
+        setup_admin_routes(app)
 
         # Should have registered routes
         self.assertGreater(len(list(app.url_map.iter_rules())), 0)
@@ -272,22 +272,6 @@ class TestAuthRoutesSetup(FlaskTestCase):
         rules = list(app.url_map.iter_rules())
         self.assertGreater(len(rules), 0)
 
-    def test_register_auth_routes(self) -> None:
-        """Test register_auth_routes function."""
-        from flask import Flask
-
-        from blinkapp.routes.auth import register_auth_routes
-
-        app = Flask(__name__)
-
-        # Should not raise exception
-        register_auth_routes(app)
-
-        # Should have registered routes
-        rules = list(app.url_map.iter_rules())
-        self.assertGreater(len(rules), 0)
-
-
 class TestConfigRoutes(FlaskTestCase):
     """Test config route setup and registration."""
 
@@ -314,22 +298,6 @@ class TestSettingsRoutes(FlaskTestCase):
         # Should have registered routes
         rules = list(app.url_map.iter_rules())
         self.assertGreater(len(rules), 0)
-
-    def test_register_settings_routes(self) -> None:
-        """Test register_settings_routes function."""
-        from flask import Flask
-
-        from blinkapp.routes.settings import setup_settings_routes
-
-        app = Flask(__name__)
-
-        # Should not raise exception
-        setup_settings_routes(app)
-
-        # Should have registered routes
-        rules = list(app.url_map.iter_rules())
-        self.assertGreater(len(rules), 0)
-
 
 class TestStreamingRoutes(FlaskTestCase):
     """Test streaming route setup and registration."""

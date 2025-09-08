@@ -260,25 +260,6 @@ class TestTimeFormatting(BaseTestCase):
 
         self.assertEqual(expected, "2d ago")
 
-    def test_time_formatting_error_handling(self) -> None:
-        """Test error handling in time formatting."""
-        with patch("blinkapp.utils.formatters.format_time_ago") as mock_format:
-            mock_format.return_value = "Never"
-
-            # Test invalid timestamp handling
-            try:
-                # This will raise TypeError when passing string to fromtimestamp
-                from typing import cast
-
-                datetime.fromtimestamp(
-                    cast(float, "invalid")
-                )  # Intentionally testing invalid input
-            except (ValueError, TypeError):
-                # Should fall back to format_time_ago
-                result = mock_format("fallback_value")
-                self.assertEqual(result, "Never")
-
-
 class TestCacheDirectoryOperations(BaseTestCase):
     """Test cache directory operations - lines 1316-1322."""
 

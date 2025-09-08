@@ -14,34 +14,11 @@ All functions support optional time providers for testing scenarios
 where deterministic time values are required.
 """
 
-from collections.abc import Callable
 from datetime import datetime
 
 __all__ = [
-    "get_current_timestamp",
-    "get_current_time",
     "seconds_since_now_from_datetime",
 ]
-
-
-def get_current_timestamp(time_provider: Callable[[], int] | None = None) -> int:
-    """Get current timestamp with injectable time provider."""
-    if time_provider is None:
-
-        def default_time_provider() -> int:
-            return int(datetime.now().timestamp())
-
-        time_provider = default_time_provider
-
-    return time_provider()
-
-
-def get_current_time(time_provider: Callable[[], datetime] | None = None) -> datetime:
-    """Get current datetime with injectable time provider."""
-    if time_provider is None:
-        time_provider = datetime.now
-
-    return time_provider()
 
 
 def seconds_since_now_from_datetime(dt: "datetime") -> int:

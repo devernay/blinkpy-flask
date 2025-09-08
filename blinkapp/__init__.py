@@ -46,7 +46,7 @@ from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
 
 # Admin routes
-from blinkapp.routes.admin import register_admin_routes
+from blinkapp.routes.admin import setup_admin_routes
 from blinkapp.routes.auth import setup_auth_routes
 
 # Camera operations and route handlers
@@ -157,7 +157,7 @@ setup_system_routes(app)
 setup_settings_routes(app)
 
 # Set up admin routes
-register_admin_routes(app)
+setup_admin_routes(app)
 
 # ============================================================================
 # Global Application State

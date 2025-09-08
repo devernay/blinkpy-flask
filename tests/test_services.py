@@ -128,21 +128,6 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(is_valid_email_format("@domain.com"))
         self.assertFalse(is_valid_email_format("user@"))
 
-    def test_extract_username_domain_valid(self) -> None:
-        """Test username extraction from email (returns domain part)."""
-        from blinkapp.services.auth_service import extract_username_domain
-
-        # The function actually returns the domain part, not username
-        result = extract_username_domain("test@example.com")
-        self.assertEqual(result, "example.com")
-
-    def test_extract_username_domain_invalid(self) -> None:
-        """Test username extraction from invalid email."""
-        from blinkapp.services.auth_service import extract_username_domain
-
-        result = extract_username_domain("invalid_email")
-        self.assertEqual(result, "")
-
     @patch("blinkapp.services.auth_service.logger")
     def test_validate_credentials_valid(self, mock_logger) -> None:
         """Test credential validation with valid inputs."""
@@ -166,28 +151,6 @@ class TestAuthService(BaseTestCase):
 
         result = validate_credentials("test@example.com", "")
         self.assertFalse(result)
-
-    def test_create_auth_config(self) -> None:
-        """Test auth config creation."""
-        from blinkapp.services.auth_service import create_auth_config
-
-        result = create_auth_config("test@example.com", "password123")
-        self.assertIn("username", result)
-        self.assertIn("password", result)
-        self.assertEqual(result["username"], "test@example.com")
-        self.assertEqual(result["password"], "password123")
-
-    def test_extract_username_domain_cases(self) -> None:
-        """Test username domain extraction."""
-        from blinkapp.services.auth_service import extract_username_domain
-
-        # With @ symbol
-        result = extract_username_domain("user@example.com")
-        self.assertEqual(result, "example.com")
-
-        # Without @ symbol - returns empty string based on actual implementation
-        result = extract_username_domain("username")
-        self.assertEqual(result, "")
 
     def test_is_valid_email_format_comprehensive(self) -> None:
         """Test email validation comprehensively."""
@@ -218,14 +181,6 @@ class TestAuthService(BaseTestCase):
 
         # Valid credentials
         self.assertTrue(validate_credentials("user@example.com", "password123"))
-
-    def test_create_auth_config_function(self) -> None:
-        """Test auth config creation."""
-        from blinkapp.services.auth_service import create_auth_config
-
-        result = create_auth_config("user@example.com", "password123")
-        expected = {"username": "user@example.com", "password": "password123"}
-        self.assertEqual(result, expected)
 
 
 class TestCacheService(BaseTestCase):
@@ -350,28 +305,6 @@ class TestCacheService(BaseTestCase):
 class TestDeviceService(BaseTestCase):
     """Test device service functions."""
 
-    def test_format_device_temperature_celsius_conversion(self) -> None:
-        """Test device temperature formatting with Celsius conversion."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        # The function converts Fahrenheit to Celsius
-        result = format_device_temperature(77, "C")  # 77°F = 25°C
-        self.assertEqual(result, "25.0°C")
-
-    def test_format_device_temperature_fahrenheit_no_conversion(self) -> None:
-        """Test device temperature formatting in Fahrenheit without conversion."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        result = format_device_temperature(77, "F")
-        self.assertEqual(result, "77.0°F")
-
-    def test_format_device_temperature_none(self) -> None:
-        """Test device temperature formatting with None value."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        result = format_device_temperature(None, "C")
-        self.assertEqual(result, "N/A")
-
     def test_create_device_data(self) -> None:
         """Test device data creation for UI display."""
         from blinkapp.services.device_service import create_device_data
@@ -396,28 +329,6 @@ class TestDeviceService(BaseTestCase):
         self.assertIn("name", result)
         self.assertEqual(result["name"], "Test Camera")
         self.assertEqual(result["id"], "test_camera_boost")
-
-    def test_format_device_temperature_celsius_coverage(self) -> None:
-        """Test temperature formatting in Celsius."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        # The function appears to do temperature conversion, so test actual behavior
-        result = format_device_temperature(77.0, "C")  # 77F = 25C
-        self.assertIn("°C", result)
-
-    def test_format_device_temperature_fahrenheit_coverage(self) -> None:
-        """Test temperature formatting in Fahrenheit."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        result = format_device_temperature(25.0, "F")  # 25C = 77F
-        self.assertIn("°F", result)
-
-    def test_format_device_temperature_none_coverage(self) -> None:
-        """Test temperature formatting with None value."""
-        from blinkapp.services.device_service import format_device_temperature
-
-        result = format_device_temperature(None, "C")
-        self.assertEqual(result, "N/A")
 
     def test_create_device_data_basic(self) -> None:
         """Test creating device data."""

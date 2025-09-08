@@ -172,23 +172,6 @@ class TestFormatters(BaseTestCase):
         result = format_time_duration(3600)  # 1h exactly
         self.assertEqual(result, "1h")
 
-    def test_format_time_ago_recent(self) -> None:
-        """Test format_time_ago with recent timestamp."""
-        from blinkapp.utils.formatters import format_time_ago
-
-        recent_timestamp = int(time.time()) - 300  # 5 minutes ago
-        result = format_time_ago(recent_timestamp)
-        self.assertIn("ago", result)
-
-    def test_format_time_ago_very_old(self) -> None:
-        """Test format_time_ago with very old timestamp."""
-        from blinkapp.utils.formatters import format_time_ago
-
-        # The function handles negative timestamps by calculating from epoch
-        result = format_time_ago(-1)
-        self.assertIn("ago", result)
-
-
 class TestValidators(BaseTestCase):
     """Test validator functions."""
 
@@ -339,30 +322,6 @@ class TestParsers(BaseTestCase):
 
         result = extract_thumbnail_timestamp(None)
         self.assertEqual(result, 0)
-
-    def test_parse_arguments_string(self) -> None:
-        """Test parse_arguments with string input converted to list."""
-        from blinkapp.utils.parsers import parse_arguments
-
-        result = parse_arguments(["--host", "127.0.0.1", "--port", "8080"])
-        self.assertEqual(result.host, "127.0.0.1")
-        self.assertEqual(result.port, 8080)
-
-    def test_parse_arguments_list(self) -> None:
-        """Test parse_arguments with list input."""
-        from blinkapp.utils.parsers import parse_arguments
-
-        result = parse_arguments(["--host", "127.0.0.1", "--port", "8080"])
-        self.assertEqual(result.host, "127.0.0.1")
-        self.assertEqual(result.port, 8080)
-
-    def test_parse_arguments_defaults(self) -> None:
-        """Test parse_arguments with default values."""
-        from blinkapp.utils.parsers import parse_arguments
-
-        result = parse_arguments([])
-        self.assertEqual(result.host, "0.0.0.0")
-        self.assertEqual(result.port, 5001)
 
     def test_parse_clip_id_basic(self) -> None:
         """Test parse_clip_id with basic ID."""

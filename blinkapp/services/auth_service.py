@@ -13,8 +13,6 @@ __all__ = [
     "load_saved_blink",
     "validate_credentials",
     "is_valid_email_format",
-    "extract_username_domain",
-    "create_auth_config",
     "handle_login",
     "handle_2fa_verification",
     "logger",
@@ -55,20 +53,6 @@ def is_blink_authenticated(blink_instance=None) -> bool:
             return False
 
     return blink_instance is not None and blink_instance.auth.token is not None
-
-
-def extract_username_domain(username: str) -> str:
-    """Extract domain from username - pure function.
-
-    Args:
-        username: Username to extract domain from.
-
-    Returns:
-        Domain portion of the username.
-    """
-    if "@" in username:
-        return username.split("@")[1]
-    return ""
 
 
 def is_valid_email_format(email: str) -> bool:
@@ -138,19 +122,6 @@ def validate_credentials(username: str, password: str) -> bool:
 
     # Basic validation - non-empty strings
     return len(username.strip()) > 0 and len(password.strip()) > 0
-
-
-def create_auth_config(username: str, password: str) -> dict[str, str]:
-    """Create auth configuration - pure function.
-
-    Args:
-        username: Username for authentication.
-        password: Password for authentication.
-
-    Returns:
-        Dictionary containing auth configuration.
-    """
-    return {"username": username, "password": password}
 
 
 def _create_blink_session(

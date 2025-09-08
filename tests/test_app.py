@@ -2723,49 +2723,6 @@ class TestVideoProcessingOperations(BaseTestCase):
 class TestCommandLineInterface(BaseTestCase):
     """Test command line interface and argument parsing."""
 
-    def test_parse_arguments_default(self) -> None:
-        """Test argument parsing with defaults."""
-        from blinkapp.utils.parsers import parse_arguments
-
-        # Test with minimal arguments
-        args = parse_arguments(["--host", "127.0.0.1"])
-
-        self.assertEqual(args.host, "127.0.0.1")
-        self.assertEqual(args.port, 5001)  # Default port
-        self.assertFalse(args.debug)  # Default debug
-
-    def test_parse_arguments_all_options(self) -> None:
-        """Test argument parsing with all options."""
-        from blinkapp.utils.parsers import parse_arguments
-
-        args = parse_arguments(
-            [
-                "--host",
-                "0.0.0.0",
-                "--port",
-                "8080",
-                "--debug",
-                "--cache",
-                "/custom/cache",
-                "--log-level",
-                "DEBUG",
-            ]
-        )
-
-        self.assertEqual(args.host, "0.0.0.0")
-        self.assertEqual(args.port, 8080)
-        self.assertTrue(args.debug)
-        self.assertEqual(args.cache, "/custom/cache")
-        self.assertEqual(args.log_level, "DEBUG")
-
-    def test_parse_arguments_help(self) -> None:
-        """Test help argument."""
-        from blinkapp.utils.parsers import parse_arguments
-
-        with self.assertRaises(SystemExit):
-            parse_arguments(["--help"])
-
-
 class TestApplicationInitialization(BaseTestCase):
     """Test application initialization and startup."""
 

@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "format_clips_by_day",
     "format_time_duration",
-    "format_time_ago",
 ]
 
 
@@ -84,23 +83,4 @@ def format_time_duration(seconds: int) -> str:
         return f"{days}d"
 
 
-def format_time_ago(timestamp: int) -> str:
-    """Format Unix timestamp as 'X ago' string.
 
-    Args:
-        timestamp: Unix timestamp (seconds since epoch)
-
-    Returns:
-        Formatted time ago string (e.g., "5m ago", "2h ago")
-
-    Raises:
-        ValueError: If timestamp is invalid
-        OSError: If timestamp is out of range
-    """
-    from datetime import UTC, datetime
-
-    dt = datetime.fromtimestamp(timestamp, tz=UTC)
-    from blinkapp.services.time_service import seconds_since_now_from_datetime
-
-    seconds = seconds_since_now_from_datetime(dt)
-    return f"{format_time_duration(seconds)} ago"

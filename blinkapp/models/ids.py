@@ -240,14 +240,4 @@ class ClipId(BaseId):
         sync_name, item_id_str = self.value.split("~", 1)
         return sync_name, int(item_id_str)
 
-    @classmethod
-    def from_cloud(cls, clip_id: int | str) -> "ClipId":
-        """Create ClipId for cloud storage clip.
 
-        Args:
-            clip_id: Numeric ID of the cloud clip
-
-        Returns:
-            ClipId instance for cloud clip
-        """
-        return cls(str(clip_id))

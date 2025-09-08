@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from flask import Flask
 
 
-def register_auth_routes(app: Flask) -> None:
-    """Register authentication routes with the Flask app.
+def setup_auth_routes(app: Flask) -> None:
+    """Set up authentication routes with the Flask app.
 
     Args:
         app: Flask application instance to register routes with.
@@ -64,10 +64,4 @@ def register_auth_routes(app: Flask) -> None:
         return logout_user()
 
 
-def setup_auth_routes(app: Flask) -> None:
-    """Alias for register_auth_routes for compatibility.
 
-    Args:
-        app: Flask application instance to register routes with.
-    """
-    register_auth_routes(app)

@@ -5,14 +5,12 @@ This module provides parsing functions for extracting and converting data
 from various sources like timestamps, arguments, and identifiers.
 """
 
-import argparse
 import logging
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     "extract_thumbnail_timestamp",
-    "parse_arguments",
     "parse_clip_id",
 ]
 
@@ -57,51 +55,6 @@ def extract_thumbnail_timestamp(filename: str | None) -> int:
         return 0
     except (ValueError, IndexError):
         return 0
-
-
-def parse_arguments(args_list: list[str]) -> argparse.Namespace:
-    """Parse command line arguments list into namespace object.
-
-    Args:
-        args: List of command line arguments to parse.
-
-    Returns:
-        Parsed arguments namespace object.
-    """
-    import argparse
-
-    from blinkapp.config import Config
-
-    # Create argument parser
-    parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
-    parser.add_argument(
-        "--host",
-        default=Config.DEFAULT_HOST,
-        help=f"Host to bind to (default: {Config.DEFAULT_HOST})",
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=Config.DEFAULT_PORT,
-        help=f"Port to bind to (default: {Config.DEFAULT_PORT})",
-    )
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set logging level (default: INFO)",
-    )
-    parser.add_argument(
-        "--cache",
-        default=Config.DEFAULT_CACHE_DIR,
-        help=f"Cache directory (default: {Config.DEFAULT_CACHE_DIR})",
-    )
-    parser.add_argument(
-        "--dump-system", action="store_true", help="Dump system info and exit"
-    )
-
-    return parser.parse_args(args_list)
 
 
 def parse_clip_id(clip_id_str: str) -> str:

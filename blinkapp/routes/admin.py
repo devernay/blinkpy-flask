@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from flask import Flask
 
 
-def register_admin_routes(app: Flask) -> None:
-    """Register admin routes with the Flask app."""
+def setup_admin_routes(app: Flask) -> None:
+    """Set up admin routes with the Flask app."""
 
     @app.route("/api/cache", methods=["DELETE"])
     @ensure_blink_available
