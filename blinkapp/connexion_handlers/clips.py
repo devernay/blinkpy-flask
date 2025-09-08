@@ -2,6 +2,8 @@
 
 from typing import TYPE_CHECKING
 
+from flask.typing import ResponseReturnValue
+
 from ..config import Config
 from ..models.ids import ClipId
 from ..models.types import ClipsResponse, JsonDict

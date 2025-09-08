@@ -2,7 +2,6 @@
 
 from typing import TYPE_CHECKING
 
-import flask
 from flask import Flask, request
 
 if TYPE_CHECKING:
