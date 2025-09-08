@@ -49,9 +49,13 @@ def get_system_details(network_id: str) -> JsonDict | tuple[JsonDict, int]:
             return {"success": False, "error": "Invalid systems format"}, 500
 
         for system in systems:
-            # Type narrowing: ensure system is a dict
-            if isinstance(system, dict) and str(system.get("network_id")) == str(network_id_obj):
-                return {"success": True, "data": system}
+            # Type narrowing: ensure system is a dict with network_id
+            if (isinstance(system, dict) 
+                and "network_id" in system 
+                and str(system["network_id"]) == str(network_id_obj)):
+                # Create a properly typed response
+                response_data: JsonDict = {"success": True, "data": system}
+                return response_data
 
         return {"success": False, "error": "System not found"}, 404
     except ValueError:

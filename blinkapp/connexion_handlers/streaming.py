@@ -78,7 +78,10 @@ def get_hls_stream_segments(
         result = get_hls_file(camera_id_obj, filename)
 
         # Type narrowing with assert
-        assert result[0] is not None and result[1] is not None, "HLS file not found"
-        return result
-    except (ValueError, AssertionError):
-        return {"success": False, "error": "Invalid camera ID or HLS file not found"}, 400
+        if result[0] is not None and result[1] is not None:
+            from flask import Response
+            return Response(result[0], mimetype=result[1])
+        else:
+            return {"success": False, "error": "HLS file not found"}, 404
+    except ValueError:
+        return {"success": False, "error": "Invalid camera ID"}, 400

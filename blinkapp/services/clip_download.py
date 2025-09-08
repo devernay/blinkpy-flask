@@ -19,15 +19,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from flask import jsonify, send_file
-from flask.typing import ResponseReturnValue
-
-if TYPE_CHECKING:
-    from blinkpy.blinkpy import Blink
-
-    from blinkapp.models.ids import ClipId
 
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
+from blinkapp.models.types import JsonDict
+
+if TYPE_CHECKING:
+    from blinkpy.blinkpy import Blink
+    from flask import Response
+
+    from blinkapp.models.ids import ClipId
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +97,7 @@ async def _download_cloud_clip_core(
         return None, error_msg
 
 
-def download_cloud_clip(clip_id: ClipId) -> "Response | tuple[JsonDict, int]":
+def download_cloud_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
     """Download a cloud clip and return it as a file response."""
     try:
         from blinkapp.services.blink_service import get_blink_instance
@@ -158,7 +159,7 @@ def download_cloud_clip(clip_id: ClipId) -> "Response | tuple[JsonDict, int]":
 
 def download_local_clip(
     clip_id: ClipId, sync_name: str | None = None, item_id: str | None = None
-) -> "Response | tuple[JsonDict, int]":
+) -> Response | tuple[JsonDict, int]:
     """Download a local clip using blinkpy LocalStorageMediaItem API."""
     try:
         from blinkapp.services.blink_service import get_blink_instance
@@ -285,7 +286,7 @@ def download_local_clip(
         )
 
 
-def download_clip_common(clip_path: Path, clip_id: ClipId) -> "Response | tuple[JsonDict, int]":
+def download_clip_common(clip_path: Path, clip_id: ClipId) -> Response | tuple[JsonDict, int]:
     """Common clip download functionality for both cloud and local clips."""
     try:
         if not clip_path.exists():

@@ -32,7 +32,6 @@ from blinkapp.utils.formatters import format_clips_by_day
 if TYPE_CHECKING:
     from blinkpy.blinkpy import Blink
     from flask import Response
-    from flask.typing import ResponseReturnValue
 
     from blinkapp.services.blink_connection import BlinkConnection
 
@@ -53,7 +52,7 @@ class VideoMetadata(TypedDict):
 logger = logging.getLogger(__name__)
 
 
-def download_clip(clip_id: ClipId) -> "Response | tuple[JsonDict, int]":
+def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
     """Download clip file by ID.
 
     This function serves as a bridge between the route handlers and the
