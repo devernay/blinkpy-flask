@@ -98,7 +98,7 @@ DecoratorFunction = Callable[
 
 # Cache and utility types
 CacheKey = str  # Cache key identifier
-ValidationFunction = Callable[[str], JsonValue]  # Input validation function type
+ValidationFunction = Callable[[str], object]  # Input validation function type - validates string input and returns validated object (e.g., CameraId, ClipId)
 
 # Auth-specific types
 AuthJsonDict = dict[str, str | int | bool]  # Auth module JSON dict

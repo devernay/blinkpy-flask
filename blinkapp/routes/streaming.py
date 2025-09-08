@@ -23,7 +23,21 @@ def setup_streaming_routes(app: Flask) -> None:
 
     @app.route("/api/cameras/<camera_id_str>/streams", methods=["POST"])
     def validate_camera_id_param(value: str) -> CameraId:
-        """Validate camera ID parameter."""
+        """Validate camera ID parameter.
+        
+        ValidationFunctions take a string parameter from the URL and return
+        a validated object. If validation fails, they should raise ValueError
+        or TypeError. The validated object replaces the string in kwargs.
+        
+        Args:
+            value: String camera ID from URL parameter
+            
+        Returns:
+            CameraId: Validated camera ID object
+            
+        Raises:
+            ValueError: If camera ID format is invalid
+        """
         return CameraId(value)
 
     @ensure_blink_available

@@ -155,19 +155,31 @@ def _validate_parameters(
 ) -> ErrorResponse | None:
     """Validate URL parameters and return error response or None on success.
 
-    Transforms string URL parameters into validated objects using provided
-    validation functions. For example, converts "camera_id_str" to a CameraId
-    object and replaces it in kwargs as "camera_id".
+    ValidationFunctions are used to convert string URL parameters into validated
+    objects. They take a string input and return a validated object (e.g., CameraId).
+    If validation fails, they should raise ValueError or TypeError.
+    
+    The validation process:
+    1. Takes string parameter from URL (e.g., "camera_id_str": "12345")
+    2. Calls validation function: validator("12345") -> CameraId("12345")
+    3. Replaces parameter in kwargs: {"camera_id": CameraId("12345")}
+    4. Removes "_str" suffix from parameter name for cleaner API
 
     Args:
         kwargs: Route function keyword arguments (modified in place)
         validate_params: Mapping of parameter names to validation functions
+                        e.g., {"camera_id_str": lambda x: CameraId(x)}
 
     Returns:
         Error response tuple if validation fails, None if successful
 
     Side Effects:
         Modifies kwargs in place, replacing validated parameters
+        
+    Example:
+        Input kwargs: {"camera_id_str": "12345"}
+        Validation: {"camera_id_str": CameraId}
+        Output kwargs: {"camera_id": CameraId("12345")}
     """
     # Import here to avoid circular import
     from blinkapp import create_api_response
