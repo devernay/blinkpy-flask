@@ -11,6 +11,7 @@ from ..models.ids import CameraId
 from ..models.types import JsonDict
 from ..utils.decorators import ensure_blink_available
 from ..utils.route_decorators import api_route_with_validation
+from ..utils.validation_helpers import validate_camera_id
 
 if TYPE_CHECKING:
     from flask import Flask
@@ -22,27 +23,9 @@ def setup_streaming_routes(app: Flask) -> None:
     """Register streaming routes with the Flask app."""
 
     @app.route("/api/cameras/<camera_id_str>/streams", methods=["POST"])
-    def validate_camera_id_param(value: str) -> CameraId:
-        """Validate camera ID parameter.
-        
-        ValidationFunctions take a string parameter from the URL and return
-        a validated object. If validation fails, they should raise ValueError
-        or TypeError. The validated object replaces the string in kwargs.
-        
-        Args:
-            value: String camera ID from URL parameter
-            
-        Returns:
-            CameraId: Validated camera ID object
-            
-        Raises:
-            ValueError: If camera ID format is invalid
-        """
-        return CameraId(value)
-
     @ensure_blink_available
     @api_route_with_validation(
-        "start live stream", validate_params={"camera_id_str": validate_camera_id_param}
+        "start live stream", validate_params={"camera_id_str": validate_camera_id}
     )
     def start_live_stream_route(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
         """Start stream route - thin wrapper around connexion handler."""
@@ -53,7 +36,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id_str>/streams", methods=["DELETE"])
     @ensure_blink_available
     @api_route_with_validation(
-        "stop live stream", validate_params={"camera_id_str": validate_camera_id_param}
+        "stop live stream", validate_params={"camera_id_str": validate_camera_id}
     )
     def stop_live_stream_route(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
         """Stop stream route - thin wrapper around connexion handler."""
@@ -64,7 +47,7 @@ def setup_streaming_routes(app: Flask) -> None:
     @app.route("/api/cameras/<camera_id_str>/streams/<path:filename>")
     @ensure_blink_available
     @api_route_with_validation(
-        "get HLS segments", validate_params={"camera_id_str": validate_camera_id_param}
+        "get HLS segments", validate_params={"camera_id_str": validate_camera_id}
     )
     def get_hls_stream_segments_route(
         camera_id: CameraId, filename: str
