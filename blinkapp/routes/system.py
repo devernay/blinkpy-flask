@@ -1,12 +1,11 @@
 """System management routes for the Blink Flask application."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-import flask
-from flask import Flask
+from flask import Flask, request
 
 if TYPE_CHECKING:
-    pass
+    from flask.wrappers import Request
 
 from blinkapp.models.ids import NetworkId
 from blinkapp.models.types import JsonDict
@@ -59,7 +58,8 @@ def setup_system_routes(app: Flask) -> None:
         """Update system route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import update_system_settings
 
-        body_data = flask.request.get_json()
+        # Flask 3.x get_json() - pyright doesn't understand LocalProxy
+        body_data = getattr(request, 'get_json')()
         body = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 

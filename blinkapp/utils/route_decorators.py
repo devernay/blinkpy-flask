@@ -125,9 +125,8 @@ def _validate_json_payload(
     from blinkapp import Config, create_api_response
 
     assert isinstance(request, Request)
-    # Flask's request.get_json() method exists but pyright doesn't recognize it on the Request type
-    # This is a known issue with Flask type stubs - the method is dynamically added
-    data: dict[str, object] | None = request.get_json()  # pyright: ignore[reportAttributeAccessIssue]
+    # Flask 3.x get_json() - use getattr to bypass pyright LocalProxy limitation
+    data: dict[str, object] | None = getattr(request, 'get_json')()
     if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(
             success=False,
@@ -147,7 +146,7 @@ def _validate_json_payload(
             )
             return jsonify(response), status_code
 
-    return None  # Success - data is available via request.get_json()
+    return None  # Success - data is available via getattr(request, 'get_json')()
 
 
 def _validate_parameters(
@@ -262,7 +261,7 @@ def _create_base_decorator(
                     json_error = _validate_json_payload(required_fields)
                     if json_error is not None:
                         return json_error
-                    # json validation passed, data is available via request.get_json()
+                    # json validation passed, data is available via getattr(request, 'get_json')()
 
                 # Validate parameters
                 if validate_params:

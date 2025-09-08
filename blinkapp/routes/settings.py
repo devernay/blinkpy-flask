@@ -42,5 +42,6 @@ def setup_settings_routes(app: Flask) -> None:
         """Update settings route - thin wrapper around connexion handler."""
         from ..connexion_handlers.settings import update_user_settings
 
-        body = flask.request.get_json() or {}  # type: ignore[attr-defined]
+        # Flask 3.x get_json() - use getattr to bypass pyright LocalProxy limitation
+        body = getattr(flask.request, 'get_json')() or {}
         return update_user_settings(body)
