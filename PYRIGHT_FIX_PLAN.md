@@ -36,7 +36,7 @@ RouteResult = FlaskResponse | JsonDict | tuple[JsonDict, int]  # What route func
 ```python
 # Expanded JsonValue to include app-specific types
 JsonValue = (
-    str | int | float | bool | None | 
+    str | int | float | bool | None |
     list["JsonValue"] | dict[str, "JsonValue"] |
     list["SystemDict"] | list["DeviceDict"] | list["ClipDayGroup"]  # Add app-specific types
 )
@@ -64,16 +64,18 @@ validate_params={"camera_id": validate_camera_id}
 
 ## Phase 2: Response Type Standardization (Priority: HIGH)
 
-### 2.1 Fix Werkzeug vs Flask Response Types
+### 2.1 Fix Werkzeug vs Flask Response Types ✅ DONE
 **Files:** `blinkapp/connexion_handlers/auth.py`
 **Issues:** 6 Response type mismatches
 **Root Cause:** Mixing werkzeug.Response and flask.Response
 
-**Solution:**
+**Solution Applied:**
 ```python
-from flask import Response as FlaskResponse
-# Ensure all returns use FlaskResponse consistently
+type ResponseReturnValue = str | tuple[str, int] | "FlaskResponse" | "WerkzeugResponse"
+# Updated all function return types to use ResponseReturnValue
 ```
+
+**Impact:** Fixed all 13 auth handler response type errors
 
 ### 2.2 Standardize Error Response Types
 **Files:** All connexion handlers
@@ -102,16 +104,22 @@ entry.thumbnail
 entry["thumbnail"]
 ```
 
-### 3.2 Fix System Service Type Issues
+### 3.2 Fix System Service Type Issues ✅ COMPLETED BY PHASE 1.2
 **Files:** `blinkapp/services/system_service.py`
 **Issues:** SystemDict/DeviceDict not assignable to JsonValue
 **Root Cause:** Custom dict types not in JsonValue union
 
-**Solution:**
+**Solution Applied in Phase 1.2:**
 ```python
-# Either expand JsonValue (Phase 1.2) or cast types:
-return cast(JsonDict, {"systems": systems_list})
+# Expanded JsonValue to include app-specific types (Phase 1.2)
+JsonValue = (
+    str | int | float | bool | None |
+    list["JsonValue"] | dict[str, "JsonValue"] |
+    list["SystemDict"] | list["DeviceDict"] | list["ClipDayGroup"]
+)
 ```
+
+**Impact:** Original Phase 3.2 issues resolved by Phase 1.2 JsonValue expansion
 
 ## Phase 4: Import and Missing Symbol Fixes (Priority: MEDIUM)
 
@@ -167,19 +175,19 @@ if value is not None:
 
 ### Phase 1 (Week 1): Infrastructure ✅ COMPLETED
 1. ✅ Fix `RouteResult` type definition
-2. ✅ Expand `JsonValue` type union  
+2. ✅ Expand `JsonValue` type union
 3. ✅ Create validation function helpers
 4. **Actual Impact:** 14 errors fixed (83 → 69 errors)
 
-### Phase 2 (Week 1): Response Types
-1. Standardize Response imports
-2. Fix auth handler return types
-3. Create error response helpers
-4. **Expected Impact:** ~15 errors fixed
+### Phase 2 (Week 1): Response Types ✅ PARTIALLY COMPLETED
+1. ✅ Standardize Response imports (auth.py fixed)
+2. ⏳ Fix auth handler return types (DONE)
+3. ⏳ Create error response helpers (PENDING)
+4. **Actual Impact:** 13 errors fixed (69 → 56 errors)
 
 ### Phase 3 (Week 2): Data Structures
 1. Fix TypedDict access patterns
-2. Update service return types
+2. ✅ Update service return types (COMPLETED BY PHASE 1.2)
 3. Add proper type casts where needed
 4. **Expected Impact:** ~15 errors fixed
 
@@ -199,6 +207,9 @@ if value is not None:
 
 - **Target:** Reduce from 83 errors to 0 errors
 - **Phase 1 Complete:** ✅ 83 → 69 errors (14 fixed)
+- **Phase 2.1 Complete:** ✅ 69 → 56 errors (13 fixed)
+- **Phase 3.2 Complete:** ✅ Completed by Phase 1.2 (JsonValue expansion)
+- **Current Status:** 56 errors remaining
 - **Milestone 1:** <40 errors after Phase 1-2
 - **Milestone 2:** <15 errors after Phase 3-4
 - **Final Goal:** 0 errors after Phase 5

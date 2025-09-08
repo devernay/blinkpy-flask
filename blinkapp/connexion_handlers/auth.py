@@ -3,10 +3,13 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from flask import Response
+    from flask.wrappers import Response as FlaskResponse
+    from werkzeug.wrappers import Response as WerkzeugResponse
+
+type ResponseReturnValue = str | tuple[str, int] | "FlaskResponse" | "WerkzeugResponse"
 
 
-def main_page() -> "Response":
+def main_page() -> ResponseReturnValue:
     """Main application interface.
 
     Returns:
@@ -20,7 +23,7 @@ def main_page() -> "Response":
     return render_template("index.html")
 
 
-def login_page() -> "Response":
+def login_page() -> ResponseReturnValue:
     """Login page.
 
     Returns:
@@ -31,7 +34,7 @@ def login_page() -> "Response":
     return render_template("auth.html")
 
 
-def authenticate_user() -> "Response":
+def authenticate_user() -> ResponseReturnValue:
     """Authenticate user.
 
     NOTE: This handler is called by login_page_route() on POST requests,
@@ -59,7 +62,7 @@ def authenticate_user() -> "Response":
         ), 400
 
 
-def twofa_page() -> "Response":
+def twofa_page() -> ResponseReturnValue:
     """2FA verification page.
 
     Returns:
@@ -73,7 +76,7 @@ def twofa_page() -> "Response":
     return render_template("auth.html", is_2fa=True)
 
 
-def verify_twofa() -> "Response":
+def verify_twofa() -> ResponseReturnValue:
     """Verify 2FA code.
 
     NOTE: This handler is called by twofa_page_route() on POST requests,
@@ -102,7 +105,7 @@ def verify_twofa() -> "Response":
         ), 400
 
 
-def logout_user() -> "Response":
+def logout_user() -> ResponseReturnValue:
     """Logout user.
 
     Returns:
