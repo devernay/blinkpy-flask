@@ -112,10 +112,11 @@ def get_clip_thumbnail(
         if check:
             if clip_id_obj in clips_cache:
                 clip_entry = clips_cache[clip_id_obj]
+                thumbnail_path = clip_entry.get("thumbnail")
                 if (
                     clip_entry is not None
-                    and clip_entry.thumbnail
-                    and clip_entry.thumbnail.exists()
+                    and thumbnail_path is not None
+                    and thumbnail_path.exists()
                 ):
                     return {"success": True, "exists": True, "available": True}
                 else:
@@ -130,12 +131,13 @@ def get_clip_thumbnail(
         clip_entry = clips_cache[clip_id_obj]
 
         # Return the thumbnail file if it exists
+        thumbnail_path = clip_entry.get("thumbnail")
         if (
             clip_entry is not None
-            and clip_entry.thumbnail
-            and clip_entry.thumbnail.exists()
+            and thumbnail_path is not None
+            and thumbnail_path.exists()
         ):
-            return send_file(clip_entry.thumbnail, mimetype="image/jpeg")
+            return send_file(thumbnail_path, mimetype="image/jpeg")
         else:
             return {"success": False, "error": "Thumbnail not found"}, 404
 
