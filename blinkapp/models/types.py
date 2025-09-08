@@ -58,9 +58,16 @@ __all__ = [
 
 # Basic data types - use specific JSON types for better type safety
 JsonValue = (
-    str | int | float | bool | None | 
-    list["JsonValue"] | dict[str, "JsonValue"] |
-    list["SystemDict"] | list["DeviceDict"] | list["ClipDayGroup"]  # Add app-specific types
+    str
+    | int
+    | float
+    | bool
+    | None
+    | list["JsonValue"]
+    | dict[str, "JsonValue"]
+    | list["SystemDict"]
+    | list["DeviceDict"]
+    | list["ClipDayGroup"]  # Add app-specific types
 )
 JsonDict = dict[str, JsonValue]  # Standard JSON-serializable dictionary
 DeviceDict = dict[str, JsonValue]  # Device information dictionary
@@ -74,11 +81,13 @@ ErrorResponse = tuple[Response, int]  # Error response with Flask Response
 # Flask response types - use Flask's own types
 FlaskResponse = Response | tuple[Response, int] | tuple[Response, int, dict[str, str]]
 TemplateResult = str | FlaskResponse  # What template functions can return
-RouteResult = FlaskResponse | JsonDict | tuple[JsonDict, int]  # What route functions can return
+RouteResult = (
+    FlaskResponse | JsonDict | tuple[JsonDict, int]
+)  # What route functions can return
 
 # Decorated route function types
 DecoratedRouteFunction = Callable[
-    ..., FlaskResponse
+    ..., RouteResult  # Use RouteResult instead of FlaskResponse
 ]  # What decorated route functions return
 DecoratorFunction = Callable[
     [Callable[..., RouteResult]], DecoratedRouteFunction

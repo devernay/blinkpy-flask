@@ -18,7 +18,6 @@ from blinkapp.models.types import (
     DecoratedRouteFunction,
     DecoratorFunction,
     ErrorResponse,
-    FlaskResponse,
     RouteResult,
     TemplateResult,
     ValidationFunction,
@@ -68,7 +67,7 @@ def _get_operation_name(
     return operation_name or func.__name__.replace("_", " ")
 
 
-def _handle_response_formatting(result: RouteResult) -> FlaskResponse:
+def _handle_response_formatting(result: RouteResult) -> RouteResult:
     """Handle common response formatting logic."""
     # Import here to avoid circular import
     from blinkapp import create_api_response
@@ -235,7 +234,7 @@ def _create_base_decorator(
 
     def decorator(func: Callable[..., object]) -> DecoratedRouteFunction:
         @functools.wraps(func)
-        def wrapper(*args: object, **kwargs: object) -> FlaskResponse:
+        def wrapper(*args: object, **kwargs: object) -> RouteResult:
             op_name = _get_operation_name(func, operation_name)
 
             try:
@@ -311,7 +310,7 @@ def _get_cache_key(
         return str(args[0]) if args is not None else "default"
 
 
-def _create_cached_response(cached_result: object) -> FlaskResponse:
+def _create_cached_response(cached_result: object) -> RouteResult:
     """Create response for cached data."""
     # Import here to avoid circular import
     from blinkapp import create_api_response
@@ -320,7 +319,7 @@ def _create_cached_response(cached_result: object) -> FlaskResponse:
     return jsonify(response), status_code
 
 
-def _create_success_message_response(message: str) -> FlaskResponse:
+def _create_success_message_response(message: str) -> RouteResult:
     """Create response for simple success messages."""
     # Import here to avoid circular import
     from blinkapp import create_api_response
