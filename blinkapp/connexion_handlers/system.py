@@ -45,9 +45,9 @@ def get_system_details(network_id: str) -> JsonDict | tuple[JsonDict, int]:
 
         systems = data.get("systems", [])
         # Type narrowing: ensure systems is iterable
-        if not isinstance(systems, (list, tuple)):
+        if not isinstance(systems, list | tuple):
             return {"success": False, "error": "Invalid systems format"}, 500
-            
+
         for system in systems:
             # Type narrowing: ensure system is a dict
             if isinstance(system, dict) and str(system.get("network_id")) == str(network_id_obj):

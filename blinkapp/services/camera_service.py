@@ -150,7 +150,7 @@ async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
         async def get_camera():
             return find_camera_by_id(camera_id)
 
-        camera = await blink_conn.execute(get_camera())
+        camera = await blink_conn.execute(get_camera)
         if camera is None:
             response, status_code = create_api_response(
                 success=False,

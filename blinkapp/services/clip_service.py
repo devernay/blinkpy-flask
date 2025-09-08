@@ -65,7 +65,7 @@ def download_clip(clip_id: ClipId) -> ResponseReturnValue:
     clips_cache = ensure_clips_cache_initialized()
     if clip_id in clips_cache:
         clip_entry = clips_cache[clip_id]
-        return download_clip_common(clip_entry.file_path, clip_id)
+        return download_clip_common(clip_entry.filepath, clip_id)
     else:
         # Return 404 for missing clips
         return {"success": False, "error": "Clip not found"}, 404

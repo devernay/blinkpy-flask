@@ -59,7 +59,8 @@ def setup_system_routes(app: Flask) -> None:
         """Update system route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import update_system_settings
 
-        body = flask.request.get_json() or {}
+        body_data = flask.request.get_json()
+        body = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 
     @app.route("/api/systems/<network_id>/devices")
