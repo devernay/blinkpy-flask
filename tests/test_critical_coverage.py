@@ -30,10 +30,6 @@ from .test_base import (
 )
 
 
-class TestLoggingSetup(BaseTestCase):
-    """Test logging setup functionality - lines 441-452."""
-
-
 class TestCameraThumbnailCacheUpdate(BaseTestCase):
     """Test thumbnail cache update mechanism - lines 939-992."""
 
@@ -68,14 +64,6 @@ class TestCameraThumbnailCacheUpdate(BaseTestCase):
                 mock_unlink.assert_called_once()
         except Exception:
             self.assertTrue(True)
-
-
-class TestCacheDirectoryOperations(BaseTestCase):
-    """Test cache directory operations - lines 1316-1322."""
-
-
-class TestValidationClasses(BaseTestCase):
-    """Test validation classes and their patterns."""
 
 
 class TestCachePathInitialization(BaseTestCase):
@@ -145,10 +133,6 @@ class TestAPIResponseCreation(BaseTestCase):
         # Type assertion for pyright - we know it's a string after assertIsInstance
         assert isinstance(timestamp, str)
         self.assertIn("T", timestamp)  # ISO format contains T
-
-
-class TestLRUCacheAdvanced(BaseTestCase):
-    """Test advanced LRU cache functionality."""
 
 
 if __name__ == "__main__":

@@ -2859,10 +2859,6 @@ class TestVideoProcessingOperations(BaseTestCase):
                 mock_run.assert_called_once()
 
 
-class TestCommandLineInterface(BaseTestCase):
-    """Test command line interface and argument parsing."""
-
-
 class TestApplicationInitialization(BaseTestCase):
     """Test application initialization and startup."""
 
