@@ -454,6 +454,34 @@ class TestLoggingConfig(BaseTestCase):
 
             shutil.rmtree(temp_dir, ignore_errors=True)
 
+    @patch("logging.getLogger")
+    @patch("logging.handlers.RotatingFileHandler")
+    def test_setup_logging_function(self, mock_file: Mock, mock_logger: Mock) -> None:
+        """Test logging system initialization with file rotation."""
+        import logging
+        import tempfile
+        from unittest.mock import Mock
+
+        mock_logger_instance = Mock(spec=logging.Logger)
+        mock_logger_instance.handlers = []
+        mock_logger.return_value = mock_logger_instance
+        mock_file_handler = Mock(spec=logging.Handler)
+        mock_file.return_value = mock_file_handler
+
+        from blinkapp import initialize_cache_paths, setup_logging
+
+        # Initialize cache paths before logging setup
+        initialize_cache_paths()
+        temp_dir = tempfile.mkdtemp()
+        try:
+            setup_logging(temp_dir)
+            # Should create handlers and configure logger
+            mock_logger.assert_called()
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
 
 if __name__ == "__main__":
     unittest.main()
