@@ -438,6 +438,18 @@ class TestErrors(BaseTestCase):
         with self.assertRaises(ValueError):
             ClipId("")  # Should raise ValueError for empty string
 
+    def test_type_error_handling(self) -> None:
+        """Test TypeError handling."""
+        from blinkapp.models.ids import CameraId, ClipId
+
+        # Test with wrong types that should raise ValueError
+        with self.assertRaises((ValueError, TypeError)):
+            CameraId("")  # Empty string should raise ValueError
+
+        # Test that integers are converted to strings (should work)
+        clip_id = ClipId(123)
+        self.assertEqual(str(clip_id), "123")
+
 
 class TestErrorHandlers(BaseTestCase):
     """Test error handler functions."""

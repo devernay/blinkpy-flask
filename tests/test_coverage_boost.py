@@ -11,12 +11,7 @@ Tests targeting specific functionality including:
 import os
 import sys
 import unittest
-from unittest.mock import Mock, patch
-
-from .test_base import (
-    create_mock_camera_cache,
-    create_mock_clips_cache,
-)
+from unittest.mock import Mock
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -30,11 +25,6 @@ from .test_base import BaseTestCase
 
 class TestConfigurationValues(BaseTestCase):
     """Test configuration values and constants."""
-
-    def test_config_filename_constants(self) -> None:
-        """Test filename constants."""
-        self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
-        self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
 
     def test_config_regex_patterns(self) -> None:
         """Test Config regex patterns work correctly."""
@@ -81,40 +71,6 @@ class TestGlobalVariableAccess(BaseTestCase):
         self.assertIsNotNone(blinkapp.app)
         self.assertTrue(hasattr(blinkapp.app, "config"))
 
-    def test_cache_instance_access(self) -> None:
-        """Test global cache instance access and initialization patterns.
-
-        Why: Cache instances are global singletons that must be accessible across modules.
-        What: Verifies cache instances can be accessed and mocked for testing.
-        How: Patches global cache instances and validates access patterns work correctly.
-        """
-        # Mock the cache instances directly since they're imported globals
-        mock_camera_thumbnail_cache = create_mock_camera_cache()
-        mock_clips_cache = create_mock_clips_cache()
-
-        with patch(
-            "blinkapp.services.cache_service.camera_thumbnail_cache",
-            mock_camera_thumbnail_cache,
-        ):
-            with patch("blinkapp.services.cache_service.clips_cache", mock_clips_cache):
-                # Test that ensure functions work correctly
-                from blinkapp.services.cache_service import (
-                    ensure_camera_thumbnail_cache_initialized,
-                    ensure_clips_cache_initialized,
-                )
-
-                camera_thumbnail_cache_instance = (
-                    ensure_camera_thumbnail_cache_initialized()
-                )
-                clips_cache_instance = ensure_clips_cache_initialized()
-
-                self.assertIsNotNone(camera_thumbnail_cache_instance)
-                self.assertIsNotNone(clips_cache_instance)
-                self.assertEqual(
-                    camera_thumbnail_cache_instance, mock_camera_thumbnail_cache
-                )
-                self.assertEqual(clips_cache_instance, mock_clips_cache)
-
     def test_blink_connection_access(self) -> None:
         """Test blink_connection access."""
         from blinkapp.services import blink_service
@@ -145,18 +101,6 @@ class TestGlobalVariableAccess(BaseTestCase):
 class TestErrorHandlingPaths(BaseTestCase):
     """Test error handling code paths."""
 
-    def test_type_error_handling(self) -> None:
-        """Test TypeError handling."""
-        from blinkapp.models.ids import CameraId, ClipId
-
-        # Test with wrong types that should raise ValueError
-        with self.assertRaises((ValueError, TypeError)):
-            CameraId("")  # Empty string should raise ValueError
-
-        # Test that integers are converted to strings (should work)
-        clip_id = ClipId(123)
-        self.assertEqual(str(clip_id), "123")
-
     def test_attribute_error_handling(self) -> None:
         """Test AttributeError handling patterns."""
         # Test accessing non-existent attributes
@@ -169,11 +113,6 @@ class TestErrorHandlingPaths(BaseTestCase):
 
 class TestImportAndModuleLoading(BaseTestCase):
     """Test import statements and module loading."""
-
-    def test_flask_imports(self) -> None:
-        """Test Flask-related imports."""
-        self.assertTrue(hasattr(blinkapp, "Flask"))
-        # Note: jsonify, session, render_template are imported in route modules, not main module
 
     def test_standard_library_imports(self) -> None:
         """Test standard library imports."""

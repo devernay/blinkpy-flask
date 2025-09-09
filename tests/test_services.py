@@ -507,8 +507,35 @@ class TestCacheService(BaseTestCase):
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
 
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
+    @patch("os.makedirs")
+    @patch("shutil.rmtree")
+    @patch("os.path.exists")
+    def test_clear_file_cache_operations(
+        self, mock_exists: Mock, mock_rmtree: Mock, mock_makedirs: Mock
+    ) -> None:
+        """Test file cache clearing operations."""
+        mock_exists.return_value = True
+
+        # Test the clear_file_cache function logic
+        cache_dir = "/tmp/test_cache"
+
+        # Simulate the clear_file_cache function
+        if mock_exists(cache_dir):
+            mock_rmtree(cache_dir)
+            mock_makedirs(cache_dir, exist_ok=True)
+
+        mock_rmtree.assert_called_with(cache_dir)
+        mock_makedirs.assert_called_with(cache_dir, exist_ok=True)
+
     def test_cache_instance_access(self) -> None:
-        """Test global cache instance access and initialization patterns."""
+        """Test global cache instance access and initialization patterns.
+
+        Why: Cache instances are global singletons that must be accessible across modules.
+        What: Verifies cache instances can be accessed and mocked for testing.
+        How: Patches global cache instances and validates access patterns work correctly.
+        """
         from tests.test_base import create_mock_camera_cache, create_mock_clips_cache
 
         # Mock the cache instances directly since they're imported globals
@@ -537,28 +564,6 @@ class TestCacheService(BaseTestCase):
                     camera_thumbnail_cache_instance, mock_camera_thumbnail_cache
                 )
                 self.assertEqual(clips_cache_instance, mock_clips_cache)
-
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
-    @patch("os.makedirs")
-    @patch("shutil.rmtree")
-    @patch("os.path.exists")
-    def test_clear_file_cache_operations(
-        self, mock_exists: Mock, mock_rmtree: Mock, mock_makedirs: Mock
-    ) -> None:
-        """Test file cache clearing operations."""
-        mock_exists.return_value = True
-
-        # Test the clear_file_cache function logic
-        cache_dir = "/tmp/test_cache"
-
-        # Simulate the clear_file_cache function
-        if mock_exists(cache_dir):
-            mock_rmtree(cache_dir)
-            mock_makedirs(cache_dir, exist_ok=True)
-
-        mock_rmtree.assert_called_with(cache_dir)
-        mock_makedirs.assert_called_with(cache_dir, exist_ok=True)
 
 
 class TestCameraService(BaseTestCase):

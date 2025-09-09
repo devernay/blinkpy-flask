@@ -769,6 +769,28 @@ class TestThreadSafeLRUCache(BaseTestCase):
         # All operations should succeed
         self.assertTrue(all(results))
 
+    def test_lru_cache_memory_efficiency(self) -> None:
+        """Test LRU cache memory management with size limits.
+
+        Why: Cache must evict old entries to prevent memory leaks in long-running processes.
+        What: Verifies proper eviction of least recently used items when cache is full.
+        How: Fills cache beyond capacity and validates oldest entries are removed.
+        """
+        from blinkapp.models.cache import LRUCache
+
+        cache: LRUCache[str, str] = LRUCache(maxsize=10)
+
+        # Fill beyond capacity
+        for i in range(20):
+            cache[f"key_{i}"] = f"value_{i}"
+
+        # Should maintain max size
+        self.assertEqual(len(cache), 10)
+
+        # Should contain most recent items
+        for i in range(10, 20):
+            self.assertIn(f"key_{i}", cache)
+
 
 class TestCameraThumbnailCache(BaseTestCase):
     """Test CameraThumbnailCache functionality."""

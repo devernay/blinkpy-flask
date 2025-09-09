@@ -1035,6 +1035,11 @@ class TestConfig(BaseTestCase):
         self.assertGreater(Config.MAX_USERNAME_LENGTH, 10)
         self.assertIsInstance(Config.DEFAULT_SYSTEM_NAME, str)
 
+    def test_config_filename_constants(self) -> None:
+        """Test filename constants."""
+        self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
+        self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
+
 
 if __name__ == "__main__":
     # Create test suite
