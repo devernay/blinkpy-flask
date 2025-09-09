@@ -462,6 +462,14 @@ class TestClipId(BaseTestCase):
         with self.assertRaises(ValueError):
             ClipId("")
 
+    def test_type_error_handling(self) -> None:
+        """Test TypeError handling."""
+        from blinkapp.models.ids import ClipId
+
+        # Test that integers are converted to strings (should work)
+        clip_id = ClipId(123)
+        self.assertEqual(str(clip_id), "123")
+
     def test_clip_id_string_methods(self) -> None:
         """Test ClipId string method delegation."""
         clip_id = ClipId("clip_456")
