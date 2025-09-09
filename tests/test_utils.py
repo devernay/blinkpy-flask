@@ -17,6 +17,7 @@ DO NOT add Flask route tests here - those belong in test_integration_api.py.
 import unittest
 from unittest.mock import Mock, patch
 
+from blinkapp.config import Config
 from tests.test_base import BaseTestCase
 
 
@@ -481,6 +482,14 @@ class TestLoggingConfig(BaseTestCase):
             import shutil
 
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+    @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
+    def test_logging_configuration(self) -> None:
+        """Test logging configuration paths."""
+        # Test that logging configuration can be accessed
+        self.assertTrue(hasattr(Config, "LOG_FILE"))
+        self.assertTrue(hasattr(Config, "LOG_MAX_BYTES"))
+        self.assertTrue(hasattr(Config, "LOG_BACKUP_COUNT"))
 
 
 if __name__ == "__main__":

@@ -9,13 +9,10 @@ Tests critical application functionality including:
 - Threading and concurrency
 """
 
-import logging
 import os
 import sys
 import threading
 import unittest
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import Mock, patch
 
@@ -26,7 +23,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cachetools import LRUCache
 
 from blinkapp import (
-    Config,
     create_api_response,
     initialize_cache_paths,
 )
@@ -35,134 +31,11 @@ from blinkapp.models.ids import CameraId, ClipId
 from .test_base import (
     BaseTestCase,
     create_mock_camera,
-    mock_execute_with_coroutine_cleanup,
 )
 
 
 class TestLoggingSetup(BaseTestCase):
     """Test logging setup functionality - lines 441-452."""
-
-    @patch("logging.getLogger")
-    @patch("logging.handlers.RotatingFileHandler")
-    def test_setup_logging_function(self, mock_file: Mock, mock_logger: Mock) -> None:
-        """Test logging system initialization with file rotation.
-
-        Why: Proper logging is critical for debugging production issues and monitoring.
-        What: Verifies logging setup creates both file and console handlers correctly.
-        How: Mocks logging components and validates handler configuration and formatting.
-        """
-        mock_logger_instance = Mock(spec=logging.Logger)
-        mock_logger_instance.handlers = []
-        mock_logger.return_value = mock_logger_instance
-        mock_file_handler = Mock(spec=logging.Handler)
-        mock_file.return_value = mock_file_handler
-
-        import tempfile
-
-        from blinkapp import initialize_cache_paths, setup_logging
-
-        # Initialize cache paths before logging setup
-        initialize_cache_paths()
-        temp_dir = tempfile.mkdtemp()
-        try:
-            setup_logging(temp_dir)
-            # Should create handlers and configure logger
-            mock_logger.assert_called()
-        finally:
-            import shutil
-
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-    @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
-    def test_logging_configuration(self) -> None:
-        """Test logging configuration paths."""
-        # Test that logging configuration can be accessed
-        self.assertTrue(hasattr(Config, "LOG_FILE"))
-        self.assertTrue(hasattr(Config, "LOG_MAX_BYTES"))
-        self.assertTrue(hasattr(Config, "LOG_BACKUP_COUNT"))
-
-
-class TestBlinkInitialization(BaseTestCase):
-    """Test Blink system initialization - lines 800-820."""
-
-    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
-    @patch("aiohttp.ClientSession")
-    @patch("blinkpy.blinkpy.Blink")
-    @patch("blinkpy.auth.Auth")
-    def test_initialize_blink_success(
-        self,
-        mock_auth: Mock,
-        mock_blink: Mock,
-        mock_session: Mock,
-        mock_connection: Mock,
-    ) -> None:
-        """Test successful Blink initialization."""
-        # Setup mocks
-        mock_session_instance = Mock(spec=object)
-        mock_session.return_value = mock_session_instance
-
-        from tests.test_base import create_mock_blink_instance
-
-        mock_blink_instance = create_mock_blink_instance(
-            available=True, key_required=False
-        )
-        mock_blink.return_value = mock_blink_instance
-
-        from tests.test_base import create_mock_auth
-
-        mock_auth_instance = create_mock_auth()
-        mock_auth.return_value = mock_auth_instance
-
-        from blinkapp.services.auth_service import initialize_blink
-
-        # Mock the async execution
-        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=True)
-        result = mock_connection.execute(
-            initialize_blink("test@example.com", "password")
-        )
-        self.assertTrue(result)
-
-    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
-    @patch("aiohttp.ClientSession")
-    @patch("blinkpy.blinkpy.Blink")
-    @patch("blinkpy.auth.Auth")
-    def test_initialize_blink_2fa_required(
-        self,
-        mock_auth: Mock,
-        mock_blink: Mock,
-        mock_session: Mock,
-        mock_connection: Mock,
-    ) -> None:
-        """Test Blink initialization when 2FA authentication is required.
-
-        Why: 2FA is commonly required for Blink accounts and must be handled properly.
-        What: Verifies system detects 2FA requirement and handles authentication flow.
-        How: Mocks auth requiring 2FA and validates proper exception handling.
-        """
-        # Setup mocks
-        mock_session_instance = Mock(spec=object)
-        mock_session.return_value = mock_session_instance
-
-        from tests.test_base import create_mock_blink_instance
-
-        mock_blink_instance = create_mock_blink_instance(
-            available=True, key_required=True
-        )
-        mock_blink.return_value = mock_blink_instance
-
-        try:
-            from blinkapp.services.auth_service import initialize_blink
-
-            # Mock the async execution for 2FA required case
-            mock_connection.execute = mock_execute_with_coroutine_cleanup(
-                return_value="2fa_required"
-            )
-            result = mock_connection.execute(
-                initialize_blink("test@example.com", "password")
-            )
-            self.assertEqual(result, "2fa_required")
-        except (ImportError, AttributeError):
-            self.assertTrue(True)
 
 
 class TestCameraThumbnailCacheUpdate(BaseTestCase):
@@ -228,100 +101,12 @@ class TestCameraThumbnailCacheUpdate(BaseTestCase):
             self.assertTrue(True)
 
 
-class TestTimeFormatting(BaseTestCase):
-    """Test time formatting functions - lines 890-915."""
-
-    def test_time_difference_calculation(self) -> None:
-        """Test time difference calculation for thumbnails."""
-        # Test recent timestamp (minutes ago)
-        now = datetime.now()
-        recent_time = now - timedelta(minutes=30)
-        recent_ts = recent_time.timestamp()
-
-        # Test the time formatting logic
-        diff = now - datetime.fromtimestamp(recent_ts)
-        minutes = diff.seconds // 60
-        expected = f"{minutes}m ago"
-
-        self.assertIn("m ago", expected)
-
-    def test_time_formatting_hours(self) -> None:
-        """Test time formatting for hours."""
-        now = datetime.now()
-        hours_ago = now - timedelta(hours=3)
-
-        diff = now - hours_ago
-        hours = diff.seconds // 3600
-        expected = f"{hours}h ago"
-
-        self.assertIn("h ago", expected)
-
-    def test_time_formatting_days(self) -> None:
-        """Test time formatting for days."""
-        now = datetime.now()
-        days_ago = now - timedelta(days=2)
-
-        diff = now - days_ago
-        days = diff.days
-        expected = f"{days}d ago"
-
-        self.assertEqual(expected, "2d ago")
-
-
 class TestCacheDirectoryOperations(BaseTestCase):
     """Test cache directory operations - lines 1316-1322."""
-
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
-    @patch("os.makedirs")
-    @patch("shutil.rmtree")
-    @patch("os.path.exists")
-    def test_clear_file_cache_operations(
-        self, mock_exists: Mock, mock_rmtree: Mock, mock_makedirs: Mock
-    ) -> None:
-        """Test file cache clearing operations."""
-        mock_exists.return_value = True
-
-        # Test the clear_file_cache function logic
-        cache_dir = "/tmp/test_cache"
-
-        # Simulate the clear_file_cache function
-        if mock_exists(cache_dir):
-            mock_rmtree(cache_dir)
-            mock_makedirs(cache_dir, exist_ok=True)
-
-        mock_rmtree.assert_called_with(cache_dir)
-        mock_makedirs.assert_called_with(cache_dir, exist_ok=True)
-
-    @patch("concurrent.futures.ThreadPoolExecutor")
-    def test_parallel_cache_clearing(self, mock_executor: Mock) -> None:
-        """Test parallel execution of cache clearing."""
-        mock_executor_instance = Mock(spec=ThreadPoolExecutor)
-        mock_executor.return_value.__enter__.return_value = mock_executor_instance
-
-        # Test parallel execution pattern
-        with mock_executor() as executor:
-            executor.submit(lambda: None)
-            executor.submit(lambda: None)
-
-        # Should have submitted tasks
-        self.assertTrue(mock_executor.called)
 
 
 class TestValidationClasses(BaseTestCase):
     """Test validation classes and their patterns."""
-
-    def test_camera_id_validation_patterns(self) -> None:
-        """Test CameraId validation patterns."""
-        # Test valid patterns
-        valid_ids = ["12345", "camera123", "CAM_001"]
-        for valid_id in valid_ids:
-            try:
-                camera_id = CameraId(valid_id)
-                self.assertEqual(str(camera_id), valid_id)
-            except ValueError:
-                # Some patterns might be more restrictive
-                pass
 
     def test_validation_error_messages(self) -> None:
         """Test ID validation provides meaningful error messages for debugging.
