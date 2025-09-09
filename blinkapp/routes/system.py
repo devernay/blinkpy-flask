@@ -58,8 +58,8 @@ def setup_system_routes(app: Flask) -> None:
         """Update system route - thin wrapper around connexion handler."""
         from ..connexion_handlers.system import update_system_settings
 
-        # Flask 3.x: Get actual Request object from LocalProxy for type safety
-        body_data = request._get_current_object().get_json()
+        # Flask 3.x: Use getattr to access LocalProxy method
+        body_data = getattr(request, "get_json")()  # noqa: B009
         body = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 

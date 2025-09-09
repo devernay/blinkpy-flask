@@ -147,15 +147,10 @@ async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
         blink_conn = ensure_blink_connection_initialized()
 
         # Find camera through shared connection
-        async def get_camera():
-            return find_camera_by_id(camera_id)
-
-        camera = await blink_conn.execute(get_camera)
+        camera = find_camera_by_id(camera_id)
         if camera is None:
             response, status_code = create_api_response(
-                success=False,
-                error="Camera not found",
-                status_code=404
+                success=False, error="Camera not found", status_code=404
             )
             return response, status_code
 
@@ -166,15 +161,12 @@ async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
         await blink_conn.execute(do_record())
 
         response, status_code = create_api_response(
-            success=True,
-            data={"message": f"Recording started for camera {camera_id}"}
+            success=True, data={"message": f"Recording started for camera {camera_id}"}
         )
         return response, status_code
     except Exception as e:
         logger.error(f"Failed to start recording for camera {camera_id}: {e}")
         response, status_code = create_api_response(
-            success=False,
-            error=f"Failed to start recording: {str(e)}",
-            status_code=500
+            success=False, error=f"Failed to start recording: {str(e)}", status_code=500
         )
         return response, status_code

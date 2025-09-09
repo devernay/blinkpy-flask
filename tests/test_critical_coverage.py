@@ -16,7 +16,6 @@ import threading
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, patch
 
@@ -260,6 +259,7 @@ class TestTimeFormatting(BaseTestCase):
 
         self.assertEqual(expected, "2d ago")
 
+
 class TestCacheDirectoryOperations(BaseTestCase):
     """Test cache directory operations - lines 1316-1322."""
 
@@ -360,20 +360,29 @@ class TestValidationClasses(BaseTestCase):
 class TestCachePathInitialization(BaseTestCase):
     """Test cache path initialization - lines 754-775."""
 
+    @patch("pathlib.Path.mkdir")
     @patch("pathlib.Path")
-    def test_initialize_cache_paths_with_config(self, mock_path: Mock) -> None:
+    def test_initialize_cache_paths_with_config(
+        self, mock_path: Mock, mock_mkdir: Mock
+    ) -> None:
         """Test cache path initialization with app config."""
+        from tests.test_base import create_mock_path
+
         # Setup mock path that supports / operator
-        mock_path_instance = Mock(spec=Path)
-        mock_path_instance.__truediv__ = Mock(return_value=Mock(spec=Path))
-        mock_path_instance.__str__ = Mock(return_value="/test/cache")
+        mock_path_instance = create_mock_path(
+            "test_critical_coverage_cache_path", "/test/cache", mock_mkdir
+        )
+        mock_subpath = create_mock_path(
+            "test_critical_coverage_subpath", "/test/cache/subdir", mock_mkdir
+        )
+        mock_path_instance.__truediv__ = Mock(return_value=mock_subpath)
         mock_path.return_value = mock_path_instance
 
         # Test initialization (will use default config outside app context)
         initialize_cache_paths()
 
         # Should create directories
-        mock_path_instance.mkdir.assert_called()
+        mock_mkdir.assert_called()
 
     def test_initialize_cache_paths_default(self) -> None:
         """Test cache path initialization with defaults."""

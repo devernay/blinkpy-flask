@@ -16,6 +16,8 @@ import sys
 import unittest
 from collections.abc import Callable
 from contextlib import contextmanager
+from datetime import datetime
+from pathlib import Path as RealPath
 from typing import ParamSpec, TypeVar
 from unittest.mock import MagicMock, Mock, _patch
 from unittest.mock import patch as original_patch
@@ -30,6 +32,26 @@ from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
 
 
+def create_mock_path(
+    name: str, path_str: str = "/mock/path", mkdir_mock: Mock | None = None
+) -> Mock:
+    """Create a properly configured Mock Path object.
+
+    Args:
+        name: Unique name for the Mock (required for identification)
+        path_str: String representation of the path
+        mkdir_mock: Optional Mock to use for mkdir method
+
+    Returns:
+        Mock Path object with proper __str__ and mkdir configuration
+    """
+    mock_path = Mock(spec=RealPath, name=name)
+    mock_path.__str__ = Mock(return_value=path_str)
+    if mkdir_mock:
+        mock_path.mkdir = mkdir_mock
+    return mock_path
+
+
 def strict_patch_func(target: str, *args, **kwargs) -> _patch:
     """Patch function that only allows patching symbols in __all__."""
     # Allow bypassing strict patching for specific implementation detail tests
@@ -40,6 +62,8 @@ def strict_patch_func(target: str, *args, **kwargs) -> _patch:
         # Check if we're in a test that checks implementation details
         test_name = None
         for i in range(10):  # Look up the call stack
+            if frame is None:
+                break
             frame = frame.f_back
             if frame is None:
                 break
@@ -230,7 +254,7 @@ def create_mock_blink_instance(
     available: bool = True,
     sync_data: dict[str, str | int] | None = None,
     networks: list[dict[str, str | int]] | None = None,
-    cameras: CaseInsensitiveDict[Mock] | None = None,
+    cameras: CaseInsensitiveDict[Mock] | dict[str, Mock] | None = None,
     refresh: Callable[[], None] | None = None,
     start: Callable[[], None] | None = None,
     save: Callable[[], None] | None = None,
@@ -291,7 +315,7 @@ def create_mock_stream_manager(
     active_streams: dict[str, Mock] | None = None,
     cleanup_on_exit: bool = True,
     stream_id: str | None = None,
-    created_at: str | int | None = None,
+    created_at: str | int | datetime | None = None,
     size: int | None = None,
 ) -> Mock:
     """Create a mock StreamManager with common attributes."""
@@ -366,7 +390,7 @@ def create_mock_sync(
     network_id: int = 12345,
     armed: bool = False,
     online: bool = True,
-    cameras: CaseInsensitiveDict[Mock] | None = None,
+    cameras: CaseInsensitiveDict[Mock] | dict[str, Mock] | None = None,
     local_storage: bool = False,
     local_storage_manifest_ready: bool = False,
     name: str | None = None,
@@ -399,7 +423,7 @@ def create_mock_sync(
 
 def create_mock_clip_item(
     clip_id: str | int = "123",
-    created_at: str | int | None = None,
+    created_at: str | int | datetime | None = None,
     name: str = "Test Camera",
     size: int | None = None,
     url: str | None = None,
@@ -439,7 +463,7 @@ def create_mock_clip_cache_entry(
     access_count: int = 0,
     last_accessed: float | None = None,
     filepath: str | None = None,
-    thumbnail: str | None = None,
+    thumbnail: str | os.PathLike[str] | None = None,
     cloud_thumbnail_url: str | None = None,
 ) -> Mock:
     """Create a mock ClipCacheEntry with proper spec."""
@@ -465,7 +489,7 @@ def create_mock_clip_cache_entry(
 
 
 def create_mock_blink_connection(
-    execute_return_value: str | list[dict[str, str | int]] | None = None,
+    execute_return_value: str | list[dict[str, str | int]] | bool | None = None,
     execute_side_effect: Exception | list[str] | None = None,
     blink: Mock | None = None,
 ) -> Mock:
@@ -561,9 +585,13 @@ def initialize_for_testing() -> None:
 
     # Initialize cache directories
     if not blinkapp.CACHE_DIR:
-        from blinkapp.services.cache_service import initialize_cache_paths
+        # Mock the cache path initialization to avoid creating real directories
+        from unittest.mock import patch
 
-        initialize_cache_paths()
+        with patch("pathlib.Path.mkdir"):
+            from blinkapp.services.cache_service import initialize_cache_paths
+
+            initialize_cache_paths()
 
     # Initialize cache objects
     try:
@@ -686,12 +714,13 @@ class BaseTestCase(unittest.TestCase):
                         pass
 
             # Also close any handlers that might be lingering
-            for handler in logging._handlers.copy():
-                try:
-                    handler.close()
-                except Exception:
-                    pass
-            logging._handlers.clear()
+            if hasattr(logging, "_handlers"):
+                for handler in logging._handlers.copy():  # type: ignore[attr-defined]
+                    try:
+                        handler.close()
+                    except Exception:
+                        pass
+                logging._handlers.clear()  # type: ignore[attr-defined]
 
             # Find and close any pending coroutines from AsyncMock BEFORE gc.collect()
             pending_coros = []
@@ -725,8 +754,8 @@ class BaseTestCase(unittest.TestCase):
                             # Only close files that look like log files
                             if (
                                 hasattr(obj, "name")
-                                and isinstance(obj.name, str)
-                                and "log" in obj.name
+                                and isinstance(getattr(obj, "name", None), str)
+                                and "log" in getattr(obj, "name", "")
                             ):
                                 obj.close()
                     except Exception:
@@ -756,9 +785,13 @@ class FlaskTestCase(BaseTestCase):
         self.client = self.app.test_client()
 
         # Initialize cache paths for Flask tests
+        # Mock the cache path initialization to avoid creating real directories
+        from unittest.mock import patch
+
         import blinkapp
 
-        blinkapp.initialize_cache_paths()
+        with patch("pathlib.Path.mkdir"):
+            blinkapp.initialize_cache_paths()
 
     def setup_mock_blink(self, available=True, sync_data=None, cameras=None):
         """Helper to set up mock Blink objects with common configuration."""

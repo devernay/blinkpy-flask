@@ -42,6 +42,6 @@ def setup_settings_routes(app: Flask) -> None:
         """Update settings route - thin wrapper around connexion handler."""
         from ..connexion_handlers.settings import update_user_settings
 
-        # Flask 3.x: Get actual Request object from LocalProxy for type safety
-        body = request._get_current_object().get_json() or {}
+        # Flask 3.x: Use getattr to access LocalProxy method
+        body = getattr(request, "get_json")() or {}  # noqa: B009
         return update_user_settings(body)

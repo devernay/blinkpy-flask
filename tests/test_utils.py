@@ -15,6 +15,7 @@ DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
 
 import unittest
+from unittest.mock import Mock, patch
 
 from tests.test_base import BaseTestCase
 
@@ -170,6 +171,7 @@ class TestFormatters(BaseTestCase):
 
         result = format_time_duration(3600)  # 1h exactly
         self.assertEqual(result, "1h")
+
 
 class TestValidators(BaseTestCase):
     """Test validator functions."""
@@ -370,7 +372,8 @@ class TestErrorHandlers(BaseTestCase):
 class TestLoggingConfig(BaseTestCase):
     """Test logging configuration."""
 
-    def test_setup_logging_basic(self) -> None:
+    @patch("pathlib.Path.mkdir")
+    def test_setup_logging_basic(self, mock_mkdir: Mock) -> None:
         """Test basic logging setup."""
         from blinkapp.utils.logging_config import setup_logging
 

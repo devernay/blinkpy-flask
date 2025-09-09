@@ -8,13 +8,11 @@ including error handling, response formatting, and validation.
 import functools
 import logging
 from collections.abc import Callable
-from typing import Protocol
 
 from flask import Response, jsonify, request
 from flask.wrappers import Request
 
 from blinkapp.models.types import (
-    CacheKey,
     DecoratedRouteFunction,
     DecoratorFunction,
     ErrorResponse,
@@ -26,23 +24,13 @@ from blinkapp.models.types import (
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "CacheProtocol",
     "api_route",
     "api_route_with_validation",
     "simple_success_response",
-    "cached_response",
     "file_response_route",
     "method_dispatch_route",
-    "cached_api_route",
     "template_route_with_validation",
 ]
-
-
-class CacheProtocol(Protocol):
-    """Protocol for cache-like objects."""
-
-    def get(self, key: CacheKey, default: object = None) -> object: ...
-    def __setitem__(self, key: CacheKey, value: object) -> None: ...
 
 
 def _get_template_operation_name(
@@ -125,8 +113,8 @@ def _validate_json_payload(
     from blinkapp import Config, create_api_response
 
     assert isinstance(request, Request)
-    # Flask 3.x: Get actual Request object from LocalProxy for type safety
-    data: dict[str, object] | None = request._get_current_object().get_json()
+    # Flask 3.x: Use getattr to access LocalProxy method
+    data: dict[str, object] | None = getattr(request, "get_json")()  # noqa: B009
     if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(
             success=False,
@@ -146,7 +134,7 @@ def _validate_json_payload(
             )
             return jsonify(response), status_code
 
-    return None  # Success - data is available via request._get_current_object().get_json()
+    return None  # Success - data is available via getattr(request, 'get_json')()
 
 
 def _validate_parameters(
@@ -222,8 +210,6 @@ def _create_base_decorator(
     required_fields: list[str] | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
     success_message: str | None = None,
-    cache_dict: CacheProtocol | None = None,
-    cache_key_func: Callable[..., CacheKey] | None = None,
     skip_response_formatting: bool = False,
 ) -> DecoratorFunction:
     """
@@ -238,30 +224,23 @@ def _create_base_decorator(
         required_fields: List of required fields in JSON payload
         validate_params: Dict mapping parameter names to validation functions
         success_message: Success message for simple success responses
-        cache_dict: Dictionary to use for caching
-        cache_key_func: Function to generate cache key
         skip_response_formatting: If True, return result directly (for file responses)
     """
 
-    def decorator(func: Callable[..., object]) -> DecoratedRouteFunction:
+    def decorator(func: Callable[..., RouteResult]) -> DecoratedRouteFunction:
         @functools.wraps(func)
         def wrapper(*args: object, **kwargs: object) -> RouteResult:
             op_name = _get_operation_name(func, operation_name)
 
             try:
-                # Handle caching (check cache first)
-                if cache_dict is not None:
-                    cache_key = _get_cache_key(cache_key_func, args, kwargs)
-                    cached_result = cache_dict.get(cache_key)
-                    if cached_result is not None:
-                        return _create_cached_response(cached_result)
+                # Handle caching (check cache first) - REMOVED: unused functionality
 
                 # Validate JSON if required
                 if validate_json:
                     json_error = _validate_json_payload(required_fields)
                     if json_error is not None:
                         return json_error
-                    # json validation passed, data is available via request._get_current_object().get_json()
+                    # json validation passed, data is available via getattr(request, 'get_json')()
 
                 # Validate parameters
                 if validate_params:
@@ -277,10 +256,7 @@ def _create_base_decorator(
                 # Call the original function
                 result = func(*args, **kwargs)
 
-                # Handle caching (store result)
-                if cache_dict is not None and not _is_error_response(result):
-                    cache_key = _get_cache_key(cache_key_func, args, kwargs)
-                    cache_dict[cache_key] = result
+                # Handle caching (store result) - REMOVED: unused functionality
 
                 # Handle simple success response
                 if success_message is not None:
@@ -298,7 +274,10 @@ def _create_base_decorator(
                             f"Expected FlaskResponse but got {type(result)} in {op_name}"
                         )
                         # Convert object to RouteResult through type narrowing
-                        if isinstance(result, dict | str | int | float | bool) or result is None:
+                        if (
+                            isinstance(result, dict | str | int | float | bool)
+                            or result is None
+                        ):
                             route_result: RouteResult = result
                         else:
                             # For other types, convert to dict
@@ -313,27 +292,6 @@ def _create_base_decorator(
         return wrapper
 
     return decorator
-
-
-def _get_cache_key(
-    cache_key_func: Callable[..., CacheKey] | None = None,
-    args: tuple[object, ...] | None = None,
-    kwargs: dict[str, object] | None = None,
-) -> CacheKey:
-    """Generate cache key from function arguments."""
-    if cache_key_func is not None:
-        return cache_key_func(*(args or ()), **(kwargs or {}))
-    else:
-        return str(args[0]) if args is not None else "default"
-
-
-def _create_cached_response(cached_result: object) -> RouteResult:
-    """Create response for cached data."""
-    # Import here to avoid circular import
-    from blinkapp import create_api_response
-
-    response, status_code = create_api_response(success=True, data=cached_result)
-    return jsonify(response), status_code
 
 
 def _create_success_message_response(message: str) -> RouteResult:
@@ -423,29 +381,6 @@ def simple_success_response(message: str | None = None) -> DecoratorFunction:
     return _create_base_decorator(success_message=message)
 
 
-def cached_response(
-    cache_dict: CacheProtocol, cache_key_func: Callable[..., CacheKey] | None = None
-) -> DecoratorFunction:
-    """
-    Decorator that adds caching to API responses.
-
-    Args:
-        cache_dict: Dictionary to use for caching
-        cache_key_func: Function to generate cache key from function args
-                       If not provided, uses the first argument as key
-
-    Usage:
-        @app.route("/api/clip/list")
-        @cached_response(clips_metadata_cache, lambda storage_type: storage_type)
-        @api_route("get clips")
-        def get_clips():
-            storage_type = request.args.get("storage", "cloud")
-            # ... fetch clips logic ...
-            return clips
-    """
-    return _create_base_decorator(cache_dict=cache_dict, cache_key_func=cache_key_func)
-
-
 def file_response_route(
     operation_name: str | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
@@ -498,43 +433,6 @@ def method_dispatch_route(operation_name: str | None = None) -> DecoratorFunctio
     """
     return _create_base_decorator(
         operation_name=operation_name, skip_response_formatting=True
-    )
-
-
-def cached_api_route(
-    operation_name: str | None = None,
-    cache_dict: CacheProtocol | None = None,
-    cache_key_func: Callable[..., CacheKey] | None = None,
-    validate_params: dict[str, ValidationFunction] | None = None,
-) -> DecoratorFunction:
-    """
-    Combined decorator for API routes with caching and validation.
-
-    This combines the functionality of api_route, cached_response, and validation
-    into a single decorator for complex routes.
-
-    Args:
-        operation_name: Optional name for the operation
-        cache_dict: Dictionary to use for caching
-        cache_key_func: Function to generate cache key from function args
-        validate_params: Dict mapping parameter names to validation functions
-
-    Usage:
-        @app.route("/api/clip/list")
-        @cached_api_route(
-            "get clips",
-            cache_dict=clips_metadata_cache,
-            cache_key_func=lambda: request.args.get("storage", "cloud")
-        )
-        def get_clips():
-            # Caching and error handling are automatic
-            return clips_data
-    """
-    return _create_base_decorator(
-        operation_name=operation_name,
-        cache_dict=cache_dict,
-        cache_key_func=cache_key_func,
-        validate_params=validate_params,
     )
 
 

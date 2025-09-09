@@ -18,7 +18,7 @@ def create_api_response(
     Returns:
         Standardized API response dict with timestamp
     """
-    response: JsonDict = {
+    response: dict[str, JsonValue] = {
         "success": success,
         "timestamp": datetime.now(UTC).isoformat(),
     }

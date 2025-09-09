@@ -18,7 +18,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from flask import jsonify, send_file
+from flask import send_file
 
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
@@ -143,7 +143,7 @@ def download_cloud_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
                     error=error or "Failed to download cloud clip",
                     status_code=status_code,
                 )
-                return jsonify(response_dict), status_code
+                return response_dict, status_code
 
         return download_clip_common(clip_path, clip_id)
 
@@ -154,7 +154,7 @@ def download_cloud_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
             error=f"Failed to download cloud clip: {e}",
             status_code=500,
         )
-        return jsonify(response_dict), status_code
+        return response_dict, status_code
 
 
 def download_local_clip(
@@ -286,7 +286,9 @@ def download_local_clip(
         )
 
 
-def download_clip_common(clip_path: Path, clip_id: ClipId) -> Response | tuple[JsonDict, int]:
+def download_clip_common(
+    clip_path: Path, clip_id: ClipId
+) -> Response | tuple[JsonDict, int]:
     """Common clip download functionality for both cloud and local clips."""
     try:
         if not clip_path.exists():

@@ -104,12 +104,10 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
             # Validate against schema
             try:
-                validate(
-                    instance=result,
-                    schema=dict(resolved_schema)
-                    if isinstance(resolved_schema, dict)
-                    else resolved_schema,
-                )
+                if isinstance(resolved_schema, dict):
+                    validate(instance=result, schema=resolved_schema)
+                else:
+                    self.fail(f"Invalid schema type: {type(resolved_schema)}")
             except ValidationError as e:
                 self.fail(f"Camera list response validation failed: {e.message}")
 
@@ -129,12 +127,10 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
             # Validate against schema
             try:
-                validate(
-                    instance=result,
-                    schema=dict(resolved_schema)
-                    if isinstance(resolved_schema, dict)
-                    else resolved_schema,
-                )
+                if isinstance(resolved_schema, dict):
+                    validate(instance=result, schema=resolved_schema)
+                else:
+                    self.fail(f"Invalid schema type: {type(resolved_schema)}")
             except ValidationError as e:
                 self.fail(f"Settings response validation failed: {e.message}")
 
@@ -178,12 +174,10 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
             # Validate against schema
             try:
-                validate(
-                    instance=result,
-                    schema=dict(resolved_schema)
-                    if isinstance(resolved_schema, dict)
-                    else resolved_schema,
-                )
+                if isinstance(resolved_schema, dict):
+                    validate(instance=result, schema=resolved_schema)
+                else:
+                    self.fail(f"Invalid schema type: {type(resolved_schema)}")
             except ValidationError as e:
                 self.fail(f"Systems response validation failed: {e.message}")
 
@@ -209,12 +203,10 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
             # Validate against schema
             try:
-                validate(
-                    instance=result,
-                    schema=dict(resolved_schema)
-                    if isinstance(resolved_schema, dict)
-                    else resolved_schema,
-                )
+                if isinstance(resolved_schema, dict):
+                    validate(instance=result, schema=resolved_schema)
+                else:
+                    self.fail(f"Invalid schema type: {type(resolved_schema)}")
             except ValidationError as e:
                 self.fail(f"Clips response validation failed: {e.message}")
 
@@ -243,12 +235,10 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
             # Validate against schema
             try:
-                validate(
-                    instance=result,
-                    schema=dict(resolved_schema)
-                    if isinstance(resolved_schema, dict)
-                    else resolved_schema,
-                )
+                if isinstance(resolved_schema, dict):
+                    validate(instance=result, schema=resolved_schema)
+                else:
+                    self.fail(f"Invalid schema type: {type(resolved_schema)}")
             except ValidationError as e:
                 self.fail(f"Streaming response validation failed: {e.message}")
 

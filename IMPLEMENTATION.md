@@ -182,11 +182,11 @@ When checking and fixing code quality fix those issue in that order:
 1. fix "ruff check" errors and warnings in the main code and the test code
 2. fix "pyright" errors in the main code
 3. fix "pyright" warnings in the main code
-4. run pytest on the full test suite and fix errors
+4. run pytest on the full test suite and fix errors (remove tests that check for functions that were removed)
 5. fix "pyright" errors in the test code
 6. fix "pyright" warnings in the test code
 7. run pytest on the full test suite and fix errors and warnings
-Don't forget that the application API is described in api.json, and the Blink API is described in blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol.
+Don't forget that the application API is described in api.json, and the Blink API is described in blink-api.json, blinkpy-source, and ../BlinkMonitorProtocol. blinkpy-source contains the blinkpy implementation, tests, and an example in blinkpy-source/blinkapp which can be used as reference.
 
 ### blink-api.json consolidation
 

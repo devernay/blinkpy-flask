@@ -144,9 +144,11 @@ class BlinkConnection:
 
         if self.blink is not None:
             # Close the aiohttp session if it exists
-            if (self.blink.auth is not None 
-                and hasattr(self.blink.auth, 'session') 
-                and self.blink.auth.session is not None):
+            if (
+                self.blink.auth is not None
+                and hasattr(self.blink.auth, "session")
+                and self.blink.auth.session is not None
+            ):
                 try:
                     if self.loop and self.loop.is_running():
                         future = asyncio.run_coroutine_threadsafe(
@@ -155,7 +157,7 @@ class BlinkConnection:
                         future.result(timeout=Config.FUTURE_RESULT_TIMEOUT)
                 except (TimeoutError, RuntimeError, OSError) as e:
                     logger.debug(f"Session cleanup: {e}")
-            
+
             # Clear the Blink reference (proper teardown per blinkpy tests)
             self.blink = None
 

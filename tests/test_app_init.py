@@ -50,8 +50,24 @@ class TestAppInitialization(unittest.TestCase):
                 # Expected to fail in test environment, but function exists
                 pass
 
-    def test_initialize_cache_paths_basic(self) -> None:
+    @patch("pathlib.Path.mkdir")
+    @patch("pathlib.Path")
+    def test_initialize_cache_paths_basic(
+        self, mock_path: Mock, mock_mkdir: Mock
+    ) -> None:
         """Test initialize_cache_paths basic functionality."""
+        from tests.test_base import create_mock_path
+
+        # Setup mock path that supports / operator
+        mock_path_instance = create_mock_path(
+            "test_app_init_cache_paths_basic", "/test/cache", mock_mkdir
+        )
+        mock_subpath = create_mock_path(
+            "test_app_init_subpath", "/test/cache/subdir", mock_mkdir
+        )
+        mock_path_instance.__truediv__ = Mock(return_value=mock_subpath)
+        mock_path.return_value = mock_path_instance
+
         try:
             result = initialize_cache_paths()
             self.assertIsInstance(result, (dict, type(None)))
