@@ -375,10 +375,20 @@ class TestLoggingConfig(BaseTestCase):
     @patch("pathlib.Path.mkdir")
     def test_setup_logging_basic(self, mock_mkdir: Mock) -> None:
         """Test basic logging setup."""
+        import tempfile
+
         from blinkapp.utils.logging_config import setup_logging
 
-        # Should not raise exception
-        setup_logging()
+        # Create temporary directory that persists for test
+        temp_dir = tempfile.mkdtemp()
+        try:
+            # Should not raise exception
+            setup_logging(temp_dir)
+        finally:
+            # Clean up
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

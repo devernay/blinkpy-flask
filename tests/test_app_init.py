@@ -44,11 +44,18 @@ class TestAppInitialization(unittest.TestCase):
             mock_get_logger.return_value = Mock(spec=logging.Logger)
 
             # Should not raise exception
+            import tempfile
+
+            temp_dir = tempfile.mkdtemp()
             try:
-                setup_logging()
+                setup_logging(temp_dir)
             except Exception:
                 # Expected to fail in test environment, but function exists
                 pass
+            finally:
+                import shutil
+
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
     @patch("pathlib.Path.mkdir")
     @patch("pathlib.Path")

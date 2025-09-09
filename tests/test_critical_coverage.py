@@ -57,13 +57,21 @@ class TestLoggingSetup(BaseTestCase):
         mock_file_handler = Mock(spec=logging.Handler)
         mock_file.return_value = mock_file_handler
 
+        import tempfile
+
         from blinkapp import initialize_cache_paths, setup_logging
 
         # Initialize cache paths before logging setup
         initialize_cache_paths()
-        setup_logging()
-        # Should create handlers and configure logger
-        mock_logger.assert_called()
+        temp_dir = tempfile.mkdtemp()
+        try:
+            setup_logging(temp_dir)
+            # Should create handlers and configure logger
+            mock_logger.assert_called()
+        finally:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
     def test_logging_configuration(self) -> None:

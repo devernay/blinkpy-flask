@@ -14,8 +14,11 @@ __all__ = [
 ]
 
 
-def setup_logging() -> None:
-    """Configure logging with rotating file handler in cache directory.
+def setup_logging(log_dir: str) -> None:
+    """Configure logging with rotating file handler in log directory.
+
+    Args:
+        log_dir: Directory path where log files will be stored
 
     Sets up application logging with:
     - Rotating file handler to prevent log files from growing too large
@@ -23,12 +26,12 @@ def setup_logging() -> None:
     - Appropriate log levels and formatting
     - Error-specific log file for critical issues
 
-    The logging configuration uses the cache directory for log file storage
+    The logging configuration uses the provided log directory for log file storage
     and implements rotation to manage disk space usage effectively.
     """
-    # Ensure cache directory exists for log files
-    cache_dir = Path("cache")  # Use default cache directory
-    cache_dir.mkdir(exist_ok=True)
+    # Ensure log directory exists for log files
+    log_path = Path(log_dir)
+    log_path.mkdir(exist_ok=True)
 
     # Configure root logger
     root_logger = logging.getLogger()
@@ -46,19 +49,19 @@ def setup_logging() -> None:
     simple_formatter = logging.Formatter("%(levelname)s: %(message)s")
 
     # File handler with rotation at each app launch
-    log_file = cache_dir / "blink_app.log"
+    log_file = log_path / "blink_app.log"
 
     # Rotate existing log file if it exists and has content
     if log_file.exists() and log_file.stat().st_size > 0:
         import time
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        rotated_file = cache_dir / f"blink_app.log.{timestamp}"
+        rotated_file = log_path / f"blink_app.log.{timestamp}"
         log_file.rename(rotated_file)
 
         # Clean up old rotated files, keep only the most recent 9 (plus current = 10 total)
         rotated_files = sorted(
-            cache_dir.glob("blink_app.log.*"),
+            log_path.glob("blink_app.log.*"),
             key=lambda x: x.stat().st_mtime,
             reverse=True,
         )

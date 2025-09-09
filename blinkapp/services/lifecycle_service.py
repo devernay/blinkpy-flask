@@ -84,7 +84,7 @@ def startup() -> None:
             logger.error(f"Failed to create cache subdirectories: {e}")
 
         # Configure logging with file rotation after cache paths are ready
-        setup_logging()
+        setup_logging(CACHE_DIR)
 
         # Initialize HLS streaming manager for live video transcoding
         from blinkapp.services.stream_service import initialize_stream_manager

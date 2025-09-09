@@ -13,6 +13,7 @@ import gc
 import importlib
 import os
 import sys
+import tempfile
 import unittest
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -30,6 +31,27 @@ from requests.structures import CaseInsensitiveDict
 
 from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
+
+# Global temporary directory for tests
+_test_temp_dir = None
+
+
+def get_test_temp_dir() -> str:
+    """Get or create a temporary directory for tests."""
+    global _test_temp_dir
+    if _test_temp_dir is None:
+        _test_temp_dir = tempfile.mkdtemp(prefix="blinkapp_test_")
+    return _test_temp_dir
+
+
+def cleanup_test_temp_dir() -> None:
+    """Clean up the test temporary directory."""
+    global _test_temp_dir
+    if _test_temp_dir and os.path.exists(_test_temp_dir):
+        import shutil
+
+        shutil.rmtree(_test_temp_dir, ignore_errors=True)
+        _test_temp_dir = None
 
 
 def create_mock_path(

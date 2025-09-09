@@ -1836,11 +1836,18 @@ class TestLoggingAndSetup(BaseTestCase):
             mock_get_logger.return_value = mock_logger
 
             # Should be able to call setup_logging
+            import tempfile
+
+            temp_dir = tempfile.mkdtemp()
             try:
-                setup_logging()
+                setup_logging(temp_dir)
             except Exception:
                 # May fail due to file system operations, but function should exist
                 pass
+            finally:
+                import shutil
+
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
             # Should have attempted to get logger
             self.assertTrue(mock_get_logger.called)
