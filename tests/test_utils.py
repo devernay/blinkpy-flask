@@ -203,6 +203,20 @@ class TestValidationHelpers(BaseTestCase):
         """Set up test fixtures."""
         super().setUp()
 
+    def test_validate_camera_id_valid_minimal(self) -> None:
+        """Test validation_helpers validate_camera_id with valid input (minimal)."""
+        from blinkapp.utils.validation_helpers import validate_camera_id
+
+        result = validate_camera_id("12345")
+        self.assertEqual(result, "12345")
+
+    def test_validate_clip_id_valid_minimal(self) -> None:
+        """Test validation_helpers validate_clip_id with valid input (minimal)."""
+        from blinkapp.utils.validation_helpers import validate_clip_id
+
+        result = validate_clip_id("67890")
+        self.assertEqual(result, "67890")
+
 
 class TestValidators(BaseTestCase):
     """Test validator functions."""
@@ -213,6 +227,13 @@ class TestValidators(BaseTestCase):
 
         result = validate_string_input("hello", 10, "test_field")
         self.assertEqual(result, "hello")
+
+    def test_validate_string_input_valid_minimal(self) -> None:
+        """Test validate_string_input with valid input (minimal)."""
+        from blinkapp.utils.validators import validate_string_input
+
+        result = validate_string_input("test", 10, "test_field")
+        self.assertEqual(result, "test")
 
     def test_validate_string_input_too_long(self) -> None:
         """Test validate_string_input with input too long."""
@@ -363,6 +384,20 @@ class TestParsers(BaseTestCase):
         filename = "thumb_1234567890.jpg"
         result = extract_thumbnail_timestamp(filename)
         self.assertEqual(result, 1234567890)
+
+    def test_extract_thumbnail_timestamp_none_minimal(self) -> None:
+        """Test extract_thumbnail_timestamp with None (minimal)."""
+        from blinkapp.utils.parsers import extract_thumbnail_timestamp
+
+        result = extract_thumbnail_timestamp(None)
+        self.assertEqual(result, 0)
+
+    def test_parse_clip_id_valid_minimal(self) -> None:
+        """Test parse_clip_id with valid input (minimal)."""
+        from blinkapp.utils.parsers import parse_clip_id
+
+        result = parse_clip_id("12345")
+        self.assertEqual(result, "12345")
 
     def test_extract_thumbnail_timestamp_invalid(self) -> None:
         """Test extract_thumbnail_timestamp with invalid filename."""
