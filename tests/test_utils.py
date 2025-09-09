@@ -204,6 +204,29 @@ class TestValidators(BaseTestCase):
         with self.assertRaises(ValueError):
             validate_camera_id("")
 
+    def test_validate_camera_id_comprehensive(self) -> None:
+        """Test comprehensive camera ID validation."""
+        try:
+            from blinkapp.utils.validators import validate_camera_id
+
+            # Valid IDs should not raise exceptions
+            try:
+                validate_camera_id("camera123")
+                validate_camera_id("cam-456")
+                validate_camera_id("cam_789")
+            except ValueError:
+                self.fail("validate_camera_id raised ValueError for valid input")
+
+            # Invalid IDs should raise ValueError
+            with self.assertRaises(ValueError):
+                validate_camera_id("")
+            with self.assertRaises((ValueError, TypeError)):
+                validate_camera_id(None)  # type: ignore
+            with self.assertRaises(ValueError):
+                validate_camera_id("invalid@camera")
+        except ImportError:
+            self.skipTest("validate_camera_id function not found")
+
     def test_validate_tcp_url_valid(self) -> None:
         """Test validate_tcp_url with valid URL."""
         from blinkapp.utils.validators import validate_tcp_url

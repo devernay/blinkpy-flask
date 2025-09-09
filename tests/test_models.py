@@ -1100,6 +1100,20 @@ class TestCacheStatsAndMethods(BaseTestCase):
         result = cache[clip_id]
         self.assertIn("cached_at", result)
 
+    def test_cache_model_edge_cases(self) -> None:
+        """Test cache model edge cases."""
+        from blinkapp.models.cache import ThreadSafeLRUCache
+
+        # Test with small capacity
+        cache = ThreadSafeLRUCache(capacity=2)
+        cache["key1"] = "value1"
+        cache["key2"] = "value2"
+        cache["key3"] = "value3"  # Should evict key1
+
+        self.assertNotIn("key1", cache)
+        self.assertIn("key2", cache)
+        self.assertIn("key3", cache)
+
 
 if __name__ == "__main__":
     unittest.main()

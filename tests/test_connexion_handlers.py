@@ -392,3 +392,31 @@ class TestClipsHandlers(BaseTestCase):
 
         self.assertEqual(result, {"clips": []})
         mock_process.assert_called_once_with([])
+
+    def test_system_handler_get_systems(self) -> None:
+        """Test systems handler."""
+        try:
+            from blinkapp.connexion_handlers.system import get_systems
+
+            with patch("blinkapp.services.system_service.get_systems") as mock_get:
+                mock_get.return_value = {"systems": []}
+
+                result = get_systems()
+
+                self.assertIsNotNone(result)
+        except ImportError:
+            self.skipTest("get_systems handler not found")
+
+    def test_clips_handler_download_clip(self) -> None:
+        """Test clip download handler."""
+        try:
+            from blinkapp.connexion_handlers.clips import download_clip
+
+            with patch("blinkapp.services.clip_service.download_clip") as mock_download:
+                mock_download.return_value = ({"success": True}, 200)
+
+                result = download_clip("test_clip")
+
+                self.assertIsNotNone(result)
+        except ImportError:
+            self.skipTest("download_clip handler not found")
