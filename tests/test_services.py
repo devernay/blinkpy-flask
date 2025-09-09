@@ -167,6 +167,30 @@ class TestAuthService(BaseTestCase):
             mock_factory.assert_called_once()
 
 
+class TestBlinkConnection(BaseTestCase):
+    """Test blink connection service functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
+class TestBlinkService(BaseTestCase):
+    """Test blink service functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
+class TestBlinkValidators(BaseTestCase):
+    """Test blink validators service functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
 class TestCacheService(BaseTestCase):
     """Test cache service functions."""
 
@@ -305,6 +329,14 @@ class TestCacheService(BaseTestCase):
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         ensure_cache_paths_initialized()  # Should not raise exception
+
+
+class TestCameraService(BaseTestCase):
+    """Test camera service functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
 
 
 class TestDebugService(BaseTestCase):
@@ -1027,6 +1059,14 @@ class TestStreamService(BaseTestCase):
             self.assertFalse(result)
 
 
+class TestSettingsService(BaseTestCase):
+    """Test settings service functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
 class TestSystemService(BaseTestCase):
     """Test system service functions."""
 
@@ -1060,6 +1100,14 @@ class TestSystemService(BaseTestCase):
         result = get_systems()
         self.assertIsInstance(result, dict)
         self.assertIn("systems", result)
+
+
+class TestThumbnailService(BaseTestCase):
+    """Test thumbnail service functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
 
 
 class TestLifecycleService(BaseTestCase):

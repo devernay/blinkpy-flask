@@ -272,6 +272,7 @@ class TestAuthRoutesSetup(FlaskTestCase):
         rules = list(app.url_map.iter_rules())
         self.assertGreater(len(rules), 0)
 
+
 class TestConfigRoutes(FlaskTestCase):
     """Test config route setup and registration."""
 
@@ -298,6 +299,7 @@ class TestSettingsRoutes(FlaskTestCase):
         # Should have registered routes
         rules = list(app.url_map.iter_rules())
         self.assertGreater(len(rules), 0)
+
 
 class TestStreamingRoutes(FlaskTestCase):
     """Test streaming route setup and registration."""
@@ -331,6 +333,25 @@ class TestSystemRoutes(FlaskTestCase):
 
         # Should not raise exception
         setup_system_routes(app)
+
+        # Should have registered routes
+        rules = list(app.url_map.iter_rules())
+        self.assertGreater(len(rules), 0)
+
+
+class TestThumbnailsRoutes(FlaskTestCase):
+    """Test thumbnails route functions."""
+
+    def test_setup_thumbnails_routes(self) -> None:
+        """Test thumbnails routes setup."""
+        from flask import Flask
+
+        from blinkapp.routes.thumbnails import setup_camera_thumbnail_routes
+
+        app = Flask(__name__)
+
+        # Should not raise exception
+        setup_camera_thumbnail_routes(app)
 
         # Should have registered routes
         rules = list(app.url_map.iter_rules())

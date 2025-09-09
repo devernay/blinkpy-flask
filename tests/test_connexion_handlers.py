@@ -15,6 +15,14 @@ from blinkapp.models.types import JsonDict
 from tests.test_base import BaseTestCase, create_mock_blink_instance
 
 
+class TestAdminHandlers(BaseTestCase):
+    """Test admin connexion handlers."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
 class TestAuthHandlers(BaseTestCase):
     """Test authentication connexion handlers."""
 
@@ -420,3 +428,27 @@ class TestClipsHandlers(BaseTestCase):
                 self.assertIsNotNone(result)
         except ImportError:
             self.skipTest("download_clip handler not found")
+
+
+class TestSettingsHandlers(BaseTestCase):
+    """Test settings connexion handlers."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
+class TestStreamingHandlers(BaseTestCase):
+    """Test streaming connexion handlers."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
+class TestThumbnailsHandlers(BaseTestCase):
+    """Test thumbnails connexion handlers."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()

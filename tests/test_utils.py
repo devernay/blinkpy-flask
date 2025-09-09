@@ -20,6 +20,14 @@ from unittest.mock import Mock, patch
 from tests.test_base import BaseTestCase
 
 
+class TestApiResponses(BaseTestCase):
+    """Test API response functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
+
+
 class TestDecorators(BaseTestCase):
     """Test decorator functions."""
 
@@ -171,6 +179,14 @@ class TestFormatters(BaseTestCase):
 
         result = format_time_duration(3600)  # 1h exactly
         self.assertEqual(result, "1h")
+
+
+class TestValidationHelpers(BaseTestCase):
+    """Test validation helper functions."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        super().setUp()
 
 
 class TestValidators(BaseTestCase):
