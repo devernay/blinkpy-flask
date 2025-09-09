@@ -887,6 +887,45 @@ class TestCloudClipProcessing(BaseTestCase):
                 f"No thumbnail URL provided for clip {self.clip_id}"
             )
 
+    def test_process_cloud_clip_background_blink_unavailable(self) -> None:
+        """Test when blink instance is unavailable."""
+        from blinkapp.services.clip_processing import process_cloud_clip_background
+        from tests.test_base import create_mock_blink_instance
+
+        with (
+            patch("pathlib.Path.exists", return_value=False),
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_initialized"
+            ) as mock_ensure,
+        ):
+            mock_blink = create_mock_blink_instance(available=False)
+            mock_ensure.return_value = mock_blink
+
+            process_cloud_clip_background(self.clip_id)
+            mock_ensure.assert_called_once()
+
+    def test_process_local_clip_background_thumbnail_exists(self) -> None:
+        """Test local clip processing when thumbnail already exists."""
+        from blinkapp.services.clip_processing import process_local_clip_background
+
+        with patch("pathlib.Path.exists", return_value=True) as mock_exists:
+            process_local_clip_background(self.clip_id, "sync_name", "filename.mp4")
+            mock_exists.assert_called_once()
+
+    def test_process_local_clip_background_blink_error(self) -> None:
+        """Test local clip processing when blink initialization fails."""
+        from blinkapp.services.clip_processing import process_local_clip_background
+
+        with (
+            patch("pathlib.Path.exists", return_value=False),
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_initialized"
+            ) as mock_ensure,
+        ):
+            mock_ensure.side_effect = RuntimeError("Blink not available")
+            process_local_clip_background(self.clip_id, "sync_name", "filename.mp4")
+            mock_ensure.assert_called_once()
+
 
 class TestStreamService(BaseTestCase):
     """Test stream service functions."""
