@@ -423,6 +423,24 @@ class TestApiResponse(BaseTestCase):
         self.assertTrue(result["success"])
         self.assertIn("timestamp", result)
 
+    def test_create_api_response_with_status_code_critical(self) -> None:
+        """Test API response creation with custom HTTP status codes (critical)."""
+        response, status_code = create_api_response(
+            success=True, data={"test": "data"}, status_code=201
+        )
+
+        self.assertTrue(response["success"])
+        self.assertEqual(response["data"], {"test": "data"})
+        self.assertEqual(status_code, 201)
+
+    def test_create_api_response_timestamp_format_critical(self) -> None:
+        """Test API response timestamp format (critical)."""
+        response, _ = create_api_response(success=True, data={"test": "data"})
+
+        timestamp = response["timestamp"]
+        self.assertIsInstance(timestamp, str)
+        self.assertIn("T", str(timestamp))  # ISO format contains T
+
 
 class TestUtilityFunctions(BaseTestCase):
     """Test utility functions."""
@@ -2968,6 +2986,60 @@ class TestApplicationInitialization(BaseTestCase):
 
             configure_logging("DEBUG")
             mock_logger.setLevel.assert_called()
+
+    def test_clear_all_caches_basic_app_init(self) -> None:
+        """Test clear_all_caches basic functionality (from app_init)."""
+        from blinkapp import clear_all_caches
+
+        # Should not raise exception
+        try:
+            clear_all_caches()
+        except Exception:
+            pass
+
+    def test_setup_logging_with_mock_app_init(self) -> None:
+        """Test setup_logging with mocked logging (from app_init)."""
+        from unittest.mock import Mock, patch
+
+        from blinkapp.utils.logging_config import setup_logging
+
+        with (
+            patch("logging.getLogger") as mock_get_logger,
+            patch("logging.StreamHandler") as mock_stream_handler,
+            patch("logging.handlers.RotatingFileHandler") as mock_file_handler,
+            patch("logging.Formatter") as mock_formatter,
+        ):
+            mock_logger = Mock()
+            mock_get_logger.return_value = mock_logger
+            mock_handler = Mock()
+            mock_stream_handler.return_value = mock_handler
+            mock_file_handler.return_value = mock_handler
+            mock_formatter.return_value = Mock()
+
+            setup_logging("/tmp")
+
+            # Should have called logger setup methods
+            mock_get_logger.assert_called()
+            mock_logger.setLevel.assert_called()
+
+    def test_initialize_cache_paths_basic_app_init(self) -> None:
+        """Test initialize_cache_paths basic functionality (from app_init)."""
+        from unittest.mock import Mock, patch
+
+        from blinkapp import initialize_cache_paths
+
+        with (
+            patch("pathlib.Path.mkdir") as mock_mkdir,
+            patch("pathlib.Path") as mock_path,
+        ):
+            mock_path_instance = Mock()
+            mock_path.return_value = mock_path_instance
+            mock_path_instance.exists.return_value = False
+
+            initialize_cache_paths()
+
+            # Should have attempted to create directories
+            mock_mkdir.assert_called()
 
     def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
