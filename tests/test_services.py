@@ -330,6 +330,28 @@ class TestCacheService(BaseTestCase):
 
         ensure_cache_paths_initialized()  # Should not raise exception
 
+    @patch("blinkapp.CACHE_DIR", None)
+    @patch("blinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
+    def test_ensure_cache_paths_cache_dir_none(self) -> None:
+        """Test cache path initialization when main cache directory is None."""
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
+
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
+
+    @patch("blinkapp.CACHE_DIR", "test")
+    @patch("blinkapp.CREDENTIALS_FILE", None)
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
+    def test_ensure_cache_paths_credentials_file_none(self) -> None:
+        """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
+
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
+
 
 class TestCameraService(BaseTestCase):
     """Test camera service functions."""
