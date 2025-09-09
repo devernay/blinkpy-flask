@@ -32,27 +32,6 @@ from requests.structures import CaseInsensitiveDict
 from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
 
-# Global temporary directory for tests
-_test_temp_dir = None
-
-
-def get_test_temp_dir() -> str:
-    """Get or create a temporary directory for tests."""
-    global _test_temp_dir
-    if _test_temp_dir is None:
-        _test_temp_dir = tempfile.mkdtemp(prefix="blinkapp_test_")
-    return _test_temp_dir
-
-
-def cleanup_test_temp_dir() -> None:
-    """Clean up the test temporary directory."""
-    global _test_temp_dir
-    if _test_temp_dir and os.path.exists(_test_temp_dir):
-        import shutil
-
-        shutil.rmtree(_test_temp_dir, ignore_errors=True)
-        _test_temp_dir = None
-
 
 def create_mock_path(
     name: str, path_str: str = "/mock/path", mkdir_mock: Mock | None = None
@@ -670,12 +649,37 @@ class BaseTestCase(unittest.TestCase):
     """Unified base test case with setup and cleanup."""
 
     def setUp(self) -> None:
-        """Initialize test environment."""
+        """Set up test environment with isolated temporary directories."""
         super().setUp()
+
+        # Create temporary directory for this test
+        self.test_temp_dir = tempfile.mkdtemp(prefix="blinkapp_test_")
+
+        # Patch initialize_cache_paths to use temp directory
+        def mock_initialize_cache_paths():
+            import blinkapp
+
+            blinkapp.CACHE_DIR = self.test_temp_dir
+            blinkapp.THUMBNAIL_CACHE_DIR = os.path.join(
+                self.test_temp_dir, "thumbnails"
+            )
+            blinkapp.CLIPS_CACHE_DIR = os.path.join(self.test_temp_dir, "clips")
+            blinkapp.HLS_OUTPUT_DIR = os.path.join(self.test_temp_dir, "hls")
+            blinkapp.SETTINGS_FILE = os.path.join(self.test_temp_dir, "settings.json")
+            blinkapp.CREDENTIALS_FILE = os.path.join(self.test_temp_dir, "blink.json")
+
+        self.cache_patch = original_patch(
+            "blinkapp.services.cache_service.initialize_cache_paths",
+            mock_initialize_cache_paths,
+        )
+        self.cache_patch.start()
+
+        # Initialize test environment
         initialize_for_testing()
 
     def tearDown(self) -> None:
-        """Clean up global state after each test."""
+        """Clean up test environment."""
+        # Clean up global state
         try:
             import asyncio
 
@@ -712,6 +716,17 @@ class BaseTestCase(unittest.TestCase):
         except Exception:
             # Ignore teardown errors to prevent masking test failures
             pass
+
+        # Stop patcher
+        self.cache_patch.stop()
+
+        # Clean up temporary directory
+        if hasattr(self, "test_temp_dir") and os.path.exists(self.test_temp_dir):
+            import shutil
+
+            shutil.rmtree(self.test_temp_dir, ignore_errors=True)
+
+        super().tearDown()
 
     def _cleanup_async_operations(self) -> None:
         """Clean up pending async operations to prevent RuntimeWarnings."""
