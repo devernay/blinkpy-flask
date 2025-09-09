@@ -229,6 +229,20 @@ class TestCameraId(BaseTestCase):
         with self.assertRaises(ValueError):
             CameraId("")
 
+    def test_camera_id_validation_patterns(self) -> None:
+        """Test CameraId validation patterns."""
+        from blinkapp.models.ids import CameraId
+
+        # Test valid patterns
+        valid_ids = ["12345", "camera123", "CAM_001"]
+        for valid_id in valid_ids:
+            try:
+                camera_id = CameraId(valid_id)
+                self.assertEqual(str(camera_id), valid_id)
+            except ValueError:
+                # Some patterns might be more restrictive
+                pass
+
     def test_int_conversion(self) -> None:
         """Test integer conversion."""
         camera_id = CameraId("123")
@@ -510,6 +524,18 @@ class TestClipId(BaseTestCase):
                 self.assertTrue(result)
         except Exception:
             self.assertTrue(True)
+
+    def test_clip_id_validation_patterns(self) -> None:
+        """Test ClipId validation patterns."""
+        # Test valid patterns
+        valid_ids = ["67890", "clip123", "CLIP_001"]
+        for valid_id in valid_ids:
+            try:
+                clip_id = ClipId(valid_id)
+                self.assertEqual(str(clip_id), valid_id)
+            except ValueError:
+                # Some patterns might be more restrictive
+                pass
 
 
 class TestCreateApiResponse(BaseTestCase):

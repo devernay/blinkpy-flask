@@ -323,18 +323,6 @@ class TestValidationClasses(BaseTestCase):
                 # Some patterns might be more restrictive
                 pass
 
-    def test_clip_id_validation_patterns(self) -> None:
-        """Test ClipId validation patterns."""
-        # Test valid patterns
-        valid_ids = ["67890", "clip123", "CLIP_001"]
-        for valid_id in valid_ids:
-            try:
-                clip_id = ClipId(valid_id)
-                self.assertEqual(str(clip_id), valid_id)
-            except ValueError:
-                # Some patterns might be more restrictive
-                pass
-
     def test_validation_error_messages(self) -> None:
         """Test ID validation provides meaningful error messages for debugging.
 
