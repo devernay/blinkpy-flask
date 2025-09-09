@@ -55,6 +55,205 @@ class TestAuthRoutes(FlaskTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"login", response.data.lower())
 
+    def test_login_page_loads_integration(self) -> None:
+        """Test that login page loads correctly (integration)."""
+        response = self.client.get("/login")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"login", response.data.lower())
+
+    def test_login_success_no_2fa_integration(self) -> None:
+        """Test successful login without 2FA requirement (integration)."""
+        from unittest.mock import patch
+
+        with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
+            # Mock successful login without 2FA
+            mock_handle_login.return_value = (True, False, None)
+
+            response = self.client.post(
+                "/login",
+                data={"username": "test@example.com", "password": "password123"},
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/"))
+
+    def test_login_requires_2fa_integration(self) -> None:
+        """Test login that requires 2FA verification (integration)."""
+        from unittest.mock import patch
+
+        with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
+            # Mock login that requires 2FA
+            mock_handle_login.return_value = (True, True, None)
+
+            response = self.client.post(
+                "/login",
+                data={"username": "test@example.com", "password": "password123"},
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/2fa"))
+
+    def test_login_failure_integration(self) -> None:
+        """Test failed login with invalid credentials (integration)."""
+        from unittest.mock import patch
+
+        with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
+            # Mock failed login
+            mock_handle_login.return_value = (False, False, "Invalid credentials")
+
+            response = self.client.post(
+                "/login",
+                data={"username": "invalid@example.com", "password": "wrongpassword"},
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b"Authentication failed", response.data)
+
+    def test_2fa_page_without_pending_session_integration(self) -> None:
+        """Test 2FA page redirects to login when no pending session (integration)."""
+        response = self.client.get("/2fa")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.location.endswith("/login"))
+
+    def test_2fa_page_with_pending_session_integration(self) -> None:
+        """Test 2FA page shows verification form with pending session (integration)."""
+        with self.client.session_transaction() as sess:
+            sess["pending_2fa"] = True
+            sess["username"] = "test@example.com"
+            sess["password"] = "password123"
+
+        response = self.client.get("/2fa")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"2FA", response.data)
+
+    def test_2fa_verification_success_integration(self) -> None:
+        """Test successful 2FA verification (integration)."""
+        from unittest.mock import patch
+
+        with patch(
+            "blinkapp.services.auth_service.handle_2fa_verification"
+        ) as mock_handle_2fa:
+            # Mock successful 2FA verification
+            mock_handle_2fa.return_value = (True, None)
+
+            with self.client.session_transaction() as sess:
+                sess["pending_2fa"] = True
+                sess["username"] = "test@example.com"
+                sess["password"] = "password123"
+
+            response = self.client.post("/2fa", data={"code": "123456"})
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/"))
+
+    def test_2fa_verification_failure_integration(self) -> None:
+        """Test failed 2FA verification (integration)."""
+        from unittest.mock import patch
+
+        with patch(
+            "blinkapp.services.auth_service.handle_2fa_verification"
+        ) as mock_handle_2fa:
+            # Mock failed 2FA verification
+            mock_handle_2fa.return_value = (False, "Invalid 2FA code")
+
+            with self.client.session_transaction() as sess:
+                sess["pending_2fa"] = True
+                sess["username"] = "test@example.com"
+                sess["password"] = "password123"
+
+            response = self.client.post("/2fa", data={"code": "invalid"})
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b"Invalid 2FA code", response.data)
+
+    def test_login_missing_credentials_integration(self) -> None:
+        """Test login with missing username or password (integration)."""
+        response = self.client.post("/login", data={"username": ""})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Username and password required", response.data)
+
+    def test_logout_clears_session_integration(self) -> None:
+        """Test logout clears authentication session (integration)."""
+        with self.client.session_transaction() as sess:
+            sess["authenticated"] = True
+
+        response = self.client.post("/logout")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.location.endswith("/login"))
+
+    def test_main_page_with_saved_credentials_integration(self) -> None:
+        """Test main page loads with authenticated session (integration)."""
+        with self.client.session_transaction() as sess:
+            sess["authenticated"] = True
+
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_main_page_without_saved_credentials_integration(self) -> None:
+        """Test main page redirects to login without saved credentials (integration)."""
+        from unittest.mock import patch
+
+        with patch("blinkapp.services.auth_service.load_saved_blink") as mock_load:
+            # Mock no saved credentials
+            mock_load.return_value = None
+
+            response = self.client.get("/")
+
+            # Should redirect to login
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/login"))
+
+    def test_complete_2fa_flow_integration(self) -> None:
+        """Test complete login flow with 2FA (integration)."""
+        from unittest.mock import patch
+
+        with (
+            patch("blinkapp.services.auth_service.handle_login") as mock_handle_login,
+            patch(
+                "blinkapp.services.auth_service.handle_2fa_verification"
+            ) as mock_handle_2fa,
+        ):
+            # Step 1: Login requires 2FA
+            mock_handle_login.return_value = (True, True, None)
+
+            response = self.client.post(
+                "/login",
+                data={"username": "test@example.com", "password": "password123"},
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/2fa"))
+
+            # Step 2: Successful 2FA verification
+            mock_handle_2fa.return_value = (True, None)
+
+            response = self.client.post("/2fa", data={"code": "123456"})
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/"))
+
+    def test_direct_login_success_integration(self) -> None:
+        """Test direct login success without 2FA (integration)."""
+        from unittest.mock import patch
+
+        with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
+            # Mock successful login
+            mock_handle_login.return_value = (True, False, None)
+
+            response = self.client.post(
+                "/login",
+                data={"username": "test@example.com", "password": "password123"},
+            )
+
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(response.location.endswith("/"))
+
     def test_2fa_page_accessible(self) -> None:
         """Test 2FA page is accessible."""
         response = self.client.get("/2fa")
