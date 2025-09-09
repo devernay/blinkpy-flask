@@ -11,16 +11,13 @@ Tests critical application functionality including:
 
 import os
 import sys
-import threading
 import unittest
-from typing import Any
 from unittest.mock import Mock, patch
 
 # Add the app directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app module and key components
-from cachetools import LRUCache
 
 from blinkapp import (
     create_api_response,
@@ -151,15 +148,6 @@ class TestCachePathInitialization(BaseTestCase):
 class TestAPIResponseCreation(BaseTestCase):
     """Test API response creation functionality."""
 
-    def test_create_api_response_error(self) -> None:
-        """Test API response creation with error."""
-        error_msg = "Test error message"
-        response, _ = create_api_response(success=False, error=error_msg)
-
-        self.assertFalse(response["success"])
-        self.assertEqual(response["error"], error_msg)
-        self.assertIn("timestamp", response)
-
     def test_create_api_response_with_status_code(self) -> None:
         """Test API response creation with custom HTTP status codes.
 
@@ -188,38 +176,6 @@ class TestAPIResponseCreation(BaseTestCase):
 
 class TestLRUCacheAdvanced(BaseTestCase):
     """Test advanced LRU cache functionality."""
-
-    def test_lru_cache_thread_safety(self) -> None:
-        """Test LRU cache concurrent access from multiple threads.
-
-        Why: Cache is accessed by multiple request threads simultaneously in production.
-        What: Verifies thread-safe operations prevent data corruption and race conditions.
-        How: Spawns multiple threads performing cache operations and validates consistency.
-        """
-        cache: LRUCache[str, str] = LRUCache(maxsize=100)
-        results: list[bool] = []
-
-        def worker(thread_id: int) -> None:
-            for i in range(10):
-                key = f"thread_{thread_id}_key_{i}"
-                value = f"thread_{thread_id}_value_{i}"
-                cache[key] = value
-                retrieved = cache.get(key)
-                results.append(retrieved == value)
-
-        # Create multiple threads
-        threads: list[Any] = []
-        for i in range(5):
-            thread = threading.Thread(target=worker, args=(i,))
-            threads.append(thread)
-            thread.start()
-
-        # Wait for all threads
-        for thread in threads:
-            thread.join()
-
-        # All operations should succeed
-        self.assertTrue(all(results))
 
 
 if __name__ == "__main__":

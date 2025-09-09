@@ -345,6 +345,35 @@ class TestApiResponse(BaseTestCase):
         self.assertIn("timestamp", response)
         self.assertEqual(status_code, 200)
 
+    def test_create_api_response_error_detailed(self) -> None:
+        """Test API response creation with error."""
+        error_msg = "Test error message"
+        response, _ = create_api_response(success=False, error=error_msg)
+
+        self.assertFalse(response["success"])
+        self.assertEqual(response["error"], error_msg)
+        self.assertIn("timestamp", response)
+
+    def test_create_api_response_with_status_code(self) -> None:
+        """Test API response creation with custom HTTP status codes."""
+        response, status_code = create_api_response(
+            success=True, data={"created": True}, status_code=201
+        )
+
+        self.assertTrue(response["success"])
+        self.assertEqual(status_code, 201)
+
+    def test_create_api_response_timestamp_format(self) -> None:
+        """Test API response timestamp format."""
+        response, _ = create_api_response(success=True, data={"test": "data"})
+
+        # Should have ISO format timestamp
+        timestamp = response["timestamp"]
+        self.assertIsInstance(timestamp, str)
+        # Type assertion for pyright - we know it's a string after assertIsInstance
+        assert isinstance(timestamp, str)
+        self.assertIn("T", timestamp)  # ISO format contains T
+
 
 class TestUtilityFunctions(BaseTestCase):
     """Test utility functions."""
