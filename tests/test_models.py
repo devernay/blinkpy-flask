@@ -219,6 +219,11 @@ class TestCameraId(BaseTestCase):
             CameraId("camera-123!")
         self.assertIn("Invalid Camera ID format", str(cm.exception))
 
+    def test_empty_string_raises_error(self) -> None:
+        """Test empty string raises ValueError."""
+        with self.assertRaises(ValueError):
+            CameraId("")  # Should raise ValueError for empty string
+
     def test_empty_id(self) -> None:
         """Test empty camera ID raises error."""
         with self.assertRaises(ValueError):

@@ -180,6 +180,20 @@ class TestFormatters(BaseTestCase):
         result = format_time_duration(3600)  # 1h exactly
         self.assertEqual(result, "1h")
 
+    def test_format_time_duration_edge_cases(self) -> None:
+        """Test format_time_duration edge cases."""
+        from blinkapp.utils.formatters import format_time_duration
+
+        # Test zero duration
+        self.assertEqual(format_time_duration(0), "0s")
+
+        # Test days
+        self.assertEqual(format_time_duration(86400), "1d")
+
+        # Test negative duration raises error
+        with self.assertRaises(ValueError):
+            format_time_duration(-1)
+
 
 class TestValidationHelpers(BaseTestCase):
     """Test validation helper functions."""

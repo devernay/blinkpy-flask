@@ -182,6 +182,18 @@ class TestBlinkService(BaseTestCase):
         """Set up test fixtures."""
         super().setUp()
 
+    def test_blink_connection_access(self) -> None:
+        """Test blink_connection access."""
+        from blinkapp.services import blink_service
+
+        # Test that we can get a blink connection instance
+        try:
+            connection = blink_service.ensure_blink_connection_initialized()
+            self.assertTrue(hasattr(connection, "execute"))
+        except RuntimeError:
+            # Connection not initialized yet, which is fine
+            pass
+
 
 class TestBlinkValidators(BaseTestCase):
     """Test blink validators service functions."""
@@ -351,6 +363,59 @@ class TestCacheService(BaseTestCase):
 
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
+
+    @patch("blinkapp.CACHE_DIR", "test")
+    @patch("blinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", None)
+    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
+    def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
+        """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
+
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
+
+    @patch("blinkapp.CACHE_DIR", "test")
+    @patch("blinkapp.CREDENTIALS_FILE", "test")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
+    @patch("blinkapp.CLIPS_CACHE_DIR", None)
+    def test_ensure_cache_paths_clips_dir_none(self) -> None:
+        """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
+
+        with self.assertRaises(RuntimeError):
+            ensure_cache_paths_initialized()
+
+    def test_cache_instance_access(self) -> None:
+        """Test global cache instance access and initialization patterns."""
+        from tests.test_base import create_mock_camera_cache, create_mock_clips_cache
+
+        # Mock the cache instances directly since they're imported globals
+        mock_camera_thumbnail_cache = create_mock_camera_cache()
+        mock_clips_cache = create_mock_clips_cache()
+
+        with patch(
+            "blinkapp.services.cache_service.camera_thumbnail_cache",
+            mock_camera_thumbnail_cache,
+        ):
+            with patch("blinkapp.services.cache_service.clips_cache", mock_clips_cache):
+                # Test that ensure functions work correctly
+                from blinkapp.services.cache_service import (
+                    ensure_camera_thumbnail_cache_initialized,
+                    ensure_clips_cache_initialized,
+                )
+
+                camera_thumbnail_cache_instance = (
+                    ensure_camera_thumbnail_cache_initialized()
+                )
+                clips_cache_instance = ensure_clips_cache_initialized()
+
+                self.assertIsNotNone(camera_thumbnail_cache_instance)
+                self.assertIsNotNone(clips_cache_instance)
+                self.assertEqual(
+                    camera_thumbnail_cache_instance, mock_camera_thumbnail_cache
+                )
+                self.assertEqual(clips_cache_instance, mock_clips_cache)
 
 
 class TestCameraService(BaseTestCase):
@@ -1012,6 +1077,20 @@ class TestStreamService(BaseTestCase):
 
         result = ensure_stream_manager_initialized()
         self.assertIsNotNone(result)
+
+    def test_stream_manager_access(self) -> None:
+        """Test stream_manager access through service."""
+        from blinkapp.services.stream_service import (
+            ensure_stream_manager_initialized,
+            initialize_stream_manager,
+        )
+
+        # Initialize stream manager
+        initialize_stream_manager()
+
+        # Test that we can access it through the service
+        stream_manager = ensure_stream_manager_initialized()
+        self.assertIsNotNone(stream_manager)
 
     def test_is_stream_active_false(self) -> None:
         """Test is_stream_active when stream is not active."""
