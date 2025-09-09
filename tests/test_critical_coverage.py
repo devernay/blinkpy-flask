@@ -236,21 +236,6 @@ class TestLRUCacheAdvanced(BaseTestCase):
         # All operations should succeed
         self.assertTrue(all(results))
 
-    def test_lru_cache_clear_operation(self) -> None:
-        """Test LRU cache clear operation."""
-        cache: LRUCache[str, str] = LRUCache(maxsize=10)
-
-        # Add items
-        for i in range(5):
-            cache[f"key_{i}"] = f"value_{i}"
-
-        self.assertEqual(len(cache), 5)
-
-        # Clear cache
-        cache.clear()
-
-        self.assertEqual(len(cache), 0)
-
     def test_lru_cache_contains_operation(self) -> None:
         """Test LRU cache __contains__ operation."""
         cache: LRUCache[str, str] = LRUCache(maxsize=5)

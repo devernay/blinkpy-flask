@@ -449,6 +449,13 @@ class TestFlaskApp(FlaskTestCase):
         self.assertFalse(data["success"])
         self.assertIn("Invalid Network ID format", data["error"])
 
+    def test_app_instance_access(self) -> None:
+        """Test app instance access."""
+        import blinkapp
+
+        self.assertIsNotNone(blinkapp.app)
+        self.assertTrue(hasattr(blinkapp.app, "config"))
+
 
 class TestAdditionalEndpoints(FlaskTestCase):
     """Test additional endpoints for better coverage."""
@@ -1039,6 +1046,29 @@ class TestConfig(BaseTestCase):
         """Test filename constants."""
         self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
         self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
+
+    def test_config_regex_patterns(self) -> None:
+        """Test Config regex patterns work correctly."""
+        import re
+
+        from blinkapp.config import Config
+
+        # Test camera ID pattern
+        camera_pattern = Config.VALID_CAMERA_ID_PATTERN
+        self.assertTrue(re.match(camera_pattern, "camera123"))
+        self.assertTrue(re.match(camera_pattern, "cam-era_123"))
+        self.assertFalse(re.match(camera_pattern, "cam@era"))
+
+        # Test network ID pattern
+        network_pattern = Config.VALID_NETWORK_ID_PATTERN
+        self.assertTrue(re.match(network_pattern, "12345"))
+        self.assertFalse(re.match(network_pattern, "abc123"))
+
+        # Test clip ID pattern
+        clip_pattern = Config.VALID_CLIP_ID_PATTERN
+        self.assertTrue(re.match(clip_pattern, "clip_123-test~456"))
+        self.assertFalse(re.match(clip_pattern, "clip@123"))
+        self.assertTrue(hasattr(Config, "THUMBNAILS_SUBDIR"))
 
 
 if __name__ == "__main__":

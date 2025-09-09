@@ -791,6 +791,23 @@ class TestThreadSafeLRUCache(BaseTestCase):
         for i in range(10, 20):
             self.assertIn(f"key_{i}", cache)
 
+    def test_lru_cache_clear_operation(self) -> None:
+        """Test LRU cache clear operation."""
+        from blinkapp.models.cache import LRUCache
+
+        cache: LRUCache[str, str] = LRUCache(maxsize=10)
+
+        # Add items
+        for i in range(5):
+            cache[f"key_{i}"] = f"value_{i}"
+
+        self.assertEqual(len(cache), 5)
+
+        # Clear cache
+        cache.clear()
+
+        self.assertEqual(len(cache), 0)
+
 
 class TestCameraThumbnailCache(BaseTestCase):
     """Test CameraThumbnailCache functionality."""

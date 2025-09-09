@@ -411,17 +411,6 @@ class TestErrors(BaseTestCase):
         # The error stores both message and status code
         self.assertIn("Test error", str(error))
 
-    def test_attribute_error_handling(self) -> None:
-        """Test AttributeError handling patterns."""
-        from unittest.mock import Mock
-
-        # Test accessing non-existent attributes
-        mock_obj = Mock(spec=object)
-
-        # This should not raise AttributeError due to Mock
-        result = getattr(mock_obj, "nonexistent_attr", "default")
-        self.assertIsNotNone(result)
-
     def test_exception_handling_patterns(self) -> None:
         """Test consistent exception handling patterns across ID validation.
 
@@ -449,6 +438,17 @@ class TestErrors(BaseTestCase):
         # Test that integers are converted to strings (should work)
         clip_id = ClipId(123)
         self.assertEqual(str(clip_id), "123")
+
+    def test_attribute_error_handling(self) -> None:
+        """Test AttributeError handling patterns."""
+        from unittest.mock import Mock
+
+        # Test accessing non-existent attributes
+        mock_obj = Mock(spec=object)
+
+        # This should not raise AttributeError due to Mock
+        result = getattr(mock_obj, "nonexistent_attr", "default")
+        self.assertIsNotNone(result)
 
 
 class TestErrorHandlers(BaseTestCase):
