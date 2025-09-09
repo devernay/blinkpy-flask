@@ -39,7 +39,7 @@ from blinkapp import (
     Config,
     app,
 )
-from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
+from blinkapp.models.cache import CameraThumbnailCache
 from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
 from blinkapp.models.responses import create_api_response
 from blinkapp.utils.formatters import format_time_duration
@@ -52,7 +52,11 @@ from .test_base import (
     FlaskTestCase,
     create_mock_blink_instance,
     create_mock_camera,
+    create_mock_camera_cache,
+    create_mock_clip_cache_entry,
     create_mock_clip_item,
+    create_mock_clips_cache,
+    create_mock_path,
     create_mock_sync,
     mock_execute_with_coroutine_cleanup,
     with_blink_auth,
@@ -935,8 +939,6 @@ class TestCacheOperations(BaseTestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
 
-        from blinkapp.models.cache import CameraThumbnailCache
-
         self.cache = CameraThumbnailCache(maxsize=10)
 
     def test_cache_set_get(self) -> None:
@@ -1240,7 +1242,7 @@ class TestAPIEndpoints(FlaskTestCase):
         mock_subpath = create_mock_path(
             "test_app_cache_subpath", "/tmp/test_cache/subdir", mock_mkdir
         )
-        mock_path_instance.__truediv__ = Mock(return_value=mock_subpath)
+        mock_path_instance.__truediv__ = Mock(spec=callable, return_value=mock_subpath)
         mock_path.return_value = mock_path_instance
 
         # Import and call the function
@@ -1454,7 +1456,9 @@ class TestClipProcessing(BaseTestCase):
         """
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
-        mock_blink_instance.get_videos_metadata = AsyncMock(return_value=[])
+        mock_blink_instance.get_videos_metadata = AsyncMock(
+            spec=callable, return_value=[]
+        )
         mock_blink.return_value = mock_blink_instance
 
         T = TypeVar("T")
@@ -1752,8 +1756,8 @@ class TestAdvancedEndpoints(BaseTestCase):
             )
 
             # Mock the cache to contain our test clip
-            mock_cache.__contains__ = Mock(return_value=True)
-            mock_cache.__getitem__ = Mock(return_value=mock_cache_entry)
+            mock_cache.__contains__ = Mock(spec=callable, return_value=True)
+            mock_cache.__getitem__ = Mock(spec=callable, return_value=mock_cache_entry)
 
             with patch("pathlib.Path.exists", return_value=True):
                 response = self.client.get("/api/clips/test_clip/thumbnail?check=true")
@@ -1771,7 +1775,7 @@ class TestAdvancedEndpoints(BaseTestCase):
 
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             # Mock cache to not contain the clip
-            mock_cache.__contains__ = Mock(return_value=False)
+            mock_cache.__contains__ = Mock(spec=callable, return_value=False)
 
             response = self.client.get("/api/clips/nonexistent/thumbnail?check=true")
             self.assertEqual(response.status_code, 200)
@@ -2134,7 +2138,7 @@ class TestClipDownloadOperations(BaseTestCase):
     ) -> None:
         """Test downloading clip not found in metadata."""
         # Mock empty metadata with async return
-        mock_blink.get_videos_metadata = AsyncMock(return_value=[])
+        mock_blink.get_videos_metadata = AsyncMock(spec=callable, return_value=[])
 
         T = TypeVar("T")
 
@@ -2202,7 +2206,9 @@ class TestClipDownloadOperations(BaseTestCase):
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("subprocess.run") as mock_subprocess:
-                mock_subprocess.return_value = Mock(returncode=0)
+                mock_subprocess.return_value = Mock(
+                    spec=subprocess.CompletedProcess, returncode=0
+                )
 
                 response = self.client.post("/api/clips/test_clip/thumbnail")
 
@@ -2403,7 +2409,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
 
         # Mock sync module (not network)
         mock_sync = create_mock_sync(network_id=12345)
-        mock_sync.async_arm = AsyncMock(return_value=None)
+        mock_sync.async_arm = AsyncMock(spec=callable, return_value=None)
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink.return_value = mock_blink_instance
 
@@ -2436,12 +2442,13 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
             "blinkapp.services.cache_service.ensure_clips_cache_initialized"
         ) as mock_ensure_cache:
             # Mock Path object for thumbnail using spec
-            from pathlib import Path
 
-            mock_thumbnail_path = Mock(spec=Path)
+            mock_thumbnail_path = create_mock_path("mock_path")
             mock_thumbnail_path.exists.return_value = True
             # Use str() instead of __str__ for mocking
-            mock_thumbnail_path.__str__ = Mock(return_value="/fake/path/thumbnail.jpg")
+            mock_thumbnail_path.__str__ = Mock(
+                spec=callable, return_value="/fake/path/thumbnail.jpg"
+            )
 
             # Mock the cache returned by ensure function
             from tests.test_base import create_mock_camera_cache
@@ -2682,8 +2689,12 @@ class TestVideoProcessingOperations(BaseTestCase):
             with patch("subprocess.run") as mock_run:
                 # Mock ffprobe duration check
                 mock_run.side_effect = [
-                    Mock(returncode=0, stdout="30.0"),  # Duration
-                    Mock(returncode=0),  # ffmpeg extraction
+                    Mock(
+                        spec=subprocess.CompletedProcess, returncode=0, stdout="30.0"
+                    ),  # Duration
+                    Mock(
+                        spec=subprocess.CompletedProcess, returncode=0
+                    ),  # ffmpeg extraction
                 ]
 
                 generate_local_clip_thumbnail(
@@ -2728,7 +2739,9 @@ class TestVideoProcessingOperations(BaseTestCase):
             # First call is for thumbnail (should not exist), second is for video (should exist)
             mock_exists.side_effect = [False, True]
             with patch("subprocess.run") as mock_run:
-                mock_run.return_value = Mock(returncode=0)
+                mock_run.return_value = Mock(
+                    spec=subprocess.CompletedProcess, returncode=0
+                )
 
                 generate_local_clip_thumbnail(
                     ClipId.from_local("sync1", 123),
@@ -2824,11 +2837,11 @@ class TestErrorHandlingAdvanced(BaseTestCase):
             with patch("blinkapp.logger"):
                 with patch(
                     "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized",
-                    return_value=Mock(spec=CameraThumbnailCache),
+                    return_value=create_mock_camera_cache(),
                 ):
                     with patch(
                         "blinkapp.services.cache_service.ensure_clips_cache_initialized",
-                        return_value=Mock(spec=ClipsCache),
+                        return_value=create_mock_clips_cache(),
                     ):
                         with patch(
                             "blinkapp.services.connection_service.ensure_executor_initialized",
@@ -2892,7 +2905,6 @@ class TestPerformanceOptimizations(BaseTestCase):
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
-        from blinkapp.models.cache import CameraThumbnailCache
 
         # Test FIFO cache behavior
         cache = CameraThumbnailCache(maxsize=2)
@@ -3025,7 +3037,7 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         """Test downloading cached local clip."""
 
         # Mock cached clip
-        mock_filepath = Mock(spec=Path)
+        mock_filepath = create_mock_path("mock_path")
         mock_filepath.exists.return_value = True
 
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
@@ -3476,7 +3488,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Mock sync module structure
         mock_sync = create_mock_sync(cameras={})
         mock_sync.network_id = 12345
-        mock_sync.async_arm = AsyncMock(return_value=None)
+        mock_sync.async_arm = AsyncMock(spec=callable, return_value=None)
         mock_blink_instance.sync = {"sync1": mock_sync}
 
         T = TypeVar("T")
@@ -3774,7 +3786,6 @@ class TestResourceManagement(BaseTestCase):
 
     def test_cache_size_enforcement(self) -> None:
         """Test that cache size limits are enforced."""
-        from blinkapp.models.cache import CameraThumbnailCache
 
         # Test FIFO cache respects size limits
         cache = CameraThumbnailCache(maxsize=3)
@@ -3800,19 +3811,19 @@ class TestResourceManagement(BaseTestCase):
         # Mock file operations
         with patch("pathlib.Path.iterdir") as mock_iterdir:
             mock_files = [
-                Mock(spec=Path, name="file.mp4", unlink=Mock(spec=callable)),
-                Mock(spec=Path, name="file.mp4", unlink=Mock(spec=callable)),
+                create_mock_path("file.mp4", unlink_mock=Mock(spec=callable)),
+                create_mock_path("file.mp4", unlink_mock=Mock(spec=callable)),
             ]
             mock_iterdir.return_value = mock_files
 
             with patch("pathlib.Path.exists", return_value=True):
                 with patch(
                     "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized",
-                    return_value=Mock(spec=CameraThumbnailCache),
+                    return_value=create_mock_camera_cache(),
                 ):
                     with patch(
                         "blinkapp.services.cache_service.ensure_clips_cache_initialized",
-                        return_value=Mock(spec=ClipsCache),
+                        return_value=create_mock_clips_cache(),
                     ):
                         with patch(
                             "blinkapp.services.connection_service.ensure_executor_initialized",
@@ -3884,9 +3895,9 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         # Mock thumbnail files
         mock_files = []
         for i, timestamp in enumerate([1000, 2000, 3000]):
-            mock_file = Mock(spec=Path)
+            mock_file = create_mock_path("mock_path")
             mock_file.name = f"12345_{timestamp}.jpg"
-            mock_file.stat.return_value = Mock(st_mtime=timestamp)
+            mock_file.stat.return_value = Mock(spec=os.stat_result, st_mtime=timestamp)
             mock_files.append(mock_file)
 
         with patch("pathlib.Path.exists", return_value=True):
@@ -3921,7 +3932,7 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         # Mock old thumbnail files with invalid camera IDs
         mock_files = []
         for i in range(5):
-            mock_file = Mock(spec=Path)
+            mock_file = create_mock_path("mock_path")
             mock_file.name = f"99999_{1000 + i}.jpg"  # Invalid camera ID
             mock_file.unlink = Mock(spec=callable)
             mock_files.append(mock_file)
@@ -3956,20 +3967,23 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         from blinkapp.services.cache_service import load_clips_cache
 
         # Mock clip files with different formats
-        mock_file1 = Mock(spec=Path)
+        mock_file1 = create_mock_path("mock_path")
         mock_file1.name = "123456_clip.mp4"
-        mock_file1.stat.return_value = Mock(st_size=1024000, st_mtime=1000)
+        mock_file1.stat.return_value = Mock(
+            spec=os.stat_result, st_size=1024000, st_mtime=1000
+        )
 
-        mock_file2 = Mock(spec=Path)
+        mock_file2 = create_mock_path("mock_path")
         mock_file2.name = "789012_video.mp4"
-        mock_file2.stat.return_value = Mock(st_size=2048000, st_mtime=2000)
+        mock_file2.stat.return_value = Mock(
+            spec=os.stat_result, st_size=2048000, st_mtime=2000
+        )
 
         mock_files = [mock_file1, mock_file2]
 
         # Mock the cache instance
-        from blinkapp.models.cache import ClipsCache
 
-        mock_cache = Mock(spec=ClipsCache)
+        mock_cache = create_mock_clips_cache()
         mock_cache.add_clip = Mock(spec=callable)
 
         with patch("pathlib.Path.exists", return_value=True):
@@ -3985,7 +3999,6 @@ class TestCacheMaintenanceOperations(BaseTestCase):
 
     def test_cache_maintenance_with_size_limits(self) -> None:
         """Test cache maintenance respects size limits."""
-        from blinkapp.models.cache import CameraThumbnailCache
 
         # Test cache eviction policy
         cache = CameraThumbnailCache(maxsize=3)
@@ -4095,7 +4108,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         mock_blink_instance = create_mock_blink_instance()
         mock_sync = create_mock_sync(cameras={})
         mock_sync.network_id = 12345
-        mock_sync.async_arm = AsyncMock(return_value=True)
+        mock_sync.async_arm = AsyncMock(spec=callable, return_value=True)
         mock_blink_instance.sync = {"12345": mock_sync}  # Use network_id as key
         mock_blink_init.return_value = mock_blink_instance
 
@@ -5029,17 +5042,17 @@ class TestAdvancedCacheOperations(BaseTestCase):
 
         # Valid camera files
         for i in range(3):
-            mock_file = Mock(spec=Path)
+            mock_file = create_mock_path("mock_path")
             mock_file.name = f"12345_{1000 + i}.jpg"
-            mock_file.stat.return_value = Mock(st_mtime=1000 + i)
+            mock_file.stat.return_value = Mock(spec=os.stat_result, st_mtime=1000 + i)
             mock_file.unlink = Mock(spec=callable)
             mock_files.append(mock_file)
 
         # Invalid camera files (should be cleaned up)
         for i in range(2):
-            mock_file = Mock(spec=Path)
+            mock_file = create_mock_path("mock_path")
             mock_file.name = f"99999_{2000 + i}.jpg"  # Invalid camera ID
-            mock_file.stat.return_value = Mock(st_mtime=2000 + i)
+            mock_file.stat.return_value = Mock(spec=os.stat_result, st_mtime=2000 + i)
             mock_file.unlink = Mock(spec=callable)
             mock_files.append(mock_file)
 
@@ -5101,9 +5114,9 @@ class TestAdvancedCacheOperations(BaseTestCase):
         ]  # 5 files, should keep most recent 3
 
         for i, timestamp in enumerate(timestamps):
-            mock_file = Mock(spec=Path)
+            mock_file = create_mock_path("mock_path")
             mock_file.name = f"12345_{timestamp}.jpg"
-            mock_file.stat.return_value = Mock(st_mtime=timestamp)
+            mock_file.stat.return_value = Mock(spec=os.stat_result, st_mtime=timestamp)
             mock_file.unlink = Mock(spec=callable)
             mock_files.append(mock_file)
 
@@ -5148,15 +5161,16 @@ class TestAdvancedCacheOperations(BaseTestCase):
         ]
 
         for filename, size, mtime in clip_data:
-            mock_file = Mock(spec=Path)
+            mock_file = create_mock_path("mock_path")
             mock_file.name = filename
-            mock_file.stat.return_value = Mock(st_size=size, st_mtime=mtime)
+            mock_file.stat.return_value = Mock(
+                spec=os.stat_result, st_size=size, st_mtime=mtime
+            )
             mock_files.append(mock_file)
 
         # Mock the cache instance
-        from blinkapp.models.cache import ClipsCache
 
-        mock_cache = Mock(spec=ClipsCache)
+        mock_cache = create_mock_clips_cache()
         mock_cache.add_clip = Mock(spec=callable)
 
         with patch("pathlib.Path.exists", return_value=True):
@@ -5456,7 +5470,6 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_fifo_cache_basic_operations(self) -> None:
         """Test cache basic operations."""
-        from blinkapp.models.cache import CameraThumbnailCache
 
         # Test basic cache operations
         cache = CameraThumbnailCache(maxsize=2)
@@ -5610,11 +5623,11 @@ class TestCriticalPathCoverage(BaseTestCase):
         # Test that clear_all_caches function exists and returns dict
         with patch(
             "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized",
-            return_value=Mock(spec=CameraThumbnailCache),
+            return_value=create_mock_camera_cache(),
         ):
             with patch(
                 "blinkapp.services.cache_service.ensure_clips_cache_initialized",
-                return_value=Mock(spec=ClipsCache),
+                return_value=create_mock_clips_cache(),
             ):
                 result = clear_all_caches()
                 self.assertIsInstance(result, dict)
@@ -5905,16 +5918,14 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         self, mock_cache_init: Mock, mock_blink: Mock
     ) -> None:
         """Test clip thumbnail check success."""
-        from pathlib import Path
-        from unittest.mock import Mock
 
         # Mock blink availability
         mock_blink_instance = create_mock_blink_instance()
         mock_blink.return_value = mock_blink_instance
 
-        mock_path = Mock(spec=Path)
+        mock_path = create_mock_path("mock_path")
         mock_path.exists.return_value = True
-        mock_cache = {"12345": Mock(thumbnail=mock_path)}
+        mock_cache = {"12345": create_mock_clip_cache_entry()}
         mock_cache_init.return_value = mock_cache
 
         response = self.client.get("/api/clips/12345/thumbnail?check=true")
@@ -5952,7 +5963,9 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
         # Mock blink connection
         mock_connection.blink = create_mock_blink_instance()
         mock_connection.blink.networks = {
-            "network1": Mock(cameras={"cam1": Mock(name="Camera 1")})
+            "network1": Mock(
+                spec=object, cameras={"cam1": create_mock_camera(name="Camera 1")}
+            )
         }
 
         # Test device data creation
@@ -6005,7 +6018,6 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
 
     def test_cache_hit_optimization(self) -> None:
         """Test cache hit optimization."""
-        from blinkapp.models.cache import CameraThumbnailCache
 
         cache = CameraThumbnailCache(maxsize=10)
 

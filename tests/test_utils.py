@@ -129,11 +129,11 @@ class TestFormatters(BaseTestCase):
         """Test format_clips_by_day with single clip."""
         from typing import cast
 
-        from blinkapp.models.types import ClipData
+        from blinkapp.models.types import ClipApiData
         from blinkapp.utils.formatters import format_clips_by_day
 
         clips = cast(
-            list[ClipData],
+            list[ClipApiData],
             [
                 {
                     "id": "1",

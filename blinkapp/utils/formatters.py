@@ -8,7 +8,8 @@ formats, including time formatting and data organization.
 import logging
 from datetime import UTC, datetime
 
-from blinkapp.models.types import ClipData, ClipDayGroup
+from blinkapp.models.types import ClipApiData as ClipData
+from blinkapp.models.types import ClipDayGroup
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,3 @@ def format_time_duration(seconds: int) -> str:
     else:
         days = seconds // 86400
         return f"{days}d"
-
-
-

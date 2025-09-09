@@ -3,9 +3,15 @@
 import json
 import os
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from jsonschema import ValidationError, validate
+
+from .test_base import (
+    create_mock_blink_connection,
+    create_mock_blink_instance,
+    create_mock_camera,
+)
 
 
 class TestConnexionSchemaValidation(unittest.TestCase):
@@ -89,9 +95,9 @@ class TestConnexionSchemaValidation(unittest.TestCase):
             patch("blinkapp.services.device_service.create_device_data") as mock_device,
         ):
             # Mock blink connection
-            mock_blink_obj = Mock()
+            mock_blink_obj = create_mock_blink_instance()
             mock_blink_obj.cameras = {}
-            mock_connection.return_value = Mock()
+            mock_connection.return_value = create_mock_blink_connection()
             mock_connection.return_value.blink = mock_blink_obj
             mock_device.return_value = {"id": "cam1", "name": "Camera 1"}
 
@@ -218,8 +224,8 @@ class TestConnexionSchemaValidation(unittest.TestCase):
             patch("blinkapp.services.camera_service.find_camera_by_id") as mock_find,
             patch("blinkapp.services.stream_service.init_camera_stream") as mock_stream,
         ):
-            mock_find.return_value = Mock()  # Return a camera object
-            mock_stream.return_value = (Mock(), "http://test-stream-url")
+            mock_find.return_value = create_mock_camera()  # Return a camera object
+            mock_stream.return_value = (create_mock_camera(), "http://test-stream-url")
 
             # Get expected schema
             schema = self.get_response_schema(

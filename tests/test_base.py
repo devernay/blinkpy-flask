@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path as RealPath
 from typing import ParamSpec, TypeVar
-from unittest.mock import MagicMock, Mock, _patch, patch
+from unittest.mock import Mock, _patch, patch
 from unittest.mock import patch as original_patch
 
 from blinkpy.blinkpy import Blink
@@ -28,12 +28,14 @@ from blinkpy.livestream import BlinkLiveStream
 from blinkpy.sync_module import BlinkSyncModule
 from requests.structures import CaseInsensitiveDict
 
-from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 from blinkapp.services.stream_service import StreamManager
 
 
 def create_mock_path(
-    name: str, path_str: str = "/mock/path", mkdir_mock: Mock | None = None
+    name: str,
+    path_str: str = "/mock/path",
+    mkdir_mock: Mock | None = None,
+    unlink_mock: Mock | None = None,
 ) -> Mock:
     """Create a properly configured Mock Path object.
 
@@ -41,14 +43,17 @@ def create_mock_path(
         name: Unique name for the Mock (required for identification)
         path_str: String representation of the path
         mkdir_mock: Optional Mock to use for mkdir method
+        unlink_mock: Optional Mock to use for unlink method
 
     Returns:
-        Mock Path object with proper __str__ and mkdir configuration
+        Mock Path object with proper __str__, mkdir, and unlink configuration
     """
     mock_path = Mock(spec=RealPath, name=name)
-    mock_path.__str__ = Mock(return_value=path_str)
+    mock_path.__str__ = Mock(spec=callable, return_value=path_str)
     if mkdir_mock:
         mock_path.mkdir = mkdir_mock
+    if unlink_mock:
+        mock_path.unlink = unlink_mock
     return mock_path
 
 
@@ -185,9 +190,7 @@ def create_mock_cache_instance(
         """Mock cache.__contains__() method."""
         return str(key) in cache_data
 
-    from blinkapp.models.cache import ClipsCache
-
-    mock_cache = Mock(spec=ClipsCache)
+    mock_cache = create_mock_clips_cache()
     mock_cache.get = mock_get
     mock_cache.__setitem__ = mock_setitem
     mock_cache.__getitem__ = mock_getitem
@@ -237,7 +240,9 @@ def create_mock_camera(
     mock_camera.updated_at = updated_at
 
     # Mock init_livestream to return a proper mock live stream
-    mock_camera.init_livestream = Mock(return_value=create_mock_live_stream())
+    mock_camera.init_livestream = Mock(
+        spec=callable, return_value=create_mock_live_stream()
+    )
 
     # Optional attributes
     if battery_voltage is not None:
@@ -269,7 +274,9 @@ def create_mock_blink_instance(
     mock_blink.key_required = key_required
     mock_blink.auth = create_mock_auth()
     mock_blink.auth.token = "valid_token" if available else None
-    mock_blink.get_clip_url = Mock(return_value="http://example.com/clip.mp4")
+    mock_blink.get_clip_url = Mock(
+        spec=callable, return_value="http://example.com/clip.mp4"
+    )
 
     # Create async mock for get_videos_metadata
     async def mock_get_videos_metadata(stop: int = 25) -> list[dict[str, str | int]]:
@@ -350,7 +357,7 @@ def create_mock_live_stream(
     mock_stream.url = url or f"tcp://localhost:8080/{stream_id}"
 
     # Mock start() to return a simple value, not a coroutine
-    mock_stream.start = Mock(return_value=None)
+    mock_stream.start = Mock(spec=callable, return_value=None)
 
     if stop_error:
         mock_stream.stop.side_effect = stop_error
@@ -365,8 +372,10 @@ def create_mock_camera_cache(
     """Create a mock CameraThumbnailCache with common attributes."""
     from unittest.mock import Mock
 
+    from blinkapp.models.cache import CameraThumbnailCache
+
     mock_cache = Mock(spec=CameraThumbnailCache)
-    mock_cache.__len__ = Mock(return_value=size)
+    mock_cache.__len__ = Mock(spec=callable, return_value=size)
     if max_size is not None:
         mock_cache.max_size = max_size
     if hit_rate is not None:
@@ -378,10 +387,12 @@ def create_mock_clips_cache(size: int = 5, max_size: int = 50) -> Mock:
     """Create a mock ClipsCache with common attributes."""
     from unittest.mock import Mock
 
+    from blinkapp.models.cache import ClipsCache
+
     mock_cache = Mock(spec=ClipsCache)
-    mock_cache.__len__ = Mock(return_value=size)
+    mock_cache.__len__ = Mock(spec=callable, return_value=size)
     mock_cache.max_size = max_size
-    mock_cache.get = Mock(return_value=None)
+    mock_cache.get = Mock(spec=callable, return_value=None)
     mock_cache.add_clip = Mock(spec=callable)
     return mock_cache
 
@@ -438,7 +449,9 @@ def create_mock_clip_item(
 
         mock_item = Mock(spec=LocalStorageMediaItem)
         # LocalStorageMediaItem.url is a method that returns URL
-        mock_item.url = Mock(return_value=url or "http://example.com/local_video.mp4")
+        mock_item.url = Mock(
+            spec=callable, return_value=url or "http://example.com/local_video.mp4"
+        )
     else:
         # Cloud clips are dict[str, str | bool | None]
         # Keys: "id", "created_at", "device_name", "media", "thumbnail", "deleted"
@@ -467,7 +480,6 @@ def create_mock_clip_cache_entry(
     cloud_thumbnail_url: str | None = None,
 ) -> Mock:
     """Create a mock ClipCacheEntry with proper spec."""
-    from unittest.mock import Mock
 
     from blinkapp.models.cache import ClipCacheEntry
 
@@ -491,6 +503,7 @@ def create_mock_clip_cache_entry(
 def create_mock_blink_connection(
     execute_return_value: str | list[dict[str, str | int]] | bool | None = None,
     execute_side_effect: Exception | list[str] | None = None,
+    execute: Mock | None = None,
     blink: Mock | None = None,
 ) -> Mock:
     """Create a mock BlinkConnection with common methods."""
@@ -499,7 +512,9 @@ def create_mock_blink_connection(
     from blinkapp.services.blink_connection import BlinkConnection
 
     mock_connection = Mock(spec=BlinkConnection)
-    if execute_side_effect:
+    if execute:
+        mock_connection.execute = execute
+    elif execute_side_effect:
         mock_connection.execute.side_effect = execute_side_effect
     else:
         mock_connection.execute.return_value = execute_return_value
@@ -522,12 +537,12 @@ def create_mock_auth(
         # Only use spec if Auth is not already a Mock
         if hasattr(Auth, "_mock_name"):
             # Auth is already mocked, don't use spec
-            mock_auth = Mock()
+            mock_auth = Mock(spec=object)  # Use generic spec
         else:
             mock_auth = Mock(spec=Auth)
     except ImportError:
         # Fallback if import fails
-        mock_auth = Mock()
+        mock_auth = Mock(spec=object)  # Use generic spec
 
     if startup:
         mock_auth.startup = startup
@@ -603,9 +618,9 @@ def initialize_for_testing() -> None:
 
         assert cache_service is not None
         if cache_service.clips_cache is None:
-            cache_service.clips_cache = MagicMock(spec=ClipsCache)
+            cache_service.clips_cache = create_mock_clips_cache()
         if cache_service.camera_thumbnail_cache is None:
-            cache_service.camera_thumbnail_cache = MagicMock(spec=CameraThumbnailCache)
+            cache_service.camera_thumbnail_cache = create_mock_camera_cache()
 
 
 def setup_test_globals() -> None:
@@ -756,9 +771,7 @@ class FlaskTestCase(BaseTestCase):
 
     def setup_mock_connection(self, return_value=None, side_effect=None):
         """Helper to set up mock connection with coroutine cleanup."""
-        from unittest.mock import Mock
-
-        return Mock(
+        return create_mock_blink_connection(
             execute=mock_execute_with_coroutine_cleanup(return_value, side_effect)
         )
 
@@ -906,7 +919,7 @@ def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
                 raise side_effect
         return return_value
 
-    return Mock(side_effect=mock_execute)
+    return Mock(spec=callable, side_effect=mock_execute)
 
 
 def create_video_metadata(

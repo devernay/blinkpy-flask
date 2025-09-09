@@ -383,7 +383,7 @@ class TestCachePathInitialization(BaseTestCase):
         mock_subpath = create_mock_path(
             "test_critical_coverage_subpath", "/test/cache/subdir", mock_mkdir
         )
-        mock_path_instance.__truediv__ = Mock(return_value=mock_subpath)
+        mock_path_instance.__truediv__ = Mock(spec=callable, return_value=mock_subpath)
         mock_path.return_value = mock_path_instance
 
         # Test initialization (will use default config outside app context)

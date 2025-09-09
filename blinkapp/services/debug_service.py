@@ -96,7 +96,7 @@ def handle_dump_system(
     import sys
 
     from blinkapp import CREDENTIALS_FILE, Config, initialize_cache_paths, logger
-    from blinkapp.services.blink_connection import blink_connection
+    from blinkapp.services.blink_connection import get_blink_connection
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
     from blinkapp.services.lifecycle_service import cleanup_blink_session
 
@@ -114,6 +114,7 @@ def handle_dump_system(
         logger.error("No saved credentials found.")
         sys.exit(1)
 
+    blink_connection = get_blink_connection()
     assert blink_connection is not None
     blink_connection.start()
     blink = None

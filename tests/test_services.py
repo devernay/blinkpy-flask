@@ -46,7 +46,6 @@ class TestTimeService(BaseTestCase):
         self.assertLess(result, 65)
 
 
-
 class TestAuthService(BaseTestCase):
     """Test authentication service functions."""
 
@@ -522,8 +521,8 @@ class TestHLSStream(BaseTestCase):
         # Use real TemporaryDirectory class as spec
         mock_dir = Mock(spec=tempfile.TemporaryDirectory)
         mock_dir.name = "/tmp/hls_test_camera_123"
-        mock_dir.__enter__ = Mock(return_value=mock_dir)
-        mock_dir.__exit__ = Mock(return_value=None)
+        mock_dir.__enter__ = Mock(spec=callable, return_value=mock_dir)
+        mock_dir.__exit__ = Mock(spec=callable, return_value=None)
 
         with patch("tempfile.TemporaryDirectory", return_value=mock_dir):
             # Mock FFmpeg process

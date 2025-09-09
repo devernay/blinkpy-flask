@@ -16,7 +16,7 @@ from cachetools import Cache, LRUCache
 from blinkapp.models.ids import CameraId, ClipId
 
 
-class ClipData(TypedDict):
+class ClipCacheData(TypedDict):
     """Structure for clip data returned by the API."""
 
     id: str
@@ -36,7 +36,7 @@ class ClipCacheEntry(ClipCacheEntryRequired, total=False):
     """Structure for clip cache entries."""
 
     # All fields are optional since entries can be created with different subsets
-    clip_data: ClipData
+    clip_data: ClipCacheData
     cached_at: float
     access_count: int
     last_accessed: float
@@ -71,7 +71,7 @@ __all__ = [
     "ThreadSafeLRUCache",
     "CameraThumbnailCache",
     "ClipsCache",
-    "ClipData",
+    "ClipCacheData",
     "ClipCacheEntry",
     "CameraThumbnailCacheEntry",
 ]
@@ -220,7 +220,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, ClipCacheEntry]):
         """
         super().__init__(maxsize=maxsize)
 
-    def add_clip(self, clip_id: ClipId, clip_data: ClipData) -> None:
+    def add_clip(self, clip_id: ClipId, clip_data: ClipCacheData) -> None:
         """Add clip with automatic metadata enhancement.
 
         Stores clip data with additional tracking metadata for cache management
@@ -238,7 +238,7 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, ClipCacheEntry]):
         }
         self[clip_id] = enhanced_data
 
-    def get_clip(self, clip_id: ClipId) -> ClipData | None:
+    def get_clip(self, clip_id: ClipId) -> ClipCacheData | None:
         """Get clip and update access statistics.
 
         Args:

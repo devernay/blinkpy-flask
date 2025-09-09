@@ -18,8 +18,8 @@ import unittest
 from blinkapp.models.cache import (
     CameraThumbnailCache,
     CameraThumbnailCacheEntry,
+    ClipCacheData,
     ClipCacheEntry,
-    ClipData,
     ClipsCache,
     ThreadSafeCache,
     ThreadSafeLRUCache,
@@ -844,7 +844,7 @@ class TestClipsCache(BaseTestCase):
         """Set up test clips cache."""
         self.cache = ClipsCache(maxsize=3)
         self.clip_id = ClipId("clip123")
-        self.clip_data: ClipData = {
+        self.clip_data: ClipCacheData = {
             "id": "clip123",
             "camera_name": "Front Door",
             "system_name": "Home",
@@ -953,8 +953,8 @@ class TestTypeDefinitions(BaseTestCase):
     """Test type definitions and data structures."""
 
     def test_clip_data_structure(self) -> None:
-        """Test ClipData TypedDict structure."""
-        clip_data: ClipData = {
+        """Test ClipCacheData TypedDict structure."""
+        clip_data: ClipCacheData = {
             "id": "clip123",
             "camera_name": "Front Door",
             "system_name": "Home",
@@ -975,9 +975,9 @@ class TestTypeDefinitions(BaseTestCase):
 
     def test_clip_day_group_structure(self) -> None:
         """Test ClipDayGroup TypedDict structure."""
-        from blinkapp.models.types import ClipData as TypesClipData
+        from blinkapp.models.types import ClipApiData as TypesClipApiData
 
-        clip_data: TypesClipData = {
+        clip_data: TypesClipApiData = {
             "id": "clip123",
             "created_at": "2024-01-01T12:00:00Z",
             "device_name": "Front Door",
@@ -1005,7 +1005,7 @@ class TestTypeDefinitions(BaseTestCase):
 
     def test_clip_cache_entry_structure(self) -> None:
         """Test ClipCacheEntry TypedDict structure."""
-        clip_data: ClipData = {
+        clip_data: ClipCacheData = {
             "id": "clip123",
             "camera_name": "Front Door",
             "system_name": "Home",

@@ -17,7 +17,7 @@ T = TypeVar("T")
 
 
 # Clip data structures
-class ClipData(TypedDict):
+class ClipApiData(TypedDict):
     """Structure for clip data."""
 
     id: str
@@ -31,14 +31,14 @@ class ClipDayGroup(TypedDict):
     """Structure for clips grouped by day."""
 
     date: str
-    clips: list[ClipData]
+    clips: list[ClipApiData]
 
 
 # Explicitly define what this module exports
 __all__ = [
     "P",
     "T",
-    "ClipData",
+    "ClipApiData",
     "ClipDayGroup",
     "JsonDict",
     "ClipsResponse",
@@ -98,7 +98,9 @@ DecoratorFunction = Callable[
 
 # Cache and utility types
 CacheKey = str  # Cache key identifier
-ValidationFunction = Callable[[str], object]  # Input validation function type - validates string input and returns validated object (e.g., CameraId, ClipId)
+ValidationFunction = Callable[
+    [str], object
+]  # Input validation function type - validates string input and returns validated object (e.g., CameraId, ClipId)
 
 # Auth-specific types
 AuthJsonDict = dict[str, str | int | bool]  # Auth module JSON dict

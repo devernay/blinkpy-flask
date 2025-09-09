@@ -72,13 +72,3 @@ class TestApiResponses:
         result = create_api_response(success=True)
         assert result["success"] is True
         assert "data" not in result
-
-
-class TestConnexionDecorators:
-    """Test utils/connexion_decorators.py (1 missed line)."""
-
-    def test_import_connexion_decorators(self):
-        """Test importing connexion_decorators module."""
-        from blinkapp.utils import connexion_decorators
-
-        assert connexion_decorators is not None

@@ -72,7 +72,7 @@ class TestAppInitialization(unittest.TestCase):
         mock_subpath = create_mock_path(
             "test_app_init_subpath", "/test/cache/subdir", mock_mkdir
         )
-        mock_path_instance.__truediv__ = Mock(return_value=mock_subpath)
+        mock_path_instance.__truediv__ = Mock(spec=callable, return_value=mock_subpath)
         mock_path.return_value = mock_path_instance
 
         try:

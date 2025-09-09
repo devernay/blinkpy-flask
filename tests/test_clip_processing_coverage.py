@@ -7,6 +7,8 @@ import pytest
 from blinkapp.models.ids import ClipId
 from blinkapp.services import clip_processing
 
+from .test_base import create_mock_blink_instance
+
 
 class TestProcessCloudClipBackground:
     """Test process_cloud_clip_background function."""
@@ -43,8 +45,7 @@ class TestProcessCloudClipBackground:
     ):
         """Test when blink instance is unavailable."""
         mock_exists.return_value = False
-        mock_blink = Mock()
-        mock_blink.available = False
+        mock_blink = create_mock_blink_instance(available=False)
         mock_ensure.return_value = mock_blink
 
         # Should return early
@@ -92,7 +93,7 @@ class TestDownloadAndCacheCloudThumbnail:
     def test_download_and_cache_cloud_thumbnail_local_clip_error(self):
         """Test with local clip ID raises error."""
         # Create a mock local clip ID
-        mock_clip_id = Mock()
+        mock_clip_id = Mock(spec=ClipId)
         mock_clip_id.is_local.return_value = True
 
         with pytest.raises(
@@ -109,9 +110,9 @@ class TestDownloadAndCacheCloudThumbnail:
         mock_exists.return_value = True
 
         # Create a mock cloud clip ID
-        mock_clip_id = Mock()
+        mock_clip_id = Mock(spec=ClipId)
         mock_clip_id.is_local.return_value = False
-        mock_clip_id.__str__ = Mock(return_value="test_clip")
+        mock_clip_id.__str__ = Mock(spec=callable, return_value="test_clip")
 
         result = clip_processing.download_and_cache_cloud_thumbnail(
             mock_clip_id, "http://test.url"
@@ -130,9 +131,9 @@ class TestDownloadAndCacheCloudThumbnail:
         mock_get.side_effect = Exception("Network error")
 
         # Create a mock cloud clip ID
-        mock_clip_id = Mock()
+        mock_clip_id = Mock(spec=ClipId)
         mock_clip_id.is_local.return_value = False
-        mock_clip_id.__str__ = Mock(return_value="test_clip")
+        mock_clip_id.__str__ = Mock(spec=callable, return_value="test_clip")
 
         result = clip_processing.download_and_cache_cloud_thumbnail(
             mock_clip_id, "http://test.url"

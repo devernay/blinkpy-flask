@@ -366,9 +366,9 @@ def load_clips_cache() -> None:
             parts = filename.replace(".mp4", "").split("_", 1)
             if len(parts) >= 2:
                 clip_id = ClipId(parts[0])
-                from blinkapp.models.cache import ClipData
+                from blinkapp.models.cache import ClipCacheData
 
-                clip_data: ClipData = {
+                clip_data: ClipCacheData = {
                     "id": str(clip_id),
                     "camera_name": parts[1] if len(parts) > 1 else "unknown",
                     "system_name": "cached",

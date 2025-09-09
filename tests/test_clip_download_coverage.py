@@ -1,10 +1,12 @@
 """Comprehensive tests for clip_download.py to achieve near 100% coverage."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from blinkapp.models.ids import ClipId
 from blinkapp.services import clip_download
+
+from .test_base import create_mock_blink_instance
 
 
 class TestDownloadClipCommon:
@@ -78,8 +80,7 @@ class TestDownloadCloudClip:
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_cloud_clip_blink_unavailable(self, mock_get_blink):
         """Test when blink instance exists but not available."""
-        mock_blink = Mock()
-        mock_blink.available = False
+        mock_blink = create_mock_blink_instance(available=False)
         mock_get_blink.return_value = mock_blink
 
         result = clip_download.download_cloud_clip(ClipId("test_clip"))
@@ -95,8 +96,7 @@ class TestDownloadCloudClip:
     @patch("blinkapp.services.clip_download.download_clip_common")
     def test_download_cloud_clip_cached(self, mock_common, mock_exists, mock_get_blink):
         """Test when clip is already cached."""
-        mock_blink = Mock()
-        mock_blink.available = True
+        mock_blink = create_mock_blink_instance(available=True)
         mock_get_blink.return_value = mock_blink
         mock_exists.return_value = True
         mock_common.return_value = "file_response"
@@ -115,8 +115,7 @@ class TestDownloadCloudClip:
         self, mock_sync, mock_mkdir, mock_exists, mock_get_blink
     ):
         """Test when download fails."""
-        mock_blink = Mock()
-        mock_blink.available = True
+        mock_blink = create_mock_blink_instance(available=True)
         mock_get_blink.return_value = mock_blink
         mock_exists.return_value = False
         mock_sync.return_value = (None, "Download error")
@@ -137,8 +136,7 @@ class TestDownloadCloudClip:
         self, mock_sync, mock_mkdir, mock_exists, mock_get_blink
     ):
         """Test when clip not found."""
-        mock_blink = Mock()
-        mock_blink.available = True
+        mock_blink = create_mock_blink_instance(available=True)
         mock_get_blink.return_value = mock_blink
         mock_exists.return_value = False
         mock_sync.return_value = (None, "Clip not found")

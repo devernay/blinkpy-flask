@@ -105,11 +105,24 @@ class TestMinimalCoverage(BaseTestCase):
 
     def test_formatters_format_clips_by_day_single_day(self):
         """Test format_clips_by_day with clips from single day."""
+        from blinkapp.models.types import ClipApiData
         from blinkapp.utils.formatters import format_clips_by_day
 
-        clips = [
-            {"created_at": "2025-01-01T10:00:00Z", "name": "clip1"},
-            {"created_at": "2025-01-01T15:00:00Z", "name": "clip2"},
+        clips: list[ClipApiData] = [
+            {
+                "id": "1",
+                "created_at": "2025-01-01T10:00:00Z",
+                "device_name": "cam1",
+                "thumbnail": "thumb1",
+                "media": "url1",
+            },
+            {
+                "id": "2",
+                "created_at": "2025-01-01T15:00:00Z",
+                "device_name": "cam1",
+                "thumbnail": "thumb2",
+                "media": "url2",
+            },
         ]
 
         result = format_clips_by_day(clips)
