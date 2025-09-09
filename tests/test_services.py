@@ -285,6 +285,55 @@ class TestCacheService(BaseTestCase):
         stats = get_cache_stats()
         self.assertIsInstance(stats, dict)
 
+    def test_clear_all_caches(self) -> None:
+        """Test clearing all caches."""
+        from blinkapp.services.cache_service import clear_all_caches
+
+        with (
+            patch(
+                "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized"
+            ),
+            patch("blinkapp.services.cache_service.ensure_clips_cache_initialized"),
+            patch("blinkapp.services.cache_service.clear_camera_thumbnail_cache_files"),
+            patch("blinkapp.services.cache_service.clear_clips_cache_files"),
+            patch("blinkapp.services.connection_service.ensure_executor_initialized"),
+        ):
+            clear_all_caches()  # Should not raise exception
+
+    def test_ensure_cache_paths_initialized(self) -> None:
+        """Test cache paths initialization."""
+        from blinkapp.services.cache_service import ensure_cache_paths_initialized
+
+        ensure_cache_paths_initialized()  # Should not raise exception
+
+
+class TestDebugService(BaseTestCase):
+    """Test debug service functions."""
+
+    def test_check_credentials_file_exists_true(self) -> None:
+        """Test credentials file exists returns True."""
+        from pathlib import Path
+
+        from blinkapp.services.debug_service import check_credentials_file_exists
+
+        mock_path = Mock(spec=Path)
+        mock_path.exists.return_value = True
+
+        result = check_credentials_file_exists(mock_path)
+        self.assertTrue(result)
+
+    def test_check_credentials_file_exists_false(self) -> None:
+        """Test credentials file does not exist returns False."""
+        from pathlib import Path
+
+        from blinkapp.services.debug_service import check_credentials_file_exists
+
+        mock_path = Mock(spec=Path)
+        mock_path.exists.return_value = False
+
+        result = check_credentials_file_exists(mock_path)
+        self.assertFalse(result)
+
 
 class TestDeviceService(BaseTestCase):
     """Test device service functions."""
@@ -881,6 +930,40 @@ class TestStreamService(BaseTestCase):
         camera_id = CameraId("test_camera")
         result = is_stream_active(camera_id)
         self.assertIsInstance(result, bool)
+
+    def test_stop_camera_stream_success(self) -> None:
+        """Test successful camera stream stop."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import stop_camera_stream
+
+        with patch(
+            "blinkapp.services.stream_service.ensure_stream_manager_initialized"
+        ) as mock_ensure:
+            mock_manager = Mock()
+            mock_ensure.return_value = mock_manager
+
+            camera_id = CameraId("test_camera")
+            result = stop_camera_stream(camera_id)
+
+            self.assertTrue(result)
+            mock_manager.stop_stream.assert_called_once_with(str(camera_id))
+
+    def test_stop_camera_stream_failure(self) -> None:
+        """Test camera stream stop failure."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import stop_camera_stream
+
+        with patch(
+            "blinkapp.services.stream_service.ensure_stream_manager_initialized"
+        ) as mock_ensure:
+            mock_manager = Mock()
+            mock_manager.stop_stream.side_effect = Exception("Stop error")
+            mock_ensure.return_value = mock_manager
+
+            camera_id = CameraId("test_camera")
+            result = stop_camera_stream(camera_id)
+
+            self.assertFalse(result)
 
 
 class TestSystemService(BaseTestCase):
