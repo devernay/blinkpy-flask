@@ -6053,6 +6053,16 @@ class TestModuleImports(FlaskTestCase):
         self.assertTrue(hasattr(blinkapp, "Flask"))
         # Note: jsonify, session, render_template are imported in route modules, not main module
 
+    @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
+    def test_logging_configuration(self) -> None:
+        """Test logging configuration paths."""
+        from blinkapp import Config
+
+        # Test that logging configuration can be accessed
+        self.assertTrue(hasattr(Config, "LOG_FILE"))
+        self.assertTrue(hasattr(Config, "LOG_MAX_BYTES"))
+        self.assertTrue(hasattr(Config, "LOG_BACKUP_COUNT"))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

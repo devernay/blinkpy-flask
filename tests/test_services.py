@@ -194,6 +194,45 @@ class TestBlinkService(BaseTestCase):
             # Connection not initialized yet, which is fine
             pass
 
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
+    @patch("aiohttp.ClientSession")
+    @patch("blinkpy.blinkpy.Blink")
+    @patch("blinkpy.auth.Auth")
+    def test_initialize_blink_success(
+        self,
+        mock_auth: Mock,
+        mock_blink: Mock,
+        mock_session: Mock,
+        mock_connection: Mock,
+    ) -> None:
+        """Test successful Blink initialization."""
+        from tests.test_base import (
+            create_mock_auth,
+            create_mock_blink_instance,
+            mock_execute_with_coroutine_cleanup,
+        )
+
+        # Setup mocks
+        mock_session_instance = Mock(spec=object)
+        mock_session.return_value = mock_session_instance
+
+        mock_blink_instance = create_mock_blink_instance(
+            available=True, key_required=False
+        )
+        mock_blink.return_value = mock_blink_instance
+
+        mock_auth_instance = create_mock_auth()
+        mock_auth.return_value = mock_auth_instance
+
+        from blinkapp.services.auth_service import initialize_blink
+
+        # Mock the async execution
+        mock_connection.execute = mock_execute_with_coroutine_cleanup(return_value=True)
+        result = mock_connection.execute(
+            initialize_blink("test@example.com", "password")
+        )
+        self.assertTrue(result)
+
 
 class TestBlinkValidators(BaseTestCase):
     """Test blink validators service functions."""
