@@ -6043,5 +6043,16 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
 # ============================================================================
 
 
+class TestModuleImports(FlaskTestCase):
+    """Test module import functionality."""
+
+    def test_flask_imports(self) -> None:
+        """Test Flask-related imports."""
+        import blinkapp
+
+        self.assertTrue(hasattr(blinkapp, "Flask"))
+        # Note: jsonify, session, render_template are imported in route modules, not main module
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
