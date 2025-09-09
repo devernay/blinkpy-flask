@@ -422,6 +422,22 @@ class TestErrors(BaseTestCase):
         result = getattr(mock_obj, "nonexistent_attr", "default")
         self.assertIsNotNone(result)
 
+    def test_exception_handling_patterns(self) -> None:
+        """Test consistent exception handling patterns across ID validation.
+
+        Why: Consistent error handling prevents application crashes from invalid input.
+        What: Verifies ID classes raise ValueError for invalid input consistently.
+        How: Tests empty string input to both CameraId and ClipId validation.
+        """
+        from blinkapp.models.ids import CameraId, ClipId
+
+        # Test ValueError handling
+        with self.assertRaises(ValueError):
+            CameraId("")  # Should raise ValueError for empty string
+
+        with self.assertRaises(ValueError):
+            ClipId("")  # Should raise ValueError for empty string
+
 
 class TestErrorHandlers(BaseTestCase):
     """Test error handler functions."""

@@ -145,22 +145,6 @@ class TestGlobalVariableAccess(BaseTestCase):
 class TestErrorHandlingPaths(BaseTestCase):
     """Test error handling code paths."""
 
-    def test_exception_handling_patterns(self) -> None:
-        """Test consistent exception handling patterns across ID validation.
-
-        Why: Consistent error handling prevents application crashes from invalid input.
-        What: Verifies ID classes raise ValueError for invalid input consistently.
-        How: Tests empty string input to both CameraId and ClipId validation.
-        """
-        from blinkapp.models.ids import CameraId, ClipId
-
-        # Test ValueError handling
-        with self.assertRaises(ValueError):
-            CameraId("")  # Should raise ValueError for empty string
-
-        with self.assertRaises(ValueError):
-            ClipId("")  # Should raise ValueError for empty string
-
     def test_type_error_handling(self) -> None:
         """Test TypeError handling."""
         from blinkapp.models.ids import CameraId, ClipId

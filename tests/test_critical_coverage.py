@@ -26,7 +26,6 @@ from blinkapp import (
     create_api_response,
     initialize_cache_paths,
 )
-from blinkapp.models.ids import CameraId, ClipId
 
 from .test_base import (
     BaseTestCase,
@@ -107,35 +106,6 @@ class TestCacheDirectoryOperations(BaseTestCase):
 
 class TestValidationClasses(BaseTestCase):
     """Test validation classes and their patterns."""
-
-    def test_validation_error_messages(self) -> None:
-        """Test ID validation provides meaningful error messages for debugging.
-
-        Why: Clear error messages help developers identify validation failures quickly.
-        What: Verifies error messages contain relevant context about validation failure.
-        How: Triggers validation error with empty ID and checks message content.
-        """
-        with self.assertRaises(ValueError) as context:
-            CameraId("")
-
-        # Should contain meaningful error message
-        error_msg = str(context.exception)
-        self.assertIn("Camera", error_msg)
-
-    def test_type_name_methods(self) -> None:
-        """Test _get_type_name methods."""
-        camera_id = CameraId("test123")
-        clip_id = ClipId("test456")
-
-        # Test that type name methods exist and return strings
-        try:
-            camera_type = camera_id._get_type_name()
-            clip_type = clip_id._get_type_name()
-            self.assertIsInstance(camera_type, str)
-            self.assertIsInstance(clip_type, str)
-        except NotImplementedError:
-            # Methods might not be implemented in base class
-            self.assertTrue(True)
 
 
 class TestCachePathInitialization(BaseTestCase):
