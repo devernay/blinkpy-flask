@@ -151,21 +151,6 @@ class TestCachePathInitialization(BaseTestCase):
 class TestAPIResponseCreation(BaseTestCase):
     """Test API response creation functionality."""
 
-    def test_create_api_response_success_with_data(self) -> None:
-        """Test API response creation with structured data payload.
-
-        Why: Consistent API response format is critical for frontend integration.
-        What: Verifies response structure includes success flag, data, and timestamp.
-        How: Creates response with test data and validates JSON structure compliance.
-        """
-        test_data: dict[str, Any] = {"key": "value", "number": 123}
-        response, status_code = create_api_response(success=True, data=test_data)
-
-        self.assertTrue(response["success"])
-        self.assertEqual(response["data"], test_data)
-        self.assertIn("timestamp", response)
-        self.assertEqual(status_code, 200)
-
     def test_create_api_response_error(self) -> None:
         """Test API response creation with error."""
         error_msg = "Test error message"
@@ -235,28 +220,6 @@ class TestLRUCacheAdvanced(BaseTestCase):
 
         # All operations should succeed
         self.assertTrue(all(results))
-
-    def test_lru_cache_contains_operation(self) -> None:
-        """Test LRU cache __contains__ operation."""
-        cache: LRUCache[str, str] = LRUCache(maxsize=5)
-
-        cache["existing_key"] = "value"
-
-        self.assertIn("existing_key", cache)
-        self.assertNotIn("nonexistent_key", cache)
-
-    def test_lru_cache_getitem_operation(self) -> None:
-        """Test LRU cache __getitem__ operation."""
-        cache: LRUCache[str, str] = LRUCache(maxsize=5)
-
-        cache["test_key"] = "test_value"
-
-        # Should work with [] operator
-        self.assertEqual(cache["test_key"], "test_value")
-
-        # Should raise KeyError for missing key
-        with self.assertRaises(KeyError):
-            _ = cache["missing_key"]
 
 
 if __name__ == "__main__":

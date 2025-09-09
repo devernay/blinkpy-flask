@@ -808,6 +808,32 @@ class TestThreadSafeLRUCache(BaseTestCase):
 
         self.assertEqual(len(cache), 0)
 
+    def test_lru_cache_contains_operation(self) -> None:
+        """Test LRU cache __contains__ operation."""
+        from blinkapp.models.cache import LRUCache
+
+        cache: LRUCache[str, str] = LRUCache(maxsize=5)
+
+        cache["existing_key"] = "value"
+
+        self.assertIn("existing_key", cache)
+        self.assertNotIn("nonexistent_key", cache)
+
+    def test_lru_cache_getitem_operation(self) -> None:
+        """Test LRU cache __getitem__ operation."""
+        from blinkapp.models.cache import LRUCache
+
+        cache: LRUCache[str, str] = LRUCache(maxsize=5)
+
+        cache["test_key"] = "test_value"
+
+        # Should work with [] operator
+        self.assertEqual(cache["test_key"], "test_value")
+
+        # Should raise KeyError for missing key
+        with self.assertRaises(KeyError):
+            _ = cache["missing_key"]
+
 
 class TestCameraThumbnailCache(BaseTestCase):
     """Test CameraThumbnailCache functionality."""

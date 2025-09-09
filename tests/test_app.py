@@ -333,6 +333,18 @@ class TestApiResponse(BaseTestCase):
         self.assertIsNone(response["data"])
         self.assertEqual(status_code, 400)
 
+    def test_create_api_response_success_with_data(self) -> None:
+        """Test API response creation with structured data payload."""
+        from typing import Any
+
+        test_data: dict[str, Any] = {"key": "value", "number": 123}
+        response, status_code = create_api_response(success=True, data=test_data)
+
+        self.assertTrue(response["success"])
+        self.assertEqual(response["data"], test_data)
+        self.assertIn("timestamp", response)
+        self.assertEqual(status_code, 200)
+
 
 class TestUtilityFunctions(BaseTestCase):
     """Test utility functions."""
@@ -1069,6 +1081,16 @@ class TestConfig(BaseTestCase):
         self.assertTrue(re.match(clip_pattern, "clip_123-test~456"))
         self.assertFalse(re.match(clip_pattern, "clip@123"))
         self.assertTrue(hasattr(Config, "THUMBNAILS_SUBDIR"))
+
+    def test_config_http_constants(self) -> None:
+        """Test HTTP status constants."""
+        from blinkapp.config import Config
+
+        if hasattr(Config, "HTTP_STATUS_OK"):
+            self.assertEqual(Config.HTTP_STATUS_OK, 200)
+
+        if hasattr(Config, "ErrorMessages"):
+            self.assertTrue(hasattr(Config.ErrorMessages, "SYNC_MODULE_NOT_FOUND"))
 
 
 if __name__ == "__main__":
@@ -6097,6 +6119,33 @@ class TestModuleImports(FlaskTestCase):
         self.assertTrue(hasattr(Config, "LOG_FILE"))
         self.assertTrue(hasattr(Config, "LOG_MAX_BYTES"))
         self.assertTrue(hasattr(Config, "LOG_BACKUP_COUNT"))
+
+    def test_standard_library_imports(self) -> None:
+        """Test standard library imports."""
+        import blinkapp as app_module
+
+        self.assertTrue(hasattr(app_module, "os"))
+
+    def test_third_party_imports(self) -> None:
+        """Test third-party imports."""
+        import blinkapp
+        from blinkapp.services import connection_service
+
+        self.assertTrue(hasattr(connection_service, "http_session"))
+        self.assertTrue(hasattr(blinkapp, "Path"))
+
+    def test_custom_class_imports(self) -> None:
+        """Test custom class availability."""
+        import blinkapp
+        from blinkapp.models import ids
+
+        self.assertTrue(hasattr(ids, "CameraId"))
+        self.assertTrue(hasattr(ids, "ClipId"))
+        self.assertTrue(hasattr(blinkapp, "Config"))
+
+        # Test classes are callable
+        self.assertTrue(callable(ids.CameraId))
+        self.assertTrue(callable(ids.ClipId))
 
 
 if __name__ == "__main__":
