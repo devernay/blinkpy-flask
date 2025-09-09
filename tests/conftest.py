@@ -1,20 +1,80 @@
-#!/usr/bin/env python3
-"""Pytest configuration for strict patching."""
+"""Pytest configuration for completely isolated testing."""
 
 import os
+from pathlib import Path
 
-from tests.test_base import disable_strict_patching, enable_strict_patching
-
-
-def pytest_configure(config):
-    """Configure pytest with strict patching enabled by default."""
-    # Enable strict patching by default, disable only if explicitly set to false
-    if os.environ.get("STRICT_PATCHING", "").lower() not in ("0", "false", "no"):
-        enable_strict_patching()
-        print("✅ Strict patching enabled - only __all__ exports can be patched")
+import pytest
 
 
-def pytest_unconfigure(config):
-    """Clean up after pytest."""
-    # Always restore original patching behavior
-    disable_strict_patching()
+@pytest.fixture(autouse=True)
+def isolate_all_file_operations(tmp_path, monkeypatch):
+    """Redirect ALL file operations away from source directory."""
+
+    source_dir = Path(".").resolve()
+
+    # Store originals
+    original_open = open
+    original_mkdir = os.mkdir
+    original_makedirs = os.makedirs
+    original_path_mkdir = Path.mkdir
+
+    def safe_open(file, mode="r", **kwargs):
+        file_path = Path(file).resolve()
+        if file_path.is_relative_to(source_dir) and any(m in mode for m in "wax+"):
+            # Redirect writes to tmp_path
+            rel_path = file_path.relative_to(source_dir)
+            new_path = tmp_path / rel_path
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            return original_open(new_path, mode, **kwargs)
+        return original_open(file, mode, **kwargs)
+
+    def safe_mkdir(path, mode=0o777):
+        path_obj = Path(path).resolve()
+        if path_obj.is_relative_to(source_dir):
+            rel_path = path_obj.relative_to(source_dir)
+            new_path = tmp_path / rel_path
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            return original_mkdir(new_path, mode)
+        return original_mkdir(path, mode)
+
+    def safe_makedirs(name, mode=0o777, exist_ok=False):
+        path_obj = Path(name).resolve()
+        if path_obj.is_relative_to(source_dir):
+            rel_path = path_obj.relative_to(source_dir)
+            new_path = tmp_path / rel_path
+            new_path.mkdir(parents=True, exist_ok=True)
+            return
+        return original_makedirs(name, mode, exist_ok)
+
+    # Patch all file operations
+    monkeypatch.setattr("builtins.open", safe_open)
+    monkeypatch.setattr("os.mkdir", safe_mkdir)
+    monkeypatch.setattr("os.makedirs", safe_makedirs)
+
+    # Patch pathlib operations
+    def safe_path_mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        if self.resolve().is_relative_to(source_dir):
+            rel_path = self.resolve().relative_to(source_dir)
+            new_path = tmp_path / rel_path
+            return original_path_mkdir(
+                new_path, mode=mode, parents=parents, exist_ok=exist_ok
+            )
+        return original_path_mkdir(self, mode=mode, parents=parents, exist_ok=exist_ok)
+
+    monkeypatch.setattr(Path, "mkdir", safe_path_mkdir)
+
+    # Redirect cache operations
+    def mock_initialize_cache_paths():
+        import blinkapp
+
+        blinkapp.CACHE_DIR = str(tmp_path)
+        blinkapp.THUMBNAIL_CACHE_DIR = str(tmp_path / "thumbnails")
+        blinkapp.CLIPS_CACHE_DIR = str(tmp_path / "clips")
+        blinkapp.HLS_OUTPUT_DIR = str(tmp_path / "hls")
+        blinkapp.SETTINGS_FILE = str(tmp_path / "settings.json")
+        blinkapp.CREDENTIALS_FILE = str(tmp_path / "blink.json")
+
+    monkeypatch.setattr(
+        "blinkapp.services.cache_service.initialize_cache_paths",
+        mock_initialize_cache_paths,
+    )

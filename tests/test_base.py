@@ -9,7 +9,6 @@ This module provides all test utilities in one place:
 """
 
 import functools
-import gc
 import importlib
 import os
 import sys
@@ -631,7 +630,6 @@ def with_app_initialized(func: Callable[P, T]) -> Callable[P, T]:  # noqa: UP047
 
 def with_blink_auth(test_func):
     """Decorator to add blink authentication mock to test methods."""
-    from unittest.mock import patch
 
     @functools.wraps(test_func)
     def wrapper(*args, **kwargs):
@@ -646,103 +644,50 @@ def with_blink_auth(test_func):
 
 
 class BaseTestCase(unittest.TestCase):
-    """Unified base test case with setup and cleanup."""
+    """Simplified base test case - isolation handled by pytest fixtures."""
 
     def setUp(self) -> None:
-        """Set up test environment with isolated temporary directories."""
+        """Set up test environment."""
         super().setUp()
-
-        # Create temporary directory for this test
-        self.test_temp_dir = tempfile.mkdtemp(prefix="blinkapp_test_")
-
-        # Patch initialize_cache_paths to use temp directory
-        def mock_initialize_cache_paths():
-            import blinkapp
-
-            blinkapp.CACHE_DIR = self.test_temp_dir
-            blinkapp.THUMBNAIL_CACHE_DIR = os.path.join(
-                self.test_temp_dir, "thumbnails"
-            )
-            blinkapp.CLIPS_CACHE_DIR = os.path.join(self.test_temp_dir, "clips")
-            blinkapp.HLS_OUTPUT_DIR = os.path.join(self.test_temp_dir, "hls")
-            blinkapp.SETTINGS_FILE = os.path.join(self.test_temp_dir, "settings.json")
-            blinkapp.CREDENTIALS_FILE = os.path.join(self.test_temp_dir, "blink.json")
-
-        self.cache_patch = patch(
-            "blinkapp.services.cache_service.initialize_cache_paths",
-            mock_initialize_cache_paths,
-        )
-        self.cache_patch.start()
-
-        # Initialize test environment
         initialize_for_testing()
 
     def tearDown(self) -> None:
         """Clean up test environment."""
-        # Clean up global state
         try:
             import asyncio
 
             from blinkapp.services import blink_service, connection_service
             from blinkapp.services.cache_service import cleanup_global_caches
 
-            # Clean up Blink session properly using public interface
+            # Clean up Blink session
             try:
                 asyncio.run(blink_service.cleanup_blink_session())
             except Exception:
-                # Fallback to manual cleanup if asyncio fails
-                blink_instance = blink_service.get_blink_instance()
-                if blink_instance is not None and blink_instance.auth is not None:
-                    if blink_instance.auth.session is not None:
-                        session = blink_instance.auth.session
-                        if session and not session.closed:
-                            try:
-                                asyncio.run(session.close())
-                            except Exception:
-                                pass
+                pass
 
-            # Reset Blink objects using public interface
+            # Reset services
             blink_service.cleanup_blink_instances()
-
-            # Reset connection service
-            assert connection_service is not None
-            connection_service.executor = None
-
-            # Reset global caches to avoid test interference
+            if connection_service:
+                connection_service.executor = None
             cleanup_global_caches()
-
-            # Clean up any pending async operations to prevent warnings
             self._cleanup_async_operations()
         except Exception:
-            # Ignore teardown errors to prevent masking test failures
             pass
-
-        # Stop patcher
-        self.cache_patch.stop()
-
-        # Clean up temporary directory
-        if hasattr(self, "test_temp_dir") and os.path.exists(self.test_temp_dir):
-            import shutil
-
-            shutil.rmtree(self.test_temp_dir, ignore_errors=True)
 
         super().tearDown()
 
     def _cleanup_async_operations(self) -> None:
         """Clean up pending async operations to prevent RuntimeWarnings."""
         try:
+            import gc
             import inspect
-
-            # Close any open logging handlers to prevent ResourceWarnings
             import logging
 
-            # Get all loggers and close their handlers
-            loggers_to_clean = [logging.getLogger()]  # Root logger
-            loggers_to_clean.extend(
+            # Close logging handlers
+            loggers = [logging.getLogger()] + [
                 logging.getLogger(name) for name in logging.Logger.manager.loggerDict
-            )
-
-            for logger in loggers_to_clean:
+            ]
+            for logger in loggers:
                 for handler in logger.handlers[:]:
                     try:
                         handler.close()
@@ -750,58 +695,16 @@ class BaseTestCase(unittest.TestCase):
                     except Exception:
                         pass
 
-            # Also close any handlers that might be lingering
-            if hasattr(logging, "_handlers"):
-                for handler in logging._handlers.copy():  # type: ignore[attr-defined]
-                    try:
-                        handler.close()
-                    except Exception:
-                        pass
-                logging._handlers.clear()  # type: ignore[attr-defined]
-
-            # Find and close any pending coroutines from AsyncMock BEFORE gc.collect()
-            pending_coros = []
+            # Close pending coroutines
             for obj in gc.get_objects():
                 if inspect.iscoroutine(obj):
-                    pending_coros.append(obj)
-
-            # Close all pending coroutines
-            for coro in pending_coros:
-                try:
-                    coro.close()
-                except Exception:
-                    pass
-
-            # Force close any remaining file objects before gc.collect() (except std streams)
-            import io
-            import sys
-
-            std_streams = {sys.stdin, sys.stdout, sys.stderr}
-
-            for obj in gc.get_objects():
-                if isinstance(
-                    obj,
-                    io.IOBase
-                    | io.BufferedWriter
-                    | io.BufferedReader
-                    | io.TextIOWrapper,
-                ):
                     try:
-                        if not obj.closed and obj not in std_streams:
-                            # Only close files that look like log files
-                            if (
-                                hasattr(obj, "name")
-                                and isinstance(getattr(obj, "name", None), str)
-                                and "log" in getattr(obj, "name", "")
-                            ):
-                                obj.close()
+                        obj.close()
                     except Exception:
                         pass
 
-            # Force garbage collection after cleanup
             gc.collect()
         except Exception:
-            # Ignore cleanup errors
             pass
 
 
@@ -811,7 +714,6 @@ class FlaskTestCase(BaseTestCase):
     def setUp(self) -> None:
         """Set up Flask test client and configuration."""
         super().setUp()
-        import tempfile
 
         from blinkapp import app
 
@@ -954,7 +856,6 @@ class FlaskTestCase(BaseTestCase):
 
     def mock_blink_system(self, available=True, systems=None):
         """Context manager for mocking blink system with common setup."""
-        from unittest.mock import patch
 
         @contextmanager
         def _mock():
@@ -971,7 +872,6 @@ class FlaskTestCase(BaseTestCase):
 
     def with_blink_mocks(self, available=True, sync_data=None):
         """Decorator to automatically patch blink service with common setup."""
-        from unittest.mock import patch
 
         def decorator(test_method):
             @patch("blinkapp.services.blink_service.blink_connection")
