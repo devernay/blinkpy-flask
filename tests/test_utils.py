@@ -235,6 +235,40 @@ class TestValidators(BaseTestCase):
         result = validate_string_input("test", 10, "test_field")
         self.assertEqual(result, "test")
 
+    def test_validate_string_input_too_long_minimal_v2(self) -> None:
+        """Test validate_string_input with input too long (minimal v2)."""
+        from blinkapp.utils.validators import validate_string_input
+
+        with self.assertRaises(ValueError):
+            validate_string_input("very_long_string", 5, "test_field")
+
+    def test_is_valid_email_format_valid_minimal_v2(self) -> None:
+        """Test is_valid_email_format with valid email (minimal v2)."""
+        from blinkapp.utils.validators import is_valid_email_format
+
+        self.assertTrue(is_valid_email_format("test@example.com"))
+
+    def test_is_valid_email_format_invalid_minimal_v2(self) -> None:
+        """Test is_valid_email_format with invalid email (minimal v2)."""
+        from blinkapp.utils.validators import is_valid_email_format
+
+        self.assertFalse(is_valid_email_format("invalid-email"))
+
+    def test_validate_credentials_valid_email_minimal_v2(self) -> None:
+        """Test validate_credentials with valid email (minimal v2)."""
+        from blinkapp.utils.validators import validate_credentials
+
+        email, password = validate_credentials("test@example.com", "testpass")
+        self.assertEqual(email, "test@example.com")
+        self.assertEqual(password, "testpass")
+
+    def test_validate_credentials_empty_minimal_v2(self) -> None:
+        """Test validate_credentials with empty input (minimal v2)."""
+        from blinkapp.utils.validators import validate_credentials
+
+        with self.assertRaises(ValueError):
+            validate_credentials("", "password")
+
     def test_validate_string_input_too_long(self) -> None:
         """Test validate_string_input with input too long."""
         from blinkapp.utils.validators import validate_string_input
