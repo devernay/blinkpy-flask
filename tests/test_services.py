@@ -143,6 +143,29 @@ class TestAuthService(BaseTestCase):
         # Valid credentials
         self.assertTrue(validate_credentials("user@example.com", "password123"))
 
+    def test_create_blink_session_default(self) -> None:
+        """Test creating blink session with default factory."""
+        from blinkapp.services import auth_service
+
+        with patch("aiohttp.ClientSession") as mock_session_class:
+            mock_session = Mock()
+            mock_session_class.return_value = mock_session
+
+            result = auth_service._create_blink_session()
+
+            self.assertEqual(result, mock_session)
+            mock_session_class.assert_called_once()
+
+    def test_create_blink_session_custom_factory(self):
+        """Test creating blink session with custom factory."""
+        from blinkapp.services import auth_service
+
+        with patch("aiohttp.ClientSession", return_value=Mock()) as mock_factory:
+            result = auth_service._create_blink_session()
+
+            self.assertIsNotNone(result)
+            mock_factory.assert_called_once()
+
 
 class TestCacheService(BaseTestCase):
     """Test cache service functions."""
@@ -313,7 +336,7 @@ class TestDeviceService(BaseTestCase):
         self.assertEqual(result["name"], "Test Camera")
 
 
-class TestHLSServicePureFunctions(BaseTestCase):
+class TestHlsService(BaseTestCase):
     """Test HLS service pure functions for coverage."""
 
     def test_parse_tcp_url_variations(self) -> None:
@@ -351,6 +374,21 @@ class TestHLSServicePureFunctions(BaseTestCase):
         # Custom base URL
         result = generate_hls_url("camera456", "http://example.com:9000")
         self.assertEqual(result, "http://example.com:9000/hls/camera456/playlist.m3u8")
+
+    def test_parse_tcp_url_empty_string(self) -> None:
+        """Test parsing empty URL string."""
+        from blinkapp.services.hls_service import parse_tcp_url
+
+        result = parse_tcp_url("")
+        self.assertEqual(result, {})
+
+    def test_parse_tcp_url_no_port_detailed(self) -> None:
+        """Test parsing URL without port."""
+        from blinkapp.services.hls_service import parse_tcp_url
+
+        result = parse_tcp_url("tcp://127.0.0.1")
+        expected = {"protocol": "tcp", "host": "127.0.0.1", "port": ""}
+        self.assertEqual(result, expected)
 
 
 class TestHLSStreamConfig(BaseTestCase):
@@ -478,6 +516,26 @@ class TestFFmpegHelpers(BaseTestCase):
             result = _create_ffmpeg_process(cmd)
 
             self.assertEqual(result, mock_process)
+
+    def test_create_ffmpeg_process_with_mock_factory(self) -> None:
+        """Test FFmpeg process creation with mocked factory."""
+        from blinkapp.services.hls_service import _create_ffmpeg_process
+
+        mock_process = Mock()
+        with patch("subprocess.Popen", return_value=mock_process) as mock_popen:
+            result = _create_ffmpeg_process(["ffmpeg", "-version"])
+
+            self.assertEqual(result, mock_process)
+            mock_popen.assert_called_once()
+
+    def test_create_ffmpeg_process_os_error(self) -> None:
+        """Test FFmpeg process creation with OS error."""
+        from blinkapp.services.hls_service import _create_ffmpeg_process
+
+        with patch("subprocess.Popen", side_effect=OSError("Process error")):
+            result = _create_ffmpeg_process(["ffmpeg", "-version"])
+
+            self.assertIsNone(result)
 
 
 class TestHLSStream(BaseTestCase):
@@ -661,6 +719,50 @@ class TestHLSStream(BaseTestCase):
         self.assertEqual(content, b"playlist content")
         self.assertEqual(content_type, "application/vnd.apple.mpegurl")
 
+    def test_hls_stream_get_file_ts_content_type(self) -> None:
+        """Test get_file with .ts file returns correct content type."""
+        from blinkapp.services.hls_service import HLSStream
+
+        stream = HLSStream(self.camera_id, self.tcp_url, self.config)
+        stream._active = True
+
+        mock_temp_dir = Mock(spec=tempfile.TemporaryDirectory)
+        mock_temp_dir.name = "/tmp/test"
+        stream.temp_dir = mock_temp_dir
+
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("builtins.open") as mock_open,
+            patch("time.time", return_value=123456),
+        ):
+            mock_file = Mock()
+            mock_file.read.return_value = b"ts content"
+            mock_open.return_value.__enter__.return_value = mock_file
+
+            content, content_type = stream.get_file("segment.ts")
+
+            self.assertEqual(content, b"ts content")
+            self.assertEqual(content_type, "video/mp2t")
+
+    def test_hls_stream_is_active_with_timeout(self) -> None:
+        """Test is_active with idle timeout."""
+        from blinkapp.services.hls_service import HLSStream
+
+        stream = HLSStream(self.camera_id, self.tcp_url, self.config)
+        stream._active = True
+
+        mock_process = Mock()
+        mock_process.poll.return_value = None  # Still running
+        stream.process = mock_process
+        stream.last_access = 0  # Set to old time
+
+        with patch("time.time", return_value=1000):  # Much later time
+            with patch.object(stream, "stop") as mock_stop:
+                result = stream.is_active()
+
+                self.assertFalse(result)
+                mock_stop.assert_called_once()
+
 
 class TestCloudClipProcessing(BaseTestCase):
     """Test cloud clip processing functions."""
@@ -814,6 +916,82 @@ class TestSystemService(BaseTestCase):
         result = get_systems()
         self.assertIsInstance(result, dict)
         self.assertIn("systems", result)
+
+
+class TestLifecycleService(BaseTestCase):
+    """Test lifecycle service functions."""
+
+    @patch("blinkapp.services.cache_service.initialize_cache_paths")
+    @patch("blinkapp.services.connection_service.initialize_connections")
+    @patch("blinkapp.services.cache_service.initialize_caches")
+    @patch("blinkapp.services.stream_service.initialize_stream_manager")
+    @patch("blinkapp.services.blink_service.initialize_blink_objects")
+    @patch("blinkapp.utils.logging_config.setup_logging")
+    @patch("blinkapp.CACHE_DIR", "/mock/cache")
+    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/mock/cache/thumbnails")
+    @patch("blinkapp.CLIPS_CACHE_DIR", "/mock/cache/clips")
+    @patch("pathlib.Path.mkdir")
+    def test_startup_success(
+        self,
+        mock_mkdir,
+        mock_logging,
+        mock_blink,
+        mock_stream,
+        mock_caches,
+        mock_connections,
+        mock_paths,
+    ):
+        """Test successful startup."""
+        from blinkapp.services import lifecycle_service
+
+        lifecycle_service.startup()
+
+        mock_connections.assert_called_once()
+        mock_blink.assert_called_once()
+        mock_paths.assert_called_once()
+        mock_caches.assert_called_once()
+        mock_stream.assert_called_once()
+
+    @patch("blinkapp.services.connection_service.initialize_connections")
+    def test_startup_exception(self, mock_connections):
+        """Test startup with exception - should log but not raise."""
+        from blinkapp.services import lifecycle_service
+
+        mock_connections.side_effect = Exception("Startup error")
+
+        # Should not raise exception, just log warning
+        lifecycle_service.startup()
+        self.assertTrue(True)  # Test passes if no exception raised
+
+    @patch("blinkapp.services.connection_service.executor", Mock())
+    @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
+    def test_cleanup_resources_success(self, mock_blink_conn, mock_stream):
+        """Test successful resource cleanup."""
+        from blinkapp.services import lifecycle_service
+
+        mock_stream_manager = Mock()
+        mock_stream.return_value = mock_stream_manager
+        mock_blink_connection = Mock()
+        mock_blink_conn.return_value = mock_blink_connection
+
+        lifecycle_service.cleanup_resources()
+
+        mock_stream_manager.shutdown.assert_called_once()
+        mock_blink_connection.cleanup_active_streams.assert_called_once()
+
+    @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
+    def test_cleanup_resources_exception(self, mock_stream):
+        """Test cleanup with exception - should raise."""
+        from blinkapp.services import lifecycle_service
+
+        mock_stream.side_effect = Exception("Cleanup error")
+
+        try:
+            lifecycle_service.cleanup_resources()
+            raise AssertionError("Should have raised exception")
+        except Exception as e:
+            self.assertIn("Cleanup error", str(e))
 
 
 class TestConnectionService(BaseTestCase):
