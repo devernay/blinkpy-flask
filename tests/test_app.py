@@ -394,6 +394,35 @@ class TestApiResponse(BaseTestCase):
         assert isinstance(timestamp, str)
         self.assertIn("T", timestamp)  # ISO format contains T
 
+    def test_create_api_response_success_expansion(self) -> None:
+        """Test create_api_response with success (expansion)."""
+        from blinkapp.utils.api_responses import create_api_response
+
+        result = create_api_response(success=True, data={"test": "data"})
+
+        self.assertTrue(result["success"])
+        self.assertEqual(result["data"], {"test": "data"})
+        self.assertIn("timestamp", result)
+
+    def test_create_api_response_error_expansion(self) -> None:
+        """Test create_api_response with error (expansion)."""
+        from blinkapp.utils.api_responses import create_api_response
+
+        result = create_api_response(success=False, error="Test error")
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "Test error")
+        self.assertIn("timestamp", result)
+
+    def test_create_api_response_success_no_data_expansion(self) -> None:
+        """Test create_api_response success without data (expansion)."""
+        from blinkapp.utils.api_responses import create_api_response
+
+        result = create_api_response(success=True)
+
+        self.assertTrue(result["success"])
+        self.assertIn("timestamp", result)
+
 
 class TestUtilityFunctions(BaseTestCase):
     """Test utility functions."""

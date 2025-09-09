@@ -208,6 +208,54 @@ class TestAuthService(BaseTestCase):
             self.assertIsNotNone(result)
             mock_factory.assert_called_once()
 
+    def test_is_blink_authenticated_no_instance_expansion(self) -> None:
+        """Test is_blink_authenticated when no blink instance (expansion)."""
+        from unittest.mock import patch
+
+        from blinkapp.services import auth_service
+
+        with patch(
+            "blinkapp.services.auth_service.get_blink_instance"
+        ) as mock_get_blink:
+            mock_get_blink.return_value = None
+            result = auth_service.is_blink_authenticated()
+            self.assertFalse(result)
+
+    def test_is_valid_email_format_valid_expansion(self) -> None:
+        """Test is_valid_email_format with valid email (expansion)."""
+        from blinkapp.services import auth_service
+
+        result = auth_service.is_valid_email_format("test@example.com")
+        self.assertTrue(result)
+
+    def test_is_valid_email_format_invalid_expansion(self) -> None:
+        """Test is_valid_email_format with invalid email (expansion)."""
+        from blinkapp.services import auth_service
+
+        result = auth_service.is_valid_email_format("invalid-email")
+        self.assertFalse(result)
+
+    def test_validate_credentials_empty_expansion(self) -> None:
+        """Test validate_credentials with empty credentials (expansion)."""
+        from blinkapp.services import auth_service
+
+        result = auth_service.validate_credentials("", "")
+        self.assertFalse(result)
+
+    def test_validate_credentials_valid_expansion(self) -> None:
+        """Test validate_credentials with valid credentials (expansion)."""
+        from blinkapp.services import auth_service
+
+        result = auth_service.validate_credentials("test@example.com", "password123")
+        self.assertTrue(result)
+
+    def test_validate_credentials_invalid_email_expansion(self) -> None:
+        """Test validate_credentials with invalid email format (expansion)."""
+        from blinkapp.services import auth_service
+
+        result = auth_service.validate_credentials("invalid-email", "password123")
+        self.assertFalse(result)
+
 
 class TestBlinkConnection(BaseTestCase):
     """Test blink connection service functions."""
