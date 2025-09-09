@@ -1350,6 +1350,49 @@ class TestSystemService(BaseTestCase):
         self.assertIsInstance(result, dict)
         self.assertIn("systems", result)
 
+    def test_initialize_cache_paths_with_config(self) -> None:
+        """Test cache path initialization with app config."""
+        from unittest.mock import Mock, patch
+
+        from blinkapp import initialize_cache_paths
+        from tests.test_base import create_mock_path
+
+        with (
+            patch("pathlib.Path.mkdir") as mock_mkdir,
+            patch("pathlib.Path") as mock_path,
+        ):
+            # Setup mock path that supports / operator
+            mock_path_instance = create_mock_path(
+                "test_critical_coverage_cache_path", "/test/cache", mock_mkdir
+            )
+            mock_subpath = create_mock_path(
+                "test_critical_coverage_subpath", "/test/cache/subdir", mock_mkdir
+            )
+            mock_path_instance.__truediv__ = Mock(
+                spec=callable, return_value=mock_subpath
+            )
+            mock_path.return_value = mock_path_instance
+
+            # Test initialization (will use default config outside app context)
+            initialize_cache_paths()
+
+            # Should create directories
+            mock_mkdir.assert_called()
+
+    def test_initialize_cache_paths_default(self) -> None:
+        """Test cache path initialization with defaults."""
+        from blinkapp import initialize_cache_paths
+
+        # Should not raise exception when outside app context
+        try:
+            initialize_cache_paths()
+            success = True
+        except Exception:
+            success = False
+
+        # Should handle missing app context gracefully
+        self.assertTrue(success)
+
 
 class TestThumbnailService(BaseTestCase):
     """Test thumbnail service functions."""

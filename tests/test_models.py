@@ -866,6 +866,42 @@ class TestThreadSafeLRUCache(BaseTestCase):
         # All operations should succeed
         self.assertTrue(all(results))
 
+    def test_update_camera_thumbnail_cache_advanced(self) -> None:
+        """Test camera thumbnail cache update."""
+        from unittest.mock import Mock, patch
+
+        mock_camera = Mock()
+        mock_camera.name = "Test Camera"
+        mock_camera.thumbnail = "http://example.com/thumb.jpg"
+        mock_camera.camera_id = 12345
+
+        with (
+            patch(
+                "blinkapp.services.cache_service.camera_thumbnail_cache"
+            ) as mock_cache,
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ),
+            patch("blinkapp.services.connection_service.executor") as mock_executor,
+            patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"),
+        ):
+            # Setup mocks
+            mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
+
+            try:
+                from blinkapp import initialize_cache_paths
+                from blinkapp.routes.thumbnails import update_camera_thumbnail
+                from blinkapp.services.cache_service import initialize_caches
+
+                # Initialize cache paths and caches before thumbnail operations
+                initialize_cache_paths()
+                initialize_caches({})
+                update_camera_thumbnail(mock_camera, 2000, 1000)
+                # Should submit task to executor
+                mock_executor.submit.assert_called_once()
+            except (ImportError, AttributeError):
+                self.assertTrue(True)
+
 
 class TestCameraThumbnailCache(BaseTestCase):
     """Test CameraThumbnailCache functionality."""

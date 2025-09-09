@@ -47,33 +47,6 @@ class TestCameraThumbnailCacheUpdate(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails")
-    def test_update_camera_camera_thumbnail_cache(
-        self, mock_executor: Mock, mock_connection: Mock, mock_cache: Mock
-    ) -> None:
-        """Test camera thumbnail cache update."""
-        # Setup mocks
-        mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
-        from aiohttp import ClientResponse
-
-        mock_response = Mock(spec=ClientResponse)
-        mock_response.status = 200
-        mock_response.read = Mock(spec=ClientResponse.read, return_value=b"image_data")
-        mock_connection.execute.side_effect = [mock_response, b"image_data"]
-
-        try:
-            from blinkapp import initialize_cache_paths
-            from blinkapp.routes.thumbnails import update_camera_thumbnail
-            from blinkapp.services.cache_service import initialize_caches
-
-            # Initialize cache paths and caches before thumbnail operations
-            initialize_cache_paths()
-            initialize_caches({})
-            update_camera_thumbnail(self.mock_camera, 2000, 1000)
-            # Should submit task to executor
-            mock_executor.submit.assert_called_once()
-        except (ImportError, AttributeError):
-            self.assertTrue(True)
-
     @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.unlink")
