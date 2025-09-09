@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path as RealPath
 from typing import ParamSpec, TypeVar
-from unittest.mock import MagicMock, Mock, _patch
+from unittest.mock import MagicMock, Mock, _patch, patch
 from unittest.mock import patch as original_patch
 
 from blinkpy.blinkpy import Blink
@@ -668,7 +668,7 @@ class BaseTestCase(unittest.TestCase):
             blinkapp.SETTINGS_FILE = os.path.join(self.test_temp_dir, "settings.json")
             blinkapp.CREDENTIALS_FILE = os.path.join(self.test_temp_dir, "blink.json")
 
-        self.cache_patch = original_patch(
+        self.cache_patch = patch(
             "blinkapp.services.cache_service.initialize_cache_paths",
             mock_initialize_cache_paths,
         )
