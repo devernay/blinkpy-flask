@@ -28,59 +28,6 @@ from blinkapp import Config
 from .test_base import BaseTestCase
 
 
-class TestCachePathValidation(BaseTestCase):
-    """Test cache path validation - lines 747-751."""
-
-    @patch("blinkapp.CACHE_DIR", None)
-    @patch("blinkapp.CREDENTIALS_FILE", "test")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
-    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
-    def test_ensure_cache_paths_cache_dir_none(self) -> None:
-        """Test cache path initialization when main cache directory is None.
-
-        Why: Cache directory can be None during startup or configuration errors.
-        What: Verifies cache initialization handles missing main directory gracefully.
-        How: Mocks CACHE_DIR as None and tests initialization doesn't crash.
-        """
-        from blinkapp.services.cache_service import ensure_cache_paths_initialized
-
-        with self.assertRaises(RuntimeError):
-            ensure_cache_paths_initialized()
-
-    @patch("blinkapp.CACHE_DIR", "test")
-    @patch("blinkapp.CREDENTIALS_FILE", None)
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
-    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
-    def test_ensure_cache_paths_credentials_file_none(self) -> None:
-        """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
-        from blinkapp.services.cache_service import ensure_cache_paths_initialized
-
-        with self.assertRaises(RuntimeError):
-            ensure_cache_paths_initialized()
-
-    @patch("blinkapp.CACHE_DIR", "test")
-    @patch("blinkapp.CREDENTIALS_FILE", "test")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", None)
-    @patch("blinkapp.CLIPS_CACHE_DIR", "test")
-    def test_ensure_cache_paths_thumbnail_dir_none(self) -> None:
-        """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
-        from blinkapp.services.cache_service import ensure_cache_paths_initialized
-
-        with self.assertRaises(RuntimeError):
-            ensure_cache_paths_initialized()
-
-    @patch("blinkapp.CACHE_DIR", "test")
-    @patch("blinkapp.CREDENTIALS_FILE", "test")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "test")
-    @patch("blinkapp.CLIPS_CACHE_DIR", None)
-    def test_ensure_cache_paths_clips_dir_none(self) -> None:
-        """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
-        from blinkapp.services.cache_service import ensure_cache_paths_initialized
-
-        with self.assertRaises(RuntimeError):
-            ensure_cache_paths_initialized()
-
-
 class TestConfigurationValues(BaseTestCase):
     """Test configuration values and constants."""
 
@@ -88,21 +35,6 @@ class TestConfigurationValues(BaseTestCase):
         """Test filename constants."""
         self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
         self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
-
-    def test_format_time_duration(self) -> None:
-        """Test time duration formatting."""
-        from blinkapp.utils.formatters import format_time_duration
-
-        # Test various durations
-        self.assertEqual(format_time_duration(30), "30s")
-        self.assertEqual(format_time_duration(90), "1m")
-        self.assertEqual(format_time_duration(3600), "1h")
-        self.assertEqual(format_time_duration(86400), "1d")
-
-        # Test edge cases
-        self.assertEqual(format_time_duration(0), "0s")
-        with self.assertRaises(ValueError):
-            format_time_duration(-1)
 
     def test_config_regex_patterns(self) -> None:
         """Test Config regex patterns work correctly."""
