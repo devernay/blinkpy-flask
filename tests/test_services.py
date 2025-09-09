@@ -1310,6 +1310,14 @@ class TestConnectionService(BaseTestCase):
         result = ensure_http_session_initialized()
         self.assertIsNotNone(result)
 
+    def test_third_party_imports(self) -> None:
+        """Test third-party imports."""
+        import blinkapp
+        from blinkapp.services import connection_service
+
+        self.assertTrue(hasattr(connection_service, "http_session"))
+        self.assertTrue(hasattr(blinkapp, "Path"))
+
     def test_connection_service_basic(self) -> None:
         """Test basic connection service."""
         from blinkapp.services.blink_connection import get_blink_connection

@@ -1128,5 +1128,22 @@ class TestCacheStatsAndMethods(BaseTestCase):
         self.assertIn("key3", cache)
 
 
+class TestModuleImports(BaseTestCase):
+    """Test model module imports."""
+
+    def test_custom_class_imports(self) -> None:
+        """Test custom class availability."""
+        import blinkapp
+        from blinkapp.models import ids
+
+        self.assertTrue(hasattr(ids, "CameraId"))
+        self.assertTrue(hasattr(ids, "ClipId"))
+        self.assertTrue(hasattr(blinkapp, "Config"))
+
+        # Test classes are callable
+        self.assertTrue(callable(ids.CameraId))
+        self.assertTrue(callable(ids.ClipId))
+
+
 if __name__ == "__main__":
     unittest.main()
