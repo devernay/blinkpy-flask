@@ -269,6 +269,13 @@ class TestValidators(BaseTestCase):
         with self.assertRaises(ValueError):
             validate_credentials("", "password")
 
+    def test_validate_string_input_valid_minimal_v3(self) -> None:
+        """Test validate_string_input with valid input (minimal v3)."""
+        from blinkapp.utils.validators import validate_string_input
+
+        result = validate_string_input("test", 10, "test_field")
+        self.assertEqual(result, "test")
+
     def test_validate_string_input_too_long(self) -> None:
         """Test validate_string_input with input too long."""
         from blinkapp.utils.validators import validate_string_input

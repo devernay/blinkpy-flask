@@ -2902,6 +2902,73 @@ class TestApplicationInitialization(BaseTestCase):
         self.assertGreater(Config.LOG_MAX_BYTES, 0)
         self.assertGreater(Config.LOG_BACKUP_COUNT, 0)
 
+    def test_create_argument_parser_defaults_main(self) -> None:
+        """Test argument parser with default values (from main)."""
+        from blinkapp.__main__ import create_argument_parser
+
+        parser = create_argument_parser()
+        args = parser.parse_args([])
+
+        self.assertEqual(args.host, "0.0.0.0")
+        self.assertEqual(args.port, 5001)
+
+    def test_create_argument_parser_custom_args_main(self) -> None:
+        """Test argument parser with custom arguments (from main)."""
+        from blinkapp.__main__ import create_argument_parser
+
+        parser = create_argument_parser()
+        args = parser.parse_args(["--host", "0.0.0.0", "--port", "8080", "--debug"])
+
+        self.assertEqual(args.host, "0.0.0.0")
+        self.assertEqual(args.port, 8080)
+        self.assertTrue(args.debug)
+
+    def test_run_app_dump_system_main(self) -> None:
+        """Test run_app with dump system option (from main)."""
+        import argparse
+        from unittest.mock import Mock, patch
+
+        from blinkapp.__main__ import run_app
+
+        args = Mock(spec=argparse.Namespace)
+        args.dump_system = True
+
+        with patch("blinkapp.__main__.dump_system_info") as mock_dump:
+            run_app(args)
+            mock_dump.assert_called_once()
+
+    def test_run_app_normal_mode_main(self) -> None:
+        """Test run_app in normal mode (from main)."""
+        import argparse
+        from unittest.mock import Mock, patch
+
+        from blinkapp.__main__ import run_app
+
+        args = Mock(spec=argparse.Namespace)
+        args.dump_system = False
+        args.host = "127.0.0.1"
+        args.port = 5001
+        args.debug = False
+
+        with patch("blinkapp.__main__.app") as mock_app:
+            run_app(args)
+            mock_app.run.assert_called_once_with(
+                host="127.0.0.1", port=5001, debug=False
+            )
+
+    def test_configure_logging_levels_main(self) -> None:
+        """Test logging configuration (from main)."""
+        from unittest.mock import patch
+
+        from blinkapp.__main__ import configure_logging
+
+        with patch("logging.getLogger") as mock_get_logger:
+            mock_logger = Mock()
+            mock_get_logger.return_value = mock_logger
+
+            configure_logging("DEBUG")
+            mock_logger.setLevel.assert_called()
+
     def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
         # Test that key global variables exist in their respective services
