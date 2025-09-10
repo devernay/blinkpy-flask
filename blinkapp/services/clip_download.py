@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from flask import send_file
+import flask
 
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
@@ -215,7 +215,7 @@ def download_local_clip(
         manifest = sync_module._local_storage["manifest"]
         local_item = None
         for item in manifest:
-            if str(item.id) == item_id_str:
+            if str(item.id) == str(item_id_str):
                 local_item = item
                 break
 
@@ -235,7 +235,7 @@ def download_local_clip(
 
         if cached_filepath.exists():
             # Return cached file
-            return send_file(
+            return flask.send_file(
                 cached_filepath,
                 as_attachment=True,
                 download_name=f"clip_{clip_id}.mp4",
@@ -285,7 +285,7 @@ def download_local_clip(
             )
 
         if filepath and filepath.exists():
-            return send_file(
+            return flask.send_file(
                 filepath,
                 as_attachment=True,
                 download_name=f"clip_{clip_id}.mp4",
@@ -328,7 +328,7 @@ def download_clip_common(
             )
 
         # Return the file
-        return send_file(
+        return flask.send_file(
             clip_path,
             as_attachment=True,
             download_name=f"clip_{clip_id}.mp4",
