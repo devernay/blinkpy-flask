@@ -1180,6 +1180,29 @@ class TestCacheService(BaseTestCase):
                 self.assertEqual(clips_cache_instance, mock_clips_cache)
 
 
+class TestBlinkConnectionService(BaseTestCase):
+    """Test blink connection service functions."""
+
+    def test_get_blink_connection_singleton(self) -> None:
+        """Test that blink connection is a singleton."""
+        from blinkapp.services.blink_connection import get_blink_connection
+
+        connection1 = get_blink_connection()
+        connection2 = get_blink_connection()
+
+        self.assertIs(connection1, connection2)
+
+    def test_blink_connection_properties(self) -> None:
+        """Test BlinkConnection class properties."""
+        from blinkapp.services.blink_connection import BlinkConnection
+
+        connection = BlinkConnection()
+
+        # Test initial state
+        self.assertIsNone(connection.blink)
+        self.assertFalse(connection.is_authenticated)
+
+
 class TestCameraService(BaseTestCase):
     """Test camera service functions."""
 
@@ -1218,6 +1241,50 @@ class TestDebugService(BaseTestCase):
 
     def test_dump_cloud_videos_empty(self) -> None:
         """Test dump_cloud_videos with empty list."""
+        from blinkapp.services.debug_service import dump_cloud_videos
+
+        result = dump_cloud_videos([])
+        self.assertIsNone(result)
+
+    def test_dump_cloud_videos_with_data(self) -> None:
+        """Test dump_cloud_videos with video data."""
+        from blinkapp.services.debug_service import dump_cloud_videos
+        from tests.test_base import create_mock_clip_item
+
+        mock_clip = create_mock_clip_item(
+            clip_id="123", name="test_clip.mp4", created_at="2024-01-01T12:00:00Z"
+        )
+
+        result = dump_cloud_videos([mock_clip])
+
+        # Function logs but doesn't return data
+        self.assertIsNone(result)
+
+    @patch("blinkapp.services.debug_service.ensure_blink_initialized")
+    def test_dump_blink_system_info_success(self, mock_ensure_blink: Mock) -> None:
+        """Test dump_blink_system_info with successful execution."""
+        from blinkapp.services.debug_service import dump_blink_system_info
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_ensure_blink.return_value = mock_blink
+
+        result = dump_blink_system_info()
+
+        # Function logs but doesn't return data
+        self.assertIsNone(result)
+        mock_ensure_blink.assert_called_once()
+
+    @patch("blinkapp.services.debug_service.ensure_blink_initialized")
+    def test_dump_blink_system_info_no_blink(self, mock_ensure_blink: Mock) -> None:
+        """Test dump_blink_system_info when blink not available."""
+        from blinkapp.services.debug_service import dump_blink_system_info
+
+        mock_ensure_blink.return_value = None
+
+        result = dump_blink_system_info()
+
+        self.assertIsNone(result)
+        mock_ensure_blink.assert_called_once()
         from blinkapp.services.debug_service import dump_cloud_videos
 
         with patch("blinkapp.services.debug_service.logger") as mock_logger:
@@ -2731,7 +2798,60 @@ class TestClipService(BaseTestCase):
         self.clip_id = ClipId("123456")
 
 
-class TestStreamService(BaseTestCase):
+class TestCameraService(BaseTestCase):
+    """Test camera service functions."""
+
+    @patch("blinkapp.services.camera_service.ensure_blink_initialized")
+    def test_find_camera_by_id_success(self, mock_ensure_blink: Mock) -> None:
+        """Test find_camera_by_id with existing camera."""
+        from blinkapp.services.camera_service import find_camera_by_id
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
+        mock_blink.cameras = {"camera_12345": mock_camera}
+        mock_ensure_blink.return_value = mock_blink
+
+        result = find_camera_by_id(12345)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.name, "Test Camera")
+
+    @patch("blinkapp.services.camera_service.ensure_blink_initialized")
+    def test_find_camera_by_id_not_found(self, mock_ensure_blink: Mock) -> None:
+        """Test find_camera_by_id with non-existent camera."""
+        from blinkapp.services.camera_service import find_camera_by_id
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_blink.cameras = {}
+        mock_ensure_blink.return_value = mock_blink
+
+        result = find_camera_by_id(99999)
+
+        self.assertIsNone(result)
+
+    @patch("blinkapp.services.camera_service.find_camera_by_id")
+    def test_require_camera_success(self, mock_find_camera: Mock) -> None:
+        """Test require_camera with existing camera."""
+        from blinkapp.services.camera_service import require_camera
+
+        mock_camera = create_mock_camera(camera_id=12345)
+        mock_find_camera.return_value = mock_camera
+
+        result = require_camera(12345)
+
+        self.assertEqual(result, mock_camera)
+
+    @patch("blinkapp.services.camera_service.find_camera_by_id")
+    def test_require_camera_not_found(self, mock_find_camera: Mock) -> None:
+        """Test require_camera with non-existent camera."""
+        from blinkapp.services.camera_service import require_camera
+        from blinkapp.utils.errors import CameraNotFoundError
+
+        mock_find_camera.return_value = None
+
+        with self.assertRaises(CameraNotFoundError):
+            require_camera(99999)
+
     """Test stream service functions."""
 
     def test_ensure_stream_manager_initialized(self) -> None:
@@ -2754,6 +2874,66 @@ class TestStreamService(BaseTestCase):
         # Test that we can access it through the service
         stream_manager = ensure_stream_manager_initialized()
         self.assertIsNotNone(stream_manager)
+
+    @patch("blinkapp.services.blink_service.get_blink_instance")
+    def test_start_camera_stream_success(self, mock_get_blink: Mock) -> None:
+        """Test start_camera_stream with successful stream start."""
+        from blinkapp.services.stream_service import start_camera_stream
+        from tests.test_base import create_mock_camera, create_mock_live_stream
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_camera = create_mock_camera(camera_id=12345)
+        mock_stream = create_mock_live_stream()
+        mock_camera.init_livestream.return_value = mock_stream
+
+        mock_blink.cameras = {"camera_12345": mock_camera}
+        mock_get_blink.return_value = mock_blink
+
+        result = start_camera_stream(12345)
+
+        self.assertTrue(result["success"])
+        self.assertIn("stream_url", result)
+
+    @patch("blinkapp.services.blink_service.get_blink_instance")
+    def test_start_camera_stream_camera_not_found(self, mock_get_blink: Mock) -> None:
+        """Test start_camera_stream when camera not found."""
+        from blinkapp.services.stream_service import start_camera_stream
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_blink.cameras = {}
+        mock_get_blink.return_value = mock_blink
+
+        result = start_camera_stream(99999)
+
+        self.assertFalse(result["success"])
+        self.assertIn("error", result)
+
+    @patch("blinkapp.services.blink_service.get_blink_instance")
+    def test_stop_camera_stream_success(self, mock_get_blink: Mock) -> None:
+        """Test stop_camera_stream with successful stream stop."""
+        from blinkapp.services.stream_service import stop_camera_stream
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_camera = create_mock_camera(camera_id=12345)
+        mock_blink.cameras = {"camera_12345": mock_camera}
+        mock_get_blink.return_value = mock_blink
+
+        result = stop_camera_stream(12345)
+
+        self.assertTrue(result["success"])
+
+    def test_get_stream_manager_singleton(self) -> None:
+        """Test that stream manager is a singleton."""
+        from blinkapp.services.stream_service import (
+            ensure_stream_manager_initialized,
+            initialize_stream_manager,
+        )
+
+        initialize_stream_manager()
+        manager1 = ensure_stream_manager_initialized()
+        manager2 = ensure_stream_manager_initialized()
+
+        self.assertIs(manager1, manager2)
 
     def test_is_stream_active_false(self) -> None:
         """Test is_stream_active when stream is not active."""
