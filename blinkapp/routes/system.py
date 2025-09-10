@@ -1,6 +1,6 @@
 """System management routes for the Blink Flask application."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from flask import Flask, request
 
@@ -76,8 +76,10 @@ def setup_system_routes(app: Flask) -> None:
         """
         from ..connexion_handlers.system import update_system_settings
 
-        # Flask 3.x: Use getattr to access LocalProxy method
-        body_data = getattr(request, "get_json")()  # noqa: B009  # Flask compatibility - access LocalProxy method
+        # Get JSON body with proper type narrowing
+        body_data = request.get_json()
+        if body_data is None:
+            body_data = {}
         body: JsonDict = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 

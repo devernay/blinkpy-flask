@@ -159,7 +159,7 @@ async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
             """Execute camera recording operation."""
             return await camera.record()
 
-        await blink_conn.execute(do_record())
+        blink_conn.execute(do_record())
 
         response, status_code = create_api_response(
             success=True, data={"message": f"Recording started for camera {camera_id}"}

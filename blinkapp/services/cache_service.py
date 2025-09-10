@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from blinkpy.camera import BlinkCamera
 
@@ -290,9 +290,8 @@ def initialize_cache_paths() -> None:
     try:
         from flask import current_app
 
-        cache_dir_config: str = current_app.config.get(
-            "CACHE_DIR", Config.DEFAULT_CACHE_DIR
-        )
+        cache_dir_raw = current_app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR)
+        cache_dir_config: str = cache_dir_raw if isinstance(cache_dir_raw, str) else Config.DEFAULT_CACHE_DIR
     except RuntimeError:
         cache_dir_config = Config.DEFAULT_CACHE_DIR
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from flask import request
 
@@ -12,6 +12,7 @@ from ..utils.route_decorators import api_route
 
 if TYPE_CHECKING:
     from flask import Flask
+    from flask.wrappers import Request
 
 
 def setup_settings_routes(app: Flask) -> None:
@@ -58,8 +59,10 @@ def setup_settings_routes(app: Flask) -> None:
         """
         from ..connexion_handlers.settings import update_user_settings
 
-        # Flask 3.x: Use getattr to access LocalProxy method
-        body_raw = getattr(request, "get_json")() or {}  # noqa: B009  # Flask compatibility - access LocalProxy method
+        # Get JSON body with proper type narrowing
+        body_raw = request.get_json()
+        if body_raw is None:
+            body_raw = {}
         # Type narrowing: ensure we have a dict
         if not isinstance(body_raw, dict):
             body_raw = {}

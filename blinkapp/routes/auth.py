@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from flask import Flask
-    from flask.typing import Any  # type: ignore[name-defined]
+    from flask import Response as FlaskResponse
+    from werkzeug.wrappers import Response as WerkzeugResponse
+
+type ResponseReturnValue = str | tuple[str, int] | "FlaskResponse" | "WerkzeugResponse"
 
 
 def setup_auth_routes(app: Flask) -> None:
@@ -17,25 +20,25 @@ def setup_auth_routes(app: Flask) -> None:
     """
 
     @app.route("/")
-    def main_page_route() -> Any:
+    def main_page_route() -> ResponseReturnValue:
         """Main page route - serves the main application page.
 
         Returns:
-            Any  # type: ignore[name-defined]: Main page template or redirect response.
+            ResponseReturnValue: Main page template or redirect response.
         """
         from ..connexion_handlers.auth import main_page
 
         return main_page()
 
     @app.route("/login", methods=["GET", "POST"])
-    def login_page_route() -> Any:
+    def login_page_route() -> ResponseReturnValue:
         """Login route - handles both GET (show form) and POST (authenticate) requests.
 
         NOTE: Exception to naming convention - this route calls both login_page()
         and authenticate_user() handlers based on HTTP method.
 
         Returns:
-            Any  # type: ignore[name-defined]: Login form template or authentication redirect response.
+            ResponseReturnValue: Login form template or authentication redirect response.
         """
         from flask import request
 
@@ -47,14 +50,14 @@ def setup_auth_routes(app: Flask) -> None:
             return authenticate_user()
 
     @app.route("/2fa", methods=["GET", "POST"])
-    def twofa_page_route() -> Any:
+    def twofa_page_route() -> ResponseReturnValue:
         """2FA route - handles both GET (show form) and POST (verify code) requests.
 
         NOTE: Exception to naming convention - this route calls both twofa_page()
         and verify_twofa() handlers based on HTTP method.
 
         Returns:
-            Any  # type: ignore[name-defined]: 2FA form template or verification redirect response.
+            ResponseReturnValue: 2FA form template or verification redirect response.
         """
         from flask import request
 
@@ -66,11 +69,11 @@ def setup_auth_routes(app: Flask) -> None:
             return verify_twofa()
 
     @app.route("/logout", methods=["POST"])
-    def logout_user_route() -> Any:
+    def logout_user_route() -> ResponseReturnValue:
         """Logout route - clears user session and redirects to login page.
 
         Returns:
-            Any  # type: ignore[name-defined]: Redirect response to login page.
+            ResponseReturnValue: Redirect response to login page.
         """
         from ..connexion_handlers.auth import logout_user
 

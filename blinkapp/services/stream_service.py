@@ -58,7 +58,7 @@ stream_manager: StreamManager | None = None
 
 
 def initialize_stream_manager(
-    manager_factory: CallableType[[Config], StreamManager] | None = None,
+    manager_factory: CallableType[[HLSStreamConfig], StreamManager] | None = None,
 ) -> None:
     """Initialize the global stream manager instance with injectable factory.
 
