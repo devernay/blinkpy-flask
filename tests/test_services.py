@@ -1187,6 +1187,54 @@ class TestCameraService(BaseTestCase):
         """Set up test fixtures."""
         super().setUp()
 
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    def test_find_camera_by_id_success(self, mock_ensure_blink: Mock) -> None:
+        """Test find_camera_by_id with existing camera."""
+        from blinkapp.services.camera_service import find_camera_by_id
+        from tests.test_base import create_mock_blink_instance, create_mock_camera
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_camera = create_mock_camera(camera_id=12345)
+
+        # Setup sync module with camera
+        mock_sync = Mock()
+        mock_sync.cameras = {"camera_12345": mock_camera}
+        mock_blink.sync = {"sync_1": mock_sync}
+        mock_ensure_blink.return_value = mock_blink
+
+        result = find_camera_by_id(12345)
+
+        self.assertEqual(result, mock_camera)
+
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    def test_find_camera_by_id_not_found(self, mock_ensure_blink: Mock) -> None:
+        """Test find_camera_by_id with non-existent camera."""
+        from blinkapp.services.camera_service import find_camera_by_id
+        from tests.test_base import create_mock_blink_instance
+
+        mock_blink = create_mock_blink_instance(available=True)
+        mock_sync = Mock()
+        mock_sync.cameras = {}
+        mock_blink.sync = {"sync_1": mock_sync}
+        mock_ensure_blink.return_value = mock_blink
+
+        result = find_camera_by_id(99999)
+
+        self.assertIsNone(result)
+
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    def test_find_camera_by_id_blink_unavailable(self, mock_ensure_blink: Mock) -> None:
+        """Test find_camera_by_id when blink is unavailable."""
+        from blinkapp.services.camera_service import find_camera_by_id
+        from tests.test_base import create_mock_blink_instance
+
+        mock_blink = create_mock_blink_instance(available=False)
+        mock_ensure_blink.return_value = mock_blink
+
+        result = find_camera_by_id(12345)
+
+        self.assertIsNone(result)
+
 
 class TestDebugService(BaseTestCase):
     """Test debug service functions."""
