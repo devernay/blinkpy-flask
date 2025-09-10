@@ -56,6 +56,14 @@ def create_mock_path(
 
     # __truediv__ should return another Path mock (avoid recursion)
     def create_subpath(other: str) -> Mock:
+        """Create a subpath Mock for path division operations.
+
+        Args:
+            other: The path component to append
+
+        Returns:
+            Mock object representing a Path subpath
+        """
         return Mock(spec=RealPath, name=f"{name}_subpath_{other}")
 
     mock_path.__truediv__ = Mock(spec=callable, side_effect=create_subpath)
