@@ -61,7 +61,16 @@ def create_mock_path(
 
 
 def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:
-    """Patch function that only allows patching symbols in __all__."""
+    """Patch function that only allows patching symbols in __all__.
+
+    Args:
+        target: The target to patch
+        *args: Additional arguments for patch
+        **kwargs: Additional keyword arguments for patch
+
+    Returns:
+        _patch: The patch object
+    """
     # Allow bypassing strict patching for specific implementation detail tests
     import inspect
 
@@ -176,21 +185,48 @@ def create_mock_cache_instance(
     cache_data = initial_data.copy() if initial_data else {}
 
     def mock_get(key: str) -> dict[str, str | int] | None:
-        """Mock cache.get() method - returns copy to allow in-place modifications."""
+        """Mock cache.get() method - returns copy to allow in-place modifications.
+
+        Args:
+            key: Cache key to retrieve
+
+        Returns:
+            dict[str, str | int] | None: Cached value or None
+        """
         str_key = str(key)
         original = cache_data.get(str_key)
         return original.copy() if original and isinstance(original, dict) else original
 
     def mock_setitem(self_param: Mock, key: str, value: dict[str, str | int]) -> None:
-        """Mock cache.__setitem__() method."""
+        """Mock cache.__setitem__() method.
+
+        Args:
+            self_param: Mock self parameter
+            key: Cache key
+            value: Value to store
+        """
         cache_data[str(key)] = value
 
     def mock_getitem(key: str) -> dict[str, str | int]:
-        """Mock cache.__getitem__() method."""
+        """Mock cache.__getitem__() method.
+
+        Args:
+            key: Cache key to retrieve
+
+        Returns:
+            dict[str, str | int]: Cached value
+        """
         return cache_data[str(key)]
 
     def mock_contains(key: str) -> bool:
-        """Mock cache.__contains__() method."""
+        """Mock cache.__contains__() method.
+
+        Args:
+            key: Cache key to check
+
+        Returns:
+            bool: True if key exists
+        """
         return str(key) in cache_data
 
     mock_cache = create_mock_clips_cache()
@@ -222,7 +258,26 @@ def create_mock_camera(
     armed: bool | None = None,
     enabled: bool | None = None,
 ) -> Mock:
-    """Create a mock camera with common attributes."""
+    """Create a mock camera with common attributes.
+
+    Args:
+        camera_id: Camera ID
+        name: Camera name
+        battery: Battery status
+        temperature: Temperature reading
+        wifi_strength: WiFi signal strength
+        motion_enabled: Whether motion detection is enabled
+        thumbnail: Thumbnail URL
+        last_record: Last recording data
+        updated_at: Last update timestamp
+        temperature_calibrated: Calibrated temperature
+        battery_voltage: Battery voltage
+        armed: Whether camera is armed
+        enabled: Whether camera is enabled
+
+    Returns:
+        Mock: Mock camera object
+    """
     from unittest.mock import Mock
 
     mock_camera = Mock(spec=BlinkCamera)
@@ -272,7 +327,22 @@ def create_mock_blink_instance(
     videos: CaseInsensitiveDict[list[dict[str, str | int]]] | None = None,
     key_required: bool = False,
 ) -> Mock:
-    """Create a mock blink instance with common methods."""
+    """Create a mock blink instance with common methods.
+
+    Args:
+        available: Whether blink is available
+        sync_data: Sync module data
+        networks: Network data
+        cameras: Camera instances
+        refresh: Refresh callback
+        start: Start callback
+        save: Save callback
+        videos: Video data
+        key_required: Whether key is required
+
+    Returns:
+        Mock: Mock blink instance
+    """
     from unittest.mock import Mock
 
     mock_blink = Mock(spec=Blink)
@@ -286,6 +356,14 @@ def create_mock_blink_instance(
 
     # Create async mock for get_videos_metadata
     async def mock_get_videos_metadata(stop: int = 25) -> list[dict[str, str | int]]:
+        """Mock get_videos_metadata function.
+
+        Args:
+            stop: Maximum number of videos to return
+
+        Returns:
+            list[dict[str, str | int]]: List of video metadata
+        """
         # Return metadata that includes the test clip ID
         return [
             {
@@ -300,11 +378,24 @@ def create_mock_blink_instance(
 
     # Create async mock for do_http_get
     async def mock_do_http_get(url: str) -> Mock:
+        """Mock do_http_get function.
+
+        Args:
+            url: URL to fetch
+
+        Returns:
+            Mock: Mock response object
+        """
         from aiohttp import ClientResponse
 
         mock_response = Mock(spec=ClientResponse)
 
         async def mock_read() -> bytes:
+            """Mock read function.
+
+            Returns:
+                bytes: Mock video content
+            """
             return b"video_content"
 
         mock_response.read = mock_read
@@ -331,7 +422,18 @@ def create_mock_stream_manager(
     created_at: str | int | datetime | None = None,
     size: int | None = None,
 ) -> Mock:
-    """Create a mock StreamManager with common attributes."""
+    """Create a mock StreamManager with common attributes.
+
+    Args:
+        active_streams: Active stream dictionary
+        cleanup_on_exit: Whether to cleanup on exit
+        stream_id: Stream identifier
+        created_at: Creation timestamp
+        size: Stream size
+
+    Returns:
+        Mock: Mock StreamManager object
+    """
     from unittest.mock import Mock
 
     mock_manager = Mock(spec=StreamManager)
@@ -355,7 +457,16 @@ def create_mock_live_stream(
     stop_error: Exception | None = None,
     url: str | None = None,
 ) -> Mock:
-    """Create a mock BlinkLiveStream with common attributes."""
+    """Create a mock BlinkLiveStream with common attributes.
+
+    Args:
+        stream_id: Stream identifier
+        stop_error: Error to raise on stop
+        url: Stream URL
+
+    Returns:
+        Mock: Mock BlinkLiveStream object
+    """
     from unittest.mock import Mock
 
     mock_stream = Mock(spec=BlinkLiveStream)
@@ -375,7 +486,16 @@ def create_mock_live_stream(
 def create_mock_camera_cache(
     size: int = 10, max_size: int | None = 100, hit_rate: float | None = 0.85
 ) -> Mock:
-    """Create a mock CameraThumbnailCache with common attributes."""
+    """Create a mock CameraThumbnailCache with common attributes.
+
+    Args:
+        size: Cache size
+        max_size: Maximum cache size
+        hit_rate: Cache hit rate
+
+    Returns:
+        Mock: Mock CameraThumbnailCache object
+    """
     from unittest.mock import Mock
 
     from blinkapp.models.cache import CameraThumbnailCache
@@ -390,7 +510,15 @@ def create_mock_camera_cache(
 
 
 def create_mock_clips_cache(size: int = 5, max_size: int = 50) -> Mock:
-    """Create a mock ClipsCache with common attributes."""
+    """Create a mock ClipsCache with common attributes.
+
+    Args:
+        size: Cache size
+        max_size: Maximum cache size
+
+    Returns:
+        Mock: Mock ClipsCache object
+    """
     from unittest.mock import Mock
 
     from blinkapp.models.cache import ClipsCache
@@ -415,7 +543,23 @@ def create_mock_sync(
     _local_storage: dict[str, list[Mock]] | None = None,
     sync_id: int | None = None,
 ) -> Mock:
-    """Create a mock sync module with common attributes."""
+    """Create a mock sync module with common attributes.
+
+    Args:
+        network_id: Network identifier
+        armed: Whether sync is armed
+        online: Whether sync is online
+        cameras: Camera dictionary
+        local_storage: Whether local storage is enabled
+        local_storage_manifest_ready: Whether manifest is ready
+        name: Sync module name
+        refresh: Refresh callback
+        _local_storage: Local storage data
+        sync_id: Sync module ID
+
+    Returns:
+        Mock: Mock sync module object
+    """
     from unittest.mock import Mock
 
     mock_sync = Mock(spec=BlinkSyncModule)
@@ -446,7 +590,19 @@ def create_mock_clip_item(
     url: str | None = None,
     is_local_storage: bool = True,
 ) -> Mock:
-    """Create a mock clip item with proper spec."""
+    """Create a mock clip item with proper spec.
+
+    Args:
+        clip_id: Clip identifier
+        created_at: Creation timestamp
+        name: Camera name
+        size: Clip size
+        url: Clip URL
+        is_local_storage: Whether this is local storage
+
+    Returns:
+        Mock: Mock clip item object
+    """
     from datetime import datetime
     from unittest.mock import Mock
 
@@ -485,7 +641,20 @@ def create_mock_clip_cache_entry(
     thumbnail: str | os.PathLike[str] | None = None,
     cloud_thumbnail_url: str | None = None,
 ) -> Mock:
-    """Create a mock ClipCacheEntry with proper spec."""
+    """Create a mock ClipCacheEntry with proper spec.
+
+    Args:
+        clip_data: Clip metadata
+        cached_at: Cache timestamp
+        access_count: Access count
+        last_accessed: Last access timestamp
+        filepath: File path
+        thumbnail: Thumbnail path
+        cloud_thumbnail_url: Cloud thumbnail URL
+
+    Returns:
+        Mock: Mock ClipCacheEntry object
+    """
     from blinkapp.models.cache import ClipCacheEntry
 
     mock_entry = Mock(spec=ClipCacheEntry)
@@ -511,7 +680,17 @@ def create_mock_blink_connection(
     execute: Mock | None = None,
     blink: Mock | None = None,
 ) -> Mock:
-    """Create a mock BlinkConnection with common methods."""
+    """Create a mock BlinkConnection with common methods.
+
+    Args:
+        execute_return_value: Return value for execute method
+        execute_side_effect: Side effect for execute method
+        execute: Mock execute method
+        blink: Mock blink instance
+
+    Returns:
+        Mock: Mock BlinkConnection object
+    """
     from unittest.mock import Mock
 
     from blinkapp.services.blink_connection import BlinkConnection
@@ -533,7 +712,16 @@ def create_mock_auth(
     validate_login: Callable[[], bool] | None = None,
     check_key_required: Callable[[], bool] | None = None,
 ) -> Mock:
-    """Create a mock Auth with common methods."""
+    """Create a mock Auth with common methods.
+
+    Args:
+        startup: Startup callback
+        validate_login: Login validation callback
+        check_key_required: Key requirement check callback
+
+    Returns:
+        Mock: Mock Auth object
+    """
     from unittest.mock import Mock
 
     try:
@@ -559,7 +747,11 @@ def create_mock_auth(
 
 
 def create_mock_thread_pool_executor() -> Mock:
-    """Create a mock ThreadPoolExecutor with common methods."""
+    """Create a mock ThreadPoolExecutor with common methods.
+
+    Returns:
+        Mock: Mock ThreadPoolExecutor
+    """
     from concurrent.futures import ThreadPoolExecutor
     from unittest.mock import Mock
 
@@ -582,7 +774,11 @@ def create_mock_thread_pool_executor() -> Mock:
 
 
 def create_mock_future() -> Mock:
-    """Create a mock Future with common methods."""
+    """Create a mock Future with common methods.
+
+    Returns:
+        Mock: Mock Future object
+    """
     from concurrent.futures import Future
     from unittest.mock import Mock
 
@@ -593,7 +789,14 @@ def create_mock_future() -> Mock:
 
 
 def create_mock_client_response(content: bytes = b"test_content") -> Mock:
-    """Create a mock ClientResponse with common methods."""
+    """Create a mock ClientResponse with common methods.
+
+    Args:
+        content: Response content
+
+    Returns:
+        Mock: Mock ClientResponse object
+    """
     from unittest.mock import Mock
 
     from aiohttp import ClientResponse
@@ -605,7 +808,15 @@ def create_mock_client_response(content: bytes = b"test_content") -> Mock:
 
 
 def create_mock_completed_process(returncode: int = 0, stdout: str = "") -> Mock:
-    """Create a mock subprocess.CompletedProcess."""
+    """Create a mock subprocess.CompletedProcess.
+
+    Args:
+        returncode: Process return code
+        stdout: Process stdout
+
+    Returns:
+        Mock: Mock CompletedProcess object
+    """
     import subprocess
     from unittest.mock import Mock
 
@@ -695,10 +906,22 @@ T = TypeVar("T")
 
 
 def with_app_initialized(func: Callable[P, T]) -> Callable[P, T]:  # noqa: UP047
-    """Decorator to ensure app globals are initialized for testing."""
+    """Decorator to ensure app globals are initialized for testing.
+
+    Args:
+        func: Function to wrap
+
+    Returns:
+        Callable[P, T]: Wrapped function
+    """
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        """Wrapper function.
+
+        Returns:
+            T: Function result
+        """
         initialize_for_testing()
         return func(*args, **kwargs)
 
@@ -706,10 +929,18 @@ def with_app_initialized(func: Callable[P, T]) -> Callable[P, T]:  # noqa: UP047
 
 
 def with_blink_auth(test_func: Callable[..., None]) -> Callable[..., None]:
-    """Decorator to add blink authentication mock to test methods."""
+    """Decorator to add blink authentication mock to test methods.
+
+    Args:
+        test_func: Test function to wrap
+
+    Returns:
+        Callable[..., None]: Wrapped test function
+    """
 
     @functools.wraps(test_func)
     def wrapper(*args: Mock, **kwargs: Mock) -> None:
+        """Wrapper function."""
         with patch(
             "blinkapp.services.blink_service.ensure_blink_initialized"
         ) as mock_ensure_blink:
@@ -809,8 +1040,22 @@ class FlaskTestCase(BaseTestCase):
 
             initialize_cache_paths()
 
-    def setup_mock_blink(self, available: bool = True, sync_data: dict[str, Mock] | None = None, cameras: list[Mock] | None = None) -> Mock:
-        """Helper to set up mock Blink objects with common configuration."""
+    def setup_mock_blink(
+        self,
+        available: bool = True,
+        sync_data: dict[str, Mock] | None = None,
+        cameras: list[Mock] | None = None,
+    ) -> Mock:
+        """Helper to set up mock Blink objects with common configuration.
+
+        Args:
+            available: Whether blink is available
+            sync_data: Sync data dictionary
+            cameras: List of cameras
+
+        Returns:
+            Mock: Mock blink instance
+        """
         mock_blink = create_mock_blink_instance(available=available)
         mock_blink.available = available
 
@@ -829,14 +1074,29 @@ class FlaskTestCase(BaseTestCase):
 
         return mock_blink
 
-    def setup_mock_connection(self, return_value: Mock | None = None, side_effect: Exception | None = None) -> Mock:
-        """Helper to set up mock connection with coroutine cleanup."""
+    def setup_mock_connection(
+        self, return_value: Mock | None = None, side_effect: Exception | None = None
+    ) -> Mock:
+        """Helper to set up mock connection with coroutine cleanup.
+
+        Args:
+            return_value: Return value for connection
+            side_effect: Side effect for connection
+
+        Returns:
+            Mock: Mock connection
+        """
         return create_mock_blink_connection(
             execute=mock_execute_with_coroutine_cleanup(return_value, side_effect)
         )
 
     def assert_api_success(self, response: Mock, expected_status: int = 200) -> None:
-        """Assert API response is successful with expected format."""
+        """Assert API response is successful with expected format.
+
+        Args:
+            response: Response to check
+            expected_status: Expected status code
+        """
         import json
 
         self.assertEqual(response.status_code, expected_status)
@@ -845,19 +1105,39 @@ class FlaskTestCase(BaseTestCase):
         return data
 
     def authenticated_session(self) -> Generator[None, None, None]:
-        """Context manager for authenticated session."""
+        """Context manager for authenticated session.
+
+        Returns:
+            Generator[None, None, None]: Session context
+        """
         from contextlib import contextmanager
 
         @contextmanager
         def session_context() -> Generator[None, None, None]:
+            """Session context manager.
+
+            Returns:
+                Generator[None, None, None]: Session context
+            """
             with self.client.session_transaction() as sess:
                 sess["authenticated"] = True
             yield
 
         return session_context()
 
-    def assert_api_error(self, response: Mock, expected_status: int = 500, error_contains: str | None = None) -> None:
-        """Assert API response is an error with expected format."""
+    def assert_api_error(
+        self,
+        response: Mock,
+        expected_status: int = 500,
+        error_contains: str | None = None,
+    ) -> None:
+        """Assert API response is an error with expected format.
+
+        Args:
+            response: Response to check
+            expected_status: Expected status code
+            error_contains: Expected error message substring
+        """
         import json
 
         self.assertEqual(response.status_code, expected_status)
@@ -867,8 +1147,19 @@ class FlaskTestCase(BaseTestCase):
             self.assertIn(error_contains, data.get("error", ""))
         return data
 
-    def assert_response_contains(self, response: Mock, expected_status: int = 200, *content_checks: str) -> Mock:
-        """Assert response status and content contains specified strings."""
+    def assert_response_contains(
+        self, response: Mock, expected_status: int = 200, *content_checks: str
+    ) -> Mock:
+        """Assert response status and content contains specified strings.
+
+        Args:
+            response: Response to check
+            expected_status: Expected status code
+            *content_checks: Content strings to check for
+
+        Returns:
+            Mock: The response object
+        """
         self.assertEqual(response.status_code, expected_status)
         for content in content_checks:
             if isinstance(content, str):
@@ -877,15 +1168,29 @@ class FlaskTestCase(BaseTestCase):
                 self.assertIn(content, response.data)
         return response
 
-    def assert_redirect(self, response: Any, expected_location_contains: str | None = None) -> Any:
-        """Assert response is a redirect with optional location check."""
+    def assert_redirect(
+        self, response: Any, expected_location_contains: str | None = None
+    ) -> Any:
+        """Assert response is a redirect with optional location check.
+
+        Args:
+            response: Response to check
+            expected_location_contains: Expected location substring
+
+        Returns:
+            Any: The response object
+        """
         self.assertEqual(response.status_code, 302)
         if expected_location_contains:
             self.assertIn(expected_location_contains, response.location or "")
         return response
 
     def run_test_cases(self, test_cases: list[dict[str, Any]]) -> None:
-        """Run multiple test cases with consistent pattern."""
+        """Run multiple test cases with consistent pattern.
+
+        Args:
+            test_cases: List of test case dictionaries
+        """
         for case in test_cases:
             with self.subTest(**case):
                 method = case.get("method", "GET")
@@ -900,7 +1205,15 @@ class FlaskTestCase(BaseTestCase):
 
     @staticmethod
     def make_test_name(feature: str, scenario: str) -> str:
-        """Generate consistent test method names."""
+        """Generate consistent test method names.
+
+        Args:
+            feature: Feature name
+            scenario: Scenario name
+
+        Returns:
+            str: Generated test name
+        """
         return f"test_{feature}_{scenario}"
 
     def skip_if_no_flask(self) -> None:
@@ -908,8 +1221,20 @@ class FlaskTestCase(BaseTestCase):
         if not hasattr(self, "client"):
             self.skipTest("Flask client not available")
 
-    def check_endpoint(self, method: str, path: str, expected_status: int = 200, **kwargs: Any) -> Any:
-        """Generic endpoint tester to reduce boilerplate."""
+    def check_endpoint(
+        self, method: str, path: str, expected_status: int = 200, **kwargs: Any
+    ) -> Any:
+        """Generic endpoint tester to reduce boilerplate.
+
+        Args:
+            method: HTTP method
+            path: Endpoint path
+            expected_status: Expected status code
+            **kwargs: Additional arguments
+
+        Returns:
+            Any: Response object
+        """
         client_method = getattr(self.client, method.lower())
         response = client_method(path, **kwargs)
 
@@ -927,8 +1252,18 @@ class FlaskTestCase(BaseTestCase):
         else:
             return response
 
-    def mock_blink_system(self, available: bool = True, systems: dict[str, Any] | None = None) -> Generator[tuple[Mock, Mock], None, None]:
-        """Context manager for mocking blink system with common setup."""
+    def mock_blink_system(
+        self, available: bool = True, systems: dict[str, Any] | None = None
+    ) -> Generator[tuple[Mock, Mock], None, None]:
+        """Context manager for mocking blink system with common setup.
+
+        Args:
+            available: Whether blink is available
+            systems: Systems dictionary
+
+        Returns:
+            Generator[tuple[Mock, Mock], None, None]: Mock blink and connection
+        """
 
         @contextmanager
         def _mock() -> Generator[tuple[Mock, Mock], None, None]:
@@ -943,13 +1278,42 @@ class FlaskTestCase(BaseTestCase):
 
         return _mock()
 
-    def with_blink_mocks(self, available: bool = True, sync_data: dict[str, Any] | None = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        """Decorator to automatically patch blink service with common setup."""
+    def with_blink_mocks(
+        self, available: bool = True, sync_data: dict[str, Any] | None = None
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Decorator to automatically patch blink service with common setup.
+
+        Args:
+            available: Whether blink is available
+            sync_data: Sync data dictionary
+
+        Returns:
+            Callable[[Callable[..., Any]], Callable[..., Any]]: Decorator function
+        """
 
         def decorator(test_method: Callable[..., Any]) -> Callable[..., Any]:
+            """Decorator function.
+
+            Args:
+                test_method: Test method to decorate
+
+            Returns:
+                Callable[..., Any]: Decorated test method
+            """
+
             @patch("blinkapp.services.blink_service.blink_connection")
             @patch("blinkapp.services.blink_service.blink")
             def wrapper(self: Any, mock_blink: Mock, mock_connection: Mock) -> Any:
+                """Wrapper function.
+
+                Args:
+                    self: Test instance
+                    mock_blink: Mock blink instance
+                    mock_connection: Mock connection
+
+                Returns:
+                    Any: Test result
+                """
                 mock_blink.available = available
                 mock_blink.sync = sync_data or {}
                 mock_connection.execute = mock_execute_with_coroutine_cleanup()
@@ -960,10 +1324,28 @@ class FlaskTestCase(BaseTestCase):
         return decorator
 
 
-def mock_execute_with_coroutine_cleanup(return_value: Any = None, side_effect: Any = None) -> Mock:
-    """Create a mock execute function that properly handles coroutines."""
+def mock_execute_with_coroutine_cleanup(
+    return_value: Any = None, side_effect: Any = None
+) -> Mock:
+    """Create a mock execute function that properly handles coroutines.
+
+    Args:
+        return_value: Return value for mock
+        side_effect: Side effect for mock
+
+    Returns:
+        Mock: Mock execute function
+    """
 
     def mock_execute(coro: Any) -> Any:
+        """Mock execute function.
+
+        Args:
+            coro: Coroutine to execute
+
+        Returns:
+            Any: Mock result
+        """
         # Close the coroutine to prevent warnings
         if hasattr(coro, "close"):
             coro.close()
@@ -991,7 +1373,20 @@ def create_video_metadata(
     thumbnail: str | None = "http://example.com/thumb.jpg",
     size: int | None = 1024,
 ) -> dict[str, str | int | bool | None]:
-    """Create properly typed video metadata for tests."""
+    """Create properly typed video metadata for tests.
+
+    Args:
+        clip_id: Clip identifier
+        created_at: Creation timestamp
+        device_name: Device name
+        deleted: Whether clip is deleted
+        media: Media URL
+        thumbnail: Thumbnail URL
+        size: Clip size
+
+    Returns:
+        dict[str, str | int | bool | None]: Video metadata
+    """
     return {
         "id": clip_id,
         "created_at": created_at,
