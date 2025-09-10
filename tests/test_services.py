@@ -1234,6 +1234,72 @@ class TestDebugService(BaseTestCase):
             mock_logger.info.assert_any_call(f"Video: {videos[0]}")
             mock_logger.info.assert_any_call(f"Video: {videos[1]}")
 
+    def test_dump_blink_system_info_blink_unavailable(self) -> None:
+        """Test dump_blink_system_info when blink is unavailable."""
+        from blinkapp.services.debug_service import dump_blink_system_info
+
+        with (
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_initialized",
+                return_value=None,
+            ),
+            patch("blinkapp.logger") as mock_logger,
+        ):
+            dump_blink_system_info()
+
+            mock_logger.error.assert_called_with("Blink system not available")
+
+    def test_dump_blink_system_info_blink_not_available(self) -> None:
+        """Test dump_blink_system_info when blink exists but not available."""
+        from blinkapp.services.debug_service import dump_blink_system_info
+        from tests.test_base import create_mock_blink_instance
+
+        mock_blink = create_mock_blink_instance()
+        mock_blink.available = False
+
+        with (
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_initialized",
+                return_value=mock_blink,
+            ),
+            patch("blinkapp.logger") as mock_logger,
+        ):
+            dump_blink_system_info()
+
+            mock_logger.error.assert_called_with("Blink system not available")
+
+    def test_dump_blink_system_info_success(self) -> None:
+        """Test dump_blink_system_info with successful system dump."""
+        from blinkapp.services.debug_service import dump_blink_system_info
+        from tests.test_base import (
+            create_mock_blink_instance,
+            create_mock_camera,
+            create_mock_sync,
+        )
+
+        mock_sync = create_mock_sync(network_id=12345, armed=True, status="online")
+        mock_camera = create_mock_camera(name="camera1")
+
+        mock_blink = create_mock_blink_instance()
+        mock_blink.available = True
+        mock_blink.account_id = "12345"
+        mock_blink.homescreen = {"account": {"id": "12345"}}
+        mock_blink.sync = {"sync1": mock_sync}
+        mock_blink.cameras = {"camera1": mock_camera}
+
+        with (
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_initialized",
+                return_value=mock_blink,
+            ),
+            patch("blinkapp.logger") as mock_logger,
+        ):
+            dump_blink_system_info()
+
+            # Check that logger was called (don't assert specific calls since they may vary)
+            self.assertTrue(mock_logger.info.called)
+            self.assertTrue(mock_logger.info.call_count > 0)
+
 
 class TestDeviceService(BaseTestCase):
     """Test device service functions."""

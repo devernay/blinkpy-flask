@@ -297,6 +297,14 @@ def create_mock_camera(
     mock_camera.last_record = last_record
     mock_camera.updated_at = updated_at
 
+    # Create attributes dict for debug_service compatibility
+    mock_camera.attributes = {
+        "battery": battery,
+        "temperature": temperature,
+        "wifi_strength": wifi_strength,
+        "motion_enabled": motion_enabled,
+    }
+
     # Mock init_livestream to return a proper mock live stream
     mock_camera.init_livestream = Mock(
         spec=callable, return_value=create_mock_live_stream()
@@ -542,6 +550,7 @@ def create_mock_sync(
     refresh: Callable[[], None] | None = None,
     _local_storage: dict[str, list[Mock]] | None = None,
     sync_id: int | None = None,
+    status: str = "online",
 ) -> Mock:
     """Create a mock sync module with common attributes.
 
@@ -556,6 +565,7 @@ def create_mock_sync(
         refresh: Refresh callback
         _local_storage: Local storage data
         sync_id: Sync module ID
+        status: Sync module status
 
     Returns:
         Mock: Mock sync module object
@@ -567,6 +577,7 @@ def create_mock_sync(
     mock_sync.sync_id = sync_id or (network_id + 100000)  # Different from network_id
     mock_sync.arm = armed
     mock_sync.online = online
+    mock_sync.status = status
     mock_sync.cameras = cameras or {}
     mock_sync.local_storage = local_storage
     mock_sync.local_storage_manifest_ready = local_storage_manifest_ready
