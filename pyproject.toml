@@ -90,19 +90,13 @@ reportMissingTypeStubs = false
 [[tool.pyright.executionEnvironments]]
 root = "tests"
 extraPaths = ["blinkapp"]
+# Keep these relaxed - they're reasonable for test files
 reportMissingTypeAnnotation = false
 reportMissingParameterType = false
 reportMissingReturnType = false
-reportUnknownParameterType = false
+# Keep these relaxed - needed for test frameworks and mocks
 reportUnknownVariableType = false
-reportUnknownMemberType = false
 reportUndefinedVariable = false
-reportOptionalSubscript = false
-reportArgumentType = false
-reportReturnType = false
-reportInvalidTypeForm = false
-reportAttributeAccessIssue = false
-reportGeneralTypeIssues = false
 include = ["tests"]
 exclude = ["tests/test_base.py"]
 

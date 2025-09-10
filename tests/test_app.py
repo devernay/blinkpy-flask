@@ -541,6 +541,7 @@ class TestFlaskApp(FlaskTestCase):
 
         # Use helper for assertion
         data = self.assert_api_success(response)
+        assert data is not None
         self.assertEqual(len(data["data"]["systems"]), 1)
         self.assertEqual(data["data"]["systems"][0]["name"], "Test System")
 
@@ -4055,11 +4056,11 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
             threads.append(thread)
 
         # Start all threads
-        for thread in threads:  # type: threading.Thread
+        for thread in threads:
             thread.start()
 
         # Wait for all threads to complete
-        for thread in threads:  # type: threading.Thread
+        for thread in threads:
             thread.join()
 
         # All requests should complete successfully
@@ -4569,11 +4570,11 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
             threads.append(thread)
 
         # Start all threads simultaneously
-        for thread in threads:  # type: threading.Thread
+        for thread in threads:
             thread.start()
 
         # Wait for completion
-        for thread in threads:  # type: threading.Thread
+        for thread in threads:
             thread.join(timeout=5.0)
 
         # Should handle concurrent requests without errors
@@ -5715,11 +5716,11 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
             threads.append(thread)
 
         # Start all threads
-        for thread in threads:  # type: threading.Thread
+        for thread in threads:
             thread.start()
 
         # Wait for completion
-        for thread in threads:  # type: threading.Thread
+        for thread in threads:
             thread.join(timeout=10.0)
 
         # System should handle concurrent operations without crashes
@@ -5727,7 +5728,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         self.assertEqual(len(results), 15)
 
         # All operations should return valid HTTP status codes
-        for operation_id, status_code in results:  # type: str, int
+        for operation_id, status_code in results:
             # System should handle concurrent operations successfully
             # Settings and systems should return 200, cache delete should return 200
             self.assertIn(

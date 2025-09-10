@@ -27,7 +27,7 @@ def run_tests_and_get_results() -> list[str]:
         if any(status in line for status in ["PASSED", "FAILED", "SKIPPED", "ERROR"])
     ]
 
-    return sorted(test_lines), result.returncode
+    return sorted(test_lines)
 
 
 def load_baseline() -> list[str]:
@@ -43,6 +43,7 @@ def load_baseline() -> list[str]:
 
 class TestDiff(TypedDict):
     """Type definition for test regression analysis results."""
+
     regressions: list[str]
     new_passed: list[str]
     new_failed: list[str]
@@ -97,7 +98,7 @@ def main() -> None:
     print("🔍 Running regression check...")
 
     # Run current tests
-    current_results, exit_code = run_tests_and_get_results()
+    current_results = run_tests_and_get_results()
 
     # Load baseline
     baseline_results = load_baseline()

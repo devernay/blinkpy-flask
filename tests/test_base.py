@@ -60,7 +60,7 @@ def create_mock_path(
     return mock_path
 
 
-def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:
+def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:  # type: ignore[type-arg]
     """Patch function that only allows patching symbols in __all__.
 
     Args:
@@ -130,11 +130,11 @@ def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:
 class StrictPatch:
     """Wrapper for patch that enforces __all__ exports."""
 
-    def __init__(self, patch_func: Callable[..., _patch]) -> None:
+    def __init__(self, patch_func: Callable[..., _patch]) -> None:  # type: ignore[type-arg]
         self._patch = patch_func
         self.object = original_patch.object
 
-    def __call__(self, *args: Any, **kwargs: Any) -> _patch:
+    def __call__(self, *args: Any, **kwargs: Any) -> _patch:  # type: ignore[type-arg]
         return self._patch(*args, **kwargs)
 
 
@@ -738,11 +738,11 @@ def create_mock_auth(
         mock_auth = Mock(spec=object)
 
     if startup:
-        mock_auth.startup = startup
+        mock_auth.startup = startup  # type: ignore[assignment]
     if validate_login:
-        mock_auth.validate_login = validate_login
+        mock_auth.validate_login = validate_login  # type: ignore[assignment]
     if check_key_required:
-        mock_auth.check_key_required = check_key_required
+        mock_auth.check_key_required = check_key_required  # type: ignore[assignment]
     return mock_auth
 
 
@@ -1065,7 +1065,7 @@ class FlaskTestCase(BaseTestCase):
             mock_blink.sync = {}
 
         if cameras:
-            for sync_name, camera_list in cameras.items():
+            for sync_name, camera_list in cameras.items():  # type: ignore[attr-defined]
                 mock_sync = create_mock_sync()
                 mock_sync.cameras = {
                     f"camera{i}": cam for i, cam in enumerate(camera_list)
@@ -1123,7 +1123,7 @@ class FlaskTestCase(BaseTestCase):
                 sess["authenticated"] = True
             yield
 
-        return session_context()
+        return session_context()  # type: ignore[return-value]
 
     def assert_api_error(
         self,
@@ -1276,7 +1276,7 @@ class FlaskTestCase(BaseTestCase):
                 mock_conn.execute = mock_execute_with_coroutine_cleanup()
                 yield mock_blink, mock_conn
 
-        return _mock()
+        return _mock()  # type: ignore[return-value]
 
     def with_blink_mocks(
         self, available: bool = True, sync_data: dict[str, Any] | None = None

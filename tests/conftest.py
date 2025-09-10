@@ -24,7 +24,9 @@ def enable_strict_patching_by_default() -> None:
 
 
 @pytest.fixture(autouse=True)
-def isolate_all_file_operations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def isolate_all_file_operations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Redirect ALL file operations away from source directory."""
     source_dir = Path(".").resolve()
 
@@ -41,8 +43,8 @@ def isolate_all_file_operations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
             rel_path = file_path.relative_to(source_dir)
             new_path = tmp_path / rel_path
             new_path.parent.mkdir(parents=True, exist_ok=True)
-            return original_open(new_path, mode, **kwargs)
-        return original_open(file, mode, **kwargs)
+            return original_open(new_path, mode, **kwargs)  # type: ignore[return-value]
+        return original_open(file, mode, **kwargs)  # type: ignore[return-value]
 
     def safe_mkdir(path: str | Path, mode: int = 0o777) -> None:
         path_obj = Path(path).resolve()
@@ -53,7 +55,9 @@ def isolate_all_file_operations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
             return original_mkdir(new_path, mode)
         return original_mkdir(path, mode)
 
-    def safe_makedirs(name: str | Path, mode: int = 0o777, exist_ok: bool = False) -> None:
+    def safe_makedirs(
+        name: str | Path, mode: int = 0o777, exist_ok: bool = False
+    ) -> None:
         path_obj = Path(name).resolve()
         if path_obj.is_relative_to(source_dir):
             rel_path = path_obj.relative_to(source_dir)
@@ -68,7 +72,9 @@ def isolate_all_file_operations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr("os.makedirs", safe_makedirs)
 
     # Patch pathlib operations
-    def safe_path_mkdir(self: Path, mode: int = 0o777, parents: bool = False, exist_ok: bool = False) -> None:
+    def safe_path_mkdir(
+        self: Path, mode: int = 0o777, parents: bool = False, exist_ok: bool = False
+    ) -> None:
         if self.resolve().is_relative_to(source_dir):
             rel_path = self.resolve().relative_to(source_dir)
             new_path = tmp_path / rel_path

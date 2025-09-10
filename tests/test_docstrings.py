@@ -199,7 +199,8 @@ class TestDocstrings:
 
         # This function should pass docstring validation
         docstring = good_example.__doc__
-        is_complete, issues = check_docstring_completeness(
-            docstring, "good_example", True, True
-        )
-        assert is_complete, f"Example docstring should be complete: {issues}"
+        if docstring is not None:
+            is_complete, issues = check_docstring_completeness(
+                docstring, "good_example", True, True
+            )
+            assert is_complete, f"Example docstring should be complete: {issues}"
