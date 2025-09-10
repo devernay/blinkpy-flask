@@ -338,7 +338,9 @@ class TestAuthService(BaseTestCase):
         mock_session = Mock(spec=ClientSession)
 
         with patch("blinkpy.auth.Auth") as mock_auth_class:
-            mock_auth = Mock()
+            from tests.test_base import create_mock_auth
+
+            mock_auth = create_mock_auth()
             mock_auth_class.return_value = mock_auth
 
             result = _create_auth_object("user@example.com", "password", mock_session)
@@ -356,7 +358,9 @@ class TestAuthService(BaseTestCase):
 
         mock_session = Mock(spec=ClientSession)
         mock_auth_factory = Mock()
-        mock_auth = Mock()
+        from tests.test_base import create_mock_auth
+
+        mock_auth = create_mock_auth()
         mock_auth_factory.return_value = mock_auth
 
         result = _create_auth_object(
@@ -1950,7 +1954,9 @@ class TestClipDownload(BaseTestCase):
             )
 
             # Mock do_http_get
-            mock_response = Mock()
+            from tests.test_base import create_mock_client_response
+
+            mock_response = create_mock_client_response(b"video_data")
             mock_response.read = AsyncMock(return_value=b"video_data")
             mock_blink.do_http_get = AsyncMock(return_value=mock_response)
 
@@ -2380,9 +2386,9 @@ class TestClipProcessing(BaseTestCase):
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         mock_exists.return_value = False
-        mock_response = Mock()
-        mock_response.content = b"thumbnail_data"
-        mock_response.raise_for_status = Mock()
+        from tests.test_base import create_mock_client_response
+
+        mock_response = create_mock_client_response(b"thumbnail_data")
         mock_get.return_value = mock_response
 
         with patch("builtins.open", mock_open()) as mock_file:
@@ -2472,7 +2478,9 @@ class TestClipProcessing(BaseTestCase):
         mock_blink = create_mock_blink_instance(available=True)
         mock_ensure_blink.return_value = mock_blink
 
-        mock_cache = Mock()
+        from tests.test_base import create_mock_clips_cache
+
+        mock_cache = create_mock_clips_cache()
         mock_cache.get.return_value = None  # No cached clip data
         mock_clips_cache.return_value = mock_cache
 
@@ -2503,7 +2511,9 @@ class TestClipProcessing(BaseTestCase):
         mock_blink = create_mock_blink_instance(available=True)
         mock_ensure_blink.return_value = mock_blink
 
-        mock_cache = Mock()
+        from tests.test_base import create_mock_clips_cache
+
+        mock_cache = create_mock_clips_cache()
         mock_cache.get.return_value = {"media_url": "http://example.com/clip.mp4"}
         mock_clips_cache.return_value = mock_cache
 
@@ -2540,7 +2550,9 @@ class TestClipProcessing(BaseTestCase):
         from blinkapp.services.clip_processing import process_cloud_clip_thumbnail_only
 
         mock_exists.return_value = False
-        mock_cache = Mock()
+        from tests.test_base import create_mock_clips_cache
+
+        mock_cache = create_mock_clips_cache()
         mock_cache.get.return_value = None  # No cached data
         mock_clips_cache.return_value = mock_cache
 
