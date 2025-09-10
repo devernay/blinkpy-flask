@@ -3043,29 +3043,29 @@ class TestApplicationInitialization(BaseTestCase):
 
     def test_initialize_cache_paths_basic_app_init(self) -> None:
         """Test initialize_cache_paths basic functionality (test isolation version)."""
-        from blinkapp.services.cache_service import initialize_cache_paths
         import blinkapp
+        from blinkapp.services.cache_service import initialize_cache_paths
 
         # Store original values to restore later
-        original_cache_dir = getattr(blinkapp, 'CACHE_DIR', None)
-        original_thumbnail_dir = getattr(blinkapp, 'THUMBNAIL_CACHE_DIR', None)
-        
+        original_cache_dir = getattr(blinkapp, "CACHE_DIR", None)
+        original_thumbnail_dir = getattr(blinkapp, "THUMBNAIL_CACHE_DIR", None)
+
         try:
             # Call the function (which is mocked by test isolation)
             initialize_cache_paths()
-            
+
             # Verify that the global variables were set (this is what the mock does)
-            assert hasattr(blinkapp, 'CACHE_DIR')
-            assert hasattr(blinkapp, 'THUMBNAIL_CACHE_DIR')
-            assert hasattr(blinkapp, 'CLIPS_CACHE_DIR')
-            assert hasattr(blinkapp, 'HLS_OUTPUT_DIR')
-            assert hasattr(blinkapp, 'SETTINGS_FILE')
-            assert hasattr(blinkapp, 'CREDENTIALS_FILE')
-            
+            assert hasattr(blinkapp, "CACHE_DIR")
+            assert hasattr(blinkapp, "THUMBNAIL_CACHE_DIR")
+            assert hasattr(blinkapp, "CLIPS_CACHE_DIR")
+            assert hasattr(blinkapp, "HLS_OUTPUT_DIR")
+            assert hasattr(blinkapp, "SETTINGS_FILE")
+            assert hasattr(blinkapp, "CREDENTIALS_FILE")
+
             # Verify they are strings (paths)
             assert isinstance(blinkapp.CACHE_DIR, str)
             assert isinstance(blinkapp.THUMBNAIL_CACHE_DIR, str)
-            
+
         finally:
             # Restore original values
             if original_cache_dir is not None:

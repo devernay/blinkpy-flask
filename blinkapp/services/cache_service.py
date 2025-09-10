@@ -311,7 +311,7 @@ def initialize_cache_paths() -> None:
     """Initialize cache directory paths from Flask config or defaults."""
     import blinkapp
     from blinkapp.config import Config
-    
+
     cache_dir_config = _get_cache_dir_config()
     cache_dir = pathlib.Path(cache_dir_config)
     cache_dir.mkdir(parents=True, exist_ok=True)
