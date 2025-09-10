@@ -68,7 +68,7 @@ class TestAuthRoutes(FlaskTestCase):
 
         with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
             # Mock successful login without 2FA
-            mock_handle_login.return_value = (True, False, None)
+            mock_handle_login.return_value = {"success": True}
 
             response = self.client.post(
                 "/login",
@@ -84,7 +84,7 @@ class TestAuthRoutes(FlaskTestCase):
 
         with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
             # Mock login that requires 2FA
-            mock_handle_login.return_value = (True, True, None)
+            mock_handle_login.return_value = {"success": False, "requires_2fa": True}
 
             response = self.client.post(
                 "/login",
@@ -100,15 +100,18 @@ class TestAuthRoutes(FlaskTestCase):
 
         with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
             # Mock failed login
-            mock_handle_login.return_value = (False, False, "Invalid credentials")
+            mock_handle_login.return_value = {
+                "success": False,
+                "error": "Invalid credentials",
+            }
 
             response = self.client.post(
                 "/login",
                 data={"username": "invalid@example.com", "password": "wrongpassword"},
             )
 
-            self.assertEqual(response.status_code, 200)
-            self.assertIn(b"Authentication failed", response.data)
+            self.assertEqual(response.status_code, 400)
+            self.assertIn(b"Invalid credentials", response.data)
 
     def test_2fa_page_without_pending_session_integration(self) -> None:
         """Test 2FA page redirects to login when no pending session (integration)."""
@@ -137,14 +140,14 @@ class TestAuthRoutes(FlaskTestCase):
             "blinkapp.services.auth_service.handle_2fa_verification"
         ) as mock_handle_2fa:
             # Mock successful 2FA verification
-            mock_handle_2fa.return_value = (True, None)
+            mock_handle_2fa.return_value = {"success": True}
 
             with self.client.session_transaction() as sess:
                 sess["pending_2fa"] = True
                 sess["username"] = "test@example.com"
                 sess["password"] = "password123"
 
-            response = self.client.post("/2fa", data={"code": "123456"})
+            response = self.client.post("/2fa", data={"key": "123456"})
 
             self.assertEqual(response.status_code, 302)
             self.assertTrue(response.location.endswith("/"))
@@ -157,23 +160,26 @@ class TestAuthRoutes(FlaskTestCase):
             "blinkapp.services.auth_service.handle_2fa_verification"
         ) as mock_handle_2fa:
             # Mock failed 2FA verification
-            mock_handle_2fa.return_value = (False, "Invalid 2FA code")
+            mock_handle_2fa.return_value = {
+                "success": False,
+                "error": "Invalid 2FA code",
+            }
 
             with self.client.session_transaction() as sess:
                 sess["pending_2fa"] = True
                 sess["username"] = "test@example.com"
                 sess["password"] = "password123"
 
-            response = self.client.post("/2fa", data={"code": "invalid"})
+            response = self.client.post("/2fa", data={"key": "invalid"})
 
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 400)
             self.assertIn(b"Invalid 2FA code", response.data)
 
     def test_login_missing_credentials_integration(self) -> None:
         """Test login with missing username or password (integration)."""
         response = self.client.post("/login", data={"username": ""})
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         self.assertIn(b"Username and password required", response.data)
 
     def test_logout_clears_session_integration(self) -> None:
@@ -220,7 +226,7 @@ class TestAuthRoutes(FlaskTestCase):
             ) as mock_handle_2fa,
         ):
             # Step 1: Login requires 2FA
-            mock_handle_login.return_value = (True, True, None)
+            mock_handle_login.return_value = {"success": False, "requires_2fa": True}
 
             response = self.client.post(
                 "/login",
@@ -231,9 +237,9 @@ class TestAuthRoutes(FlaskTestCase):
             self.assertTrue(response.location.endswith("/2fa"))
 
             # Step 2: Successful 2FA verification
-            mock_handle_2fa.return_value = (True, None)
+            mock_handle_2fa.return_value = {"success": True}
 
-            response = self.client.post("/2fa", data={"code": "123456"})
+            response = self.client.post("/2fa", data={"key": "123456"})
 
             self.assertEqual(response.status_code, 302)
             self.assertTrue(response.location.endswith("/"))
@@ -244,7 +250,7 @@ class TestAuthRoutes(FlaskTestCase):
 
         with patch("blinkapp.services.auth_service.handle_login") as mock_handle_login:
             # Mock successful login
-            mock_handle_login.return_value = (True, False, None)
+            mock_handle_login.return_value = {"success": True}
 
             response = self.client.post(
                 "/login",

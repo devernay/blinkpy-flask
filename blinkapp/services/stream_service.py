@@ -15,8 +15,6 @@ __all__ = [
     "is_stream_active",
     "get_hls_file",
     "init_camera_stream",
-    "HLSStream",
-    "HLSStreamConfig",
     "StreamManager",
     "stream_manager",
     "generate_hls_url",
@@ -42,8 +40,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 # Global stream manager instance
 stream_manager: StreamManager | None = None
 
@@ -52,7 +48,6 @@ def initialize_stream_manager(manager_factory=None) -> None:
     """Initialize the global stream manager instance with injectable factory."""
     global stream_manager
     from blinkapp import Config
-    from blinkapp.services.stream_service import HLSStreamConfig, StreamManager
 
     if manager_factory is None:
 
@@ -72,8 +67,6 @@ def initialize_stream_manager(manager_factory=None) -> None:
 
 def create_stream_manager(**kwargs) -> StreamManager:
     """Factory function for stream manager - easily mockable."""
-    from blinkapp.services.stream_manager import StreamManager
-
     return StreamManager(**kwargs)
 
 

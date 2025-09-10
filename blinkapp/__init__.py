@@ -24,7 +24,6 @@ License: MIT
 
 import logging
 import os
-from pathlib import Path
 
 # Live streaming management
 # Third-party imports
@@ -38,92 +37,32 @@ from flask import (
 # Caching system for camera thumbnails, clips, and metadata
 # ID validation and type safety
 # Type definitions for better code clarity
-# Blink camera library - third-party integration
 # Application configuration
 from blinkapp.config import Config
 
-# API response models
-from blinkapp.models.responses import create_api_response
-
-# Admin routes
+# Route setup functions
 from blinkapp.routes.admin import setup_admin_routes
 from blinkapp.routes.auth import setup_auth_routes
-
-# Camera operations and route handlers
-from blinkapp.routes.camera import (
-    setup_camera_routes,
-)
-
-# Clip management routes
+from blinkapp.routes.camera import setup_camera_routes
 from blinkapp.routes.clips import setup_clips_routes
-
-# Settings management routes
 from blinkapp.routes.settings import setup_settings_routes
-
-# Streaming routes
 from blinkapp.routes.streaming import setup_streaming_routes
-
-# System management routes
 from blinkapp.routes.system import setup_system_routes
-
-# Thumbnail routes
 from blinkapp.routes.thumbnails import setup_camera_thumbnail_routes
-from blinkapp.services.blink_validators import require_sync_module
-
-# Cache management
-from blinkapp.services.cache_service import (
-    clear_all_caches,
-    initialize_cache_paths,
-    load_clips_cache,
-)
-from blinkapp.services.debug_service import (
-    dump_cloud_videos,
-)
-
-# Application lifecycle
-from blinkapp.services.lifecycle_service import (
-    cleanup_resources,
-    startup,
-)
-
-# Route setup functions
-# Route decorators and error handling
-# Utilities
-from blinkapp.utils.error_handlers import handle_api_error
-
-# Utilities
-from blinkapp.utils.logging_config import setup_logging
 
 # Explicitly define what this module exports
 __all__ = [
     # Flask application instance
     "app",
-    # Core initialization functions
-    # Utility functions (now imported from utils modules)
-    "handle_api_error",
-    "require_sync_module",
-    "setup_logging",
-    "initialize_cache_paths",
-    # Cache management
-    "clear_all_caches",
-    "load_clips_cache",
-    # Configuration and debugging
-    "dump_cloud_videos",
-    # Application lifecycle
-    "startup",
-    "cleanup_resources",
-    "main",
-    # API utilities
-    "create_api_response",
-    # Configuration files and paths (commonly patched in tests)
-    "Path",
+    # Configuration files and paths (defined in this module)
     "SETTINGS_FILE",
     "CREDENTIALS_FILE",
     "CACHE_DIR",
     "CLIPS_CACHE_DIR",
     "THUMBNAIL_CACHE_DIR",
     "HLS_OUTPUT_DIR",
-    # Logger (commonly patched in tests)
+    "CLIPS_CACHE_SIZE",
+    # Logger (defined in this module)
     "logger",
 ]
 

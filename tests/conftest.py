@@ -6,6 +6,22 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True, scope="session")
+def enable_strict_patching_by_default():
+    """Enable strict patching for all tests by default or via STRICT_PATCHING env var."""
+    import os
+
+    from tests.test_base import disable_strict_patching, enable_strict_patching
+
+    # Check environment variable - enable if STRICT_PATCHING=1 or by default
+    strict_patching_env = os.environ.get("STRICT_PATCHING", "1")
+
+    if strict_patching_env == "1":
+        enable_strict_patching()
+    else:
+        disable_strict_patching()
+
+
 @pytest.fixture(autouse=True)
 def isolate_all_file_operations(tmp_path, monkeypatch):
     """Redirect ALL file operations away from source directory."""

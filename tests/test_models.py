@@ -15,6 +15,8 @@ import threading
 import time
 import unittest
 
+from test_base import create_mock_camera
+
 from blinkapp.models.cache import (
     CameraThumbnailCache,
     CameraThumbnailCacheEntry,
@@ -868,9 +870,9 @@ class TestThreadSafeLRUCache(BaseTestCase):
 
     def test_update_camera_thumbnail_cache_advanced(self) -> None:
         """Test camera thumbnail cache update."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
-        mock_camera = Mock()
+        mock_camera = create_mock_camera()
         mock_camera.name = "Test Camera"
         mock_camera.thumbnail = "http://example.com/thumb.jpg"
         mock_camera.camera_id = 12345
@@ -889,9 +891,11 @@ class TestThreadSafeLRUCache(BaseTestCase):
             mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
 
             try:
-                from blinkapp import initialize_cache_paths
                 from blinkapp.routes.thumbnails import update_camera_thumbnail
-                from blinkapp.services.cache_service import initialize_caches
+                from blinkapp.services.cache_service import (
+                    initialize_cache_paths,
+                    initialize_caches,
+                )
 
                 # Initialize cache paths and caches before thumbnail operations
                 initialize_cache_paths()
@@ -1340,8 +1344,8 @@ class TestCacheStatsAndMethods(BaseTestCase):
         """Test cache model edge cases."""
         from blinkapp.models.cache import ThreadSafeLRUCache
 
-        # Test with small capacity
-        cache = ThreadSafeLRUCache(capacity=2)
+        # Test with small capacity using maxsize parameter
+        cache = ThreadSafeLRUCache(maxsize=2)
         cache["key1"] = "value1"
         cache["key2"] = "value2"
         cache["key3"] = "value3"  # Should evict key1

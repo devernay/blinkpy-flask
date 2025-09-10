@@ -10,14 +10,10 @@ from __future__ import annotations
 __all__ = [
     "startup",
     "cleanup_resources",
-    "dump_cloud_videos",
-    "cleanup_blink_session",
 ]
 
 import logging
 from pathlib import Path
-
-from blinkapp.services.debug_service import dump_cloud_videos
 
 logger = logging.getLogger(__name__)
 
@@ -246,18 +242,4 @@ def cleanup_resources() -> None:
         logger.warning(f"Error during resource cleanup: {e}")
 
 
-async def cleanup_blink_session() -> None:
-    """Clean up Blink aiohttp session."""
-    from blinkapp.services.blink_service import get_blink_instance
-
-    blink_instance = get_blink_instance()
-    if blink_instance is not None:
-        if hasattr(blink_instance, "auth") and blink_instance.auth:
-            if hasattr(blink_instance.auth, "session") and blink_instance.auth.session:
-                try:
-                    await blink_instance.auth.session.close()
-                except Exception as e:
-                    logger.debug(f"Error closing Blink session: {e}")
-
-
-# Function is imported at top of file
+# cleanup_blink_session is imported from blink_service

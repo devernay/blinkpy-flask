@@ -8,11 +8,12 @@ import signal
 import sys
 from typing import Any
 
-# This module is an entry point and doesn't export anything
-__all__: list[str] = []
+# This module is an entry point and exports the app for testing
+__all__: list[str] = ["app"]
 
-from blinkapp import app, cleanup_resources, startup
+from blinkapp import app
 from blinkapp.models.responses import Config
+from blinkapp.services.lifecycle_service import cleanup_resources, startup
 
 
 def create_argument_parser() -> argparse.ArgumentParser:

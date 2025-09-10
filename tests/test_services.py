@@ -24,7 +24,9 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from tests.test_base import BaseTestCase
+from aiohttp import ClientSession
+
+from tests.test_base import BaseTestCase, create_mock_thread_pool_executor
 
 
 class TestTimeService(BaseTestCase):
@@ -187,10 +189,11 @@ class TestAuthService(BaseTestCase):
 
     def test_create_blink_session_default(self) -> None:
         """Test creating blink session with default factory."""
+
         from blinkapp.services import auth_service
 
         with patch("aiohttp.ClientSession") as mock_session_class:
-            mock_session = Mock()
+            mock_session = Mock(spec=ClientSession)
             mock_session_class.return_value = mock_session
 
             result = auth_service._create_blink_session()
@@ -200,9 +203,12 @@ class TestAuthService(BaseTestCase):
 
     def test_create_blink_session_custom_factory(self):
         """Test creating blink session with custom factory."""
+
         from blinkapp.services import auth_service
 
-        with patch("aiohttp.ClientSession", return_value=Mock()) as mock_factory:
+        with patch(
+            "aiohttp.ClientSession", return_value=Mock(spec=ClientSession)
+        ) as mock_factory:
             result = auth_service._create_blink_session()
 
             self.assertIsNotNone(result)
@@ -215,7 +221,7 @@ class TestAuthService(BaseTestCase):
         from blinkapp.services import auth_service
 
         with patch(
-            "blinkapp.services.auth_service.get_blink_instance"
+            "blinkapp.services.blink_service.get_blink_instance"
         ) as mock_get_blink:
             mock_get_blink.return_value = None
             result = auth_service.is_blink_authenticated()
@@ -302,9 +308,8 @@ class TestBlinkService(BaseTestCase):
             mock_execute_with_coroutine_cleanup,
         )
 
-        # Setup mocks
-        mock_session_instance = Mock(spec=object)
-        mock_session.return_value = mock_session_instance
+        # Setup mocks - use patched ClientSession directly
+        mock_session.return_value = mock_session  # Use the patched mock directly
 
         mock_blink_instance = create_mock_blink_instance(
             available=True, key_required=False
@@ -340,9 +345,8 @@ class TestBlinkService(BaseTestCase):
             mock_execute_with_coroutine_cleanup,
         )
 
-        # Setup mocks
-        mock_session_instance = Mock(spec=object)
-        mock_session.return_value = mock_session_instance
+        # Setup mocks - use patched ClientSession directly
+        mock_session.return_value = mock_session  # Use the patched mock directly
 
         mock_blink_instance = create_mock_blink_instance(
             available=True, key_required=True
@@ -627,24 +631,21 @@ class TestDebugService(BaseTestCase):
 
     def test_check_credentials_file_exists_true(self) -> None:
         """Test credentials file exists returns True."""
-        from pathlib import Path
-
         from blinkapp.services.debug_service import check_credentials_file_exists
+        from tests.test_base import create_mock_path
 
-        mock_path = Mock(spec=Path)
-        mock_path.exists.return_value = True
+        mock_path = create_mock_path("credentials", exists=True)
 
         result = check_credentials_file_exists(mock_path)
         self.assertTrue(result)
 
     def test_check_credentials_file_exists_false(self) -> None:
         """Test credentials file does not exist returns False."""
-        from pathlib import Path
 
         from blinkapp.services.debug_service import check_credentials_file_exists
+        from tests.test_base import create_mock_path
 
-        mock_path = Mock(spec=Path)
-        mock_path.exists.return_value = False
+        mock_path = create_mock_path("credentials", exists=False)
 
         result = check_credentials_file_exists(mock_path)
         self.assertFalse(result)
@@ -883,9 +884,11 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_with_mock_factory(self) -> None:
         """Test FFmpeg process creation with mocked factory."""
+        import subprocess
+
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
-        mock_process = Mock()
+        mock_process = Mock(spec=subprocess.Popen)
         with patch("subprocess.Popen", return_value=mock_process) as mock_popen:
             result = _create_ffmpeg_process(["ffmpeg", "-version"])
 
@@ -1099,7 +1102,7 @@ class TestHLSStream(BaseTestCase):
             patch("builtins.open") as mock_open,
             patch("time.time", return_value=123456),
         ):
-            mock_file = Mock()
+            mock_file = Mock(spec=["read"])
             mock_file.read.return_value = b"ts content"
             mock_open.return_value.__enter__.return_value = mock_file
 
@@ -1110,12 +1113,14 @@ class TestHLSStream(BaseTestCase):
 
     def test_hls_stream_is_active_with_timeout(self) -> None:
         """Test is_active with idle timeout."""
+        import subprocess
+
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
         stream._active = True
 
-        mock_process = Mock()
+        mock_process = Mock(spec=subprocess.Popen)
         mock_process.poll.return_value = None  # Still running
         stream.process = mock_process
         stream.last_access = 0  # Set to old time
@@ -1325,11 +1330,12 @@ class TestStreamService(BaseTestCase):
         """Test successful camera stream stop."""
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import stop_camera_stream
+        from tests.test_base import create_mock_stream_manager
 
         with patch(
             "blinkapp.services.stream_service.ensure_stream_manager_initialized"
         ) as mock_ensure:
-            mock_manager = Mock()
+            mock_manager = create_mock_stream_manager()
             mock_ensure.return_value = mock_manager
 
             camera_id = CameraId("test_camera")
@@ -1342,11 +1348,12 @@ class TestStreamService(BaseTestCase):
         """Test camera stream stop failure."""
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import stop_camera_stream
+        from tests.test_base import create_mock_stream_manager
 
         with patch(
             "blinkapp.services.stream_service.ensure_stream_manager_initialized"
         ) as mock_ensure:
-            mock_manager = Mock()
+            mock_manager = create_mock_stream_manager()
             mock_manager.stop_stream.side_effect = Exception("Stop error")
             mock_ensure.return_value = mock_manager
 
@@ -1402,7 +1409,7 @@ class TestSystemService(BaseTestCase):
         """Test cache path initialization with app config."""
         from unittest.mock import Mock, patch
 
-        from blinkapp import initialize_cache_paths
+        from blinkapp.services.cache_service import initialize_cache_paths
         from tests.test_base import create_mock_path
 
         with (
@@ -1429,7 +1436,7 @@ class TestSystemService(BaseTestCase):
 
     def test_initialize_cache_paths_default(self) -> None:
         """Test cache path initialization with defaults."""
-        from blinkapp import initialize_cache_paths
+        from blinkapp.services.cache_service import initialize_cache_paths
 
         # Should not raise exception when outside app context
         try:
@@ -1468,6 +1475,120 @@ class TestSystemService(BaseTestCase):
                 self.assertTrue(True)
 
 
+class TestClipDownloadService(BaseTestCase):
+    """Test clip download service functions."""
+
+    def test_download_cloud_clip_core_sync_no_blink(self) -> None:
+        """Test _download_cloud_clip_core_sync with no blink instance."""
+        from pathlib import Path
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import _download_cloud_clip_core_sync
+
+        clip_id = ClipId("12345")  # Cloud clip (no ~ in ID)
+        clips_cache_dir = Path("/tmp/clips")
+
+        result_path, error = _download_cloud_clip_core_sync(
+            clip_id, None, clips_cache_dir
+        )
+
+        self.assertIsNone(result_path)
+        self.assertIn("Blink instance not available", error)
+
+    def test_download_cloud_clip_success(self) -> None:
+        """Test successful cloud clip download - no blink instance."""
+        from unittest.mock import patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import download_cloud_clip
+
+        clip_id = ClipId("12345")  # Cloud clip
+
+        with patch(
+            "blinkapp.services.blink_service.get_blink_instance"
+        ) as mock_get_blink:
+            mock_get_blink.return_value = None  # No blink instance
+
+            response, status_code = download_cloud_clip(clip_id)
+
+            self.assertEqual(status_code, 503)
+            self.assertFalse(response["success"])
+
+    def test_download_cloud_clip_failure(self) -> None:
+        """Test failed cloud clip download."""
+        from unittest.mock import patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import download_cloud_clip
+
+        clip_id = ClipId("12345")  # Cloud clip
+
+        with patch(
+            "blinkapp.services.blink_service.get_blink_instance"
+        ) as mock_get_blink:
+            mock_get_blink.return_value = None  # No blink instance
+
+            response, status_code = download_cloud_clip(clip_id)
+
+            self.assertEqual(status_code, 503)
+            self.assertFalse(response["success"])
+
+    def test_download_local_clip_success(self) -> None:
+        """Test local clip download - no local storage."""
+        from unittest.mock import patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import download_local_clip
+        from tests.test_base import create_mock_blink_instance
+
+        clip_id = ClipId.from_local("sync1", 123)
+
+        with patch(
+            "blinkapp.services.blink_service.get_blink_instance"
+        ) as mock_get_blink:
+            mock_blink = create_mock_blink_instance()
+            mock_blink.available = True
+            mock_get_blink.return_value = mock_blink
+
+            # Mock sync module without local storage
+            from tests.test_base import create_mock_sync
+
+            mock_sync = create_mock_sync(
+                12345, local_storage=False
+            )  # Use parameter directly
+            mock_blink.sync = {"sync1": mock_sync}
+
+            response, status_code = download_local_clip(clip_id)
+
+            self.assertEqual(status_code, 503)
+            self.assertFalse(response["success"])
+            self.assertIn("Local storage not available", response["error"])
+
+    def test_download_local_clip_not_found(self) -> None:
+        """Test local clip download when sync module not found."""
+        from unittest.mock import patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import download_local_clip
+        from tests.test_base import create_mock_blink_instance
+
+        clip_id = ClipId.from_local("nonexistent", 123)
+
+        with patch(
+            "blinkapp.services.blink_service.get_blink_instance"
+        ) as mock_get_blink:
+            mock_blink = create_mock_blink_instance()
+            mock_blink.available = True
+            mock_blink.sync = {}  # Empty sync dict
+            mock_get_blink.return_value = mock_blink
+
+            response, status_code = download_local_clip(clip_id)
+
+            self.assertEqual(status_code, 404)
+            self.assertFalse(response["success"])
+            self.assertIn("not found", response["error"])
+
+
 class TestThumbnailService(BaseTestCase):
     """Test thumbnail service functions."""
 
@@ -1498,9 +1619,11 @@ class TestThumbnailService(BaseTestCase):
         mock_connection.execute.side_effect = [mock_response, b"image_data"]
 
         try:
-            from blinkapp import initialize_cache_paths
             from blinkapp.routes.thumbnails import update_camera_thumbnail
-            from blinkapp.services.cache_service import initialize_caches
+            from blinkapp.services.cache_service import (
+                initialize_cache_paths,
+                initialize_caches,
+            )
 
             # Initialize cache paths and caches before thumbnail operations
             initialize_cache_paths()
@@ -1579,16 +1702,24 @@ class TestLifecycleService(BaseTestCase):
         lifecycle_service.startup()
         self.assertTrue(True)  # Test passes if no exception raised
 
-    @patch("blinkapp.services.connection_service.executor", Mock())
+    @patch(
+        "blinkapp.services.connection_service.executor",
+        create_mock_thread_pool_executor(),
+    )
     @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_cleanup_resources_success(self, mock_blink_conn, mock_stream):
         """Test successful resource cleanup."""
-        from blinkapp.services import lifecycle_service
 
-        mock_stream_manager = Mock()
+        from blinkapp.services import lifecycle_service
+        from tests.test_base import (
+            create_mock_blink_connection,
+            create_mock_stream_manager,
+        )
+
+        mock_stream_manager = create_mock_stream_manager()
         mock_stream.return_value = mock_stream_manager
-        mock_blink_connection = Mock()
+        mock_blink_connection = create_mock_blink_connection()
         mock_blink_conn.return_value = mock_blink_connection
 
         lifecycle_service.cleanup_resources()
@@ -1645,15 +1776,14 @@ class TestConnectionService(BaseTestCase):
     def test_parallel_cache_clearing(self, mock_executor: Mock) -> None:
         """Test parallel execution of cache clearing."""
 
-        # Create a properly spec'd mock instance
-        mock_executor_instance = Mock()
-        mock_executor_instance.__enter__ = Mock(return_value=mock_executor_instance)
-        mock_executor_instance.__exit__ = Mock(return_value=None)
-        mock_executor.return_value = mock_executor_instance
+        # Use patched ThreadPoolExecutor directly and set up context manager
+        mock_executor.__enter__ = Mock(spec=callable, return_value=mock_executor)
+        mock_executor.__exit__ = Mock(spec=callable, return_value=None)
+        mock_executor.return_value = mock_executor  # Use the patched mock directly
 
         # Test parallel execution pattern
         with mock_executor() as executor:
-            self.assertEqual(executor, mock_executor_instance)
+            self.assertEqual(executor, mock_executor)
 
     def test_connection_service_basic(self) -> None:
         """Test basic connection service."""

@@ -11,7 +11,6 @@ __all__ = [
     "get_devices",
     "arm_system",
     "refresh_system",
-    "logger",
 ]
 
 import logging
@@ -66,9 +65,6 @@ def get_devices(network_id: NetworkId) -> JsonDict:
     Returns:
         Dictionary with list of devices
     """
-    from blinkapp import (
-        logger,
-    )
     from blinkapp.models.ids import CameraId
     from blinkapp.routes.thumbnails import update_camera_thumbnail
     from blinkapp.services.blink_validators import require_sync_module

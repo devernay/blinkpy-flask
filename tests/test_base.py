@@ -36,6 +36,7 @@ def create_mock_path(
     path_str: str = "/mock/path",
     mkdir_mock: Mock | None = None,
     unlink_mock: Mock | None = None,
+    exists: bool = True,
 ) -> Mock:
     """Create a properly configured Mock Path object.
 
@@ -44,12 +45,14 @@ def create_mock_path(
         path_str: String representation of the path
         mkdir_mock: Optional Mock to use for mkdir method
         unlink_mock: Optional Mock to use for unlink method
+        exists: Whether the path exists (default: True)
 
     Returns:
-        Mock Path object with proper __str__, mkdir, and unlink configuration
+        Mock Path object with proper __str__, mkdir, unlink, and exists configuration
     """
     mock_path = Mock(spec=RealPath, name=name)
     mock_path.__str__ = Mock(spec=callable, return_value=path_str)
+    mock_path.exists = Mock(spec=callable, return_value=exists)
     if mkdir_mock:
         mock_path.mkdir = mkdir_mock
     if unlink_mock:
@@ -536,13 +539,13 @@ def create_mock_auth(
 
         # Only use spec if Auth is not already a Mock
         if hasattr(Auth, "_mock_name"):
-            # Auth is already mocked, don't use spec
-            mock_auth = Mock(spec=object)  # Use generic spec
+            # Auth is already mocked, use it directly
+            mock_auth = Auth
         else:
             mock_auth = Mock(spec=Auth)
     except ImportError:
-        # Fallback if import fails
-        mock_auth = Mock(spec=object)  # Use generic spec
+        # Fallback if import fails - use object as minimal spec
+        mock_auth = Mock(spec=object)
 
     if startup:
         mock_auth.startup = startup
@@ -551,6 +554,63 @@ def create_mock_auth(
     if check_key_required:
         mock_auth.check_key_required = check_key_required
     return mock_auth
+
+
+def create_mock_thread_pool_executor() -> Mock:
+    """Create a mock ThreadPoolExecutor with common methods."""
+    from concurrent.futures import ThreadPoolExecutor
+    from unittest.mock import Mock
+
+    # Check if ThreadPoolExecutor is already mocked
+    if hasattr(ThreadPoolExecutor, "_mock_name"):
+        # ThreadPoolExecutor is already mocked, use it directly
+        mock_executor = ThreadPoolExecutor
+    else:
+        mock_executor = Mock(spec=ThreadPoolExecutor)
+
+    # Set up common methods regardless of whether it was already mocked
+    if not hasattr(mock_executor, "submit") or not callable(mock_executor.submit):
+        mock_executor.submit = Mock(spec=callable)
+    if not hasattr(mock_executor, "__enter__") or not callable(mock_executor.__enter__):
+        mock_executor.__enter__ = Mock(spec=callable, return_value=mock_executor)
+    if not hasattr(mock_executor, "__exit__") or not callable(mock_executor.__exit__):
+        mock_executor.__exit__ = Mock(spec=callable, return_value=None)
+
+    return mock_executor
+
+
+def create_mock_future() -> Mock:
+    """Create a mock Future with common methods."""
+    from concurrent.futures import Future
+    from unittest.mock import Mock
+
+    mock_future = Mock(spec=Future)
+    mock_future.result = Mock(spec=callable)
+    mock_future.done = Mock(spec=callable, return_value=True)
+    return mock_future
+
+
+def create_mock_client_response(content: bytes = b"test_content") -> Mock:
+    """Create a mock ClientResponse with common methods."""
+    from unittest.mock import Mock
+
+    from aiohttp import ClientResponse
+
+    mock_response = Mock(spec=ClientResponse)
+    mock_response.read = Mock(spec=callable, return_value=content)
+    mock_response.status = 200
+    return mock_response
+
+
+def create_mock_completed_process(returncode: int = 0, stdout: str = "") -> Mock:
+    """Create a mock subprocess.CompletedProcess."""
+    import subprocess
+    from unittest.mock import Mock
+
+    mock_process = Mock(spec=subprocess.CompletedProcess)
+    mock_process.returncode = returncode
+    mock_process.stdout = stdout
+    return mock_process
 
 
 # Test constants
@@ -742,16 +802,14 @@ class FlaskTestCase(BaseTestCase):
         # Mock the cache path initialization to avoid creating real directories
         from unittest.mock import patch
 
-        import blinkapp
-
         with patch("pathlib.Path.mkdir"):
-            blinkapp.initialize_cache_paths()
+            from blinkapp.services.cache_service import initialize_cache_paths
+
+            initialize_cache_paths()
 
     def setup_mock_blink(self, available=True, sync_data=None, cameras=None):
         """Helper to set up mock Blink objects with common configuration."""
-        from unittest.mock import Mock
-
-        mock_blink = Mock(spec=object)
+        mock_blink = create_mock_blink_instance(available=available)
         mock_blink.available = available
 
         if sync_data:
@@ -941,3 +999,112 @@ def create_video_metadata(
         "thumbnail": thumbnail,
         "size": size,
     }
+
+
+class TestStrictPatching:
+    """Test strict patching functionality.
+
+    IMPORTANT: Strict patching should ALWAYS be enabled by default in this test suite.
+    The only way to disable it should be using STRICT_PATCHING=0 environment variable,
+    NOT by modifying the test code. This ensures consistent behavior and prevents
+    accidental disabling of strict patching which could hide import/export issues.
+    """
+
+    def test_strict_patching_enabled_by_default(self):
+        """Test that strict patching is enabled by default."""
+        import unittest.mock
+
+        # Strict patching should be enabled by default
+        assert unittest.mock.patch is strict_patch, (
+            "Strict patching should be enabled by default"
+        )
+
+    def test_strict_patching_environment_variable_control(self):
+        """Test that strict patching can be controlled via STRICT_PATCHING environment variable."""
+        import os
+        import unittest.mock
+
+        # Save original environment value
+        original_env = os.environ.get("STRICT_PATCHING")
+
+        try:
+            # Test STRICT_PATCHING=0 disables strict patching
+            os.environ["STRICT_PATCHING"] = "0"
+            disable_strict_patching()
+            assert unittest.mock.patch is not strict_patch, (
+                "STRICT_PATCHING=0 should disable strict patching"
+            )
+
+            # Test STRICT_PATCHING=1 enables strict patching
+            os.environ["STRICT_PATCHING"] = "1"
+            enable_strict_patching()
+            assert unittest.mock.patch is strict_patch, (
+                "STRICT_PATCHING=1 should enable strict patching"
+            )
+
+            # Test default behavior (no env var)
+            if "STRICT_PATCHING" in os.environ:
+                del os.environ["STRICT_PATCHING"]
+            enable_strict_patching()  # Default is enabled
+            assert unittest.mock.patch is strict_patch, (
+                "Default behavior should enable strict patching"
+            )
+
+        finally:
+            # Restore original environment
+            if original_env is not None:
+                os.environ["STRICT_PATCHING"] = original_env
+            elif "STRICT_PATCHING" in os.environ:
+                del os.environ["STRICT_PATCHING"]
+
+            # Restore strict patching for other tests
+            enable_strict_patching()
+
+    def test_strict_patch_allows_exported_symbols(self):
+        """Test that strict_patch allows patching exported symbols."""
+        from unittest.mock import Mock
+
+        # This should work - 'patch' is in unittest.mock.__all__
+        with strict_patch("unittest.mock.patch") as mock_patch:
+            assert isinstance(mock_patch, Mock)
+
+    def test_strict_patch_blocks_non_exported_symbols(self):
+        """Test that strict_patch blocks patching non-exported symbols."""
+        import pytest
+
+        # This should fail - '_patch_object' is not in unittest.mock.__all__
+        with pytest.raises(ValueError, match="Symbol '_patch_object' is not exported"):
+            with strict_patch("unittest.mock._patch_object"):
+                pass
+
+    def test_strict_patch_allows_modules_without_all(self):
+        """Test that strict_patch allows patching modules without __all__."""
+        from unittest.mock import Mock
+
+        # This should work - modules without __all__ are allowed
+        with strict_patch("os.path.exists") as mock_exists:
+            assert isinstance(mock_exists, Mock)
+
+    def test_enable_disable_strict_patching(self):
+        """Test enabling and disabling strict patching."""
+        import unittest.mock
+
+        # Since strict patching is enabled by default, first disable it
+        disable_strict_patching()
+        original_patch = unittest.mock.patch
+
+        # Enable strict patching
+        enable_strict_patching()
+        assert unittest.mock.patch is strict_patch
+
+        # Disable strict patching
+        disable_strict_patching()
+        assert unittest.mock.patch is original_patch
+
+        # Re-enable for other tests
+        enable_strict_patching()
+
+    def test_strict_patch_object_attribute(self):
+        """Test that strict_patch has object attribute for patch.object calls."""
+        assert hasattr(strict_patch, "object")
+        assert strict_patch.object is not None

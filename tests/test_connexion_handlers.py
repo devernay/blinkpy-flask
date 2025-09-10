@@ -8,7 +8,7 @@ Tests connexion-compatible handlers including:
 """
 
 from typing import Any, cast
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from blinkapp.connexion_handlers import auth, camera, clips, system
 from blinkapp.models.types import JsonDict
@@ -134,7 +134,7 @@ class TestSystemHandlers(BaseTestCase):
         from tests.test_base import create_mock_sync
 
         mock_sync = create_mock_sync()
-        mock_sync.async_arm.return_value = Mock(spec=object)
+        mock_sync.async_arm.return_value = AsyncMock(spec=callable)
         mock_validator.return_value = (mock_sync, None)
 
         # Mock the connection object returned by ensure_blink_connection_initialized
@@ -220,7 +220,9 @@ class TestCameraHandlers(BaseTestCase):
                 "cam2": create_mock_camera(camera_id="cam2", name="Camera 2"),
             }
         )
-        mock_connection = Mock(spec=callable)
+        from tests.test_base import create_mock_blink_connection
+
+        mock_connection = create_mock_blink_connection()
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
 
@@ -242,7 +244,9 @@ class TestCameraHandlers(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_list_cameras_no_blink(self, mock_ensure: Mock) -> None:
         """Test list_cameras when blink is None."""
-        mock_connection = Mock(spec=callable)
+        from tests.test_base import create_mock_blink_connection
+
+        mock_connection = create_mock_blink_connection()
         mock_connection.blink = None
         mock_ensure.return_value = mock_connection
 
@@ -257,7 +261,9 @@ class TestCameraHandlers(BaseTestCase):
         from tests.test_base import create_mock_blink_instance
 
         mock_blink = create_mock_blink_instance(cameras=None)
-        mock_connection = Mock(spec=callable)
+        from tests.test_base import create_mock_blink_connection
+
+        mock_connection = create_mock_blink_connection()
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
 

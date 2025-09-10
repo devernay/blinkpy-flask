@@ -573,7 +573,8 @@ class TestLoggingConfig(BaseTestCase):
         mock_file_handler = Mock(spec=logging.Handler)
         mock_file.return_value = mock_file_handler
 
-        from blinkapp import initialize_cache_paths, setup_logging
+        from blinkapp.services.cache_service import initialize_cache_paths
+        from blinkapp.utils.logging_config import setup_logging
 
         # Initialize cache paths before logging setup
         initialize_cache_paths()
