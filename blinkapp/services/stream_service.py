@@ -70,7 +70,7 @@ def initialize_stream_manager(
 
     if manager_factory is None:
 
-        def default_factory(config: Config) -> StreamManager:
+        def default_factory(config: HLSStreamConfig) -> StreamManager:
             """Default factory function for creating StreamManager instances.
 
             Args:
@@ -92,17 +92,20 @@ def initialize_stream_manager(
     stream_manager = manager_factory(stream_config)
 
 
-def create_stream_manager(**kwargs: object) -> StreamManager:
+def create_stream_manager(config: HLSStreamConfig | None = None) -> StreamManager:
     """Factory function for stream manager - easily mockable.
+
+    Args:
+        config: Optional HLS stream configuration.
 
     Returns:
         StreamManager: New StreamManager instance with provided configuration.
     """
-    return StreamManager(**kwargs)
+    return StreamManager(config)
 
 
 def ensure_stream_manager_initialized(
-    manager_factory: CallableType[[Config], StreamManager] | None = None,
+    manager_factory: CallableType[[HLSStreamConfig], StreamManager] | None = None,
 ) -> StreamManager:
     """Ensure stream manager is initialized.
 

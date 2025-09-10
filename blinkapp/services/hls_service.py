@@ -86,8 +86,8 @@ class HLSStreamConfig:
 
 
 def _create_ffmpeg_process(
-    cmd: list[str], process_factory: type[subprocess.Popen] | None = None
-) -> subprocess.Popen | None:
+    cmd: list[str], process_factory: type[subprocess.Popen[bytes]] | None = None
+) -> subprocess.Popen[bytes] | None:
     """Create FFmpeg process with injectable factory."""
     if process_factory is None:
         process_factory = subprocess.Popen

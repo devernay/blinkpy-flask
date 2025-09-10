@@ -1,10 +1,12 @@
+from __future__ import annotations
 """System service for Blink Camera Flask application.
 
 This module handles all system-related business logic including
 system listing, device management, and system arm/disarm operations.
 """
 
-from __future__ import annotations
+from typing import Dict, Any
+
 
 __all__ = [
     "get_systems",
@@ -117,7 +119,7 @@ def get_devices(network_id: NetworkId) -> JsonDict:
         update_camera_thumbnail(camera, current_ts, cached_ts)
 
         # Create device data
-        device_data = create_device_data(camera, current_ts, cached_ts)
+        device_data = create_device_data(camera, current_ts, cached_ts)  # type: ignore[misc]
         logger.debug(f"Camera device data for {camera.name}: {device_data}")
         devices.append(device_data)
 

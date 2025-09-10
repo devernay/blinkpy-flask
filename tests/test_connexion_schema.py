@@ -20,7 +20,7 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
     def setUp(self) -> None:
         """Load OpenAPI spec and extract schemas."""
-        test_dir = os.path.dirname(os.path.abspath(__file__))
+        test_dir = os.path.dirname(os.path.abspath(__file__))  # type: ignore[misc]
         project_root = os.path.dirname(test_dir)
         api_path = os.path.join(project_root, "api.json")
 
@@ -96,7 +96,7 @@ class TestConnexionSchemaValidation(unittest.TestCase):
             patch("blinkapp.services.device_service.create_device_data") as mock_device,
         ):
             # Mock blink connection
-            mock_blink_obj = create_mock_blink_instance()
+            mock_blink_obj = create_mock_blink_instance()  # type: ignore[misc]
             mock_blink_obj.cameras = {}
             mock_connection.return_value = create_mock_blink_connection()
             mock_connection.return_value.blink = mock_blink_obj

@@ -59,5 +59,9 @@ def setup_settings_routes(app: Flask) -> None:
         from ..connexion_handlers.settings import update_user_settings
 
         # Flask 3.x: Use getattr to access LocalProxy method
-        body = getattr(request, "get_json")() or {}  # noqa: B009  # Flask compatibility - access LocalProxy method
+        body_raw = getattr(request, "get_json")() or {}  # noqa: B009  # Flask compatibility - access LocalProxy method
+        # Type narrowing: ensure we have a dict
+        if not isinstance(body_raw, dict):
+            body_raw = {}
+        body: JsonDict = body_raw
         return update_user_settings(body)

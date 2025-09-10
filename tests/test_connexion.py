@@ -23,7 +23,7 @@ class TestConnexionIntegration(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test with correct path to api.json."""
         # Change to project root directory
-        test_dir = os.path.dirname(os.path.abspath(__file__))
+        test_dir = os.path.dirname(os.path.abspath(__file__))  # type: ignore[misc]
         self.project_root = os.path.dirname(test_dir)
         self.api_path = os.path.join(self.project_root, "api.json")
 

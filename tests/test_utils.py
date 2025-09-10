@@ -521,7 +521,7 @@ class TestErrors(BaseTestCase):
         from unittest.mock import Mock
 
         # Test accessing non-existent attributes
-        mock_obj = Mock(spec=object)
+        mock_obj = Mock(spec=object)  # type: ignore[misc]
 
         # This should not raise AttributeError due to Mock
         result = getattr(mock_obj, "nonexistent_attr", "default")
@@ -568,10 +568,10 @@ class TestLoggingConfig(BaseTestCase):
         import tempfile
         from unittest.mock import Mock
 
-        mock_logger_instance = Mock(spec=logging.Logger)
+        mock_logger_instance = Mock(spec=logging.Logger)  # type: ignore[misc]
         mock_logger_instance.handlers = []
         mock_logger.return_value = mock_logger_instance
-        mock_file_handler = Mock(spec=logging.Handler)
+        mock_file_handler = Mock(spec=logging.Handler)  # type: ignore[misc]
         mock_file.return_value = mock_file_handler
 
         from blinkapp.services.cache_service import initialize_cache_paths

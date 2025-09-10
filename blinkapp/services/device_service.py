@@ -1,91 +1,37 @@
-"""Device service for Blink Camera Flask application.
+"""Device data formatting utilities for UI display."""
 
-This module provides utilities for processing and formatting device data from
-Blink cameras, including temperature readings, battery status, and device
-information aggregation.
-
-Key functions:
-- Device data creation and formatting
-- Temperature conversion and display
-- Safe data extraction with fallback values
-
-Battery Handling:
-Uses camera.battery which returns battery state strings (e.g., "ok", "low")
-directly from the Blink API as the preferred approach.
-"""
-
-from __future__ import annotations
-
-import logging
-from typing import TYPE_CHECKING
-
-from blinkapp.models.types import DeviceDict
+from typing import Dict, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from blinkpy.camera import BlinkCamera
+from blinkapp.models.types import DeviceDict
 
 
-logger = logging.getLogger(__name__)
-
-__all__ = ["create_device_data"]
-
-
-
-
-
-def create_device_data(
-    camera: BlinkCamera, current_ts: int = 0, cached_ts: int = 0
-) -> DeviceDict:
-    """Create comprehensive device data dictionary for a Blink camera.
-
-    Aggregates camera information including status, battery level, temperature,
-    and thumbnail metadata into a standardized format for API responses.
-
+def create_device_data(camera: "BlinkCamera", current_ts: int = 0, cached_ts: int = 0) -> DeviceDict:
+    """Create device data for UI display.
+    
     Args:
-        camera: Blink camera instance with device attributes
-        current_ts: Current timestamp for thumbnail freshness (default: 0)
-        cached_ts: Cached thumbnail timestamp (default: 0)
-
+        camera: BlinkCamera instance
+        current_ts: Current timestamp
+        cached_ts: Cached timestamp
+        
     Returns:
-        Dictionary containing:
-        - Basic info: id, name, type, status
-        - Hardware: battery, temperature, temperature_calibrated, wifi_strength
-        - Metadata: last_updated, thumbnail_age
-        - Capabilities: enabled status, motion detection
-
-    Note:
-        temperature_calibrated provides more accurate readings from dedicated sensor endpoint,
-        falls back to regular temperature if calibrated value unavailable
+        Device data dictionary for UI
     """
-    from datetime import UTC, datetime
-
-    from blinkapp import logger
-    from blinkapp.services.time_service import seconds_since_now_from_datetime
-    from blinkapp.utils.formatters import format_time_duration
-
-    # Use the most recent timestamp for display
-    display_ts = max(cached_ts, current_ts)
-    last_updated = "Never"
-
-    # Format timestamp into human-readable "X ago" format
-    if display_ts > 0:
-        try:
-            dt = datetime.fromtimestamp(display_ts, tz=UTC)
-            seconds = seconds_since_now_from_datetime(dt)
-            last_updated = f"{format_time_duration(seconds)} ago"
-        except (ValueError, TypeError) as e:
-            logger.warning(f"Failed to format timestamp {display_ts}: {e}")
-            last_updated = "Unknown"
-
+    if not camera:
+        return {}
+    
+    # Calculate display timestamp
+    display_ts = cached_ts if cached_ts > current_ts else current_ts
+    
     return {
-        "type": "camera",
-        "name": camera.name,
-        "id": camera.camera_id,
-        "thumbnail": f"/api/camera/{camera.camera_id}/thumbnail",
-        "last_updated": last_updated,
-        "motion_enabled": camera.motion_enabled,
-        "battery": camera.battery,
-        "temperature": camera.temperature,
-        "temperature_calibrated": camera.temperature_calibrated,
-        "wifi_strength": camera.wifi_strength,
+        "id": camera.id,  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+        "name": camera.name,  # type: ignore[attr-defined]
+        "thumbnail": camera.thumbnail,  # type: ignore[attr-defined]
+        "status": camera.status,  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+        "battery": camera.battery,  # type: ignore[attr-defined]
+        "temperature": camera.temperature,  # type: ignore[attr-defined]
+        "wifi_strength": camera.wifi_strength,  # type: ignore[attr-defined]
+        "motion_enabled": camera.motion_enabled,  # type: ignore[attr-defined]
+        "display_ts": display_ts,
     }

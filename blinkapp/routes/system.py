@@ -78,7 +78,7 @@ def setup_system_routes(app: Flask) -> None:
 
         # Flask 3.x: Use getattr to access LocalProxy method
         body_data = getattr(request, "get_json")()  # noqa: B009  # Flask compatibility - access LocalProxy method
-        body = body_data if isinstance(body_data, dict) else {}
+        body: JsonDict = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 
     @app.route("/api/systems/<network_id>/devices")

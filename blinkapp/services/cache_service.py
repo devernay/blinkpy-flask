@@ -125,7 +125,7 @@ def get_cache_stats() -> dict[str, dict[str, int | float]]:
     Returns:
         Dictionary with statistics for each cache type
     """
-    stats = {}
+    stats: dict[str, dict[str, int | float]] = {}
 
     camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
     if camera_thumbnail_cache:
@@ -290,7 +290,9 @@ def initialize_cache_paths() -> None:
     try:
         from flask import current_app
 
-        cache_dir_config = current_app.config.get("CACHE_DIR", Config.DEFAULT_CACHE_DIR)
+        cache_dir_config: str = current_app.config.get(
+            "CACHE_DIR", Config.DEFAULT_CACHE_DIR
+        )
     except RuntimeError:
         cache_dir_config = Config.DEFAULT_CACHE_DIR
 

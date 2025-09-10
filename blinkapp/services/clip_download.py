@@ -1,10 +1,12 @@
+from __future__ import annotations
 """Clip download service for Blink Camera Flask application.
 
 This module handles downloading clips from both cloud and local storage,
 including common download functionality and content retrieval.
 """
 
-from __future__ import annotations
+from typing import Dict, Any, Tuple, Optional
+
 
 __all__ = [
     "download_cloud_clip",

@@ -20,7 +20,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from blinkpy.auth import BlinkSession
+    from blinkpy.auth import Auth
 
     from blinkapp.services.blink_connection import BlinkConnection
 
@@ -61,7 +61,7 @@ def cleanup_blink_instances() -> None:
 
 
 def initialize_blink_instance(
-    session_obj: BlinkSession, blink_factory: type[Blink] | None = None
+    session_obj: Auth, blink_factory: type[Blink] | None = None
 ) -> Blink:
     """Create and set the global blink instance with the provided session.
 

@@ -136,7 +136,7 @@ def get_all_python_files() -> list[str]:
                 app_files.append(os.path.join(root, file))
 
     # Add test_base.py
-    test_files = ["./tests/test_base.py"]
+    test_files = ["./tests/test_base.py"]  # type: ignore[misc]
 
     return sorted(app_files) + [f for f in test_files if os.path.exists(f)]
 

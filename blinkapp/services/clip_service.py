@@ -164,7 +164,7 @@ def process_cloud_clips(
                 clips_cache_instance[clip_id] = cache_entry
 
             # Build standardized clip object for UI consumption
-            clip_data = {
+            clip_data: JsonDict = {
                 "id": str(clip_id),
                 "camera_name": video.get("device_name", "Unknown"),
                 "system_name": Config.DEFAULT_SYSTEM_NAME,
@@ -270,7 +270,7 @@ def process_local_clips(
                                 thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
 
                         # Build standardized clip object for UI
-                        clip_data = {
+                        clip_data: JsonDict = {
                             "id": str(clip_id),
                             "camera_name": item.name,
                             "system_name": sync_name,

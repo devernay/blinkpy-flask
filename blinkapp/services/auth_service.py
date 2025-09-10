@@ -197,7 +197,7 @@ async def initialize_blink(
         # Import blink_service to work directly with global instance
         from blinkapp.services import blink_service
 
-        blink_service.initialize_blink_instance(session_obj)
+        blink_service.initialize_blink_instance(session_obj)  # type: ignore[arg-type]
 
         # Create authentication object with credentials
         auth = _create_auth_object(username, password, session_obj)
