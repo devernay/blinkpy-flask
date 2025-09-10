@@ -177,7 +177,7 @@ The development environment should include modern tooling for code quality:
 - Code formatting with ruff and type checking with pyright
 - Complete google-style docstrings in the app code
 
-The code must use type hints everywhere, and avoid usage of "Any", "object", "getattr", "hasattr", "cast", "# type: ignore" and other constructs that affect negatively strong typing. Type narrowing using isinstance or assert is good practice.
+The code must use type hints everywhere, and avoid usage of "Any", "object", "getattr", "hasattr", "cast", "# type: ignore" and other constructs that affect negatively strong typing. It's OK if generic functions use Any, but it's better to use template arguments (this is Python 3.12, but pyright has limited support for these). It's ok to use Any for args and kwargs. Type narrowing using isinstance or assert is good practice.
 When checking and fixing code quality fix those issue in that order:
 1. fix "ruff check" errors and warnings in the main code and the test code. Don't stop until every error and warning is fixed.
 2. fix "pyright" errors in the main code. Don't stop until every error and warning is fixed.

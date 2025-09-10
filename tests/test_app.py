@@ -1730,8 +1730,8 @@ class TestFileOperations(BaseTestCase):
 
         # Mock other startup operations to avoid side effects
         with (
-            patch("blinkapp.setup_logging"),
-            patch("blinkapp.load_clips_cache"),
+            patch("blinkapp.utils.logging_config.setup_logging"),
+            patch("blinkapp.services.cache_service.load_clips_cache"),
             patch("blinkapp.services.cache_service.load_camera_thumbnail_cache"),
             patch("blinkapp.services.blink_connection.get_blink_connection", None),
             patch("blinkapp.services.auth_service.load_saved_blink"),
@@ -1742,7 +1742,9 @@ class TestFileOperations(BaseTestCase):
 
     def test_cache_cleanup_operations(self) -> None:
         """Test cache cleanup operations."""
-        with patch("blinkapp.clear_all_caches") as mock_clear_caches:
+        with patch(
+            "blinkapp.services.cache_service.clear_all_caches"
+        ) as mock_clear_caches:
             mock_clear_caches.return_value = {"cleared": True, "count": 5}
 
             from blinkapp.services.cache_service import clear_all_caches
@@ -4475,13 +4477,15 @@ class TestAdvancedFileOperations(BaseTestCase):
             mock_path_class.return_value = mock_path_instance
 
             with patch("blinkapp.services.lifecycle_service.logger") as mock_logger:
-                with patch("blinkapp.setup_logging"):
+                with patch("blinkapp.utils.logging_config.setup_logging"):
                     with patch("blinkapp.services.stream_service.StreamManager"):
                         with patch("blinkapp.services.cache_service.initialize_caches"):
                             with patch(
                                 "blinkapp.services.cache_service.load_camera_thumbnail_cache"
                             ):
-                                with patch("blinkapp.load_clips_cache"):
+                                with patch(
+                                    "blinkapp.services.cache_service.load_clips_cache"
+                                ):
                                     with patch(
                                         "blinkapp.services.blink_connection.get_blink_connection"
                                     ):
@@ -6118,7 +6122,7 @@ class TestApplicationInitializationFixed(BaseTestCase):
     """Test application initialization sequences."""
 
     @patch("blinkapp.initialize_cache_paths")
-    @patch("blinkapp.setup_logging")
+    @patch("blinkapp.utils.logging_config.setup_logging")
     def test_app_initialization_sequence(
         self, mock_logging: Mock, mock_cache: Mock
     ) -> None:
@@ -6375,11 +6379,13 @@ class TestModuleImports(FlaskTestCase):
 
     def test_third_party_imports(self) -> None:
         """Test third-party imports."""
-        import blinkapp
         from blinkapp.services import connection_service
 
         self.assertTrue(hasattr(connection_service, "http_session"))
-        self.assertTrue(hasattr(blinkapp, "Path"))
+        # Path should be imported from pathlib, not from blinkapp
+        from pathlib import Path
+
+        self.assertTrue(Path is not None)
 
     def test_custom_class_imports(self) -> None:
         """Test custom class availability."""

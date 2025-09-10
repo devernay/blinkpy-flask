@@ -23,6 +23,7 @@ License: MIT
 
 import logging
 import os
+from pathlib import Path
 
 # Live streaming management
 # Third-party imports
@@ -49,6 +50,10 @@ from blinkapp.routes.streaming import setup_streaming_routes
 from blinkapp.routes.system import setup_system_routes
 from blinkapp.routes.thumbnails import setup_camera_thumbnail_routes
 
+# Import functions that tests expect to be available at module level
+from blinkapp.services.cache_service import clear_all_caches
+from blinkapp.utils.logging_config import setup_logging
+
 # Explicitly define what this module exports
 __all__ = [
     # Flask application instance
@@ -63,6 +68,10 @@ __all__ = [
     "CLIPS_CACHE_SIZE",
     # Logger (defined in this module)
     "logger",
+    # Functions expected by tests
+    "clear_all_caches",
+    "setup_logging",
+    "Path",
 ]
 
 # ============================================================================

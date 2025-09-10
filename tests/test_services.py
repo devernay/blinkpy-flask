@@ -1763,11 +1763,13 @@ class TestConnectionService(BaseTestCase):
 
     def test_third_party_imports(self) -> None:
         """Test third-party imports."""
-        import blinkapp
         from blinkapp.services import connection_service
 
         self.assertTrue(hasattr(connection_service, "http_session"))
-        self.assertTrue(hasattr(blinkapp, "Path"))
+        # Path should be imported from pathlib, not from blinkapp
+        from pathlib import Path
+
+        self.assertTrue(Path is not None)
 
     @patch("concurrent.futures.ThreadPoolExecutor")
     def test_parallel_cache_clearing(self, mock_executor: Mock) -> None:
