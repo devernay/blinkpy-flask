@@ -3047,6 +3047,7 @@ class TestApplicationInitialization(BaseTestCase):
         from blinkapp.services.cache_service import initialize_cache_paths
         from tests.test_base import create_mock_path
 
+        # Patch pathlib.Path globally since it's imported locally in the function
         with patch("pathlib.Path") as mock_path_class:
             # Create mock path instances
             mock_cache_dir = create_mock_path("cache_dir", "/tmp/cache")
@@ -3058,11 +3059,15 @@ class TestApplicationInitialization(BaseTestCase):
 
             mock_path_class.return_value = mock_cache_dir
 
-            initialize_cache_paths()
+            # Mock Flask app context to avoid RuntimeError
+            with patch("flask.current_app") as mock_app:
+                mock_app.config.get.return_value = "/tmp/test_cache"
+                
+                initialize_cache_paths()
 
-            # Should have called Path constructor and mkdir
-            mock_path_class.assert_called()
-            mock_cache_dir.mkdir.assert_called()
+                # Should have called Path constructor and mkdir
+                mock_path_class.assert_called()
+                mock_cache_dir.mkdir.assert_called()
 
     def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
