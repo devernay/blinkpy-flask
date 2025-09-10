@@ -252,6 +252,9 @@ def create_mock_camera(
         mock_camera.battery_voltage = battery_voltage
     if armed is not None:
         mock_camera.armed = armed
+        mock_camera.arm = armed  # Add arm property for device_service compatibility
+    else:
+        mock_camera.arm = True  # Default arm status
     if enabled is not None:
         mock_camera.enabled = enabled
 

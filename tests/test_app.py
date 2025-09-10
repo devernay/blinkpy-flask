@@ -6126,7 +6126,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 class TestApplicationInitializationFixed(BaseTestCase):
     """Test application initialization sequences."""
 
-    @patch("blinkapp.initialize_cache_paths")
+    @patch("blinkapp.services.cache_service.initialize_cache_paths")
     @patch("blinkapp.utils.logging_config.setup_logging")
     def test_app_initialization_sequence(
         self, mock_logging: Mock, mock_cache: Mock
