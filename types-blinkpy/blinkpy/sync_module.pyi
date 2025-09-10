@@ -1,4 +1,5 @@
 # Stubs for blinkpy.sync_module module
+import datetime
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import ClientResponse
@@ -8,21 +9,6 @@ from .camera import BlinkCamera
 
 if TYPE_CHECKING:
     from .blinkpy import Blink
-
-class LocalStorageMediaItem:
-    """Local storage media item for Blink systems."""
-
-    id: int
-    name: str
-    size: int
-    created_at: str
-    updated_at: str
-    thumbnail: str | None
-
-    def __init__(self, data: dict[str, Any]) -> None: ...
-    def url(self) -> str: ...
-    @property
-    def attributes(self) -> dict[str, Any]: ...
 
 class BlinkSyncModule:
     """Sync module class for Blink systems."""
@@ -126,3 +112,55 @@ class BlinkLotus(BlinkSyncModule):
     """Blink Lotus sync module class."""
 
     pass
+
+class LocalStorageMediaItem:
+    """Metadata of media item in the local storage manifest."""
+
+    # Private attributes
+    _id: int
+    _camera_name: str
+    _created_at: datetime.datetime
+    _size: int
+    _url_template: str
+    _manifest_id: str
+
+    def __init__(
+        self,
+        item_id: str | int,
+        camera_name: str,
+        created_at: str,
+        size: int,
+        manifest_id: str,
+        url_template: str,
+    ) -> None: ...
+
+    # Properties
+    @property
+    def id(self) -> int: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def created_at(self) -> datetime.datetime: ...
+    @property
+    def size(self) -> int: ...
+    @property
+    def url(self, manifest_id: str | None = None) -> str: ...
+
+    # Methods
+    def _build_url(self, manifest_id: str, clip_id: str) -> str: ...
+    async def prepare_download(self, blink: Blink, max_retries: int = 4) -> bool: ...
+    async def delete_video(self, blink: Blink, max_retries: int = 4) -> bool: ...
+    async def download_video(
+        self, blink: Blink, file_name: str, max_retries: int = 4
+    ) -> bool: ...
+    async def download_video_delete(
+        self, blink: Blink, file_name: str, max_retries: int = 4
+    ) -> bool: ...
+
+    # Magic methods
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+    def cmp_key(self) -> datetime.datetime: ...
+    def __eq__(self, other: object) -> bool: ...
+    def __lt__(self, other: LocalStorageMediaItem) -> bool: ...
+    def __hash__(self) -> int: ...
