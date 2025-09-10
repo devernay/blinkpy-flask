@@ -43,7 +43,6 @@ class TestCacheServiceNoIsolation:
         ):
             mkdir_mock = Mock(spec=callable)
             mock_path = create_mock_path("test_cache", mkdir_mock=mkdir_mock)
-            mock_path.__truediv__ = Mock(return_value=Mock())
             mock_path_class.return_value = mock_path
 
             real_initialize_cache_paths()
@@ -65,7 +64,6 @@ class TestCacheServiceNoIsolation:
         ):
             mkdir_mock = Mock(spec=callable)
             mock_path = create_mock_path("custom_cache", mkdir_mock=mkdir_mock)
-            mock_path.__truediv__ = Mock(return_value=Mock())
             mock_path_class.return_value = mock_path
 
             real_initialize_cache_paths()

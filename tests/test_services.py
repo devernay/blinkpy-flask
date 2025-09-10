@@ -2155,10 +2155,13 @@ class TestClipDownload(BaseTestCase):
         local_clip_id = ClipId.from_local("sync1", 123456)
         mock_blink = create_mock_blink_instance(available=True)
 
-        mock_item = Mock()
-        mock_item.id = 123456
-        mock_item.name = "test_clip.mp4"
-        mock_item.created_at = datetime(2024, 1, 1, 12, 0, 0)
+        from tests.test_base import create_mock_clip_item
+
+        mock_item = create_mock_clip_item(
+            clip_id=123456,
+            name="test_clip.mp4",
+            created_at=datetime(2024, 1, 1, 12, 0, 0),
+        )
 
         mock_sync = Mock()
         mock_sync.local_storage = Mock()

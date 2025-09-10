@@ -53,6 +53,13 @@ def create_mock_path(
     mock_path = Mock(spec=RealPath, name=name)
     mock_path.__str__ = Mock(spec=callable, return_value=path_str)
     mock_path.exists = Mock(spec=callable, return_value=exists)
+
+    # __truediv__ should return another Path mock (avoid recursion)
+    def create_subpath(other: str) -> Mock:
+        return Mock(spec=RealPath, name=f"{name}_subpath_{other}")
+
+    mock_path.__truediv__ = Mock(spec=callable, side_effect=create_subpath)
+
     if mkdir_mock:
         mock_path.mkdir = mkdir_mock
     if unlink_mock:
