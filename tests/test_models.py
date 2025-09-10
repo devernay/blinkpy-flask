@@ -53,13 +53,13 @@ class TestBaseId(BaseTestCase):
 
     def test_valid_id_creation(self) -> None:
         """Test valid ID creation and string representation."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         self.assertEqual(str(test_id), "test123")
         self.assertEqual(test_id.value, "test123")
 
     def test_numeric_id_conversion(self) -> None:
         """Test numeric ID conversion to string."""
-        test_id = self.TestId(12345)  # type: ignore[misc]
+        test_id = self.TestId(12345)
         self.assertEqual(str(test_id), "12345")
         self.assertEqual(test_id.value, "12345")
 
@@ -89,7 +89,7 @@ class TestBaseId(BaseTestCase):
 
     def test_equality_with_string(self) -> None:
         """Test ID equality with string."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         self.assertEqual(test_id, "test123")
 
     def test_inequality_with_different_id(self) -> None:
@@ -100,7 +100,7 @@ class TestBaseId(BaseTestCase):
 
     def test_inequality_with_other_types(self) -> None:
         """Test ID inequality with other types."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         self.assertNotEqual(test_id, 123)
         self.assertNotEqual(test_id, None)
 
@@ -119,48 +119,48 @@ class TestBaseId(BaseTestCase):
 
     def test_repr_format(self) -> None:
         """Test string representation format."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         repr_str = repr(test_id)
         self.assertIn("test123", repr_str)
         self.assertIn("TestId", repr_str)
 
     def test_len_method(self) -> None:
         """Test length method."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         self.assertEqual(len(test_id), 7)
 
     def test_contains_method(self) -> None:
         """Test contains method."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         self.assertIn("test", test_id)
         self.assertNotIn("xyz", test_id)
 
     def test_getitem_method(self) -> None:
         """Test getitem method."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         self.assertEqual(test_id[0], "t")
         self.assertEqual(test_id[1:5], "est1")
 
     def test_iter_method(self) -> None:
         """Test iteration over ID."""
-        test_id = self.TestId("test")  # type: ignore[misc]
+        test_id = self.TestId("test")
         chars = list(test_id)
         self.assertEqual(chars, ["t", "e", "s", "t"])
 
     def test_split_method(self) -> None:
         """Test split method."""
-        test_id = self.TestId("test_123_abc")  # type: ignore[misc]
+        test_id = self.TestId("test_123_abc")
         parts = test_id.split("_")
         self.assertEqual(parts, ["test", "123", "abc"])
 
     def test_int_conversion_valid(self) -> None:
         """Test integer conversion with valid numeric ID."""
-        test_id = self.TestId("12345")  # type: ignore[misc]
+        test_id = self.TestId("12345")
         self.assertEqual(int(test_id), 12345)
 
     def test_int_conversion_invalid(self) -> None:
         """Test integer conversion with invalid ID."""
-        test_id = self.TestId("test123")  # type: ignore[misc]
+        test_id = self.TestId("test123")
         with self.assertRaises(ValueError) as cm:
             int(test_id)
         self.assertIn("Cannot convert Test ID", str(cm.exception))
@@ -872,7 +872,7 @@ class TestThreadSafeLRUCache(BaseTestCase):
         """Test camera thumbnail cache update."""
         from unittest.mock import patch
 
-        mock_camera = create_mock_camera()  # type: ignore[misc]
+        mock_camera = create_mock_camera()
         mock_camera.name = "Test Camera"
         mock_camera.thumbnail = "http://example.com/thumb.jpg"
         mock_camera.camera_id = 12345

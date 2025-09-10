@@ -58,7 +58,7 @@ class TestSystemHandlers(BaseTestCase):
 
         from tests.test_base import create_mock_sync
 
-        mock_sync = create_mock_sync(  # type: ignore[misc]
+        mock_sync = create_mock_sync(
             network_id=12345, sync_id=67890, cameras=CaseInsensitiveDict(), online=True
         )
         mock_validator.return_value = (mock_sync, None)
@@ -97,7 +97,7 @@ class TestSystemHandlers(BaseTestCase):
 
         from tests.test_base import create_mock_sync
 
-        mock_sync = create_mock_sync(  # type: ignore[misc]
+        mock_sync = create_mock_sync(
             network_id=12345, sync_id=67890, cameras=CaseInsensitiveDict(), online=True
         )
         mock_validator.return_value = (mock_sync, None)
@@ -133,14 +133,14 @@ class TestSystemHandlers(BaseTestCase):
         """Test update_system with valid request."""
         from tests.test_base import create_mock_sync
 
-        mock_sync = create_mock_sync()  # type: ignore[misc]
+        mock_sync = create_mock_sync()
         mock_sync.async_arm.return_value = AsyncMock(spec=callable)
         mock_validator.return_value = (mock_sync, None)
 
         # Mock the connection object returned by ensure_blink_connection_initialized
         from tests.test_base import create_mock_blink_connection
 
-        mock_connection = create_mock_blink_connection(execute_return_value=None)  # type: ignore[misc]
+        mock_connection = create_mock_blink_connection(execute_return_value=None)
         mock_connection_init.return_value = mock_connection
 
         body: JsonDict = {"armed": True}
@@ -214,7 +214,7 @@ class TestCameraHandlers(BaseTestCase):
         # Mock blink connection and cameras
         from tests.test_base import create_mock_blink_instance, create_mock_camera
 
-        mock_blink = create_mock_blink_instance(  # type: ignore[misc]
+        mock_blink = create_mock_blink_instance(
             cameras={
                 "cam1": create_mock_camera(camera_id="cam1", name="Camera 1"),
                 "cam2": create_mock_camera(camera_id="cam2", name="Camera 2"),
@@ -222,7 +222,7 @@ class TestCameraHandlers(BaseTestCase):
         )
         from tests.test_base import create_mock_blink_connection
 
-        mock_connection = create_mock_blink_connection()  # type: ignore[misc]
+        mock_connection = create_mock_blink_connection()
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
 
@@ -246,7 +246,7 @@ class TestCameraHandlers(BaseTestCase):
         """Test list_cameras when blink is None."""
         from tests.test_base import create_mock_blink_connection
 
-        mock_connection = create_mock_blink_connection()  # type: ignore[misc]
+        mock_connection = create_mock_blink_connection()
         mock_connection.blink = None
         mock_ensure.return_value = mock_connection
 
@@ -260,10 +260,10 @@ class TestCameraHandlers(BaseTestCase):
         """Test list_cameras when blink has no cameras attribute."""
         from tests.test_base import create_mock_blink_instance
 
-        mock_blink = create_mock_blink_instance(cameras=None)  # type: ignore[misc]
+        mock_blink = create_mock_blink_instance(cameras=None)
         from tests.test_base import create_mock_blink_connection
 
-        mock_connection = create_mock_blink_connection()  # type: ignore[misc]
+        mock_connection = create_mock_blink_connection()
         mock_connection.blink = mock_blink
         mock_ensure.return_value = mock_connection
 
@@ -289,13 +289,13 @@ class TestClipsHandlers(BaseTestCase):
     ) -> None:
         """Test get_clips with default (cloud) storage."""
         # Setup mock blink instance
-        mock_blink_instance = create_mock_blink_instance()  # type: ignore[misc]
+        mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
 
         # Setup mock connection
         from tests.test_base import create_mock_blink_connection
 
-        mock_connection = create_mock_blink_connection(  # type: ignore[misc]
+        mock_connection = create_mock_blink_connection(
             execute_return_value=[{"id": "clip1"}]
         )
         mock_connection_init.return_value = mock_connection
@@ -323,13 +323,13 @@ class TestClipsHandlers(BaseTestCase):
     ) -> None:
         """Test get_clips with explicit cloud storage."""
         # Setup mock blink instance
-        mock_blink_instance = create_mock_blink_instance()  # type: ignore[misc]
+        mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
 
         # Setup mock connection
         from tests.test_base import create_mock_blink_connection
 
-        mock_connection = create_mock_blink_connection(  # type: ignore[misc]
+        mock_connection = create_mock_blink_connection(
             execute_return_value=[{"id": "clip1"}]
         )
         mock_connection_init.return_value = mock_connection
@@ -357,7 +357,7 @@ class TestClipsHandlers(BaseTestCase):
     ) -> None:
         """Test get_clips with local storage."""
         # Setup mocks
-        mock_blink_instance = create_mock_blink_instance()  # type: ignore[misc]
+        mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
         mock_connection.return_value = None
         mock_process.return_value = [{"date": "2024-01-01", "clips": []}]
@@ -395,7 +395,7 @@ class TestClipsHandlers(BaseTestCase):
     ) -> None:
         """Test get_clips when blink_connection is None."""
         # Setup mock blink instance
-        mock_blink_instance = create_mock_blink_instance()  # type: ignore[misc]
+        mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
 
         mock_process.return_value = []

@@ -17,7 +17,7 @@ def setup_auth_routes(app: Flask) -> None:
     """
 
     @app.route("/")
-    def main_page_route() -> Any:  # type: ignore[misc]
+    def main_page_route() -> Any:
         """Main page route - serves the main application page.
 
         Returns:
@@ -28,7 +28,7 @@ def setup_auth_routes(app: Flask) -> None:
         return main_page()
 
     @app.route("/login", methods=["GET", "POST"])
-    def login_page_route() -> Any:  # type: ignore[misc]
+    def login_page_route() -> Any:
         """Login route - handles both GET (show form) and POST (authenticate) requests.
 
         NOTE: Exception to naming convention - this route calls both login_page()
@@ -47,7 +47,7 @@ def setup_auth_routes(app: Flask) -> None:
             return authenticate_user()
 
     @app.route("/2fa", methods=["GET", "POST"])
-    def twofa_page_route() -> Any:  # type: ignore[misc]
+    def twofa_page_route() -> Any:
         """2FA route - handles both GET (show form) and POST (verify code) requests.
 
         NOTE: Exception to naming convention - this route calls both twofa_page()
@@ -66,7 +66,7 @@ def setup_auth_routes(app: Flask) -> None:
             return verify_twofa()
 
     @app.route("/logout", methods=["POST"])
-    def logout_user_route() -> Any:  # type: ignore[misc]
+    def logout_user_route() -> Any:
         """Logout route - clears user session and redirects to login page.
 
         Returns:

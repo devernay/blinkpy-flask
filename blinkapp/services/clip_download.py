@@ -1,20 +1,10 @@
-from __future__ import annotations
 """Clip download service for Blink Camera Flask application.
 
 This module handles downloading clips from both cloud and local storage,
 including common download functionality and content retrieval.
 """
 
-from typing import Dict, Any, Tuple, Optional
-
-
-__all__ = [
-    "download_cloud_clip",
-    "download_local_clip",
-    "download_clip_common",
-    "_download_cloud_clip_core",
-    "_download_cloud_clip_core_sync",
-]
+from __future__ import annotations
 
 import logging
 from pathlib import Path
@@ -25,6 +15,14 @@ from flask import send_file
 from blinkapp.config import Config
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
+
+__all__ = [
+    "download_cloud_clip",
+    "download_local_clip",
+    "download_clip_common",
+    "_download_cloud_clip_core",
+    "_download_cloud_clip_core_sync",
+]
 
 if TYPE_CHECKING:
     from blinkpy.blinkpy import Blink
