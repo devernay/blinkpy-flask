@@ -2102,13 +2102,12 @@ class TestClipDownload(BaseTestCase):
         """Test download_local_clip when no local storage."""
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
-        from tests.test_base import create_mock_blink_instance
+        from tests.test_base import create_mock_blink_instance, create_mock_sync
 
         local_clip_id = ClipId.from_local("sync1", 123456)
         mock_blink = create_mock_blink_instance(available=True)
 
-        mock_sync = Mock()
-        mock_sync.local_storage = None
+        mock_sync = create_mock_sync(local_storage=False)
         mock_blink.sync = {"sync1": mock_sync}
         mock_get_blink.return_value = mock_blink
 
@@ -2123,14 +2122,14 @@ class TestClipDownload(BaseTestCase):
         """Test download_local_clip when local item not found."""
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
-        from tests.test_base import create_mock_blink_instance
+        from tests.test_base import create_mock_blink_instance, create_mock_sync
 
         local_clip_id = ClipId.from_local("sync1", 123456)
         mock_blink = create_mock_blink_instance(available=True)
 
-        mock_sync = Mock()
-        mock_sync.local_storage = Mock()
-        mock_sync._local_storage = {"manifest": []}  # Empty manifest
+        mock_sync = create_mock_sync(
+            local_storage=True, _local_storage={"manifest": []}
+        )
         mock_blink.sync = {"sync1": mock_sync}
         mock_get_blink.return_value = mock_blink
 
