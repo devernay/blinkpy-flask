@@ -32,6 +32,8 @@ class TestCacheServiceNoIsolation:
 
     def test_initialize_cache_paths_calls_pathlib(self) -> None:
         """Test that initialize_cache_paths calls pathlib.Path correctly."""
+        from tests.test_base import create_mock_path
+
         with (
             strict_patch("pathlib.Path") as mock_path_class,
             strict_patch(
@@ -39,18 +41,21 @@ class TestCacheServiceNoIsolation:
                 return_value="/test/cache",
             ),
         ):
-            mock_path = Mock()
-            mock_path_class.return_value = mock_path
+            mkdir_mock = Mock(spec=callable)
+            mock_path = create_mock_path("test_cache", mkdir_mock=mkdir_mock)
             mock_path.__truediv__ = Mock(return_value=Mock())
+            mock_path_class.return_value = mock_path
 
             real_initialize_cache_paths()
 
             # Verify pathlib.Path was called
             assert mock_path_class.called, "pathlib.Path should have been called"
-            assert mock_path.mkdir.called, "mkdir should have been called"
+            assert mkdir_mock.called, "mkdir should have been called"
 
     def test_initialize_cache_paths_with_config(self) -> None:
         """Test cache path initialization with app config (non-isolated version)."""
+        from tests.test_base import create_mock_path
+
         with (
             strict_patch("pathlib.Path") as mock_path_class,
             strict_patch(
@@ -58,12 +63,13 @@ class TestCacheServiceNoIsolation:
                 return_value="/custom/cache",
             ),
         ):
-            mock_path = Mock()
-            mock_path_class.return_value = mock_path
+            mkdir_mock = Mock(spec=callable)
+            mock_path = create_mock_path("custom_cache", mkdir_mock=mkdir_mock)
             mock_path.__truediv__ = Mock(return_value=Mock())
+            mock_path_class.return_value = mock_path
 
             real_initialize_cache_paths()
 
             # Should have created Path instances and called mkdir
             mock_path_class.assert_called()
-            mock_path.mkdir.assert_called()
+            mkdir_mock.assert_called()
