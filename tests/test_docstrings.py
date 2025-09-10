@@ -168,9 +168,9 @@ class TestDocstrings:
             issue_summary = "\n".join(f"  {issue}" for issue in all_issues)
             pytest.fail(
                 f"Found {len(all_issues)} docstring issues:\n{issue_summary}\n\n"
-                f"All public functions and classes must have complete Google-style docstrings "
-                f"with Args sections (for functions with parameters) and Returns sections "
-                f"(for functions with return types)."
+                + "All public functions and classes must have complete Google-style docstrings "
+                + "with Args sections (for functions with parameters) and Returns sections "
+                + "(for functions with return types)."
             )
 
     def test_docstring_examples(self) -> None:

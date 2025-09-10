@@ -940,7 +940,7 @@ class TestCameraThumbnailCache(BaseTestCase):
         invalid_entry = CameraThumbnailCacheEntry(
             timestamp=0, filename="test.jpg"
         )  # Use valid type
-        invalid_entry["timestamp"] = (  # type: ignore[typeddict-item]
+        invalid_entry["timestamp"] = (
             "invalid"  # Intentionally set invalid type to test error handling
         )
         self.cache[self.camera_id] = invalid_entry

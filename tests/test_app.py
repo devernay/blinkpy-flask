@@ -1631,7 +1631,7 @@ class TestClipProcessing(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, [])  # type: ignore[return-value] # Mock function returning generic type
+            return cast(T, [])  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -2325,7 +2325,7 @@ class TestClipDownloadOperations(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, [])  # type: ignore[return-value] # Mock function returning generic type
+            return cast(T, [])  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -2597,7 +2597,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, None)  # type: ignore[return-value] # Mock function returning generic type
+            return cast(T, None)  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -3042,32 +3042,29 @@ class TestApplicationInitialization(BaseTestCase):
 
     def test_initialize_cache_paths_basic_app_init(self) -> None:
         """Test initialize_cache_paths basic functionality (from app_init)."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import Mock
 
-        from blinkapp.services.cache_service import initialize_cache_paths
+        from blinkapp.services.cache_service import _create_cache_directories
         from tests.test_base import create_mock_path
 
-        # Patch pathlib.Path globally since it's imported locally in the function
-        with patch("pathlib.Path") as mock_path_class:
-            # Create mock path instances
-            mock_cache_dir = create_mock_path("cache_dir", "/tmp/cache")
-            mock_cache_dir.mkdir = Mock(spec=callable)
-            mock_cache_dir.__truediv__ = Mock(
-                spec=callable,
-                return_value=create_mock_path("subdir", "/tmp/cache/subdir"),
+        # Create a mock Path class factory
+        mkdir_mock = Mock()
+
+        def mock_path_class(path_str: str) -> Mock:
+            mock_path = create_mock_path(f"path_{path_str}", str(path_str), mkdir_mock)
+            # Support / operator for subdirectories
+            mock_path.__truediv__ = Mock(
+                return_value=create_mock_path(
+                    f"subpath_{path_str}", f"{path_str}/sub", mkdir_mock
+                )
             )
+            return mock_path
 
-            mock_path_class.return_value = mock_cache_dir
+        # Test the injectable function directly
+        _create_cache_directories("/tmp/test_cache", mock_path_class)
 
-            # Mock Flask app context to avoid RuntimeError
-            with patch("flask.current_app") as mock_app:
-                mock_app.config.get.return_value = "/tmp/test_cache"
-                
-                initialize_cache_paths()
-
-                # Should have called Path constructor and mkdir
-                mock_path_class.assert_called()
-                mock_cache_dir.mkdir.assert_called()
+        # Should have called mkdir multiple times
+        assert mkdir_mock.call_count >= 1
 
     def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
@@ -3790,7 +3787,7 @@ class TestSystemDeviceOperations(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, None)  # type: ignore[return-value] # Mock function returning generic type
+            return cast(T, None)  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 

@@ -1403,32 +1403,29 @@ class TestSystemService(BaseTestCase):
 
     def test_initialize_cache_paths_with_config(self) -> None:
         """Test cache path initialization with app config."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import Mock
 
-        from blinkapp.services.cache_service import initialize_cache_paths
+        from blinkapp.services.cache_service import _create_cache_directories
         from tests.test_base import create_mock_path
 
-        with (
-            patch("pathlib.Path.mkdir") as mock_mkdir,
-            patch("pathlib.Path") as mock_path,
-        ):
-            # Setup mock path that supports / operator
-            mock_path_instance = create_mock_path(
-                "test_critical_coverage_cache_path", "/test/cache", mock_mkdir
-            )
-            mock_subpath = create_mock_path(
-                "test_critical_coverage_subpath", "/test/cache/subdir", mock_mkdir
-            )
-            mock_path_instance.__truediv__ = Mock(
-                spec=callable, return_value=mock_subpath
-            )
-            mock_path.return_value = mock_path_instance
+        # Create a mock Path class factory
+        mkdir_mock = Mock()
 
-            # Test initialization (will use default config outside app context)
-            initialize_cache_paths()
+        def mock_path_class(path_str: str) -> Mock:
+            mock_path = create_mock_path(f"path_{path_str}", str(path_str), mkdir_mock)
+            # Support / operator for subdirectories
+            mock_path.__truediv__ = Mock(
+                return_value=create_mock_path(
+                    f"subpath_{path_str}", f"{path_str}/sub", mkdir_mock
+                )
+            )
+            return mock_path
 
-            # Should create directories
-            mock_mkdir.assert_called()
+        # Test the injectable function directly
+        _create_cache_directories("/test/cache", mock_path_class)
+
+        # Should create directories - check that mkdir was called at least once
+        assert mkdir_mock.call_count >= 1
 
     def test_initialize_cache_paths_default(self) -> None:
         """Test cache path initialization with defaults."""

@@ -14,6 +14,8 @@ __all__ = [
     "get_cache_stats",
     "load_camera_thumbnail_cache",
     "initialize_cache_paths",
+    "_get_cache_dir_config",
+    "_create_cache_directories",
     "clear_all_caches",
     "clear_camera_thumbnail_cache_files",
     "clear_clips_cache_files",
@@ -26,6 +28,7 @@ __all__ = [
 ]
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from blinkpy.camera import BlinkCamera
@@ -280,11 +283,8 @@ def load_camera_thumbnail_cache() -> None:
 
 
 # Cache management functions merged from cache_management.py
-def initialize_cache_paths() -> None:
-    """Initialize cache directory paths from Flask config or defaults."""
-    from pathlib import Path
-
-    import blinkapp
+def _get_cache_dir_config() -> str:
+    """Get cache directory configuration from Flask app or defaults."""
     from blinkapp.config import Config
 
     try:
@@ -303,7 +303,20 @@ def initialize_cache_paths() -> None:
     except RuntimeError:
         cache_dir_config = Config.DEFAULT_CACHE_DIR
 
-    cache_dir = Path(cache_dir_config)
+    return cache_dir_config
+
+
+def _create_cache_directories(cache_dir_config: str, path_factory: Any = None) -> None:
+    """Create cache directories and set global variables."""
+    from pathlib import Path as DefaultPath
+
+    import blinkapp
+    from blinkapp.config import Config
+
+    # Use injected path factory or default
+    PathClass = path_factory if path_factory is not None else DefaultPath
+
+    cache_dir = PathClass(cache_dir_config)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     blinkapp.CACHE_DIR = str(cache_dir)
@@ -313,9 +326,15 @@ def initialize_cache_paths() -> None:
     blinkapp.HLS_OUTPUT_DIR = str(cache_dir / "hls")
     blinkapp.SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
 
-    Path(blinkapp.THUMBNAIL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
-    Path(blinkapp.CLIPS_CACHE_DIR).mkdir(parents=True, exist_ok=True)
-    Path(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    PathClass(blinkapp.THUMBNAIL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    PathClass(blinkapp.CLIPS_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    PathClass(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+
+
+def initialize_cache_paths() -> None:
+    """Initialize cache directory paths from Flask config or defaults."""
+    cache_dir_config = _get_cache_dir_config()
+    _create_cache_directories(cache_dir_config)
 
 
 def clear_all_caches() -> dict[str, str]:

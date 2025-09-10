@@ -315,7 +315,7 @@ class TestValidators(BaseTestCase):
             with self.assertRaises(ValueError):
                 validate_camera_id("")
             with self.assertRaises((ValueError, TypeError)):
-                validate_camera_id(None)  # type: ignore
+                validate_camera_id(None)  # Testing None input handling
             with self.assertRaises(ValueError):
                 validate_camera_id("invalid@camera")
         except ImportError:
@@ -396,7 +396,7 @@ class TestValidators(BaseTestCase):
         self.assertFalse(is_valid_email_format("@domain.com"))
         self.assertFalse(is_valid_email_format("user@"))
         # Test None input - function handles None gracefully but type checker doesn't know this
-        self.assertFalse(is_valid_email_format(None))  # type: ignore[arg-type] # Testing None input handling
+        self.assertFalse(is_valid_email_format(None))  # Testing None input handling
 
     def test_credential_validation_comprehensive(self) -> None:
         """Test credential validation comprehensively."""

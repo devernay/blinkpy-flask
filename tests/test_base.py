@@ -120,7 +120,7 @@ def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:
         if symbol not in module.__all__:
             raise ValueError(
                 f"Symbol '{symbol}' is not exported by module '{module_path}'. "
-                f"Available exports: {sorted(module.__all__)}"
+                + f"Available exports: {sorted(module.__all__)}"
             )
 
     return original_patch(target, *args, **kwargs)

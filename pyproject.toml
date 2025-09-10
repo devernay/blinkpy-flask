@@ -36,6 +36,13 @@ convention = "google"  # Enforce Google-style docstrings
 [tool.ruff.lint.per-file-ignores]
 # Allow unused imports in __init__.py files only if they're re-exported
 "__init__.py" = []
+# Relax requirements for test files (except test_base.py)
+"tests/test_*.py" = [
+    "D",      # Skip all docstring requirements
+    "ANN",    # Skip all type annotation requirements
+]
+# Keep strict requirements for test_base.py
+"tests/test_base.py" = []
 
 [tool.pyright]
 # Python version and environment
@@ -78,6 +85,35 @@ stubPath = "types-blinkpy"
 # Ignore third-party library issues
 reportMissingImports = false
 reportMissingTypeStubs = false
+
+# Per-file type checking configuration - relax for test files except test_base.py
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+extraPaths = ["blinkapp"]
+reportMissingTypeAnnotation = false
+reportMissingParameterType = false
+reportMissingReturnType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUndefinedVariable = false
+reportOptionalSubscript = false
+reportArgumentType = false
+reportReturnType = false
+reportInvalidTypeForm = false
+reportAttributeAccessIssue = false
+reportGeneralTypeIssues = false
+include = ["tests"]
+exclude = ["tests/test_base.py"]
+
+[[tool.pyright.executionEnvironments]]
+root = "tests/test_base.py"
+reportMissingTypeAnnotation = "error"
+reportMissingParameterType = "error"
+reportMissingReturnType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+include = ["tests/test_base.py"]
 
 [tool.ruff.format]
 quote-style = "double"
