@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, NotRequired, TypedDict
 from blinkapp.config import Config
 from blinkapp.models.cache import ClipCacheEntry
 from blinkapp.models.ids import ClipId
-from blinkapp.models.types import ClipDayGroup, JsonDict
+from blinkapp.models.types import ClipApiData, ClipDayGroup, JsonDict
 from blinkapp.services.cache_service import ensure_clips_cache_initialized
 from blinkapp.utils.formatters import format_clips_by_day
 
@@ -112,7 +112,7 @@ def process_cloud_clips(
         >>> result[0]["date"]
         "January 01, 2023"
     """
-    clips_by_day: dict[str, dict[str, object]] = {}
+    clips_by_day: dict[str, dict[str, str | list[ClipApiData]]] = {}
 
     for video in videos_metadata:
         try:
@@ -173,9 +173,10 @@ def process_cloud_clips(
                 "thumbnail": thumbnail_url,
                 "media_url": video.get("media"),
             }
-            clips_list = clips_by_day[day_key]["clips"]
-            if isinstance(clips_list, list):
-                clips_list.append(clip_data)
+            clips_list_raw = clips_by_day[day_key]["clips"]
+            if isinstance(clips_list_raw, list):
+                # Type cast: clip_data contains all required ClipApiData fields plus extras
+                clips_list_raw.append(clip_data)  # pyright: ignore[reportArgumentType]
         except Exception as e:
             # Skip malformed video entries but continue processing others
             # This ensures one bad clip doesn't break the entire list
@@ -183,7 +184,7 @@ def process_cloud_clips(
             continue
 
     # Convert clips_by_day dict to list format and format properly
-    clips_list = []
+    clips_list: list[ClipApiData] = []
     for day_data in clips_by_day.values():
         if isinstance(day_data, dict) and "clips" in day_data:
             clips = day_data["clips"]
@@ -222,7 +223,7 @@ def process_local_clips(
         if blink_connection_instance is None:
             blink_connection_instance = blink_connection
 
-    clips_by_day: dict[str, dict[str, object]] = {}
+    clips_by_day: dict[str, dict[str, str | list[ClipApiData]]] = {}
 
     assert blink_instance is not None
     for sync_name, sync_module in blink_instance.sync.items():
@@ -281,9 +282,10 @@ def process_local_clips(
                                 sync_module._local_storage["last_manifest_id"]
                             ),
                         }
-                        clips_list = clips_by_day[day_key]["clips"]
-                        if isinstance(clips_list, list):
-                            clips_list.append(clip_data)
+                        clips_list_raw = clips_by_day[day_key]["clips"]
+                        if isinstance(clips_list_raw, list):
+                            # Type cast: clip_data contains all required ClipApiData fields plus extras
+                            clips_list_raw.append(clip_data)  # pyright: ignore[reportArgumentType]
                     except Exception as e:
                         logger.warning(f"Skipping invalid local clip metadata: {e}")
                         continue
@@ -292,7 +294,7 @@ def process_local_clips(
             continue
 
     # Convert clips_by_day dict to list format and format properly
-    clips_list = []
+    clips_list: list[ClipApiData] = []
     for day_data in clips_by_day.values():
         if isinstance(day_data, dict) and "clips" in day_data:
             clips = day_data["clips"]

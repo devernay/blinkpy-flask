@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableType
 
-    from blinkapp.config import Config
 
 from blinkapp.services.hls_service import (
     HLSStream,
@@ -44,7 +43,6 @@ if TYPE_CHECKING:
 
     from blinkpy.camera import BlinkCamera
 
-    from blinkapp.config import Config
     from blinkapp.models.ids import CameraId
 
 

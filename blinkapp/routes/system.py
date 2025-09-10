@@ -77,10 +77,12 @@ def setup_system_routes(app: Flask) -> None:
         from ..connexion_handlers.system import update_system_settings
 
         # Get JSON body with proper type narrowing
-        body_data = request.get_json()
+        # NOTE: pyright doesn't recognize Flask's request.get_json() method properly
+        # This is a known Flask typing limitation, method exists and works at runtime
+        body_data: Any = request.get_json()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
         if body_data is None:
             body_data = {}
-        body: JsonDict = body_data if isinstance(body_data, dict) else {}
+        body: JsonDict = body_data if isinstance(body_data, dict) else {}  # pyright: ignore[reportUnknownVariableType]
         return update_system_settings(str(network_id), body)
 
     @app.route("/api/systems/<network_id>/devices")

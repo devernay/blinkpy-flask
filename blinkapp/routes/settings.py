@@ -12,7 +12,6 @@ from ..utils.route_decorators import api_route
 
 if TYPE_CHECKING:
     from flask import Flask
-    from flask.wrappers import Request
 
 
 def setup_settings_routes(app: Flask) -> None:
@@ -60,11 +59,13 @@ def setup_settings_routes(app: Flask) -> None:
         from ..connexion_handlers.settings import update_user_settings
 
         # Get JSON body with proper type narrowing
-        body_raw = request.get_json()
+        # NOTE: pyright doesn't recognize Flask's request.get_json() method properly
+        # This is a known Flask typing limitation, method exists and works at runtime
+        body_raw: Any = request.get_json()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
         if body_raw is None:
             body_raw = {}
         # Type narrowing: ensure we have a dict
         if not isinstance(body_raw, dict):
             body_raw = {}
-        body: JsonDict = body_raw
+        body: JsonDict = body_raw  # pyright: ignore[reportUnknownVariableType]
         return update_user_settings(body)

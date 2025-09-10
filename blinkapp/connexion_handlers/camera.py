@@ -19,7 +19,7 @@ def list_cameras() -> dict[str, list[DeviceDict]]:
     if blink is None or blink.cameras is None:
         return {"cameras": []}
 
-    cameras = []
+    cameras: list[DeviceDict] = []
     for camera_id, camera in blink.cameras.items():
         camera_data = create_device_data(camera)
         cameras.append(camera_data)

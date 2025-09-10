@@ -27,13 +27,13 @@ def create_device_data(
     display_ts = cached_ts if cached_ts > current_ts else current_ts
 
     return {
-        "id": camera.id,  # type: ignore[attr-defined]  # type: ignore[attr-defined]
-        "name": camera.name,  # type: ignore[attr-defined]
-        "thumbnail": camera.thumbnail,  # type: ignore[attr-defined]
-        "status": camera.status,  # type: ignore[attr-defined]  # type: ignore[attr-defined]
-        "battery": camera.battery,  # type: ignore[attr-defined]
-        "temperature": camera.temperature,  # type: ignore[attr-defined]
-        "wifi_strength": camera.wifi_strength,  # type: ignore[attr-defined]
-        "motion_enabled": camera.motion_enabled,  # type: ignore[attr-defined]
+        "id": camera.camera_id,
+        "name": camera.name,
+        "thumbnail": camera.thumbnail,
+        "status": camera.arm,  # Use arm property for status (motion detection enabled/disabled)
+        "battery": camera.battery,
+        "temperature": camera.temperature,
+        "wifi_strength": camera.wifi_strength,
+        "motion_enabled": camera.motion_enabled,
         "display_ts": display_ts,
     }
