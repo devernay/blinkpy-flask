@@ -451,6 +451,46 @@ class TestStreamingHandlers(BaseTestCase):
         """Set up test fixtures."""
         super().setUp()
 
+    @patch("blinkapp.services.stream_service.stop_camera_stream")
+    def test_stop_live_stream_success(self, mock_stop_stream: Mock) -> None:
+        """Test stop_live_stream with successful stream stop."""
+        from blinkapp.connexion_handlers.streaming import stop_live_stream
+
+        mock_stop_stream.return_value = True
+
+        result = stop_live_stream("12345")
+
+        self.assertIsInstance(result, dict)
+        self.assertTrue(result["success"])
+        self.assertIn("stopped", result["message"])
+
+    @patch("blinkapp.services.stream_service.stop_camera_stream")
+    def test_stop_live_stream_failure(self, mock_stop_stream: Mock) -> None:
+        """Test stop_live_stream with stream stop failure."""
+        from blinkapp.connexion_handlers.streaming import stop_live_stream
+
+        mock_stop_stream.return_value = False
+
+        result = stop_live_stream("12345")
+
+        self.assertIsInstance(result, dict)
+        self.assertFalse(result["success"])  # success reflects the actual stop result
+        self.assertIn("stop failed", result["message"])
+
+    @patch("blinkapp.services.stream_service.get_hls_file")
+    def test_get_hls_stream_segments_not_found(self, mock_get_hls: Mock) -> None:
+        """Test get_hls_stream_segments with file not found."""
+        from blinkapp.connexion_handlers.streaming import get_hls_stream_segments
+
+        mock_get_hls.return_value = (None, None)
+
+        result, status_code = get_hls_stream_segments("12345", "segment.ts")
+
+        self.assertIsInstance(result, dict)
+        self.assertFalse(result["success"])
+        self.assertIn("not found", result["error"])
+        self.assertEqual(status_code, 404)
+
 
 class TestThumbnailsHandlers(BaseTestCase):
     """Test thumbnails connexion handlers."""
