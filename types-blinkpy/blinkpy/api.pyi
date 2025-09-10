@@ -58,6 +58,9 @@ async def request_command_status(
 async def request_command_done(
     blink: Blink, network: str, command_id: str
 ) -> dict[str, Any] | ClientResponse | None: ...
+async def request_sync_events(
+    blink: Blink, network: str, **kwargs: Any
+) -> dict[str, Any] | ClientResponse | None: ...
 
 # Camera functions
 async def request_new_image(
@@ -117,11 +120,15 @@ async def request_get_liveview(
 async def request_local_storage_manifest(
     blink: Blink, network_id: str, sync_id: str
 ) -> dict[str, Any] | ClientResponse | None: ...
+async def get_local_storage_manifest(
+    blink: Blink, network_id: str, sync_id: str, manifest_request_id: str
+) -> dict[str, Any] | ClientResponse | None: ...
 async def request_local_storage_clip(
     blink: Blink,
     network_id: str,
     sync_id: str,
     manifest_id: str,
+    clip_id: str,
 ) -> dict[str, Any] | ClientResponse | None: ...
 
 # HTTP utility functions
