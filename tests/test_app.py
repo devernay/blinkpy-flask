@@ -3784,7 +3784,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         # Simulate network delay
         import time
 
-        def slow_execute(func):
+        def slow_execute(func) -> None:
             time.sleep(0.1)  # Simulate delay
             return None
 
@@ -4029,7 +4029,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
 
         results = []
 
-        def make_request():
+        def make_request() -> None:
             try:
                 response = self.client.get("/api/settings")
                 results.append(response.status_code)
@@ -4539,7 +4539,7 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
         results = []
         errors = []
 
-        def make_concurrent_request():
+        def make_concurrent_request() -> None:
             try:
                 response = self.client.get("/api/settings")
                 results.append(response.status_code)
@@ -5668,7 +5668,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         results = []
         errors = []
 
-        def concurrent_operation(operation_id):
+        def concurrent_operation(operation_id) -> None:
             try:
                 # Mix different types of operations
                 if operation_id % 3 == 0:

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 
-def main():
+def main() -> int:
     """Update baseline with current test results."""
     print("🔄 Updating test baseline...")
 

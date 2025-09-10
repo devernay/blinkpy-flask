@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 
-def get_current_passing_tests():
+def get_current_passing_tests() -> list[str]:
     """Get list of currently passing tests."""
     # Get project root (parent of tests directory)
     project_root = Path(__file__).parent.parent
@@ -32,7 +32,7 @@ def get_current_passing_tests():
     return sorted(passing_tests)
 
 
-def load_baseline():
+def load_baseline() -> list[str]:
     """Load baseline test names."""
     baseline_file = Path(__file__).parent / "test_results_baseline.txt"
     if not baseline_file.exists():
@@ -42,7 +42,7 @@ def load_baseline():
         return [line.strip() for line in f if line.strip()]
 
 
-def main():
+def main() -> int:
     """Compare current tests against baseline."""
     print("🔍 Checking test results against baseline...")
 

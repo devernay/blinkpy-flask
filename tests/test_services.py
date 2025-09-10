@@ -200,7 +200,7 @@ class TestAuthService(BaseTestCase):
             self.assertEqual(result, mock_session)
             mock_session_class.assert_called_once()
 
-    def test_create_blink_session_custom_factory(self):
+    def test_create_blink_session_custom_factory(self) -> None:
         """Test creating blink session with custom factory."""
         from blinkapp.services import auth_service
 
@@ -1675,7 +1675,7 @@ class TestLifecycleService(BaseTestCase):
         mock_caches,
         mock_connections,
         mock_paths,
-    ):
+    ) -> None:
         """Test successful startup."""
         from blinkapp.services import lifecycle_service
 
@@ -1688,7 +1688,7 @@ class TestLifecycleService(BaseTestCase):
         mock_stream.assert_called_once()
 
     @patch("blinkapp.services.connection_service.initialize_connections")
-    def test_startup_exception(self, mock_connections):
+    def test_startup_exception(self, mock_connections) -> None:
         """Test startup with exception - should log but not raise."""
         from blinkapp.services import lifecycle_service
 
@@ -1704,7 +1704,7 @@ class TestLifecycleService(BaseTestCase):
     )
     @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
-    def test_cleanup_resources_success(self, mock_blink_conn, mock_stream):
+    def test_cleanup_resources_success(self, mock_blink_conn, mock_stream) -> None:
         """Test successful resource cleanup."""
         from blinkapp.services import lifecycle_service
         from tests.test_base import (
@@ -1723,7 +1723,7 @@ class TestLifecycleService(BaseTestCase):
         mock_blink_connection.cleanup_active_streams.assert_called_once()
 
     @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
-    def test_cleanup_resources_exception(self, mock_stream):
+    def test_cleanup_resources_exception(self, mock_stream) -> None:
         """Test cleanup with exception - should raise."""
         from blinkapp.services import lifecycle_service
 

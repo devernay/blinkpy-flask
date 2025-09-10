@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 
-def main():
+def main() -> None:
     """Update the test baseline."""
     print("🔄 Updating test baseline...")
 

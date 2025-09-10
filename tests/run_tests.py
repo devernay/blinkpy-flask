@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test Runner for Blink Camera Flask Web Interface
+"""Test Runner for Blink Camera Flask Web Interface.
 
 This script provides various options for running the test suite with coverage reporting.
 """
@@ -30,7 +30,8 @@ def run_command(cmd: list[str], description: str) -> bool:
         return False
 
 
-def main():
+def main() -> int:
+    """Run tests for Blink Camera Flask Web Interface."""
     parser = argparse.ArgumentParser(
         description="Run tests for Blink Camera Flask Web Interface",
         formatter_class=argparse.RawDescriptionHelpFormatter,

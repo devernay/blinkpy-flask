@@ -14,7 +14,7 @@ import os
 import sys
 import tempfile
 import unittest
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path as RealPath
@@ -60,7 +60,7 @@ def create_mock_path(
     return mock_path
 
 
-def strict_patch_func(target: str, *args, **kwargs) -> _patch:
+def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:
     """Patch function that only allows patching symbols in __all__."""
     # Allow bypassing strict patching for specific implementation detail tests
     import inspect
@@ -121,11 +121,11 @@ def strict_patch_func(target: str, *args, **kwargs) -> _patch:
 class StrictPatch:
     """Wrapper for patch that enforces __all__ exports."""
 
-    def __init__(self, patch_func):
+    def __init__(self, patch_func: Callable[..., _patch]) -> None:
         self._patch = patch_func
         self.object = original_patch.object
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> _patch:
         return self._patch(*args, **kwargs)
 
 
@@ -702,11 +702,11 @@ def with_app_initialized(func: Callable[P, T]) -> Callable[P, T]:  # noqa: UP047
     return wrapper
 
 
-def with_blink_auth(test_func):
+def with_blink_auth(test_func: Callable[..., None]) -> Callable[..., None]:
     """Decorator to add blink authentication mock to test methods."""
 
     @functools.wraps(test_func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Mock, **kwargs: Mock) -> None:
         with patch(
             "blinkapp.services.blink_service.ensure_blink_initialized"
         ) as mock_ensure_blink:
@@ -806,7 +806,7 @@ class FlaskTestCase(BaseTestCase):
 
             initialize_cache_paths()
 
-    def setup_mock_blink(self, available=True, sync_data=None, cameras=None):
+    def setup_mock_blink(self, available: bool = True, sync_data: dict[str, Mock] | None = None, cameras: list[Mock] | None = None) -> Mock:
         """Helper to set up mock Blink objects with common configuration."""
         mock_blink = create_mock_blink_instance(available=available)
         mock_blink.available = available
@@ -826,13 +826,13 @@ class FlaskTestCase(BaseTestCase):
 
         return mock_blink
 
-    def setup_mock_connection(self, return_value=None, side_effect=None):
+    def setup_mock_connection(self, return_value: Mock | None = None, side_effect: Exception | None = None) -> Mock:
         """Helper to set up mock connection with coroutine cleanup."""
         return create_mock_blink_connection(
             execute=mock_execute_with_coroutine_cleanup(return_value, side_effect)
         )
 
-    def assert_api_success(self, response: Any, expected_status: int = 200) -> None:
+    def assert_api_success(self, response: Mock, expected_status: int = 200) -> None:
         """Assert API response is successful with expected format."""
         import json
 
@@ -841,19 +841,19 @@ class FlaskTestCase(BaseTestCase):
         self.assertTrue(data["success"])
         return data
 
-    def authenticated_session(self):
+    def authenticated_session(self) -> Generator[None, None, None]:
         """Context manager for authenticated session."""
         from contextlib import contextmanager
 
         @contextmanager
-        def session_context():
+        def session_context() -> Generator[None, None, None]:
             with self.client.session_transaction() as sess:
                 sess["authenticated"] = True
             yield
 
         return session_context()
 
-    def assert_api_error(self, response, expected_status=500, error_contains=None):
+    def assert_api_error(self, response: Mock, expected_status: int = 500, error_contains: str | None = None) -> None:
         """Assert API response is an error with expected format."""
         import json
 
@@ -864,7 +864,7 @@ class FlaskTestCase(BaseTestCase):
             self.assertIn(error_contains, data.get("error", ""))
         return data
 
-    def assert_response_contains(self, response, expected_status=200, *content_checks):
+    def assert_response_contains(self, response: Mock, expected_status: int = 200, *content_checks: str) -> Mock:
         """Assert response status and content contains specified strings."""
         self.assertEqual(response.status_code, expected_status)
         for content in content_checks:
@@ -874,14 +874,14 @@ class FlaskTestCase(BaseTestCase):
                 self.assertIn(content, response.data)
         return response
 
-    def assert_redirect(self, response, expected_location_contains=None):
+    def assert_redirect(self, response: Any, expected_location_contains: str | None = None) -> Any:
         """Assert response is a redirect with optional location check."""
         self.assertEqual(response.status_code, 302)
         if expected_location_contains:
             self.assertIn(expected_location_contains, response.location or "")
         return response
 
-    def run_test_cases(self, test_cases):
+    def run_test_cases(self, test_cases: list[dict[str, Any]]) -> None:
         """Run multiple test cases with consistent pattern."""
         for case in test_cases:
             with self.subTest(**case):
@@ -896,16 +896,16 @@ class FlaskTestCase(BaseTestCase):
                 self.check_endpoint(method, path, expected_status, **kwargs)
 
     @staticmethod
-    def make_test_name(feature, scenario):
+    def make_test_name(feature: str, scenario: str) -> str:
         """Generate consistent test method names."""
         return f"test_{feature}_{scenario}"
 
-    def skip_if_no_flask(self):
+    def skip_if_no_flask(self) -> None:
         """Skip test if Flask app is not available."""
         if not hasattr(self, "client"):
             self.skipTest("Flask client not available")
 
-    def check_endpoint(self, method, path, expected_status=200, **kwargs):
+    def check_endpoint(self, method: str, path: str, expected_status: int = 200, **kwargs: Any) -> Any:
         """Generic endpoint tester to reduce boilerplate."""
         client_method = getattr(self.client, method.lower())
         response = client_method(path, **kwargs)
@@ -924,11 +924,11 @@ class FlaskTestCase(BaseTestCase):
         else:
             return response
 
-    def mock_blink_system(self, available=True, systems=None):
+    def mock_blink_system(self, available: bool = True, systems: dict[str, Any] | None = None) -> Generator[tuple[Mock, Mock], None, None]:
         """Context manager for mocking blink system with common setup."""
 
         @contextmanager
-        def _mock():
+        def _mock() -> Generator[tuple[Mock, Mock], None, None]:
             with (
                 patch("blinkapp.services.blink_service.blink") as mock_blink,
                 patch("blinkapp.services.blink_service.blink_connection") as mock_conn,
@@ -940,13 +940,13 @@ class FlaskTestCase(BaseTestCase):
 
         return _mock()
 
-    def with_blink_mocks(self, available=True, sync_data=None):
+    def with_blink_mocks(self, available: bool = True, sync_data: dict[str, Any] | None = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator to automatically patch blink service with common setup."""
 
-        def decorator(test_method):
+        def decorator(test_method: Callable[..., Any]) -> Callable[..., Any]:
             @patch("blinkapp.services.blink_service.blink_connection")
             @patch("blinkapp.services.blink_service.blink")
-            def wrapper(self, mock_blink, mock_connection):
+            def wrapper(self: Any, mock_blink: Mock, mock_connection: Mock) -> Any:
                 mock_blink.available = available
                 mock_blink.sync = sync_data or {}
                 mock_connection.execute = mock_execute_with_coroutine_cleanup()
@@ -957,10 +957,10 @@ class FlaskTestCase(BaseTestCase):
         return decorator
 
 
-def mock_execute_with_coroutine_cleanup(return_value=None, side_effect=None):
+def mock_execute_with_coroutine_cleanup(return_value: Any = None, side_effect: Any = None) -> Mock:
     """Create a mock execute function that properly handles coroutines."""
 
-    def mock_execute(coro):
+    def mock_execute(coro: Any) -> Any:
         # Close the coroutine to prevent warnings
         if hasattr(coro, "close"):
             coro.close()
@@ -1009,7 +1009,7 @@ class TestStrictPatching:
     accidental disabling of strict patching which could hide import/export issues.
     """
 
-    def test_strict_patching_enabled_by_default(self):
+    def test_strict_patching_enabled_by_default(self) -> None:
         """Test that strict patching is enabled by default."""
         import unittest.mock
 
@@ -1018,7 +1018,7 @@ class TestStrictPatching:
             "Strict patching should be enabled by default"
         )
 
-    def test_strict_patching_environment_variable_control(self):
+    def test_strict_patching_environment_variable_control(self) -> None:
         """Test that strict patching can be controlled via STRICT_PATCHING environment variable."""
         import os
         import unittest.mock
@@ -1059,7 +1059,7 @@ class TestStrictPatching:
             # Restore strict patching for other tests
             enable_strict_patching()
 
-    def test_strict_patch_allows_exported_symbols(self):
+    def test_strict_patch_allows_exported_symbols(self) -> None:
         """Test that strict_patch allows patching exported symbols."""
         from unittest.mock import Mock
 
@@ -1067,7 +1067,7 @@ class TestStrictPatching:
         with strict_patch("unittest.mock.patch") as mock_patch:
             assert isinstance(mock_patch, Mock)
 
-    def test_strict_patch_blocks_non_exported_symbols(self):
+    def test_strict_patch_blocks_non_exported_symbols(self) -> None:
         """Test that strict_patch blocks patching non-exported symbols."""
         import pytest
 
@@ -1076,7 +1076,7 @@ class TestStrictPatching:
             with strict_patch("unittest.mock._patch_object"):
                 pass
 
-    def test_strict_patch_allows_modules_without_all(self):
+    def test_strict_patch_allows_modules_without_all(self) -> None:
         """Test that strict_patch allows patching modules without __all__."""
         from unittest.mock import Mock
 
@@ -1084,7 +1084,7 @@ class TestStrictPatching:
         with strict_patch("os.path.exists") as mock_exists:
             assert isinstance(mock_exists, Mock)
 
-    def test_enable_disable_strict_patching(self):
+    def test_enable_disable_strict_patching(self) -> None:
         """Test enabling and disabling strict patching."""
         import unittest.mock
 
@@ -1103,7 +1103,7 @@ class TestStrictPatching:
         # Re-enable for other tests
         enable_strict_patching()
 
-    def test_strict_patch_object_attribute(self):
+    def test_strict_patch_object_attribute(self) -> None:
         """Test that strict_patch has object attribute for patch.object calls."""
         assert hasattr(strict_patch, "object")
         assert strict_patch.object is not None

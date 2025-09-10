@@ -15,6 +15,7 @@ DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
 
 import unittest
+from typing import Never
 from unittest.mock import Mock, patch
 
 from blinkapp.config import Config
@@ -36,7 +37,7 @@ class TestDecorators(BaseTestCase):
         """Test safe_execute with successful function."""
         from blinkapp.utils.decorators import safe_execute
 
-        def success_func():
+        def success_func() -> str:
             return "success"
 
         result = safe_execute(success_func)
@@ -46,7 +47,7 @@ class TestDecorators(BaseTestCase):
         """Test safe_execute with exception and default value."""
         from blinkapp.utils.decorators import safe_execute
 
-        def failing_func():
+        def failing_func() -> Never:
             raise ValueError("Test error")
 
         result = safe_execute(failing_func, default="default_value")
@@ -56,7 +57,7 @@ class TestDecorators(BaseTestCase):
         """Test safe_execute with exception and no default."""
         from blinkapp.utils.decorators import safe_execute
 
-        def failing_func():
+        def failing_func() -> Never:
             raise ValueError("Test error")
 
         result = safe_execute(failing_func)
@@ -81,7 +82,7 @@ class TestRouteDecorators(BaseTestCase):
         """Test _get_operation_name with basic function."""
         from blinkapp.utils.route_decorators import _get_operation_name
 
-        def test_function():
+        def test_function() -> None:
             pass
 
         result = _get_operation_name(test_function)

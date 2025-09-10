@@ -3,6 +3,7 @@
 import json
 import os
 import unittest
+from typing import Any
 from unittest.mock import patch
 
 from jsonschema import ValidationError, validate
@@ -28,7 +29,7 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
         self.schemas = self.spec.get("components", {}).get("schemas", {})
 
-    def get_response_schema(self, path: str, method: str, status_code: str = "200"):
+    def get_response_schema(self, path: str, method: str, status_code: str = "200") -> dict[str, Any]:
         """Extract response schema from OpenAPI spec."""
         path_spec = self.spec["paths"].get(path, {})
         method_spec = path_spec.get(method.lower(), {})
@@ -47,7 +48,7 @@ class TestConnexionSchemaValidation(unittest.TestCase):
 
         return {}
 
-    def resolve_schema_refs(self, schema):
+    def resolve_schema_refs(self, schema: Any) -> Any:
         """Resolve $ref references in schema."""
         if isinstance(schema, dict):
             if "$ref" in schema:

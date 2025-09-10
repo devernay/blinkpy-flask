@@ -7,6 +7,7 @@ import json
 import os
 import unittest
 import warnings
+from typing import Any
 
 # Suppress connexion's internal jsonschema deprecation warnings
 warnings.filterwarnings(
@@ -110,7 +111,7 @@ class TestConnexionIntegration(unittest.TestCase):
         # Find all schema references
         schema_refs = set()
 
-        def find_refs(obj):
+        def find_refs(obj: Any) -> None:
             if isinstance(obj, dict):
                 if "$ref" in obj and obj["$ref"].startswith("#/components/schemas/"):
                     schema_name = obj["$ref"].split("/")[-1]

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TypedDict
 
 
-def run_tests_and_get_results():
+def run_tests_and_get_results() -> list[str]:
     """Run tests and return sorted list of test results."""
     result = subprocess.run(
         ["python", "-m", "pytest", "--tb=no", "-v"],
@@ -30,7 +30,7 @@ def run_tests_and_get_results():
     return sorted(test_lines), result.returncode
 
 
-def load_baseline():
+def load_baseline() -> list[str]:
     """Load baseline test results."""
     baseline_file = Path(__file__).parent / "test_baseline.txt"
     if not baseline_file.exists():
@@ -42,6 +42,7 @@ def load_baseline():
 
 
 class TestDiff(TypedDict):
+    """Type definition for test regression analysis results."""
     regressions: list[str]
     new_passed: list[str]
     new_failed: list[str]
@@ -91,7 +92,7 @@ def compare_results(current: list[str], baseline: list[str]) -> TestDiff:
     }
 
 
-def main():
+def main() -> None:
     """Main regression check function."""
     print("🔍 Running regression check...")
 

@@ -171,7 +171,7 @@ class TestBaseId(BaseTestCase):
         # Test that a subclass without _get_type_name raises NotImplementedError
         class IncompleteTestId1(BaseId):
             @classmethod
-            def _get_pattern(cls):
+            def _get_pattern(cls) -> str:
                 return r"^test$"
 
             # Missing _get_type_name
@@ -187,7 +187,7 @@ class TestBaseId(BaseTestCase):
         # Test through subclass that implements _get_pattern but not _get_type_name
         class TestId(BaseId):
             @classmethod
-            def _get_pattern(cls):
+            def _get_pattern(cls) -> str:
                 return r"^test$"
 
             # Missing _get_type_name
