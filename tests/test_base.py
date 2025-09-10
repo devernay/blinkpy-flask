@@ -297,12 +297,29 @@ def create_mock_camera(
     mock_camera.last_record = last_record
     mock_camera.updated_at = updated_at
 
-    # Create attributes dict for debug_service compatibility
+    # Create attributes dict matching real blinkpy camera.attributes property
     mock_camera.attributes = {
-        "battery": battery,
+        "name": name,
+        "camera_id": camera_id,
+        "serial": f"serial_{camera_id}",
+        "version": "1.0.0",
         "temperature": temperature,
-        "wifi_strength": wifi_strength,
+        "temperature_c": temperature,
+        "temperature_calibrated": temperature + 0.5 if temperature else None,
+        "battery": battery,
+        "battery_level": 85 if battery == "ok" else 20,
+        "battery_voltage": battery_voltage,
+        "thumbnail": thumbnail,
+        "video": None,
+        "recent_clips": [],
         "motion_enabled": motion_enabled,
+        "motion_detected": False,
+        "wifi_strength": wifi_strength,
+        "network_id": 12345,
+        "sync_module": "sync1",
+        "sync_signal_strength": -45,
+        "last_record": last_record,
+        "type": "camera",
     }
 
     # Mock init_livestream to return a proper mock live stream
