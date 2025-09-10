@@ -258,7 +258,11 @@ def load_camera_thumbnail_cache() -> None:
 
         # Remove invalid/old files in background
         def remove_files(files_list: list[Path]) -> None:
-            """Remove files from filesystem with error handling."""
+            """Remove files from filesystem with error handling.
+
+            Args:
+                files_list: List of Path objects representing files to remove.
+            """
             for file_path in files_list:
                 try:
                     file_path.unlink()
@@ -306,7 +310,11 @@ def initialize_cache_paths() -> None:
 
 
 def clear_all_caches() -> dict[str, str]:
-    """Clear all caches except credentials."""
+    """Clear all caches except credentials including memory and file caches.
+
+    Returns:
+        dict[str, str]: Status messages for each cache clearing operation.
+    """
     import os
     import shutil
 
@@ -411,7 +419,14 @@ def clear_clips_cache_files() -> None:
 
 
 def ensure_cache_directory(cache_dir: str) -> str:
-    """Ensure cache directory exists and return its path."""
+    """Ensure cache directory exists and return its path.
+
+    Args:
+        cache_dir: Path to the cache directory to create.
+
+    Returns:
+        str: Absolute path to the created cache directory.
+    """
     from pathlib import Path
 
     path = Path(cache_dir)
@@ -420,7 +435,14 @@ def ensure_cache_directory(cache_dir: str) -> str:
 
 
 def validate_cache_directory(cache_dir: str) -> bool:
-    """Validate that cache directory is accessible."""
+    """Validate that cache directory is accessible and writable.
+
+    Args:
+        cache_dir: Path to the cache directory to validate.
+
+    Returns:
+        bool: True if directory exists and is writable, False otherwise.
+    """
     from pathlib import Path
 
     try:

@@ -15,13 +15,21 @@ if TYPE_CHECKING:
 
 
 def setup_camera_routes(app: Flask) -> None:
-    """Register camera routes with the Flask app."""
+    """Register camera routes with the Flask app.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/api/cameras")
     @ensure_blink_available
     @api_route_with_validation("list cameras")
     def list_cameras_route() -> JsonDict:
-        """List cameras route - thin wrapper around connexion handler."""
+        """List cameras route - retrieves all available cameras from Blink systems.
+
+        Returns:
+            JsonDict: List of camera data with details and status information.
+        """
         from ..connexion_handlers.camera import list_cameras
 
         return list_cameras()
@@ -34,7 +42,14 @@ def setup_camera_routes(app: Flask) -> None:
     def get_camera_details_route(
         camera_id_str: str,
     ) -> JsonDict | tuple[JsonDict, int]:
-        """Get camera details route - thin wrapper around connexion handler."""
+        """Get camera details route - retrieves detailed information for a specific camera.
+
+        Args:
+            camera_id_str: String representation of the camera ID to get details for.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Camera details data or error response with status code.
+        """
         from ..connexion_handlers.camera import get_camera_details
 
         camera_id = CameraId(camera_id_str)
@@ -48,7 +63,14 @@ def setup_camera_routes(app: Flask) -> None:
     def start_camera_recording_route(
         camera_id: CameraId,
     ) -> JsonDict | tuple[JsonDict, int]:
-        """Start recording route - thin wrapper around connexion handler."""
+        """Start camera recording route - initiates video recording on the specified camera.
+
+        Args:
+            camera_id: CameraId object representing the camera to start recording on.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Success response or error response with status code.
+        """
         from ..connexion_handlers.camera import start_camera_recording
 
         return start_camera_recording(str(camera_id))

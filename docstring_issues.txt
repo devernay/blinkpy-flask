@@ -1,0 +1,125 @@
+Found docstring issues:
+  ./blinkapp/connexion_handlers/auth.py:37 - function 'authenticate_user': Missing Returns section for function with return type
+  ./blinkapp/connexion_handlers/auth.py:79 - function 'verify_twofa': Missing Returns section for function with return type
+  ./blinkapp/models/cache.py:112 - function 'items_list': Missing Returns section for function with return type
+  ./blinkapp/models/cache.py:117 - function 'get_stats': Missing Returns section for function with return type
+  ./blinkapp/models/ids.py:116 - function 'split': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/admin.py:15 - function 'setup_admin_routes': Missing Args section for function with parameters
+  ./blinkapp/routes/admin.py:21 - function 'clear_all_caches_route': Missing Returns section for function with return type
+  ./blinkapp/routes/admin.py:30 - function 'clear_thumbnail_cache_route': Missing Returns section for function with return type
+  ./blinkapp/routes/admin.py:39 - function 'clear_clips_cache_route': Missing Returns section for function with return type
+  ./blinkapp/routes/auth.py:21 - function 'main_page_route': Missing Returns section for function with return type
+  ./blinkapp/routes/auth.py:28 - function 'login_page_route': Missing Returns section for function with return type
+  ./blinkapp/routes/auth.py:44 - function 'twofa_page_route': Missing Returns section for function with return type
+  ./blinkapp/routes/auth.py:60 - function 'logout_user_route': Missing Returns section for function with return type
+  ./blinkapp/routes/camera.py:17 - function 'setup_camera_routes': Missing Args section for function with parameters
+  ./blinkapp/routes/camera.py:23 - function 'list_cameras_route': Missing Returns section for function with return type
+  ./blinkapp/routes/camera.py:34 - function 'get_camera_details_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/camera.py:48 - function 'start_camera_recording_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/clips.py:12 - function 'setup_clips_routes': Missing Args section for function with parameters
+  ./blinkapp/routes/clips.py:18 - function 'get_clips_route': Missing Returns section for function with return type
+  ./blinkapp/routes/clips.py:28 - function 'delete_clip_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/clips.py:37 - function 'download_clip_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/clips.py:48 - function 'get_clip_thumbnail_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/clips.py:62 - function 'generate_clip_thumbnail_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/settings.py:17 - function 'setup_settings_routes': Missing Args section for function with parameters
+  ./blinkapp/routes/settings.py:23 - function 'get_app_config_route': Missing Returns section for function with return type
+  ./blinkapp/routes/settings.py:32 - function 'get_user_settings_route': Missing Returns section for function with return type
+  ./blinkapp/routes/settings.py:41 - function 'update_user_settings_route': Missing Returns section for function with return type
+  ./blinkapp/routes/streaming.py:22 - function 'setup_streaming_routes': Missing Args section for function with parameters
+  ./blinkapp/routes/streaming.py:30 - function 'start_live_stream_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/streaming.py:41 - function 'stop_live_stream_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/streaming.py:52 - function 'get_hls_stream_segments_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/system.py:31 - function 'get_systems_route': Missing Returns section for function with return type
+  ./blinkapp/routes/system.py:42 - function 'get_system_details_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/system.py:55 - function 'update_system_settings_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/system.py:71 - function 'get_system_devices_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/system.py:82 - function 'clear_systems_cache_route': Missing Returns section for function with return type
+  ./blinkapp/routes/thumbnails.py:43 - function 'setup_camera_thumbnail_routes': Missing Args section for function with parameters
+  ./blinkapp/routes/thumbnails.py:51 - function 'get_camera_thumbnail_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/routes/thumbnails.py:65 - function 'refresh_camera_thumbnail_route': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/blink_connection.py:186 - function 'get_blink_connection': Missing Returns section for function with return type
+  ./blinkapp/services/blink_connection.py:101 - function 'execute': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/blink_service.py:45 - function 'get_blink_instance': Missing Returns section for function with return type
+  ./blinkapp/services/blink_service.py:57 - function 'initialize_blink_instance': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/cache_service.py:308 - function 'clear_all_caches': Missing Returns section for function with return type
+  ./blinkapp/services/cache_service.py:413 - function 'ensure_cache_directory': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/cache_service.py:422 - function 'validate_cache_directory': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/cache_service.py:260 - function 'remove_files': Missing Args section for function with parameters
+  ./blinkapp/services/clip_download.py:100 - function 'download_cloud_clip': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/clip_download.py:160 - function 'download_local_clip': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/clip_download.py:289 - function 'download_clip_common': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/clip_download.py:234 - function 'download_local_clip_async': Missing Returns section for function with return type
+  ./blinkapp/services/clip_processing.py:33 - function 'process_cloud_clip_background': Missing Args section for function with parameters
+  ./blinkapp/services/clip_processing.py:113 - function 'process_local_clip_background': Missing Args section for function with parameters
+  ./blinkapp/services/clip_processing.py:208 - function 'download_and_cache_cloud_thumbnail': Missing Returns section for function with return type
+  ./blinkapp/services/clip_processing.py:265 - function 'process_cloud_clip_thumbnail_only': Missing Args section for function with parameters
+  ./blinkapp/services/clip_service.py:55 - function 'download_clip': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/debug_service.py:76 - function 'check_credentials_file_exists': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/debug_service.py:81 - function 'dump_cloud_videos': Missing Args section for function with parameters
+  ./blinkapp/services/debug_service.py:88 - function 'handle_dump_system': Missing Args section for function with parameters
+  ./blinkapp/services/hls_service.py:31 - function 'parse_tcp_url': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/hls_service.py:48 - function 'generate_hls_url': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/hls_service.py:221 - function 'is_active': Missing Returns section for function with return type
+  ./blinkapp/services/hls_service.py:243 - function 'get_hls_url': Missing Returns section for function with return type
+  ./blinkapp/services/stream_service.py:47 - function 'initialize_stream_manager': Missing Args section for function with parameters
+  ./blinkapp/services/stream_service.py:76 - function 'create_stream_manager': Missing Returns section for function with return type
+  ./blinkapp/services/stream_service.py:311 - function 'generate_hls_url': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/stream_service.py:316 - function 'parse_tcp_url': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/stream_service.py:334 - function 'validate_camera_id': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/stream_service.py:339 - function 'validate_tcp_url': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/stream_service.py:250 - function 'stop_stream': Missing Args section for function with parameters
+  ./blinkapp/services/stream_service.py:257 - function 'is_stream_active': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/services/thumbnail_service.py:145 - function 'notify_thumbnail_ready': Missing Args section for function with parameters
+  ./blinkapp/utils/decorators.py:43 - function 'error_context': Missing Returns section for function with return type
+  ./blinkapp/utils/decorators.py:98 - function 'ensure_blink_available': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./blinkapp/utils/route_decorators.py:329 - function 'api_route': Missing Returns section for function with return type, Missing blank line after summary
+  ./blinkapp/utils/route_decorators.py:350 - function 'api_route_with_validation': Missing Returns section for function with return type
+  ./blinkapp/utils/route_decorators.py:385 - function 'simple_success_response': Missing Returns section for function with return type
+  ./blinkapp/utils/route_decorators.py:402 - function 'file_response_route': Missing Returns section for function with return type
+  ./blinkapp/utils/route_decorators.py:431 - function 'method_dispatch_route': Missing Returns section for function with return type
+  ./tests/test_base.py:63 - function 'strict_patch_func': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:209 - function 'create_mock_camera': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:260 - function 'create_mock_blink_instance': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:344 - function 'create_mock_stream_manager': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:370 - function 'create_mock_live_stream': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:392 - function 'create_mock_camera_cache': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:409 - function 'create_mock_clips_cache': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:423 - function 'create_mock_sync': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:458 - function 'create_mock_clip_item': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:496 - function 'create_mock_clip_cache_entry': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:526 - function 'create_mock_blink_connection': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:549 - function 'create_mock_auth': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:582 - function 'create_mock_thread_pool_executor': Missing Returns section for function with return type
+  ./tests/test_base.py:605 - function 'create_mock_future': Missing Returns section for function with return type
+  ./tests/test_base.py:616 - function 'create_mock_client_response': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:628 - function 'create_mock_completed_process': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:718 - function 'with_app_initialized': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:738 - function 'with_blink_auth': Missing Args section for function with parameters
+  ./tests/test_base.py:1002 - function 'mock_execute_with_coroutine_cleanup': Missing Args section for function with parameters
+  ./tests/test_base.py:1024 - function 'create_video_metadata': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:177 - function 'mock_get': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:183 - function 'mock_setitem': Missing Args section for function with parameters
+  ./tests/test_base.py:187 - function 'mock_getitem': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:191 - function 'mock_contains': Missing Args section for function with parameters, Missing Returns section for function with return type
+  ./tests/test_base.py:851 - function 'setup_mock_blink': Missing Args section for function with parameters
+  ./tests/test_base.py:871 - function 'setup_mock_connection': Missing Args section for function with parameters
+  ./tests/test_base.py:877 - function 'assert_api_success': Missing Args section for function with parameters
+  ./tests/test_base.py:898 - function 'assert_api_error': Missing Args section for function with parameters
+  ./tests/test_base.py:909 - function 'assert_response_contains': Missing Args section for function with parameters
+  ./tests/test_base.py:919 - function 'assert_redirect': Missing Args section for function with parameters
+  ./tests/test_base.py:926 - function 'run_test_cases': Missing Args section for function with parameters
+  ./tests/test_base.py:941 - function 'make_test_name': Missing Args section for function with parameters
+  ./tests/test_base.py:950 - function 'check_endpoint': Missing Args section for function with parameters
+  ./tests/test_base.py:969 - function 'mock_blink_system': Missing Args section for function with parameters
+  ./tests/test_base.py:985 - function 'with_blink_mocks': Missing Args section for function with parameters
+  ./tests/test_base.py:1005 - function 'mock_execute': Missing docstring
+  ./tests/test_base.py:891 - function 'session_context': Missing docstring
+  ./tests/test_base.py:988 - function 'decorator': Missing docstring
+  ./tests/test_base.py:991 - function 'wrapper': Missing docstring
+
+Total issues: 118
+
+All public functions and classes must have complete Google-style docstrings
+with Args sections (for functions with parameters) and Returns sections
+(for functions with return types).

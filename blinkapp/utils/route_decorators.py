@@ -1,5 +1,4 @@
-"""
-Route decorators for Flask application to reduce code duplication.
+"""Route decorators for Flask application to reduce code duplication.
 
 This module provides decorators that handle common patterns in API routes,
 including error handling, response formatting, and validation.
@@ -58,7 +57,7 @@ def _get_operation_name(
 def _handle_response_formatting(result: RouteResult) -> RouteResult:
     """Handle common response formatting logic."""
     # Import here to avoid circular import
-    from blinkapp import create_api_response
+    from blinkapp.models.responses import create_api_response
 
     # If the function already returns a Flask response, pass it through
     if isinstance(result, Response):
@@ -110,10 +109,11 @@ def _validate_json_payload(
 ) -> ErrorResponse | None:
     """Validate JSON payload and return error response or None on success."""
     # Import here to avoid circular import
-    from blinkapp import Config, create_api_response
+    from blinkapp import Config
+    from blinkapp.models.responses import create_api_response
 
     assert isinstance(request, Request)
-    # Flask 3.x: Use getattr to access LocalProxy method
+    # Flask 3.x: Use getattr to access LocalProxy method - handles Flask version compatibility
     data: dict[str, object] | None = getattr(request, "get_json")()  # noqa: B009
     if data is None or not isinstance(data, dict):
         response, status_code = create_api_response(
@@ -134,7 +134,7 @@ def _validate_json_payload(
             )
             return jsonify(response), status_code
 
-    return None  # Success - data is available via getattr(request, 'get_json')()
+    return None  # Success - data is available via getattr for Flask compatibility
 
 
 def _validate_parameters(
@@ -169,7 +169,7 @@ def _validate_parameters(
         Output kwargs: {"camera_id": CameraId("12345")}
     """
     # Import here to avoid circular import
-    from blinkapp import create_api_response
+    from blinkapp.models.responses import create_api_response
 
     for param_name, validator in validate_params.items():
         if param_name in kwargs:
@@ -212,8 +212,7 @@ def _create_base_decorator(
     success_message: str | None = None,
     skip_response_formatting: bool = False,
 ) -> DecoratorFunction:
-    """
-    Base decorator that handles all common patterns.
+    """Base decorator that handles all common patterns.
 
     This is the core decorator that all other decorators build upon.
     It handles validation, caching, error handling, and response formatting.
@@ -228,8 +227,26 @@ def _create_base_decorator(
     """
 
     def decorator(func: Callable[..., RouteResult]) -> DecoratedRouteFunction:
+        """Decorator function that applies API route functionality to a function.
+
+        Args:
+            func: The function to be decorated with API route functionality.
+
+        Returns:
+            DecoratedRouteFunction: The decorated function with API route capabilities.
+        """
+
         @functools.wraps(func)
         def wrapper(*args: object, **kwargs: object) -> RouteResult:
+            """Wrapper function that handles API route logic including validation and error handling.
+
+            Args:
+                *args: Positional arguments passed to the decorated function.
+                **kwargs: Keyword arguments passed to the decorated function.
+
+            Returns:
+                RouteResult: API response tuple (response_dict, status_code).
+            """
             op_name = _get_operation_name(func, operation_name)
 
             try:
@@ -240,7 +257,7 @@ def _create_base_decorator(
                     json_error = _validate_json_payload(required_fields)
                     if json_error is not None:
                         return json_error
-                    # json validation passed, data is available via getattr(request, 'get_json')()
+                    # json validation passed, data is available via getattr for Flask compatibility
 
                 # Validate parameters
                 if validate_params:
@@ -297,7 +314,7 @@ def _create_base_decorator(
 def _create_success_message_response(message: str) -> RouteResult:
     """Create response for simple success messages."""
     # Import here to avoid circular import
-    from blinkapp import create_api_response
+    from blinkapp.models.responses import create_api_response
 
     response, status_code = create_api_response(success=True, data={"message": message})
     return jsonify(response), status_code
@@ -309,8 +326,9 @@ def _is_error_response(result: object) -> bool:
 
 
 def api_route(operation_name: str | None = None) -> DecoratorFunction:
-    """
-    Decorator that handles common API route patterns including:
+    """Decorator that handles common API route patterns.
+
+    Including:
     - Try-catch error handling with standardized responses
     - Automatic JSON response formatting
     - Operation-specific error context
@@ -318,6 +336,9 @@ def api_route(operation_name: str | None = None) -> DecoratorFunction:
     Args:
         operation_name: Optional name for the operation (used in error messages)
                        If not provided, uses the function name
+
+    Returns:
+        DecoratorFunction: Decorator function for API route handling.
 
     Usage:
         @app.route("/api/example")
@@ -335,14 +356,16 @@ def api_route_with_validation(
     required_fields: list[str] | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
 ) -> DecoratorFunction:
-    """
-    Enhanced API route decorator with built-in validation.
+    """Enhanced API route decorator with built-in validation.
 
     Args:
         operation_name: Optional name for the operation
         validate_json: Whether to validate that request contains valid JSON
         required_fields: List of required fields in JSON payload
         validate_params: Dict mapping parameter names to validation functions
+
+    Returns:
+        DecoratorFunction: Decorator function for API route with validation.
 
     Usage:
         @app.route("/api/example", methods=["POST"])
@@ -365,11 +388,13 @@ def api_route_with_validation(
 
 
 def simple_success_response(message: str | None = None) -> DecoratorFunction:
-    """
-    Decorator for endpoints that just need to return a simple success message.
+    """Decorator for endpoints that just need to return a simple success message.
 
     Args:
         message: Success message to return. If not provided, uses a default.
+
+    Returns:
+        DecoratorFunction: Decorator function for simple success responses.
 
     Usage:
         @app.route("/api/clear-cache", methods=["POST"])
@@ -385,13 +410,17 @@ def file_response_route(
     operation_name: str | None = None,
     validate_params: dict[str, ValidationFunction] | None = None,
 ) -> DecoratorFunction:
-    """
-    Decorator for routes that return file responses (send_file).
+    """Decorator for routes that return file responses (send_file).
 
     This decorator handles parameter validation but doesn't wrap the response
     in JSON since file responses need to be returned directly.
 
     Args:
+        operation_name: Optional name for the operation
+        validate_params: Dict mapping parameter names to validation functions
+
+    Returns:
+        DecoratorFunction: Decorator function for file response routes.
         operation_name: Optional name for the operation
         validate_params: Dict mapping parameter names to validation functions
 
@@ -411,13 +440,16 @@ def file_response_route(
 
 
 def method_dispatch_route(operation_name: str | None = None) -> DecoratorFunction:
-    """
-    Decorator for routes that handle multiple HTTP methods with different logic.
+    """Decorator for routes that handle multiple HTTP methods with different logic.
 
     This decorator provides error handling but lets the function handle
     method-specific logic and response formatting.
 
     Args:
+        operation_name: Optional name for the operation
+
+    Returns:
+        DecoratorFunction: Decorator function for method dispatch routes.
         operation_name: Optional name for the operation
 
     Usage:
@@ -442,8 +474,7 @@ def template_route_with_validation(
     form_fields: dict[str, tuple[int, str]]
     | None = None,  # field_name: (max_length, display_name)
 ) -> Callable[[Callable[..., TemplateResult]], Callable[..., TemplateResult]]:
-    """
-    Decorator for template routes with form validation.
+    """Decorator for template routes with form validation.
 
     Args:
         operation_name: Name of the operation for logging
@@ -455,8 +486,26 @@ def template_route_with_validation(
     """
 
     def decorator(func: Callable[..., TemplateResult]) -> Callable[..., TemplateResult]:
+        """Decorator function that applies template route validation to a function.
+
+        Args:
+            func: The function to be decorated with template route validation.
+
+        Returns:
+            Callable[..., TemplateResult]: The decorated function with validation capabilities.
+        """
+
         @functools.wraps(func)
         def wrapper(*args: object, **kwargs: object) -> TemplateResult:
+            """Wrapper function that handles template route validation and error rendering.
+
+            Args:
+                *args: Positional arguments passed to the decorated function.
+                **kwargs: Keyword arguments passed to the decorated function.
+
+            Returns:
+                TemplateResult: Template response or redirect.
+            """
             from flask import render_template, request
 
             from blinkapp.utils.validators import validate_string_input

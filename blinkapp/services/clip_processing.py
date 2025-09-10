@@ -35,6 +35,9 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
 
     Checks if thumbnail is cached first. If not, downloads the clip and generates thumbnail.
     This runs in a background thread to avoid blocking the main request.
+
+    Args:
+        clip_id: ClipId object representing the cloud clip to process.
     """
     try:
         # Check if thumbnail is already cached
@@ -117,6 +120,11 @@ def process_local_clip_background(
 
     Checks if thumbnail is cached first. If not, downloads the clip and generates thumbnail.
     This runs in a background thread to avoid blocking the main request.
+
+    Args:
+        clip_id: ClipId object representing the local clip to process.
+        sync_name: Name of the sync module containing the clip.
+        filename: Original filename of the clip.
     """
     try:
         # Check if thumbnail is already cached
@@ -214,6 +222,9 @@ def download_and_cache_cloud_thumbnail(
     Downloads the thumbnail from the provided URL and saves it to the cache.
     Returns the path to the cached thumbnail or None if download failed.
 
+    Returns:
+        Path | None: Path to cached thumbnail file if successful, None otherwise.
+
     Args:
         clip_id: Clip identifier (must be a cloud clip)
         thumbnail_url: URL to download thumbnail from
@@ -267,6 +278,9 @@ def process_cloud_clip_thumbnail_only(clip_id: ClipId) -> None:
 
     Checks if thumbnail is cached first. If not, downloads thumbnail from Blink server.
     This runs in a background thread to avoid blocking the main request.
+
+    Args:
+        clip_id: ClipId object representing the cloud clip to process thumbnail for.
     """
     try:
         # Check if thumbnail is already cached

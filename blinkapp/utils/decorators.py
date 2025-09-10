@@ -54,6 +54,9 @@ def error_context(
 
     Raises:
         BlinkError: If the operation fails (or the specified reraise_as type)
+
+    Returns:
+        Generator[None, None, None]: Context manager generator for error handling.
     """
     # Import here to avoid circular dependency
     from blinkapp.utils.errors import BlinkError
@@ -104,6 +107,12 @@ def ensure_blink_available(
     available, returning an error response if not. It also serves as a type guard,
     telling type checkers that after the check, blink is guaranteed to be non-None.
 
+    Args:
+        func: Function to decorate with blink availability check.
+
+    Returns:
+        Callable[P, T | FlaskResponse]: Decorated function with blink availability check.
+
     Usage in decorated functions:
         @ensure_blink_available
         def my_function() -> ResponseReturnValue:
@@ -113,6 +122,15 @@ def ensure_blink_available(
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T | FlaskResponse:
+        """Wrapper function that ensures Blink is available before calling the decorated function.
+
+        Args:
+            *args: Positional arguments to pass to the decorated function.
+            **kwargs: Keyword arguments to pass to the decorated function.
+
+        Returns:
+            T | FlaskResponse: Either the decorated function's return value or an error response.
+        """
         from flask import jsonify
 
         error_response = check_blink_availability()
@@ -140,10 +158,8 @@ def check_blink_availability() -> ApiResponse | None:
         None if Blink is available, error response tuple if not initialized or unavailable
     """
     # Import here to avoid circular imports
-    import blinkapp
+    from blinkapp.models.responses import create_api_response
     from blinkapp.services.blink_service import ensure_blink_initialized
-
-    create_api_response = blinkapp.create_api_response
 
     try:
         blink = ensure_blink_initialized()

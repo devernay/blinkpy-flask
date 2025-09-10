@@ -1,5 +1,4 @@
-"""
-Parsing utilities for the Blink Camera Flask application.
+"""Parsing utilities for the Blink Camera Flask application.
 
 This module provides parsing functions for extracting and converting data
 from various sources like timestamps, arguments, and identifiers.

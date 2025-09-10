@@ -110,21 +110,37 @@ class ThreadSafeCache[K, V](Cache[K, V]):
             super().clear()
 
     def items_list(self) -> list[tuple[K, V]]:
-        """Get items as a list for safe iteration."""
+        """Get items as a list for safe iteration.
+
+        Returns:
+            list[tuple[K, V]]: List of (key, value) tuples from the cache.
+        """
         with self._lock:
             return list(super().items())
 
     def get_stats(self) -> dict[str, int | float]:
-        """Get cache statistics."""
+        """Get cache statistics including size, max size, and hit rate.
+
+        Returns:
+            dict[str, int | float]: Dictionary containing cache statistics.
+        """
         with self._lock:
             return {
                 "size": len(self),
-                "maxsize": getattr(self, "maxsize", 0),
-                "hits": getattr(self, "hits", 0),
-                "misses": getattr(self, "misses", 0),
+                "maxsize": getattr(
+                    self, "maxsize", 0
+                ),  # Safe access - not all cache types have these attrs
+                "hits": getattr(
+                    self, "hits", 0
+                ),  # Safe access - not all cache types have these attrs
+                "misses": getattr(
+                    self, "misses", 0
+                ),  # Safe access - not all cache types have these attrs
                 "hit_rate": (
-                    getattr(self, "hits", 0)
-                    / max(getattr(self, "hits", 0) + getattr(self, "misses", 0), 1)
+                    getattr(self, "hits", 0)  # Safe access for hit rate calculation
+                    / max(
+                        getattr(self, "hits", 0) + getattr(self, "misses", 0), 1
+                    )  # Safe access for hit rate calculation
                 ),
             }
 

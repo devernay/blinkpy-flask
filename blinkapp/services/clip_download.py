@@ -98,7 +98,14 @@ async def _download_cloud_clip_core(
 
 
 def download_cloud_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
-    """Download a cloud clip and return it as a file response."""
+    """Download a cloud clip and return it as a file response.
+
+    Args:
+        clip_id: ClipId object representing the cloud clip to download.
+
+    Returns:
+        Response | tuple[JsonDict, int]: File response with video data or error response with status code.
+    """
     try:
         from blinkapp.services.blink_service import get_blink_instance
 
@@ -160,7 +167,16 @@ def download_cloud_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
 def download_local_clip(
     clip_id: ClipId, sync_name: str | None = None, item_id: str | None = None
 ) -> Response | tuple[JsonDict, int]:
-    """Download a local clip using blinkpy LocalStorageMediaItem API."""
+    """Download a local clip using blinkpy LocalStorageMediaItem API.
+
+    Args:
+        clip_id: ClipId object representing the local clip to download.
+        sync_name: Optional sync module name for the clip.
+        item_id: Optional item ID for the clip.
+
+    Returns:
+        Response | tuple[JsonDict, int]: File response with video data or error response with status code.
+    """
     try:
         from blinkapp.services.blink_service import get_blink_instance
 
@@ -232,6 +248,11 @@ def download_local_clip(
         ensure_blink_connection_initialized()
 
         async def download_local_clip_async() -> tuple[Path | None, str]:
+            """Download local clip asynchronously and return file path or error.
+
+            Returns:
+                tuple[Path | None, str]: Tuple of (file_path, error_message).
+            """
             """Download local clip asynchronously."""
             try:
                 # Prepare the clip for download (uploads to Blink cloud temporarily)
@@ -289,7 +310,15 @@ def download_local_clip(
 def download_clip_common(
     clip_path: Path, clip_id: ClipId
 ) -> Response | tuple[JsonDict, int]:
-    """Common clip download functionality for both cloud and local clips."""
+    """Common clip download functionality for both cloud and local clips.
+
+    Args:
+        clip_path: Path object pointing to the clip file to serve.
+        clip_id: ClipId object for generating the download filename.
+
+    Returns:
+        Response | tuple[JsonDict, int]: File response or error response with status code.
+    """
     try:
         if not clip_path.exists():
             return create_api_response(

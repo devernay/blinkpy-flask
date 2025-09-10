@@ -101,7 +101,18 @@ class BlinkConnection:
     def execute(
         self, coro: Coroutine[object, object, T], timeout: int | None = None
     ) -> T:
-        """Execute async Blink operation in dedicated thread."""
+        """Execute async Blink operation in dedicated thread with timeout handling.
+
+        Args:
+            coro: Async coroutine to execute in the dedicated thread.
+            timeout: Optional timeout in seconds (uses default if None).
+
+        Returns:
+            T: Result of the coroutine execution.
+
+        Raises:
+            BlinkError: If connection not started, loop unavailable, or operation fails/times out.
+        """
         if not self._started:
             raise BlinkError("Connection not started - call start() first")
         if not self.loop:
@@ -146,7 +157,9 @@ class BlinkConnection:
             # Close the aiohttp session if it exists
             if (
                 self.blink.auth is not None
-                and hasattr(self.blink.auth, "session")
+                and hasattr(
+                    self.blink.auth, "session"
+                )  # Check if session attr exists - not all auth types have it
                 and self.blink.auth.session is not None
             ):
                 try:
@@ -184,7 +197,11 @@ def initialize_blink_connection() -> None:
 
 
 def get_blink_connection() -> BlinkConnection | None:
-    """Get the global Blink connection instance."""
+    """Get the global Blink connection instance.
+
+    Returns:
+        BlinkConnection | None: The global connection instance if available, None otherwise.
+    """
     return blink_connection
 
 

@@ -1,5 +1,4 @@
-"""
-Blink-specific validation utilities for the Blink Camera Flask application.
+"""Blink-specific validation utilities for the Blink Camera Flask application.
 
 This module provides validation functions that are specific to Blink system
 operations, including sync module validation and network-specific checks.

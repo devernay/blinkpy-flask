@@ -20,6 +20,8 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from blinkpy.auth import BlinkSession
+
     from blinkapp.services.blink_connection import BlinkConnection
 
 from blinkpy.blinkpy import Blink
@@ -43,7 +45,11 @@ async def cleanup_blink_session() -> None:
 
 
 def get_blink_instance() -> Blink | None:
-    """Get the current blink instance, or None if not initialized."""
+    """Get the current blink instance, or None if not initialized.
+
+    Returns:
+        Blink | None: The global Blink instance if available, None otherwise.
+    """
     return _blink
 
 
@@ -55,9 +61,17 @@ def cleanup_blink_instances() -> None:
 
 
 def initialize_blink_instance(
-    session_obj, blink_factory: type[Blink] | None = None
+    session_obj: BlinkSession, blink_factory: type[Blink] | None = None
 ) -> Blink:
-    """Create and set the global blink instance."""
+    """Create and set the global blink instance with the provided session.
+
+    Args:
+        session_obj: Session object for Blink authentication.
+        blink_factory: Optional Blink class factory (defaults to Blink class).
+
+    Returns:
+        Blink: The newly created and initialized Blink instance.
+    """
     global _blink
     if blink_factory is None:
         blink_factory = Blink

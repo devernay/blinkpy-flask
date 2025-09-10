@@ -66,7 +66,6 @@ def generate_local_clip_thumbnail(
         - Corrupted video: Returns None, logs error
         - Timeout: Returns None after configured timeout
     """
-
     # Verify this is a local clip - raise exception if not
     if not clip_id.is_local():
         raise ValueError(
@@ -143,7 +142,11 @@ def generate_local_clip_thumbnail(
 
 
 def notify_thumbnail_ready(clip_id: ClipId) -> None:
-    """Thumbnail ready notification (no longer needed with polling approach)."""
+    """Thumbnail ready notification (no longer needed with polling approach).
+
+    Args:
+        clip_id: ClipId object representing the clip with ready thumbnail.
+    """
     from blinkapp import logger
 
     logger.debug(f"Thumbnail ready for clip: {clip_id}")

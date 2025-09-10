@@ -1,5 +1,4 @@
-"""
-HLS streaming service for the Blink Camera Flask application.
+"""HLS streaming service for the Blink Camera Flask application.
 
 This module handles HLS (HTTP Live Streaming) specific functionality including
 TCP URL parsing, HLS URL generation, and FFmpeg process management for
@@ -29,7 +28,14 @@ __all__ = [
 
 
 def parse_tcp_url(tcp_url: str) -> dict[str, str]:
-    """Parse TCP URL components - pure function."""
+    """Parse TCP URL components - pure function.
+
+    Args:
+        tcp_url: TCP URL string to parse (e.g., "tcp://host:port").
+
+    Returns:
+        dict[str, str]: Dictionary with protocol, host, and port components.
+    """
     if not tcp_url:
         return {}
 
@@ -46,7 +52,15 @@ def parse_tcp_url(tcp_url: str) -> dict[str, str]:
 
 
 def generate_hls_url(camera_id: str, base_url: str = "http://localhost:8080") -> str:
-    """Generate HLS URL for camera - pure function."""
+    """Generate HLS URL for camera - pure function.
+
+    Args:
+        camera_id: Camera identifier for the stream.
+        base_url: Base URL for the HLS server (default: "http://localhost:8080").
+
+    Returns:
+        str: Complete HLS playlist URL for the camera.
+    """
     return f"{base_url}/hls/{camera_id}/playlist.m3u8"
 
 
@@ -126,7 +140,7 @@ def _build_ffmpeg_command(
 class HLSStream:
     """Manages a single HLS stream from TCP source."""
 
-    def __init__(self, camera_id: str, tcp_url: str, config: HLSStreamConfig):
+    def __init__(self, camera_id: str, tcp_url: str, config: HLSStreamConfig) -> None:
         """Initialize HLS stream.
 
         Args:
@@ -219,7 +233,11 @@ class HLSStream:
             self.temp_dir = None
 
     def is_active(self) -> bool:
-        """Check if stream is active."""
+        """Check if stream is active.
+
+        Returns:
+            bool: True if stream is running and within timeout limits, False otherwise.
+        """
         with self.lock:
             if not self._active or not self.process:
                 return False
@@ -241,7 +259,11 @@ class HLSStream:
             return True
 
     def get_hls_url(self) -> str | None:
-        """Get HLS stream URL."""
+        """Get HLS stream URL.
+
+        Returns:
+            str | None: HLS stream URL if available, None otherwise.
+        """
         if not self.temp_dir:
             return None
         return f"/api/cameras/{self.camera_id}/hls/stream.m3u8"

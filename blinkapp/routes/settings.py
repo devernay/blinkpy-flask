@@ -15,13 +15,21 @@ if TYPE_CHECKING:
 
 
 def setup_settings_routes(app: Flask) -> None:
-    """Register settings routes with the Flask app."""
+    """Register settings routes with the Flask app.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/api/config")
     @ensure_blink_available
     @api_route("get app config")
     def get_app_config_route() -> JsonDict:
-        """Get config route - thin wrapper around connexion handler."""
+        """Get config route - retrieves application configuration settings.
+
+        Returns:
+            JsonDict: Application configuration data.
+        """
         from ..connexion_handlers.settings import get_app_config
 
         return get_app_config()
@@ -30,7 +38,11 @@ def setup_settings_routes(app: Flask) -> None:
     @ensure_blink_available
     @api_route("get user settings")
     def get_user_settings_route() -> JsonDict:
-        """Get settings route - thin wrapper around connexion handler."""
+        """Get settings route - retrieves user preference settings.
+
+        Returns:
+            JsonDict: User settings data including preferences and configurations.
+        """
         from ..connexion_handlers.settings import get_user_settings
 
         return get_user_settings()
@@ -39,9 +51,13 @@ def setup_settings_routes(app: Flask) -> None:
     @ensure_blink_available
     @api_route("update user settings")
     def update_user_settings_route() -> JsonDict | tuple[JsonDict, int]:
-        """Update settings route - thin wrapper around connexion handler."""
+        """Update settings route - saves user preference settings.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Success response or error response with status code.
+        """
         from ..connexion_handlers.settings import update_user_settings
 
         # Flask 3.x: Use getattr to access LocalProxy method
-        body = getattr(request, "get_json")() or {}  # noqa: B009
+        body = getattr(request, "get_json")() or {}  # noqa: B009  # Flask compatibility - access LocalProxy method
         return update_user_settings(body)

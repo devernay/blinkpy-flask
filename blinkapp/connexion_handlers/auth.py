@@ -35,10 +35,13 @@ def login_page() -> ResponseReturnValue:
 
 
 def authenticate_user() -> ResponseReturnValue:
-    """Authenticate user.
+    """Authenticate user with email and password.
 
     NOTE: This handler is called by login_page_route() on POST requests,
     not by a dedicated authenticate_user_route().
+
+    Returns:
+        ResponseReturnValue: Redirect to main page on success or auth template with error.
     """
     from flask import redirect, render_template, request, url_for
 
@@ -77,10 +80,13 @@ def twofa_page() -> ResponseReturnValue:
 
 
 def verify_twofa() -> ResponseReturnValue:
-    """Verify 2FA code.
+    """Verify 2FA code and complete authentication.
 
     NOTE: This handler is called by twofa_page_route() on POST requests,
     not by a dedicated verify_twofa_route().
+
+    Returns:
+        ResponseReturnValue: Redirect to main page on success or auth template with error.
     """
     from flask import redirect, render_template, request, url_for
 

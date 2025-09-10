@@ -29,7 +29,11 @@ def setup_system_routes(app: Flask) -> None:
     @ensure_blink_available
     @api_route("get systems")
     def get_systems_route() -> JsonDict:
-        """Get systems route - thin wrapper around connexion handler."""
+        """Get systems route - retrieves all available Blink systems and their status.
+
+        Returns:
+            JsonDict: List of Blink systems with details and device counts.
+        """
         from ..connexion_handlers.system import get_systems
 
         return get_systems()
@@ -42,7 +46,14 @@ def setup_system_routes(app: Flask) -> None:
     def get_system_details_route(
         network_id: NetworkId,
     ) -> JsonDict | tuple[JsonDict, int]:
-        """Get system details route - thin wrapper around connexion handler."""
+        """Get system details route - retrieves detailed information for a specific Blink system.
+
+        Args:
+            network_id: NetworkId object representing the system to get details for.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: System details data or error response with status code.
+        """
         from ..connexion_handlers.system import get_system_details
 
         return get_system_details(str(network_id))
@@ -55,11 +66,18 @@ def setup_system_routes(app: Flask) -> None:
     def update_system_settings_route(
         network_id: NetworkId,
     ) -> JsonDict | tuple[JsonDict, int]:
-        """Update system route - thin wrapper around connexion handler."""
+        """Update system route - modifies system settings like arm/disarm status.
+
+        Args:
+            network_id: NetworkId object representing the system to update.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Updated system data or error response with status code.
+        """
         from ..connexion_handlers.system import update_system_settings
 
         # Flask 3.x: Use getattr to access LocalProxy method
-        body_data = getattr(request, "get_json")()  # noqa: B009
+        body_data = getattr(request, "get_json")()  # noqa: B009  # Flask compatibility - access LocalProxy method
         body = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 
@@ -71,7 +89,14 @@ def setup_system_routes(app: Flask) -> None:
     def get_system_devices_route(
         network_id: NetworkId,
     ) -> JsonDict | tuple[JsonDict, int]:
-        """Get system devices route - thin wrapper around connexion handler."""
+        """Get system devices route - retrieves all devices (cameras, sync modules) for a system.
+
+        Args:
+            network_id: NetworkId object representing the system to get devices for.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Device list data or error response with status code.
+        """
         from ..connexion_handlers.system import get_system_devices
 
         return get_system_devices(str(network_id))
@@ -80,7 +105,11 @@ def setup_system_routes(app: Flask) -> None:
     @ensure_blink_available
     @simple_success_response("clear systems cache")
     def clear_systems_cache_route() -> JsonDict:
-        """Clear systems cache route - thin wrapper around connexion handler."""
+        """Clear systems cache route - removes cached system data to force refresh.
+
+        Returns:
+            JsonDict: Success response indicating systems cache was cleared.
+        """
         from ..connexion_handlers.system import clear_systems_cache
 
         return clear_systems_cache()

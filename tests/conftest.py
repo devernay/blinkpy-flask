@@ -25,7 +25,6 @@ def enable_strict_patching_by_default():
 @pytest.fixture(autouse=True)
 def isolate_all_file_operations(tmp_path, monkeypatch):
     """Redirect ALL file operations away from source directory."""
-
     source_dir = Path(".").resolve()
 
     # Store originals

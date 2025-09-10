@@ -16,6 +16,7 @@ def get_camera_thumbnail(
 
     Args:
         camera_id: ID of the camera to get thumbnail for.
+        timestamp: Whether to return timestamp information.
 
     Returns:
         Thumbnail file response or error tuple.

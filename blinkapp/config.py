@@ -4,6 +4,12 @@ This module centralizes all configuration values to avoid circular imports
 between app.py and other modules that need configuration constants.
 """
 
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable as CallableType
+
 # Explicitly define what this module exports
 __all__ = [
     "Config",
@@ -235,21 +241,19 @@ def validate_cache_directory(cache_dir: str) -> bool:
     Returns:
         True if directory exists or parent directory exists for creation.
     """
-    from pathlib import Path
-
     cache_path = Path(cache_dir)
     return cache_path.exists() or cache_path.parent.exists()
 
 
-def ensure_cache_directory(cache_dir: str, validator=None) -> None:
+def ensure_cache_directory(
+    cache_dir: str, validator: "CallableType[[str], bool] | None" = None
+) -> None:
     """Ensure cache directory exists with injectable validator for testing.
 
     Args:
         cache_dir: Path to the cache directory to create.
         validator: Optional validator function for testing. Defaults to validate_cache_directory.
     """
-    from pathlib import Path
-
     if validator is None:
         validator = validate_cache_directory
 

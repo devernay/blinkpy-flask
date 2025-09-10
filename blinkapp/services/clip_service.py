@@ -57,6 +57,12 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
 
     This function serves as a bridge between the route handlers and the
     actual download implementation in clip_download service.
+
+    Args:
+        clip_id: ClipId object representing the clip to download.
+
+    Returns:
+        Response | tuple[JsonDict, int]: File response or error response with status code.
     """
     from ..services.cache_service import ensure_clips_cache_initialized
     from ..services.clip_download import download_clip_common
@@ -250,8 +256,7 @@ def process_local_clips(
                         # Create composite clip ID for local clips (sync_name:item_id)
                         clip_id = ClipId.from_local(sync_name, item.id)
                         logger.debug(
-                            f"Created local clip ID: {clip_id} from sync: "
-                            f"{sync_name}, item: {item.id}"
+                            f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}"
                         )
 
                         # Check for existing thumbnail only
@@ -319,6 +324,11 @@ async def delete_clip(clip_id: ClipId) -> tuple[JsonDict, int]:
         video_deleted = False
 
         async def find_and_delete_video() -> bool:
+            """Find and delete video from Blink system.
+
+            Returns:
+                bool: True if video was found and deleted, False otherwise.
+            """
             nonlocal videos_found, video_deleted
             blink = blink_conn.blink
             if blink is None:

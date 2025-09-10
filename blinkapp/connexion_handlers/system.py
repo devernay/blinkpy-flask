@@ -50,9 +50,11 @@ def get_system_details(network_id: str) -> JsonDict | tuple[JsonDict, int]:
 
         for system in systems:
             # Type narrowing: ensure system is a dict with network_id
-            if (isinstance(system, dict)
+            if (
+                isinstance(system, dict)
                 and "network_id" in system
-                and str(system["network_id"]) == str(network_id_obj)):
+                and str(system["network_id"]) == str(network_id_obj)
+            ):
                 # Create a properly typed response
                 response_data: JsonDict = {"success": True, "data": system}
                 return response_data
@@ -71,7 +73,6 @@ def get_system_devices(network_id: str) -> JsonDict | tuple[JsonDict, int]:
     Returns:
         Devices list dictionary
     """
-
     try:
         network_id_obj = NetworkId(network_id)
         return get_devices(network_id_obj)

@@ -5,18 +5,37 @@ line-length = 88
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "D",   # pydocstyle (docstring enforcement)
+    "ANN", # flake8-annotations (type hint enforcement)
 ]
 ignore = [
-    "E501", # line too long (handled by formatter)
-    "B007", # loop control variable not used (common pattern)
+    "E501",   # line too long (handled by formatter)
+    "B007",   # loop control variable not used (common pattern)
+    "D100",   # missing docstring in public module (allow module-level docstrings to be optional)
+    "D104",   # missing docstring in public package (allow package-level docstrings to be optional)
+    "ANN401", # dynamically typed expressions (Any) are disallowed
 ]
+
+# IMPORTANT: Import/Export Restrictions Required by Specification
+# - Modules MUST NOT re-export imported symbols via __all__
+# - Only symbols defined in the module should be in __all__
+# - Unused imports MUST be removed, not added to __all__
+# - This enforces clean module boundaries and prevents circular dependencies
+
+# Docstring configuration
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Enforce Google-style docstrings
+
+[tool.ruff.lint.per-file-ignores]
+# Allow unused imports in __init__.py files only if they're re-exported
+"__init__.py" = []
 
 [tool.pyright]
 # Python version and environment
@@ -36,6 +55,22 @@ exclude = [
 
 # Type checking mode
 typeCheckingMode = "standard"
+
+# IMPORTANT: Import/Export Restrictions Required by Specification
+# - reportPrivateImportUsage enforces that private symbols are not imported
+# - This prevents importing symbols not in __all__ from other modules
+# - Maintains clean module boundaries and API contracts
+reportPrivateImportUsage = "error"
+reportImplicitStringConcatenation = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"
+
+# Type hint enforcement
+reportMissingTypeAnnotation = "error"        # Require type hints on all functions
+reportMissingParameterType = "error"         # Require type hints on all parameters
+reportMissingReturnType = "error"            # Require return type hints
+reportUnknownParameterType = "error"         # Flag unknown parameter types
+reportUnknownVariableType = "error"          # Flag unknown variable types
+reportUnknownMemberType = "warning"          # Flag unknown member types
 
 # Use type stubs for blinkpy
 stubPath = "types-blinkpy"

@@ -1,10 +1,10 @@
 """Connexion-compatible camera management handlers."""
 
 from ..models.ids import CameraId
-from ..models.types import JsonDict
+from ..models.types import DeviceDict, JsonDict
 
 
-def list_cameras() -> JsonDict:
+def list_cameras() -> dict[str, list[DeviceDict]]:
     """Get list of all available cameras across all systems.
 
     Returns:

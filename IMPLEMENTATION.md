@@ -179,10 +179,10 @@ The development environment should include modern tooling for code quality:
 
 The code must use type hints everywhere, and avoid usage of "Any", "object", "getattr", "hasattr", "cast", "# type: ignore" and other constructs that affect negatively strong typing. Type narrowing using isinstance or assert is good practice.
 When checking and fixing code quality fix those issue in that order:
-1. fix "ruff check" errors and warnings in the main code and the test code
-2. fix "pyright" errors in the main code
-3. fix "pyright" warnings in the main code
-4. run pytest on the full test suite and fix errors (remove tests that check for functions that were removed)
+1. fix "ruff check" errors and warnings in the main code and the test code. Don't stop until every error and warning is fixed.
+2. fix "pyright" errors in the main code. Don't stop until every error and warning is fixed.
+3. fix "pyright" warnings in the main code. Don't stop until every error and warning is fixed.
+4. run pytest on the full test suite and fix errors (remove tests that check for functions that were removed). Don't stop until every error and warning is fixed.
 5. fix "pyright" errors in the test code
 6. fix "pyright" warnings in the test code
 7. run pytest on the full test suite and fix errors and warnings

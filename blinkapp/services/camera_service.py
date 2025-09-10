@@ -155,7 +155,8 @@ async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
             return response, status_code
 
         # Start recording through shared connection thread
-        async def do_record():
+        async def do_record() -> bool:
+            """Execute camera recording operation."""
             return camera.record()
 
         await blink_conn.execute(do_record())

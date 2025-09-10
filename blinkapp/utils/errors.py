@@ -19,6 +19,12 @@ class ValidationError(Exception):
     """Exception for validation errors with custom status codes."""
 
     def __init__(self, message: str, status_code: int = 400) -> None:
+        """Initialize ValidationError with message and status code.
+
+        Args:
+            message: Error message describing the validation failure.
+            status_code: HTTP status code to return (default: 400).
+        """
         super().__init__(message)
         self.status_code = status_code
 

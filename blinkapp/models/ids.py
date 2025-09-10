@@ -1,6 +1,7 @@
 """ID validation classes for the Blink Camera Flask application."""
 
 import re
+from collections.abc import Iterator
 
 from blinkapp.config import Config
 
@@ -108,13 +109,21 @@ class BaseId:
         """Get character or slice from the ID."""
         return self.value[key]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate over characters in the ID."""
         return iter(self.value)
 
     # String methods delegation (only methods actually used in the app)
     def split(self, sep: str | None = None, maxsplit: int = -1) -> list[str]:
-        """Split the ID string."""
+        """Split the ID string using the specified separator.
+
+        Args:
+            sep: The separator to use for splitting (default: None for whitespace).
+            maxsplit: Maximum number of splits to perform (default: -1 for no limit).
+
+        Returns:
+            list[str]: List of string parts after splitting.
+        """
         return self.value.split(sep, maxsplit)
 
     @classmethod
@@ -239,5 +248,3 @@ class ClipId(BaseId):
             raise ValueError("Not a local storage clip")
         sync_name, item_id_str = self.value.split("~", 1)
         return sync_name, int(item_id_str)
-
-

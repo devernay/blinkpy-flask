@@ -74,12 +74,23 @@ def dump_blink_system_info() -> None:
 
 
 def check_credentials_file_exists(credentials_path: Path) -> bool:
-    """Check if credentials file exists."""
+    """Check if credentials file exists.
+
+    Args:
+        credentials_path: Path to the credentials file to check.
+
+    Returns:
+        bool: True if credentials file exists, False otherwise.
+    """
     return credentials_path.exists()
 
 
 def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
-    """Dump cloud videos information."""
+    """Dump cloud videos information to logger.
+
+    Args:
+        videos: List of video dictionaries containing cloud video metadata.
+    """
     logger.info("=== CLOUD VIDEOS ===")
     for video in videos:
         logger.info(f"Video: {video}")
@@ -88,17 +99,24 @@ def dump_cloud_videos(videos: list[dict[str, object]]) -> None:
 def handle_dump_system(
     credentials_checker: collections.abc.Callable[[Path], bool] | None = None,
 ) -> None:
-    """Handle dump-system command line option."""
+    """Handle dump-system command line option.
+
+    Args:
+        credentials_checker: Optional function to check credentials file existence.
+    """
     if credentials_checker is None:
         credentials_checker = check_credentials_file_exists
 
     import logging
     import sys
 
-    from blinkapp import CREDENTIALS_FILE, Config, initialize_cache_paths, logger
+    from blinkapp import CREDENTIALS_FILE, Config, logger
     from blinkapp.services.blink_connection import get_blink_connection
-    from blinkapp.services.blink_service import ensure_blink_connection_initialized
-    from blinkapp.services.lifecycle_service import cleanup_blink_session
+    from blinkapp.services.blink_service import (
+        cleanup_blink_session,
+        ensure_blink_connection_initialized,
+    )
+    from blinkapp.services.cache_service import initialize_cache_paths
 
     initialize_cache_paths()
 

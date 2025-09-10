@@ -6,6 +6,19 @@ live stream management, HLS transcoding, and stream cleanup.
 
 from __future__ import annotations
 
+import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable as CallableType
+
+    from blinkapp.config import Config
+
+from blinkapp.services.hls_service import (
+    HLSStream,
+    HLSStreamConfig,
+)
+
 __all__ = [
     "initialize_stream_manager",
     "create_stream_manager",
@@ -23,17 +36,17 @@ __all__ = [
     "validate_tcp_url",
 ]
 
-import logging
 import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Callable as CallableType
+
     from blinkpy.camera import BlinkCamera
 
-from blinkapp.services.hls_service import (
-    HLSStream,
-    HLSStreamConfig,
-)
+    from blinkapp.config import Config
+    from blinkapp.models.ids import CameraId
+
 
 if TYPE_CHECKING:
     from blinkapp.models.ids import CameraId
@@ -44,14 +57,28 @@ logger = logging.getLogger(__name__)
 stream_manager: StreamManager | None = None
 
 
-def initialize_stream_manager(manager_factory=None) -> None:
-    """Initialize the global stream manager instance with injectable factory."""
+def initialize_stream_manager(
+    manager_factory: CallableType[[Config], StreamManager] | None = None,
+) -> None:
+    """Initialize the global stream manager instance with injectable factory.
+
+    Args:
+        manager_factory: Optional factory function for creating StreamManager instances.
+    """
     global stream_manager
     from blinkapp import Config
 
     if manager_factory is None:
 
-        def default_factory(config):
+        def default_factory(config: Config) -> StreamManager:
+            """Default factory function for creating StreamManager instances.
+
+            Args:
+                config: Configuration object for the StreamManager.
+
+            Returns:
+                StreamManager: New StreamManager instance.
+            """
             return StreamManager(config)
 
         manager_factory = default_factory
@@ -65,12 +92,18 @@ def initialize_stream_manager(manager_factory=None) -> None:
     stream_manager = manager_factory(stream_config)
 
 
-def create_stream_manager(**kwargs) -> StreamManager:
-    """Factory function for stream manager - easily mockable."""
+def create_stream_manager(**kwargs: object) -> StreamManager:
+    """Factory function for stream manager - easily mockable.
+
+    Returns:
+        StreamManager: New StreamManager instance with provided configuration.
+    """
     return StreamManager(**kwargs)
 
 
-def ensure_stream_manager_initialized(manager_factory=None) -> StreamManager:
+def ensure_stream_manager_initialized(
+    manager_factory: CallableType[[Config], StreamManager] | None = None,
+) -> StreamManager:
     """Ensure stream manager is initialized.
 
     Args:
@@ -202,7 +235,7 @@ class StreamManager:
     in web browsers.
     """
 
-    def __init__(self, config: HLSStreamConfig | None = None):
+    def __init__(self, config: HLSStreamConfig | None = None) -> None:
         """Initialize stream manager.
 
         Args:
@@ -240,14 +273,25 @@ class StreamManager:
                 return None, error
 
     def stop_stream(self, camera_id: str) -> None:
-        """Stop stream for camera."""
+        """Stop stream for camera.
+
+        Args:
+            camera_id: Camera identifier for the stream to stop.
+        """
         with self.lock:
             if camera_id in self.streams:
                 self.streams[camera_id].stop()
                 del self.streams[camera_id]
 
     def is_stream_active(self, camera_id: str) -> bool:
-        """Check if stream is active for camera."""
+        """Check if stream is active for camera.
+
+        Args:
+            camera_id: Camera identifier to check stream status for.
+
+        Returns:
+            bool: True if stream is active, False otherwise.
+        """
         with self.lock:
             if camera_id not in self.streams:
                 return False
@@ -301,12 +345,27 @@ class StreamManager:
 
 
 def generate_hls_url(camera_id: str, filename: str) -> str:
-    """Generate HLS URL for camera stream."""
+    """Generate HLS URL for camera stream.
+
+    Args:
+        camera_id: Camera identifier for the stream.
+        filename: HLS filename (playlist or segment).
+
+    Returns:
+        str: Complete HLS URL for the camera stream file.
+    """
     return f"/api/cameras/{camera_id}/streams/{filename}"
 
 
 def parse_tcp_url(tcp_url: str) -> tuple[str, int]:
-    """Parse TCP URL to extract host and port."""
+    """Parse TCP URL to extract host and port.
+
+    Args:
+        tcp_url: TCP URL string in format "tcp://host:port".
+
+    Returns:
+        tuple[str, int]: Tuple of (host, port) extracted from URL.
+    """
     if not tcp_url.startswith("tcp://"):
         raise ValueError("Invalid TCP URL format")
 
@@ -324,12 +383,26 @@ def parse_tcp_url(tcp_url: str) -> tuple[str, int]:
 
 
 def validate_camera_id(camera_id: str) -> bool:
-    """Validate camera ID format."""
+    """Validate camera ID format.
+
+    Args:
+        camera_id: Camera identifier string to validate.
+
+    Returns:
+        bool: True if camera ID is valid, False otherwise.
+    """
     return isinstance(camera_id, str) and len(camera_id.strip()) > 0
 
 
 def validate_tcp_url(tcp_url: str) -> bool:
-    """Validate TCP URL format."""
+    """Validate TCP URL format.
+
+    Args:
+        tcp_url: TCP URL string to validate.
+
+    Returns:
+        bool: True if TCP URL is valid, False otherwise.
+    """
     try:
         parse_tcp_url(tcp_url)
         return True

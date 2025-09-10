@@ -30,12 +30,15 @@ from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
 
 if TYPE_CHECKING:
+    from blinkpy import Blink
+
+if TYPE_CHECKING:
     from blinkpy.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 
-def is_blink_authenticated(blink_instance=None) -> bool:
+def is_blink_authenticated(blink_instance: Blink | None = None) -> bool:
     """Check if user is currently authenticated with Blink API.
 
     Args:

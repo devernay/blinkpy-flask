@@ -18,7 +18,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path as RealPath
-from typing import ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 from unittest.mock import Mock, _patch, patch
 from unittest.mock import patch as original_patch
 
@@ -483,7 +483,6 @@ def create_mock_clip_cache_entry(
     cloud_thumbnail_url: str | None = None,
 ) -> Mock:
     """Create a mock ClipCacheEntry with proper spec."""
-
     from blinkapp.models.cache import ClipCacheEntry
 
     mock_entry = Mock(spec=ClipCacheEntry)
@@ -833,7 +832,7 @@ class FlaskTestCase(BaseTestCase):
             execute=mock_execute_with_coroutine_cleanup(return_value, side_effect)
         )
 
-    def assert_api_success(self, response, expected_status=200):
+    def assert_api_success(self, response: Any, expected_status: int = 200) -> None:
         """Assert API response is successful with expected format."""
         import json
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Blink Camera Flask Web Interface
+"""Blink Camera Flask Web Interface.
 
 A comprehensive web application for managing Blink camera systems with features
 including:

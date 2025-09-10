@@ -20,7 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 def setup_streaming_routes(app: Flask) -> None:
-    """Register streaming routes with the Flask app."""
+    """Register streaming routes with the Flask app.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/api/cameras/<camera_id_str>/streams", methods=["POST"])
     @ensure_blink_available
@@ -28,7 +32,14 @@ def setup_streaming_routes(app: Flask) -> None:
         "start live stream", validate_params={"camera_id_str": validate_camera_id}
     )
     def start_live_stream_route(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
-        """Start stream route - thin wrapper around connexion handler."""
+        """Start stream route - initiates live video streaming from the specified camera.
+
+        Args:
+            camera_id: CameraId object representing the camera to start streaming from.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Stream URL and details or error response with status code.
+        """
         from ..connexion_handlers.streaming import start_live_stream
 
         return start_live_stream(str(camera_id))
@@ -39,7 +50,14 @@ def setup_streaming_routes(app: Flask) -> None:
         "stop live stream", validate_params={"camera_id_str": validate_camera_id}
     )
     def stop_live_stream_route(camera_id: CameraId) -> JsonDict | tuple[JsonDict, int]:
-        """Stop stream route - thin wrapper around connexion handler."""
+        """Stop stream route - terminates live video streaming from the specified camera.
+
+        Args:
+            camera_id: CameraId object representing the camera to stop streaming from.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Success response or error response with status code.
+        """
         from ..connexion_handlers.streaming import stop_live_stream
 
         return stop_live_stream(str(camera_id))
@@ -52,7 +70,15 @@ def setup_streaming_routes(app: Flask) -> None:
     def get_hls_stream_segments_route(
         camera_id: CameraId, filename: str
     ) -> Response | tuple[JsonDict, int]:
-        """Get HLS segments route - thin wrapper around connexion handler."""
+        """Get HLS segments route - serves HLS video stream segments and playlists.
+
+        Args:
+            camera_id: CameraId object representing the camera stream.
+            filename: HLS segment filename or playlist file to serve.
+
+        Returns:
+            Response | tuple[JsonDict, int]: HLS file response or error response with status code.
+        """
         from ..connexion_handlers.streaming import get_hls_stream_segments
 
         return get_hls_stream_segments(str(camera_id), filename)

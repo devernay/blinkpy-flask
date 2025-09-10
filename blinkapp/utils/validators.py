@@ -1,5 +1,4 @@
-"""
-Validation utilities for the Blink Camera Flask application.
+"""Validation utilities for the Blink Camera Flask application.
 
 This module provides pure validation functions for input sanitization,
 security checks, and data validation. Functions are designed to be stateless

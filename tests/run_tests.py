@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test Runner for Blink Camera Flask Web Interface
+"""Test Runner for Blink Camera Flask Web Interface
 
 This script provides various options for running the test suite with coverage reporting.
 """

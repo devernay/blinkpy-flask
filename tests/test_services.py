@@ -189,7 +189,6 @@ class TestAuthService(BaseTestCase):
 
     def test_create_blink_session_default(self) -> None:
         """Test creating blink session with default factory."""
-
         from blinkapp.services import auth_service
 
         with patch("aiohttp.ClientSession") as mock_session_class:
@@ -203,7 +202,6 @@ class TestAuthService(BaseTestCase):
 
     def test_create_blink_session_custom_factory(self):
         """Test creating blink session with custom factory."""
-
         from blinkapp.services import auth_service
 
         with patch(
@@ -641,7 +639,6 @@ class TestDebugService(BaseTestCase):
 
     def test_check_credentials_file_exists_false(self) -> None:
         """Test credentials file does not exist returns False."""
-
         from blinkapp.services.debug_service import check_credentials_file_exists
         from tests.test_base import create_mock_path
 
@@ -865,7 +862,6 @@ class TestFFmpegHelpers(BaseTestCase):
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
         """Test FFmpeg process creation with default factory."""
-
         import subprocess
 
         from blinkapp.services.hls_service import _create_ffmpeg_process
@@ -1710,7 +1706,6 @@ class TestLifecycleService(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_cleanup_resources_success(self, mock_blink_conn, mock_stream):
         """Test successful resource cleanup."""
-
         from blinkapp.services import lifecycle_service
         from tests.test_base import (
             create_mock_blink_connection,
@@ -1775,7 +1770,6 @@ class TestConnectionService(BaseTestCase):
     @patch("concurrent.futures.ThreadPoolExecutor")
     def test_parallel_cache_clearing(self, mock_executor: Mock) -> None:
         """Test parallel execution of cache clearing."""
-
         # Use patched ThreadPoolExecutor directly and set up context manager
         mock_executor.__enter__ = Mock(spec=callable, return_value=mock_executor)
         mock_executor.__exit__ = Mock(spec=callable, return_value=None)

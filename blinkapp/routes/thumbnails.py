@@ -14,12 +14,15 @@ from ..utils.route_decorators import api_route_with_validation
 from ..utils.validation_helpers import validate_camera_id
 
 if TYPE_CHECKING:
+    from blinkpy.camera import BlinkCamera as Camera
+
+if TYPE_CHECKING:
     from flask import Flask
 
 logger = logging.getLogger(__name__)
 
 
-def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
+def update_camera_thumbnail(camera: Camera, current_ts: int, cached_ts: int) -> None:
     """Update camera thumbnail if current timestamp is newer than cached.
 
     Args:
@@ -41,7 +44,11 @@ def update_camera_thumbnail(camera, current_ts: int, cached_ts: int) -> None:
 
 
 def setup_camera_thumbnail_routes(app: Flask) -> None:
-    """Register thumbnail routes with the Flask app."""
+    """Register thumbnail routes with the Flask app.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/api/cameras/<camera_id>/thumbnail")
     @ensure_blink_available
@@ -51,7 +58,14 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
     def get_camera_thumbnail_route(
         camera_id: CameraId,
     ) -> Response | JsonDict | tuple[JsonDict, int]:
-        """Get thumbnail route - thin wrapper around connexion handler."""
+        """Get thumbnail route - retrieves camera thumbnail image or timestamp information.
+
+        Args:
+            camera_id: CameraId object representing the camera to get thumbnail for.
+
+        Returns:
+            Response | JsonDict | tuple[JsonDict, int]: Thumbnail image, timestamp data, or error response.
+        """
         from ..connexion_handlers.thumbnails import get_camera_thumbnail
 
         timestamp = request.args.get("timestamp", "").lower() == "true"
@@ -65,7 +79,14 @@ def setup_camera_thumbnail_routes(app: Flask) -> None:
     def refresh_camera_thumbnail_route(
         camera_id: CameraId,
     ) -> JsonDict | tuple[JsonDict, int]:
-        """Refresh thumbnail route - thin wrapper around connexion handler."""
+        """Refresh thumbnail route - clears cache and fetches new thumbnail from camera.
+
+        Args:
+            camera_id: CameraId object representing the camera to refresh thumbnail for.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Success response or error response with status code.
+        """
         from ..connexion_handlers.thumbnails import refresh_camera_thumbnail
 
         return refresh_camera_thumbnail(str(camera_id))

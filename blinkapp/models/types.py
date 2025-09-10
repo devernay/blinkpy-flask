@@ -1,5 +1,4 @@
-"""
-Centralized type definitions for the Blink Camera Flask application.
+"""Centralized type definitions for the Blink Camera Flask application.
 
 This module contains all common type aliases used throughout the application
 to ensure consistency and avoid duplication. Import these types instead of

@@ -13,13 +13,21 @@ if TYPE_CHECKING:
 
 
 def setup_admin_routes(app: Flask) -> None:
-    """Set up admin routes with the Flask app."""
+    """Set up admin routes with the Flask app.
+
+    Args:
+        app: Flask application instance to register routes with.
+    """
 
     @app.route("/api/cache", methods=["DELETE"])
     @ensure_blink_available
     @simple_success_response("clear all caches")
     def clear_all_caches_route() -> JsonDict:
-        """Clear all caches route - thin wrapper around connexion handler."""
+        """Clear all caches route - thin wrapper around connexion handler.
+
+        Returns:
+            JsonDict: Success response indicating caches were cleared.
+        """
         from ..connexion_handlers.admin import clear_all_caches
 
         return clear_all_caches()
@@ -28,7 +36,11 @@ def setup_admin_routes(app: Flask) -> None:
     @ensure_blink_available
     @simple_success_response("clear thumbnail cache")
     def clear_thumbnail_cache_route() -> JsonDict:
-        """Clear thumbnail cache route - thin wrapper around connexion handler."""
+        """Clear thumbnail cache route - thin wrapper around connexion handler.
+
+        Returns:
+            JsonDict: Success response indicating thumbnail cache was cleared.
+        """
         from ..connexion_handlers.admin import clear_thumbnail_cache
 
         return clear_thumbnail_cache()
@@ -37,7 +49,11 @@ def setup_admin_routes(app: Flask) -> None:
     @ensure_blink_available
     @simple_success_response("clear clips cache")
     def clear_clips_cache_route() -> JsonDict:
-        """Clear clips cache route - thin wrapper around connexion handler."""
+        """Clear clips cache route - thin wrapper around connexion handler.
+
+        Returns:
+            JsonDict: Success response indicating clips cache was cleared.
+        """
         from ..connexion_handlers.admin import clear_clips_cache
 
         return clear_clips_cache()

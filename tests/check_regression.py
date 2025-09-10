@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test regression checker.
+"""Test regression checker.
 
 This script compares current test results against the baseline to detect regressions.
 """

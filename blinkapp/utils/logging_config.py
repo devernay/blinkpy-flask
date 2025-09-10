@@ -1,5 +1,4 @@
-"""
-Logging configuration utilities for the Blink Camera Flask application.
+"""Logging configuration utilities for the Blink Camera Flask application.
 
 This module provides centralized logging setup with rotating file handlers
 and appropriate log levels for both development and production environments.

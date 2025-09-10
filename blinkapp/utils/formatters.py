@@ -1,5 +1,4 @@
-"""
-Formatting utilities for the Blink Camera Flask application.
+"""Formatting utilities for the Blink Camera Flask application.
 
 This module provides formatting functions for displaying data in user-friendly
 formats, including time formatting and data organization.

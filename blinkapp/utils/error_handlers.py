@@ -1,5 +1,4 @@
-"""
-Error handling utilities for the Blink Camera Flask application.
+"""Error handling utilities for the Blink Camera Flask application.
 
 This module provides centralized error handling for API endpoints with
 consistent error response formatting and user-friendly error messages.

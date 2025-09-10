@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Update test baseline.
+"""Update test baseline.
 
 This script runs the full test suite and updates the baseline file.
 """

@@ -17,7 +17,11 @@ from blinkapp.services.lifecycle_service import cleanup_resources, startup
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
-    """Create and configure argument parser."""
+    """Create and configure argument parser for command line options.
+
+    Returns:
+        argparse.ArgumentParser: Configured argument parser with all CLI options.
+    """
     parser = argparse.ArgumentParser(description="Blink Camera Flask Web Interface")
     parser.add_argument(
         "--host",
@@ -49,14 +53,25 @@ def create_argument_parser() -> argparse.ArgumentParser:
 
 
 def setup_signal_handlers() -> None:
-    """Set up signal handlers for graceful shutdown."""
+    """Set up signal handlers for graceful shutdown.
+
+    Registers SIGINT and SIGTERM handlers for clean application shutdown,
+    and ensures cleanup_resources is called on exit.
+    """
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     atexit.register(cleanup_resources)
 
 
 def run_app(args: argparse.Namespace) -> None:
-    """Run the Flask application with given arguments."""
+    """Run the Flask application with given arguments.
+
+    Args:
+        args: Parsed command line arguments containing host, port, debug settings, etc.
+
+    Side Effects:
+        Starts Flask development server or dumps system info and exits.
+    """
     if args.dump_system:
         from blinkapp.services.debug_service import handle_dump_system
 
@@ -88,8 +103,17 @@ def signal_handler(signum: int, frame: Any) -> None:
 
 
 def configure_logging(log_level: str) -> None:
-    """Configure logging levels for all loggers."""
-    level = getattr(logging, log_level)
+    """Configure logging levels for all loggers.
+
+    Args:
+        log_level: Logging level name (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+
+    Side Effects:
+        Sets logging level for root, blinkpy, werkzeug, and flask loggers.
+    """
+    level = getattr(
+        logging, log_level
+    )  # Dynamic access to logging level constants (DEBUG, INFO, etc.)
     logging.getLogger().setLevel(level)
     logging.getLogger("blinkpy").setLevel(level)
     logging.getLogger("werkzeug").setLevel(level)
@@ -97,7 +121,11 @@ def configure_logging(log_level: str) -> None:
 
 
 def main() -> None:
-    """Main entry point."""
+    """Main entry point for the blinkapp module.
+
+    Parses command line arguments, configures the application,
+    sets up signal handlers, and starts the Flask server.
+    """
     parser = create_argument_parser()
     args = parser.parse_args()
 

@@ -866,7 +866,6 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     def test_2fa_validation_empty_key(self) -> None:
         """Test 2FA with empty verification key."""
-
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
@@ -1061,7 +1060,6 @@ class TestCacheOperations(BaseTestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-
         self.cache = CameraThumbnailCache(maxsize=10)
 
     def test_cache_set_get(self) -> None:
@@ -3192,7 +3190,6 @@ class TestPerformanceOptimizations(BaseTestCase):
 
     def test_fifo_cache_management(self) -> None:
         """Test FIFO cache management."""
-
         # Test FIFO cache behavior
         cache = CameraThumbnailCache(maxsize=2)
 
@@ -3322,7 +3319,6 @@ class TestLocalClipDownloadOperations(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_download_local_clip_cached_success(self, mock_ensure_blink: Mock) -> None:
         """Test downloading cached local clip."""
-
         # Mock cached clip
         mock_filepath = create_mock_path("mock_path")
         mock_filepath.exists.return_value = True
@@ -4072,7 +4068,6 @@ class TestResourceManagement(BaseTestCase):
 
     def test_cache_size_enforcement(self) -> None:
         """Test that cache size limits are enforced."""
-
         # Test FIFO cache respects size limits
         cache = CameraThumbnailCache(maxsize=3)
 
@@ -4285,7 +4280,6 @@ class TestCacheMaintenanceOperations(BaseTestCase):
 
     def test_cache_maintenance_with_size_limits(self) -> None:
         """Test cache maintenance respects size limits."""
-
         # Test cache eviction policy
         cache = CameraThumbnailCache(maxsize=3)
 
@@ -5762,7 +5756,6 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     def test_fifo_cache_basic_operations(self) -> None:
         """Test cache basic operations."""
-
         # Test basic cache operations
         cache = CameraThumbnailCache(maxsize=2)
 
@@ -6210,7 +6203,6 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         self, mock_cache_init: Mock, mock_blink: Mock
     ) -> None:
         """Test clip thumbnail check success."""
-
         # Mock blink availability
         mock_blink_instance = create_mock_blink_instance()
         mock_blink.return_value = mock_blink_instance
@@ -6311,7 +6303,6 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
 
     def test_cache_hit_optimization(self) -> None:
         """Test cache hit optimization."""
-
         cache = CameraThumbnailCache(maxsize=10)
 
         # Test cache hit performance
