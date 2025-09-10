@@ -1188,24 +1188,51 @@ class TestDebugService(BaseTestCase):
     """Test debug service functions."""
 
     def test_check_credentials_file_exists_true(self) -> None:
-        """Test credentials file exists returns True."""
+        """Test check_credentials_file_exists when file exists."""
+        from pathlib import Path
+
         from blinkapp.services.debug_service import check_credentials_file_exists
-        from tests.test_base import create_mock_path
 
-        mock_path = create_mock_path("credentials", exists=True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_file = Path(temp_dir) / "test_creds.json"
+            test_file.write_text("{}")
 
-        result = check_credentials_file_exists(mock_path)
-        self.assertTrue(result)
+            result = check_credentials_file_exists(test_file)
+            self.assertTrue(result)
 
     def test_check_credentials_file_exists_false(self) -> None:
-        """Test credentials file does not exist returns False."""
+        """Test check_credentials_file_exists when file doesn't exist."""
+        from pathlib import Path
+
         from blinkapp.services.debug_service import check_credentials_file_exists
-        from tests.test_base import create_mock_path
 
-        mock_path = create_mock_path("credentials", exists=False)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_file = Path(temp_dir) / "nonexistent.json"
 
-        result = check_credentials_file_exists(mock_path)
-        self.assertFalse(result)
+            result = check_credentials_file_exists(test_file)
+            self.assertFalse(result)
+
+    def test_dump_cloud_videos_empty(self) -> None:
+        """Test dump_cloud_videos with empty list."""
+        from blinkapp.services.debug_service import dump_cloud_videos
+
+        with patch("blinkapp.services.debug_service.logger") as mock_logger:
+            dump_cloud_videos([])
+
+            mock_logger.info.assert_called_with("=== CLOUD VIDEOS ===")
+
+    def test_dump_cloud_videos_with_data(self) -> None:
+        """Test dump_cloud_videos with video data."""
+        from blinkapp.services.debug_service import dump_cloud_videos
+
+        videos = [{"id": "123", "name": "test.mp4"}, {"id": "456", "name": "test2.mp4"}]
+
+        with patch("blinkapp.services.debug_service.logger") as mock_logger:
+            dump_cloud_videos(videos)
+
+            mock_logger.info.assert_any_call("=== CLOUD VIDEOS ===")
+            mock_logger.info.assert_any_call(f"Video: {videos[0]}")
+            mock_logger.info.assert_any_call(f"Video: {videos[1]}")
 
 
 class TestDeviceService(BaseTestCase):
