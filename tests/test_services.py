@@ -2836,6 +2836,42 @@ class TestStreamService(BaseTestCase):
         result = is_stream_active(camera_id)
         self.assertIsInstance(result, bool)
 
+    @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
+    def test_start_camera_stream_success(self, mock_ensure_manager: Mock) -> None:
+        """Test start_camera_stream with successful stream start."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import start_camera_stream
+        from tests.test_base import create_mock_stream_manager
+
+        camera_id = CameraId("12345")
+        tcp_url = "tcp://localhost:8080"
+
+        mock_manager = create_mock_stream_manager()
+        mock_manager.start_stream.return_value = ("http://hls-url", None)
+        mock_ensure_manager.return_value = mock_manager
+
+        hls_url, error = start_camera_stream(camera_id, tcp_url)
+
+        self.assertEqual(hls_url, "http://hls-url")
+        self.assertIsNone(error)
+        mock_manager.start_stream.assert_called_once_with("12345", tcp_url)
+
+    @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
+    def test_start_camera_stream_failure(self, mock_ensure_manager: Mock) -> None:
+        """Test start_camera_stream with stream start failure."""
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services.stream_service import start_camera_stream
+
+        camera_id = CameraId("12345")
+        tcp_url = "tcp://localhost:8080"
+
+        mock_ensure_manager.side_effect = Exception("Stream failed")
+
+        hls_url, error = start_camera_stream(camera_id, tcp_url)
+
+        self.assertIsNone(hls_url)
+        self.assertIn("Stream failed", error)
+
     def test_stop_camera_stream_success(self) -> None:
         """Test successful camera stream stop."""
         from blinkapp.models.ids import CameraId
