@@ -319,7 +319,7 @@ The live streaming functionality should include advanced stream management:
 - **RESTful API**: 51+ endpoints with comprehensive functionality covering all specifications
 - **OpenAPI Documentation**: Complete API specification with request/response schemas
 - **Type Safety**: Full type hints throughout codebase with pyright validation
-- **Testing**: 582 passing tests with 68% code coverage and complete isolation
+- **Testing**: 733 passing tests with 80% code coverage and complete isolation
 - **Code Quality**: Pre-commit hooks, ruff formatting, automated linting
 
 ### Advanced Features
@@ -333,9 +333,9 @@ The live streaming functionality should include advanced stream management:
 ## 🔧 Partially Implemented Features
 
 ### Camera Properties Display
-- ✅ Basic camera information display
-- ⚠️ Temperature, battery voltage, signal strength display pending
-- ⚠️ Real-time property updates
+- ✅ Backend data collection: Temperature, battery voltage, WiFi strength available in device service
+- ⚠️ Frontend display: Camera properties not shown in UI templates
+- ⚠️ Motion detection per camera: Individual camera motion toggle missing from Home view
 
 ### Sync Module Interaction
 - ✅ Basic sync module detection and display
@@ -344,8 +344,8 @@ The live streaming functionality should include advanced stream management:
 ## 📋 Remaining TODO Items
 
 ### High Priority
-- **Motion Detection Per Camera**: Individual camera motion toggle in Home view
-- **Camera Properties**: Display temperature, battery, WiFi/sync signal strength
+- **Motion Detection Per Camera**: Individual camera motion toggle in Home view (backend ready, frontend missing)
+- **Camera Properties UI**: Display temperature, battery, WiFi/sync signal strength in camera thumbnails or pane
 
 ### Medium Priority
 - **Sync Module Management**: Detailed interaction and configuration options
@@ -356,9 +356,9 @@ The live streaming functionality should include advanced stream management:
 - **Advanced Stream Configuration**: Quality settings, bandwidth optimization
 - **Enhanced Mobile Experience**: Progressive Web App features
 
-## 📊 Conformance Score: 98% ✅
+## 📊 Conformance Score: 96% ✅
 
-The application demonstrates excellent conformance to specifications with all major features implemented and working correctly. The remaining 2% consists of minor enhancements that don't impact core functionality.
+The application demonstrates excellent conformance to specifications with all major features implemented and working correctly. The remaining 4% consists of frontend UI elements for camera properties that have backend support but lack frontend display.
 
 **Key Achievements:**
 - Complete specification compliance for all core features
@@ -366,5 +366,9 @@ The application demonstrates excellent conformance to specifications with all ma
 - Comprehensive API with 51+ endpoints and full documentation
 - Mobile-responsive design with modern development practices
 - Robust caching and performance optimization
-- Extensive test coverage (582 tests, 68% coverage) with bulletproof isolation
+- Extensive test coverage (733 tests, 80% coverage) with bulletproof isolation
 - Complete HLS streaming implementation with FFmpeg transcoding
+
+**Minor Gaps:**
+- Camera properties (temperature, battery, WiFi strength) collected but not displayed in UI
+- Individual camera motion detection toggle missing from Home view frontend
