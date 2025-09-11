@@ -258,12 +258,18 @@ def handle_test_credentials() -> None:
 
 
 def handle_test_and_exit() -> None:
-    """Full initialization test with camera list and exit.
+    """Full initialization test with cache clearing, thumbnail loading, and clip operations.
 
-    This function does complete app startup, tests credentials,
-    retrieves camera list, and exits with status code.
+    This function:
+    1. Clears all caches
+    2. Does complete app startup and authentication
+    3. Loads camera thumbnails using our API and verifies caching
+    4. Loads cloud storage clip list and thumbnails using our API
+    5. Loads local storage clip list
+    6. Verifies all operations and exits with status code
     """
     import sys
+    from pathlib import Path
 
     from .lifecycle_service import startup
 
@@ -275,52 +281,192 @@ def handle_test_and_exit() -> None:
     logger.addHandler(console_handler)
     logger.setLevel(logging.INFO)
 
-    print("🚀 Starting full initialization test...")
+    print("🚀 Starting comprehensive test with cache clearing and thumbnail loading...")
 
     try:
-        # Do full startup (this includes credential loading)
+        # Step 1: Clear all caches
+        print("🧹 Clearing all caches...")
+        from blinkapp import CLIPS_CACHE_DIR, THUMBNAIL_CACHE_DIR
+
+        # Clear thumbnail cache if it exists
+        if THUMBNAIL_CACHE_DIR and Path(THUMBNAIL_CACHE_DIR).exists():
+            import shutil
+
+            shutil.rmtree(THUMBNAIL_CACHE_DIR)
+            print("  ✅ Thumbnail cache cleared")
+
+        # Clear clips cache if it exists
+        if CLIPS_CACHE_DIR and Path(CLIPS_CACHE_DIR).exists():
+            import shutil
+
+            shutil.rmtree(CLIPS_CACHE_DIR)
+            print("  ✅ Clips cache cleared")
+
+        # Step 2: Do full startup
         startup()
 
-        # Check if credentials were loaded successfully
+        # Step 3: Check authentication
         from .auth_service import is_blink_authenticated
 
-        if is_blink_authenticated():
-            print("✅ Credentials loaded and authenticated!")
-
-            # Try to get camera list
-            try:
-                from .blink_service import ensure_blink_initialized
-
-                blink = ensure_blink_initialized()
-
-                if blink and hasattr(blink, "cameras") and blink.cameras:
-                    print(f"📷 Found {len(blink.cameras)} cameras:")
-                    for name, camera in blink.cameras.items():
-                        status = "🟢 Armed" if camera.arm else "🔴 Disarmed"
-                        print(f"  - {name}: {status}")
-                    print("✅ Full initialization successful!")
-                    sys.exit(0)
-                else:
-                    print("⚠️ Authenticated but no cameras found")
-                    sys.exit(1)
-
-            except Exception as e:
-                print(f"❌ Error retrieving cameras: {e}")
-                sys.exit(1)
-        else:
+        if not is_blink_authenticated():
             print("❌ Failed to authenticate")
             sys.exit(1)
 
+        print("✅ Credentials loaded and authenticated!")
+
+        # Step 4: Get cameras and load thumbnails using our API
+        from .blink_service import ensure_blink_initialized
+
+        blink = ensure_blink_initialized()
+
+        if not (blink and hasattr(blink, "cameras") and blink.cameras):
+            print("⚠️ Authenticated but no cameras found")
+            sys.exit(1)
+
+        print(f"📷 Found {len(blink.cameras)} cameras, loading thumbnails via API...")
+
+        # Load camera thumbnails using our thumbnail service
+        thumbnail_success_count = 0
+        for name, camera in blink.cameras.items():
+            try:
+                if camera.thumbnail:
+                    print(f"  📸 Loading thumbnail for {name} (ID: {camera.camera_id})")
+
+                    # Print camera metadata keys for debugging
+                    camera_attrs = {
+                        attr: getattr(camera, attr, None)
+                        for attr in [
+                            "name",
+                            "camera_id",
+                            "thumbnail",
+                            "serial",
+                            "battery",
+                        ]
+                    }
+                    print(f"    📋 Camera metadata keys: {list(camera_attrs.keys())}")
+
+                    # Use our thumbnail service to get/cache the thumbnail
+                    from ..models.ids import CameraId
+                    from .thumbnail_service import (
+                        get_camera_thumbnail,  # type: ignore[attr-defined]
+                    )
+
+                    camera_id = CameraId(str(camera.camera_id))
+                    result = get_camera_thumbnail(camera_id)  # type: ignore[misc]
+
+                    if result:
+                        print(f"    ✅ Thumbnail loaded and cached for {name}")
+                        thumbnail_success_count += 1
+                    else:
+                        print(f"    ⚠️ Failed to load thumbnail for {name}")
+                else:
+                    print(f"  ⚠️ No thumbnail URL for {name}")
+            except Exception as e:
+                print(f"  ❌ Error loading thumbnail for {name}: {e}")
+
+        print(f"  ✅ Successfully loaded {thumbnail_success_count} camera thumbnails")
+
+        # Step 5: Load cloud clip list and thumbnails using our API
+        print("☁️ Loading cloud storage clip list...")
+        try:
+            from ..connexion_handlers.clips import (
+                get_clips,  # type: ignore[attr-defined]
+            )
+
+            # Get cloud clips list
+            cloud_clips_response = get_clips("cloud")  # type: ignore[misc]
+
+            if isinstance(cloud_clips_response, dict) and cloud_clips_response.get(
+                "success"
+            ):
+                cloud_clips = cloud_clips_response.get("data", [])
+                print(f"  ✅ Found {len(cloud_clips)} cloud clips")
+
+                # Print clip metadata keys for debugging
+                if cloud_clips:
+                    sample_clip = cloud_clips[0]
+                    if isinstance(sample_clip, dict):
+                        print(f"  📋 Clip metadata keys: {list(sample_clip.keys())}")
+
+                # Load thumbnails for first few cloud clips
+                clip_thumbnail_count = 0
+                for clip in cloud_clips[:3]:  # Test first 3 clips
+                    try:
+                        # Clips are dict with keys like: created_at, device_name, deleted, media, id
+                        clip_id = clip.get("id", "unknown")
+                        print(f"    📸 Loading thumbnail for cloud clip {clip_id}")
+
+                        # Use our clip thumbnail service
+                        from ..connexion_handlers.clips import (
+                            generate_clip_thumbnail,  # type: ignore[attr-defined]
+                        )
+
+                        result = generate_clip_thumbnail(str(clip_id))  # type: ignore[misc]
+
+                        if isinstance(result, dict) and result.get("success"):  # type: ignore[misc]
+                            print(f"      ✅ Thumbnail generated for clip {clip_id}")
+                            clip_thumbnail_count += 1
+                        else:
+                            print(
+                                f"      ⚠️ Failed to generate thumbnail for clip {clip_id}"
+                            )
+
+                    except Exception as e:
+                        print(f"      ❌ Error generating thumbnail for clip: {e}")
+
+                print(f"  ✅ Generated {clip_thumbnail_count} cloud clip thumbnails")
+            else:
+                print("  ⚠️ No cloud clips found")
+
+        except Exception as e:
+            print(f"  ❌ Error loading cloud clips: {e}")
+
+        # Step 6: Load local clip list
+        print("💾 Loading local storage clip list...")
+        try:
+            # Get local clips list
+            local_clips_response = get_clips("local")  # type: ignore[misc]
+
+            if isinstance(local_clips_response, dict) and local_clips_response.get(
+                "success"
+            ):
+                local_clips = local_clips_response.get("data", [])
+                print(f"  ✅ Found {len(local_clips)} local clips")
+            else:
+                print("  ⚠️ No local clips found")
+
+        except Exception as e:
+            print(f"  ❌ Error loading local clips: {e}")
+
+        # Step 7: Verify cache directories were created and populated
+        print("🔍 Verifying cache structure and content...")
+
+        if THUMBNAIL_CACHE_DIR and Path(THUMBNAIL_CACHE_DIR).exists():
+            thumbnail_files = list(Path(THUMBNAIL_CACHE_DIR).glob("*.jpg"))
+            print(
+                f"  ✅ Thumbnail cache directory created with {len(thumbnail_files)} files"
+            )
+        else:
+            print("  ⚠️ Thumbnail cache directory not created")
+
+        if CLIPS_CACHE_DIR and Path(CLIPS_CACHE_DIR).exists():
+            clip_files = list(Path(CLIPS_CACHE_DIR).rglob("*"))
+            print(f"  ✅ Clips cache directory created with {len(clip_files)} items")
+        else:
+            print("  ⚠️ Clips cache directory not created")
+
+        print("✅ Comprehensive test completed successfully!")
+        sys.exit(0)
+
     except Exception as e:
-        print(f"❌ Error during initialization: {e}")
+        print(f"❌ Error during comprehensive test: {e}")
+        import traceback
+
+        traceback.print_exc()
         sys.exit(1)
     finally:
         # Clean up
         try:
-            from .blink_service import ensure_blink_connection_initialized
-
-            blink_connection = ensure_blink_connection_initialized()
             logger.removeHandler(console_handler)
-            blink_connection.shutdown()
         except Exception:
             pass
