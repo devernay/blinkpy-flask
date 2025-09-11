@@ -17,16 +17,8 @@ def main_page() -> ResponseReturnValue:
     """
     from flask import redirect, render_template, session, url_for
 
-    # Check if session is already authenticated
     if not session.get("authenticated"):
-        # Check if we have saved Blink credentials and auto-authenticate
-        from ..services.auth_service import is_blink_authenticated
-
-        if is_blink_authenticated():
-            # Auto-authenticate the session if Blink credentials are valid
-            session["authenticated"] = True
-        else:
-            return redirect(url_for("login_page_route"))
+        return redirect(url_for("login_page_route"))
 
     return render_template("index.html")
 

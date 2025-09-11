@@ -137,11 +137,20 @@ def startup() -> None:
                     )
                 else:
                     logger.info("No saved credentials found - user will need to login")
-            elif logger.isEnabledFor(logging.INFO):
-                # Log system information for debugging if verbose logging enabled
-                from blinkapp.services.debug_service import dump_blink_system_info
+            else:
+                # Credentials loaded successfully - auto-authenticate web session
+                from flask import session
 
-                dump_blink_system_info()
+                session["authenticated"] = True
+                logger.info(
+                    "Saved credentials loaded successfully - web session authenticated"
+                )
+
+                if logger.isEnabledFor(logging.INFO):
+                    # Log system information for debugging if verbose logging enabled
+                    from blinkapp.services.debug_service import dump_blink_system_info
+
+                    dump_blink_system_info()
         except Exception as e:
             logger.error(f"Error loading saved Blink credentials: {e}")
             logger.info("Credentials preserved - log out if error persists")
