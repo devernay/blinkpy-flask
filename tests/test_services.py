@@ -3283,6 +3283,9 @@ class TestLifecycleService(BaseTestCase):
 
 class TestConnectionService(BaseTestCase):
     """Test connection service functions."""
+    
+    # Don't initialize blink objects for this test to test uninitialized state
+    init_blink_objects = False
 
     def test_initialize_connections(self) -> None:
         """Test initialize_connections function."""
@@ -3330,7 +3333,7 @@ class TestConnectionService(BaseTestCase):
         """Test basic connection service."""
         from blinkapp.services.blink_connection import get_blink_connection
 
-        # Should return None when not initialized
+        # Should return None when blink objects are not initialized
         result = get_blink_connection()
         self.assertIsNone(result)
 

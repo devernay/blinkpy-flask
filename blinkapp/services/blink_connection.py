@@ -203,10 +203,13 @@ def get_blink_connection() -> BlinkConnection | None:
     Returns:
         BlinkConnection | None: The global connection instance if available, None otherwise.
     """
-    # Use the singleton from blink_service
-    from blinkapp.services.blink_service import ensure_blink_connection_initialized
-
+    # Use the singleton from blink_service, but don't initialize if not present
+    from blinkapp.services.blink_service import get_blink_instance
+    
+    # Check if blink service has been initialized
     try:
+        get_blink_instance()  # This will raise if not initialized
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
         return ensure_blink_connection_initialized()
     except RuntimeError:
         return None

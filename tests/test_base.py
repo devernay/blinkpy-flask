@@ -995,12 +995,77 @@ def with_blink_auth(test_func: Callable[..., None]) -> Callable[..., None]:
 
 
 class BaseTestCase(unittest.TestCase):
-    """Simplified base test case - isolation handled by pytest fixtures."""
+    """Simplified base test case - isolation handled by pytest fixtures.
+    
+    Attributes:
+        init_connections: Whether to initialize connection services (default: True)
+        init_blink_objects: Whether to initialize blink objects (default: True)
+        init_stream_manager: Whether to initialize stream manager (default: True)
+        init_cache: Whether to initialize cache services (default: True)
+    """
+    
+    # Class-level defaults that can be overridden by subclasses
+    init_connections: bool = True
+    init_blink_objects: bool = True
+    init_stream_manager: bool = True
+    init_cache: bool = True
 
     def setUp(self) -> None:
-        """Set up test environment."""
+        """Set up test environment with configurable initialization."""
         super().setUp()
-        initialize_for_testing()
+        self._initialize_for_testing(
+            connections=self.init_connections,
+            blink_objects=self.init_blink_objects,
+            stream_manager=self.init_stream_manager,
+            cache=self.init_cache
+        )
+
+    def _initialize_for_testing(
+        self,
+        *,
+        connections: bool = True,
+        blink_objects: bool = True,
+        stream_manager: bool = True,
+        cache: bool = True
+    ) -> None:
+        """Initialize components for testing with fine-grained control.
+        
+        Args:
+            connections: Whether to initialize connection services
+            blink_objects: Whether to initialize blink objects
+            stream_manager: Whether to initialize stream manager
+            cache: Whether to initialize cache services
+        """
+        import blinkapp
+        
+        if connections:
+            from blinkapp.services.connection_service import initialize_connections
+            initialize_connections()
+            
+        if blink_objects:
+            from blinkapp.services.blink_service import initialize_blink_objects
+            initialize_blink_objects()
+
+        if stream_manager:
+            # Initialize stream manager
+            try:
+                from blinkapp.services.stream_service import ensure_stream_manager_initialized
+                ensure_stream_manager_initialized()
+            except Exception:
+                pass  # Stream manager initialization can fail in tests
+
+        if cache:
+            # Initialize cache services
+            try:
+                from blinkapp.services.cache_service import initialize_cache_instances
+                initialize_cache_instances()
+            except Exception:
+                pass  # Cache initialization can fail in tests
+
+        # Set up test cache directory
+        from pathlib import Path
+        blinkapp.CACHE_DIR = TestData.CACHE_DIR
+        blinkapp.CREDENTIALS_FILE = Path(TestData.CACHE_DIR) / "blink.json"
 
     def tearDown(self) -> None:
         """Clean up test environment."""

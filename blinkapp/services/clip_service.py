@@ -215,13 +215,12 @@ def process_local_clips(
     """
     # Use injected dependencies or defaults
     if blink_instance is None or blink_connection_instance is None:
-        from blinkapp.services.blink_connection import blink_connection
-        from blinkapp.services.blink_service import ensure_blink_initialized
+        from blinkapp.services.blink_service import ensure_blink_initialized, ensure_blink_connection_initialized
 
         if blink_instance is None:
             blink_instance = ensure_blink_initialized()
         if blink_connection_instance is None:
-            blink_connection_instance = blink_connection
+            blink_connection_instance = ensure_blink_connection_initialized()
 
     clips_by_day: dict[str, dict[str, str | list[ClipApiData]]] = {}
 

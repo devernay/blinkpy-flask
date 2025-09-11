@@ -336,6 +336,14 @@ def _download_camera_thumbnail(
         blink_connection = ensure_blink_connection_initialized()
 
         async def download_thumbnail_with_auth() -> bytes | None:
+            """Download thumbnail using authenticated Blink connection.
+            
+            Returns:
+                Thumbnail image data as bytes, or None if download fails.
+                
+            Raises:
+                Exception: If Blink is not authenticated or camera not found.
+            """
             blink = blink_connection.blink
             if not blink or not blink.auth or not blink.auth.validate_login():
                 raise Exception("Blink not authenticated")
