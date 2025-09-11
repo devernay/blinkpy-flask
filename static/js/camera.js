@@ -67,7 +67,7 @@ async function createCameraCard(camera) {
             const response = await fetch(`/api/cameras/${camera.id}/thumbnail?timestamp=true`);
             const data = await response.json();
             if (response.ok && data.success) {
-                thumbnailUrl = `${camera.thumbnail}?ts=${data.data.timestamp}`;
+                thumbnailUrl = `/api/cameras/${camera.id}/thumbnail?ts=${data.data.timestamp}`;
             }
         } catch (error) {
             console.error('Error fetching timestamp for camera', camera.id, error);

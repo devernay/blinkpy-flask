@@ -19,7 +19,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from blinkapp.models.types import JsonDict
+from blinkapp.models.types import JsonDict, SimpleJsonDict
 
 if TYPE_CHECKING:
     from flask import Response
@@ -344,8 +344,10 @@ def _download_camera_thumbnail(
             Raises:
                 Exception: If Blink is not authenticated or camera not found.
             """
+            from blinkapp.services.auth_service import is_blink_authenticated
+
             blink = blink_connection.blink
-            if not blink or not blink.auth or not blink.auth.validate_login():
+            if not blink or not is_blink_authenticated(blink):
                 raise Exception("Blink not authenticated")
 
             # Find the camera object
