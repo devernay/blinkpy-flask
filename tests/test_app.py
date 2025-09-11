@@ -1598,10 +1598,16 @@ class TestClipProcessing(BaseTestCase):
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.utils.decorators.check_blink_availability")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_clip_not_found(
-        self, mock_blink: Mock, mock_connection: Mock
+        self,
+        mock_get_blink: Mock,
+        mock_connection: Mock,
+        mock_ensure_blink: Mock,
+        mock_check_blink: Mock,
     ) -> None:
         """Test clip download when requested clip doesn't exist in metadata.
 
@@ -1609,12 +1615,16 @@ class TestClipProcessing(BaseTestCase):
         What: Verifies proper 404 error handling for missing clip requests.
         How: Mocks empty video metadata and validates error response format.
         """
+        # Mock blink availability check to pass
+        mock_check_blink.return_value = None
+
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.get_videos_metadata = AsyncMock(
             spec=callable, return_value=[]
         )
-        mock_blink.return_value = mock_blink_instance
+        mock_get_blink.return_value = mock_blink_instance
+        mock_ensure_blink.return_value = mock_blink_instance
 
         T = TypeVar("T")
 
@@ -1798,24 +1808,13 @@ class TestErrorScenarios(BaseTestCase):
                 "blinkapp.services.stream_service.ensure_stream_manager_initialized",
                 return_value=create_mock_stream_manager(),
             ):
-                with patch("blinkapp.CACHE_DIR", "/tmp/cache"):
-                    with patch("blinkapp.CREDENTIALS_FILE", "/tmp/cache/blink.json"):
-                        with patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"):
-                            with patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips"):
-                                with patch(
-                                    "blinkapp.SETTINGS_FILE", "/tmp/cache/settings.json"
-                                ):
-                                    # Test GET endpoints
-                                    response = self.client.get(
-                                        "/api/cameras/99999/thumbnail"
-                                    )  # type: TestResponse
-                                    self.assertEqual(response.status_code, 404)
+                # Test GET endpoints
+                response = self.client.get("/api/cameras/99999/thumbnail")  # type: TestResponse
+                self.assertEqual(response.status_code, 404)
 
-                                    # Test POST endpoints
-                                    response = self.client.post(
-                                        "/api/cameras/99999/streams"
-                                    )  # type: TestResponse
-                                    self.assertEqual(response.status_code, 404)
+                # Test POST endpoints
+                response = self.client.post("/api/cameras/99999/streams")  # type: TestResponse
+                self.assertEqual(response.status_code, 404)
 
 
 class TestConfigurationEdgeCases(BaseTestCase):
@@ -2124,7 +2123,6 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
 
     @patch("requests.get")
     @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("pathlib.Path.unlink")
     @patch("pathlib.Path.exists")
     def test_camera_thumbnail_cache_file_cleanup(

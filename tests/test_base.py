@@ -897,7 +897,6 @@ TEST_CACHE_DIR = TestData.CACHE_DIR
 
 def initialize_for_testing() -> None:
     """Initialize global variables for testing."""
-    import blinkapp
     from blinkapp.services.blink_service import initialize_blink_objects
     from blinkapp.services.connection_service import initialize_connections
 
@@ -914,15 +913,7 @@ def initialize_for_testing() -> None:
 
         initialize_stream_manager()
 
-    # Initialize cache directories
-    if not blinkapp.CACHE_DIR:
-        # Mock the cache path initialization to avoid creating real directories
-        from unittest.mock import patch
-
-        with patch("pathlib.Path.mkdir"):
-            from blinkapp.services.cache_service import initialize_cache_paths
-
-            initialize_cache_paths()
+    # Cache directories are automatically handled by pytest fixtures
 
     # Initialize cache objects
     try:
