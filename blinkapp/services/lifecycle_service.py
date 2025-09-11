@@ -98,20 +98,25 @@ def startup() -> None:
         )
 
         # Restore cached thumbnails from previous sessions
+        # Start the async Blink connection thread
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
         from blinkapp.services.cache_service import (
             load_camera_thumbnail_cache,
             load_clips_cache,
         )
 
-        load_camera_thumbnail_cache()
-
-        # Restore cached clips metadata from previous sessions
-        load_clips_cache()
-
-        # Start the async Blink connection thread
-        from blinkapp.services.blink_service import ensure_blink_connection_initialized
-
         blink_connection = ensure_blink_connection_initialized()
+        blink_connection.start()
+
+        # Load cached data after Blink connection is available
+        # Note: These functions require Blink to be initialized, so they come after BlinkConnection setup
+        try:
+            load_camera_thumbnail_cache()
+            # Restore cached clips metadata from previous sessions
+            load_clips_cache()
+        except RuntimeError as e:
+            # Blink not initialized yet, skip cache loading for now
+            logger.debug(f"Skipping cache loading during startup: {e}")
         blink_connection.start()
 
         try:

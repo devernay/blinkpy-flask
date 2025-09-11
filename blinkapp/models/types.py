@@ -41,7 +41,7 @@ __all__ = [
     "ClipDayGroup",
     "JsonDict",
     "ClipsResponse",
-    "AuthJsonDict",
+    "SimpleJsonDict",
     "ApiResponse",
     "RouteResult",
     "FlaskResponse",
@@ -101,5 +101,7 @@ ValidationFunction = Callable[
     [str], object
 ]  # Input validation function type - validates string input and returns validated object (e.g., CameraId, ClipId)
 
-# Auth-specific types
-AuthJsonDict = dict[str, str | int | bool]  # Auth module JSON dict
+# Simple types
+SimpleJsonDict = dict[
+    str, str | int | bool
+]  # Simple flat JSON dict without complex nested types

@@ -2994,6 +2994,8 @@ class TestApplicationInitialization(BaseTestCase):
 
         args = Mock(spec=argparse.Namespace)
         args.dump_system = False
+        args.test_credentials = False
+        args.test_and_exit = False
         args.cache = None
         args.host = "127.0.0.1"
         args.port = 5001

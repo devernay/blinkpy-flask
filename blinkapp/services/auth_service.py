@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Literal
 
 from aiohttp import ClientSession
 
-from blinkapp.models.types import JsonDict
+from blinkapp.models.types import SimpleJsonDict
 from blinkapp.services.blink_service import get_blink_instance
 from blinkapp.utils.decorators import error_context
 from blinkapp.utils.errors import AuthenticationError
@@ -313,28 +313,71 @@ async def load_saved_blink() -> bool:
             assert CREDENTIALS_FILE is not None
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
-            auth_data: JsonDict | None = await json_load(CREDENTIALS_FILE)
+            auth_data: SimpleJsonDict | None = await json_load(CREDENTIALS_FILE)
 
-            # Get the existing Blink instance from BlinkConnection instead of creating new session
-            from blinkapp.services.blink_service import ensure_blink_initialized
-
-            blink = ensure_blink_initialized()
-
-            # Update the auth with loaded credentials using existing session
-            blink.auth = Auth(auth_data, session=blink.auth.session)
-
-            # Try to start with existing session
-            success = await blink.start()
-            if success is True:
-                logger.info("Blink system loaded from saved credentials")
-                # Update saved credentials after successful authentication
-                await blink.save(CREDENTIALS_FILE)
-                return True
-            else:
-                logger.warning(
-                    "Failed to load Blink system from saved credentials - token may be expired"
-                )
+            if auth_data is None:
+                logger.warning("No credentials found in file")
                 return False
+
+            # Type narrowing: auth_data is now guaranteed to be a dictionary
+            assert isinstance(auth_data, dict), "auth_data must be a dictionary"
+
+            # Create fresh session and Blink instance for credential loading
+            # This matches the pattern from blinkpy-source example
+            from aiohttp import ClientSession
+            from blinkpy.blinkpy import Blink
+
+            session_obj = ClientSession()
+            try:
+                # Create fresh Blink instance with new session
+                blink = Blink(session=session_obj)
+                blink.auth = Auth(auth_data, session=session_obj)
+
+                # Try to start with fresh session
+                success = await blink.start()
+
+                if success is True:
+                    logger.info("Blink system loaded from saved credentials")
+                    camera_count = len(blink.cameras) if blink.cameras else 0
+                    logger.info(f"Found {camera_count} cameras")
+
+                    # Update saved credentials after successful authentication
+                    await blink.save(CREDENTIALS_FILE)
+
+                    # Update the BlinkConnection's blink instance
+                    from blinkapp.services.blink_service import (
+                        ensure_blink_connection_initialized,
+                    )
+
+                    blink_connection = ensure_blink_connection_initialized()
+
+                    # Close old session if it exists
+                    if (
+                        blink_connection.blink is not None
+                        and blink_connection.blink.auth is not None
+                        and blink_connection.blink.auth.session is not None
+                    ):
+                        await blink_connection.blink.auth.session.close()
+
+                    # Replace with new instance in both BlinkConnection and global variable
+                    blink_connection.blink = blink
+
+                    # Also update the global _blink variable so ensure_blink_initialized() works
+                    import blinkapp.services.blink_service as blink_service
+
+                    blink_service._blink = blink
+
+                    return True
+                else:
+                    logger.warning(
+                        "Failed to load Blink system from saved credentials - token may be expired"
+                    )
+                    await session_obj.close()
+                    return False
+            except Exception as inner_e:
+                logger.error(f"Exception in load_saved_blink: {inner_e}")
+                await session_obj.close()
+                raise inner_e
         except Exception as e:
             logger.warning(f"Could not load Blink system from saved credentials: {e}")
             return False
@@ -343,7 +386,7 @@ async def load_saved_blink() -> bool:
     return False
 
 
-def handle_login(username: str, password: str) -> JsonDict:
+def handle_login(username: str, password: str) -> SimpleJsonDict:
     """Handle user login attempt.
 
     This function performs the actual Blink authentication by calling
@@ -405,7 +448,7 @@ def handle_logout() -> dict[str, bool]:
     return {"success": True}
 
 
-def handle_2fa_verification(code: str) -> JsonDict:
+def handle_2fa_verification(code: str) -> SimpleJsonDict:
     """Handle 2FA verification.
 
     Args:
