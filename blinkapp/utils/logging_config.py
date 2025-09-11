@@ -85,6 +85,10 @@ def setup_logging(log_dir: str) -> None:
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
 
+    # Reduce blinkpy auth noise during normal login flow
+    # The "Unable to access homescreen after token refresh" error is expected during 2FA login
+    logging.getLogger("blinkpy.auth").setLevel(logging.CRITICAL)
+
     # Log successful configuration
     logger = logging.getLogger(__name__)
     logger.info("Logging configuration completed successfully")
