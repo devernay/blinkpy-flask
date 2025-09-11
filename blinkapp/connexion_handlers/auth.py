@@ -15,10 +15,14 @@ def main_page() -> ResponseReturnValue:
     Returns:
         Redirect to login page if not authenticated, otherwise renders main interface.
     """
-    from flask import redirect, render_template, session, url_for
+    from flask import current_app, redirect, render_template, session, url_for
 
     if not session.get("authenticated"):
-        return redirect(url_for("login_page_route"))
+        # Check if credentials were loaded at startup and auto-authenticate
+        if current_app.config.get("CREDENTIALS_LOADED_AT_STARTUP"):
+            session["authenticated"] = True
+        else:
+            return redirect(url_for("login_page_route"))
 
     return render_template("index.html")
 

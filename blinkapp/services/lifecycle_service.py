@@ -138,13 +138,11 @@ def startup() -> None:
                 else:
                     logger.info("No saved credentials found - user will need to login")
             else:
-                # Credentials loaded successfully - auto-authenticate web session
-                from flask import session
+                # Credentials loaded successfully - set global flag for session auth
+                from blinkapp import app
 
-                session["authenticated"] = True
-                logger.info(
-                    "Saved credentials loaded successfully - web session authenticated"
-                )
+                app.config["CREDENTIALS_LOADED_AT_STARTUP"] = True
+                logger.info("Saved credentials loaded successfully")
 
                 if logger.isEnabledFor(logging.INFO):
                     # Log system information for debugging if verbose logging enabled
