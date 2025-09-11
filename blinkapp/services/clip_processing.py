@@ -126,6 +126,13 @@ def process_local_clip_background(
         sync_name: Name of the sync module containing the clip.
         filename: Original filename of the clip.
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(
+        f"Starting local clip background processing for {clip_id} (sync: {sync_name}, file: {filename})"
+    )
+
     try:
         # Check if thumbnail is already cached
         from blinkapp import CLIPS_CACHE_DIR
@@ -221,7 +228,7 @@ def process_local_clip_background(
 
                 generate_local_clip_thumbnail(clip_id, video_path, thumbnail_path)
                 logger.info(
-                    f"Generated thumbnail for local clip {clip_id} from cached video"
+                    f"Successfully generated thumbnail for local clip {clip_id} from cached video"
                 )
 
             except Exception as e:

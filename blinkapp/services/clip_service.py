@@ -66,6 +66,11 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
     Returns:
         Response | tuple[JsonDict, int]: File response or error response with status code.
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"download_clip called for {clip_id} (is_local: {clip_id.is_local()})")
+
     from ..services.cache_service import ensure_clips_cache_initialized
     from ..services.clip_download import (
         download_clip_common,

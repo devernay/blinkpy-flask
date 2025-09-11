@@ -62,6 +62,11 @@ def setup_clips_routes(app: Flask) -> None:
         Returns:
             Response | tuple[JsonDict, int]: Video file response or error response with status code.
         """
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(f"GET /api/clips/{clip_id}/download - Downloading clip {clip_id}")
+
         from ..connexion_handlers.clips import download_clip
 
         return download_clip(str(clip_id))
@@ -103,6 +108,13 @@ def setup_clips_routes(app: Flask) -> None:
         Returns:
             JsonDict | tuple[JsonDict, int]: Success response or error response with status code.
         """
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"POST /api/clips/{clip_id}/thumbnail - Generating thumbnail for clip {clip_id}"
+        )
+
         from ..connexion_handlers.clips import generate_clip_thumbnail
 
         return generate_clip_thumbnail(str(clip_id))
