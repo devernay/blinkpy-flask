@@ -97,6 +97,8 @@ reportMissingReturnType = false
 # Keep these relaxed - needed for test frameworks and mocks
 reportUnknownVariableType = false
 reportUndefinedVariable = false
+# Suppress unittest method warnings in test files
+reportUnknownMemberType = false
 include = ["tests"]
 exclude = ["tests/test_base.py"]
 

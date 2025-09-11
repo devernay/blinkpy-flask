@@ -17,6 +17,8 @@ DO NOT add integration tests here - those belong in test_integration_*.py files.
 DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
 
+# pyright: reportUnnecessaryTypeIgnoreComment=false
+
 import subprocess
 import tempfile
 import unittest
@@ -277,7 +279,7 @@ class TestAuthService(BaseTestCase):
         """Test email validation edge cases."""
         from blinkapp.services.auth_service import is_valid_email_format
 
-        # Non-string input
+        # Non-string input - intentionally testing invalid types for robustness
         self.assertFalse(is_valid_email_format(None))  # type: ignore[arg-type]
         self.assertFalse(is_valid_email_format(123))  # type: ignore[arg-type]
 
@@ -292,7 +294,7 @@ class TestAuthService(BaseTestCase):
         """Test validate_credentials with non-string inputs."""
         from blinkapp.services.auth_service import validate_credentials
 
-        # Non-string inputs
+        # Non-string inputs - intentionally testing invalid types for robustness
         self.assertFalse(validate_credentials(None, "password"))  # type: ignore[arg-type]
         self.assertFalse(validate_credentials("user@example.com", None))  # type: ignore[arg-type]
         self.assertFalse(validate_credentials(123, "password"))  # type: ignore[arg-type]
