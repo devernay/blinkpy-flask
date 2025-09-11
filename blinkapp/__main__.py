@@ -103,6 +103,10 @@ def run_app(args: argparse.Namespace) -> None:
     if args.cache:
         app.config["CACHE_DIR"] = args.cache
 
+    # Show immediate startup message
+    print("🚀 Starting Blink Camera Web Interface...")
+    print("⏳ Initializing application (cache, connections, credentials)...")
+
     startup()
 
     # Display user-friendly startup message
