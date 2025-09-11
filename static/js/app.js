@@ -205,6 +205,10 @@ async function loadSystems() {
             document.getElementById('device-list').innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #d32f2f;">
                     ${data.error}
+                    <br><br>
+                    <button onclick="logout()" style="background: #d32f2f; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                        Log out
+                    </button>
                 </div>
             `;
         }
@@ -213,6 +217,10 @@ async function loadSystems() {
         document.getElementById('device-list').innerHTML = `
             <div style="text-align: center; padding: 40px; color: #d32f2f;">
                 Connection error. Please try again.
+                <br><br>
+                <button onclick="logout()" style="background: #d32f2f; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                    Log out
+                </button>
             </div>
         `;
     }
