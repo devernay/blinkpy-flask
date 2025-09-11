@@ -1,0 +1,27 @@
+2025-09-11 08:39:18,129 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 08:39:18,133 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 08:39:18,133 - blinkapp.services.lifecycle_service - INFO - No saved credentials found - user will need to login
+2025-09-11 08:39:18,140 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.153:5001
+2025-09-11 08:39:18,140 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-11 08:39:23,719 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "GET / HTTP/1.1" 200 -
+2025-09-11 08:39:23,749 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[36mGET /static/js/app.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:23,750 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[36mGET /static/js/livestream.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:23,750 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[36mGET /static/js/clips.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:23,750 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[36mGET /static/js/camera.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:23,802 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[35m[1mGET /api/config HTTP/1.1[0m" 500 -
+2025-09-11 08:39:23,803 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[35m[1mGET /api/systems HTTP/1.1[0m" 500 -
+2025-09-11 08:39:23,805 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:23] "[35m[1mGET /api/settings HTTP/1.1[0m" 500 -
+2025-09-11 08:40:11,940 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:40:11] "[35m[1mGET /api/systems HTTP/1.1[0m" 500 -
+2025-09-11 08:41:12,992 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:41:12] "[32mPOST /logout HTTP/1.1[0m" 302 -
+2025-09-11 08:41:13,016 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:41:13] "GET /login HTTP/1.1" 200 -
+2025-09-11 08:41:13,043 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:41:13] "GET /login HTTP/1.1" 200 -
+2025-09-11 08:42:36,848 - blinkapp - INFO - Received signal 2, shutting down...
+2025-09-11 08:42:36,849 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 08:42:36,951 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 08:42:36,952 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 08:42:36,952 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 08:42:36,952 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 08:42:36,952 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed

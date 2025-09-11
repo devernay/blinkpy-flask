@@ -174,8 +174,14 @@ def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
             # It's a cloud clip
             process_cloud_clip_thumbnail_only(clip_id_obj)
 
-        return {"success": True, "message": f"Thumbnail generation started for clip {clip_id}"}, 200
+        return {
+            "success": True,
+            "message": f"Thumbnail generation started for clip {clip_id}",
+        }, 200
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
     except Exception as e:
-        return {"success": False, "error": f"Failed to generate thumbnail: {str(e)}"}, 500
+        return {
+            "success": False,
+            "error": f"Failed to generate thumbnail: {str(e)}",
+        }, 500

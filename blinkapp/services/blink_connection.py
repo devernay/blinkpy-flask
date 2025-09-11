@@ -192,6 +192,7 @@ def initialize_blink_connection() -> None:
     """Initialize the global Blink connection."""
     # Use the singleton from blink_service instead of creating our own
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
     ensure_blink_connection_initialized()
     logger.info("Blink connection initialized")
 
@@ -204,6 +205,7 @@ def get_blink_connection() -> BlinkConnection | None:
     """
     # Use the singleton from blink_service
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
     try:
         return ensure_blink_connection_initialized()
     except RuntimeError:
@@ -214,6 +216,7 @@ def shutdown_blink_connection() -> None:
     """Shutdown the global Blink connection."""
     # Use the singleton from blink_service
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
     try:
         connection = ensure_blink_connection_initialized()
         connection.shutdown()

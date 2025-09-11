@@ -1,0 +1,31 @@
+2025-09-11 08:38:48,715 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 08:38:48,719 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 08:38:48,719 - blinkapp.services.lifecycle_service - INFO - No saved credentials found - user will need to login
+2025-09-11 08:38:48,730 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.153:5001
+2025-09-11 08:38:48,730 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-11 08:38:52,995 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:52] "GET / HTTP/1.1" 200 -
+2025-09-11 08:38:53,056 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "GET /static/js/clips.js HTTP/1.1" 200 -
+2025-09-11 08:38:53,056 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "GET /static/js/app.js HTTP/1.1" 200 -
+2025-09-11 08:38:53,056 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "GET /static/js/camera.js HTTP/1.1" 200 -
+2025-09-11 08:38:53,056 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "GET /static/js/livestream.js HTTP/1.1" 200 -
+2025-09-11 08:38:53,093 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "[35m[1mGET /api/config HTTP/1.1[0m" 500 -
+2025-09-11 08:38:53,094 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "[35m[1mGET /api/systems HTTP/1.1[0m" 500 -
+2025-09-11 08:38:53,096 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:38:53] "[35m[1mGET /api/settings HTTP/1.1[0m" 500 -
+2025-09-11 08:39:05,078 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "GET / HTTP/1.1" 200 -
+2025-09-11 08:39:05,113 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[36mGET /static/js/camera.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:05,115 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[36mGET /static/js/app.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:05,120 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[36mGET /static/js/clips.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:05,124 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[36mGET /static/js/livestream.js HTTP/1.1[0m" 304 -
+2025-09-11 08:39:05,177 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[35m[1mGET /api/config HTTP/1.1[0m" 500 -
+2025-09-11 08:39:05,180 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[35m[1mGET /api/systems HTTP/1.1[0m" 500 -
+2025-09-11 08:39:05,185 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 08:39:05] "[35m[1mGET /api/settings HTTP/1.1[0m" 500 -
+2025-09-11 08:39:13,493 - blinkapp - INFO - Received signal 2, shutting down...
+2025-09-11 08:39:13,493 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 08:39:13,599 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 08:39:13,599 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 08:39:13,599 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 08:39:13,599 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 08:39:13,599 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed

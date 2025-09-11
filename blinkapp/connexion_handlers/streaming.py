@@ -54,7 +54,10 @@ def stop_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
     try:
         camera_id_obj = CameraId(camera_id)
         success = stop_camera_stream(camera_id_obj)
-        return {"success": success, "message": f"Stream {'stopped' if success else 'stop failed'} for camera {camera_id}"}
+        return {
+            "success": success,
+            "message": f"Stream {'stopped' if success else 'stop failed'} for camera {camera_id}",
+        }
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
 
@@ -80,6 +83,7 @@ def get_hls_stream_segments(
         # Type narrowing with assert
         if result[0] is not None and result[1] is not None:
             from flask import Response
+
             return Response(result[0], mimetype=result[1])
         else:
             return {"success": False, "error": "HLS file not found"}, 404
