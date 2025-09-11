@@ -341,18 +341,17 @@ def handle_test_and_exit() -> None:
                 if camera.thumbnail:
                     print(f"  📸 Loading thumbnail for {name} (ID: {camera.camera_id})")
 
-                    # Print camera metadata keys for debugging
-                    camera_attrs = {
-                        attr: getattr(camera, attr, None)
-                        for attr in [
-                            "name",
-                            "camera_id",
-                            "thumbnail",
-                            "serial",
-                            "battery",
-                        ]
-                    }
-                    print(f"    📋 Camera metadata keys: {list(camera_attrs.keys())}")
+                    # Show camera attributes
+                    print(f"    🔍 Camera attributes for {name}:")
+                    try:
+                        attributes = getattr(camera, 'attributes', None)
+                        if attributes:
+                            for key, value in attributes.items():
+                                print(f"      {key}: {value}")
+                        else:
+                            print("      No attributes available")
+                    except Exception as e:
+                        print(f"      Error accessing attributes: {e}")
 
                     # Test thumbnail API availability without downloading
                     print(f"    ✅ Thumbnail API accessible for {name}")
@@ -368,11 +367,11 @@ def handle_test_and_exit() -> None:
         print("☁️ Loading cloud storage clip list...")
         try:
             from ..connexion_handlers.clips import (
-                get_clips,  # type: ignore[attr-defined]
+                get_clips,
             )
 
             # Get cloud clips list
-            cloud_clips_response = get_clips("cloud")  # type: ignore[misc]
+            cloud_clips_response = get_clips("cloud")
 
             if isinstance(cloud_clips_response, dict) and cloud_clips_response.get(
                 "success"
@@ -396,12 +395,12 @@ def handle_test_and_exit() -> None:
 
                         # Use our clip thumbnail service
                         from ..connexion_handlers.clips import (
-                            generate_clip_thumbnail,  # type: ignore[attr-defined]
+                            generate_clip_thumbnail,
                         )
 
-                        result = generate_clip_thumbnail(str(clip_id))  # type: ignore[misc]
+                        result = generate_clip_thumbnail(str(clip_id))
 
-                        if isinstance(result, dict) and result.get("success"):  # type: ignore[misc]
+                        if isinstance(result, dict) and result.get("success"):
                             print(f"      ✅ Thumbnail generated for clip {clip_id}")
                             clip_thumbnail_count += 1
                         else:
