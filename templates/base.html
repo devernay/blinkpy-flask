@@ -799,6 +799,80 @@
                 muteBtn.textContent = '🔇';
             }
         }
+
+        async function updateLocalClips() {
+            const updateBtn = document.querySelector('.update-clips-btn');
+            const originalText = updateBtn.textContent;
+
+            updateBtn.textContent = 'Updating...';
+            updateBtn.disabled = true;
+
+            try {
+                // Get all local clips that need thumbnail updates
+                const clipsContainer = document.getElementById('clips-container');
+                const clipElements = clipsContainer.querySelectorAll('.clip-item[data-storage="local"]');
+
+                for (const clipElement of clipElements) {
+                    const clipId = clipElement.dataset.clipId;
+                    if (clipId) {
+                        await generateClipThumbnail(clipId);
+                    }
+                }
+
+                // Refresh the clips view
+                if (window.currentStorage === 'local') {
+                    loadClips('local');
+                }
+            } catch (error) {
+                console.error('Error updating local clips:', error);
+            } finally {
+                updateBtn.textContent = originalText;
+                updateBtn.disabled = false;
+            }
+        }
+
+        async function refreshThumbnail() {
+            const modal = document.querySelector('.modal[style*="block"]');
+            if (!modal) return;
+
+            const clipId = modal.dataset.clipId;
+            if (!clipId) return;
+
+            try {
+                await generateClipThumbnail(clipId);
+
+                // Refresh the thumbnail in the modal and clips view
+                const thumbnailImg = modal.querySelector('.modal-thumbnail img');
+                if (thumbnailImg) {
+                    const timestamp = new Date().getTime();
+                    thumbnailImg.src = `/api/clips/${clipId}/thumbnail?t=${timestamp}`;
+                }
+
+                // Refresh clips view if needed
+                if (window.currentStorage) {
+                    loadClips(window.currentStorage);
+                }
+            } catch (error) {
+                console.error('Error refreshing thumbnail:', error);
+            }
+        }
+
+        async function generateClipThumbnail(clipId) {
+            try {
+                const response = await fetch(`/api/clips/${clipId}/thumbnail`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to generate thumbnail: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error(`Error generating thumbnail for clip ${clipId}:`, error);
+                throw error;
+            }
+        }
     </script>
 
     {% block scripts %}{% endblock %}
