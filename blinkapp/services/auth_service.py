@@ -329,7 +329,10 @@ async def load_saved_blink() -> bool:
                 success = await blink.start()
                 if success is True:
                     logger.info("Blink system loaded from saved credentials")
-                    # blink is already updated in the blink_service module
+                    # Update the BlinkConnection's blink instance
+                    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+                    blink_connection = ensure_blink_connection_initialized()
+                    blink_connection.blink = blink
                     return True
                 else:
                     logger.warning("Failed to load Blink system from saved credentials")
