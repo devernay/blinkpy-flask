@@ -7,7 +7,6 @@ dedicated modules for better separation of concerns.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +20,7 @@ __all__ = [
 
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 from blinkapp.config import Config
@@ -84,6 +84,27 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
         clip_entry = clips_cache[clip_id]
         if "filepath" not in clip_entry:
             return {"success": False, "error": "Clip file not cached"}, 404
+
+        # For local clips, trigger thumbnail generation if needed
+        if clip_id.is_local():
+            import threading
+
+            from ..services.cache_service import get_thumbnail_path
+            from ..services.clip_processing import process_local_clip_background
+
+            thumbnail_path = get_thumbnail_path(clip_id)
+            if not thumbnail_path.exists():
+                logger.info(
+                    f"Triggering background thumbnail generation for cached local clip {clip_id}"
+                )
+                sync_name, item_id = clip_id.get_local_parts()
+                thread = threading.Thread(
+                    target=process_local_clip_background,
+                    args=(clip_id, sync_name, f"cached_clip_{item_id}"),
+                )
+                thread.daemon = True
+                thread.start()
+
         return download_clip_common(Path(clip_entry["filepath"]), clip_id)
 
     # Not in cache - attempt to download based on clip type

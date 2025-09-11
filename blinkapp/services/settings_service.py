@@ -20,8 +20,6 @@ def get_app_config() -> JsonDict:
     Returns:
         JSON response with configuration data
     """
-    from blinkapp.config import Config
-
     return {
         "version": "1.0.0",
         "features": {
@@ -53,15 +51,9 @@ def update_settings(settings_data: JsonDict) -> JsonDict | tuple[JsonDict, int]:
         Updated settings dictionary or error response
     """
     import json
-    from pathlib import Path
-
-    import blinkapp
 
     try:
-        if not blinkapp.SETTINGS_FILE:
-            return {"success": False, "error": "Settings file not configured"}, 500
-
-        settings_path = Path(blinkapp.SETTINGS_FILE)
+        settings_path = get_settings_file_path()
 
         # Load existing settings or use defaults
         current_settings = get_user_settings()
@@ -92,9 +84,8 @@ def get_user_settings() -> JsonDict:
         - localClipRetention: "never" or retention period
         - clipThumbnailSize: "small", "medium", or "large"
     """
-    # Use the global cache directory if available, otherwise use default
-    cache_dir = blinkapp.CACHE_DIR or Config.DEFAULT_CACHE_DIR
-    settings_file = Path(cache_dir) / "settings.json"
+    # Use the settings file path accessor
+    settings_file = get_settings_file_path()
 
     try:
         if settings_file.exists():
@@ -132,3 +123,15 @@ def get_temperature_unit() -> Literal["C", "F"]:
         raise ValueError(f"Invalid temperature unit '{unit}', must be 'C' or 'F'")
 
     return unit
+
+
+def get_settings_file_path() -> Path:
+    """Get the settings file path.
+
+    Returns:
+        Path: Resolved path to the settings file.
+    """
+    assert blinkapp._SETTINGS_FILE_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._SETTINGS_FILE_PATH

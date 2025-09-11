@@ -423,9 +423,10 @@ def init_camera_stream(
     Returns:
         Tuple of (stream_object, hls_url) or (None, None) on failure
     """
-    from blinkapp import HLS_OUTPUT_DIR
+    from blinkapp.services.hls_service import get_hls_output_dir
 
-    if HLS_OUTPUT_DIR is None:
+    hls_output_dir = get_hls_output_dir()
+    if hls_output_dir is None:
         logger.error("HLS output directory not configured")
         return None, None
 

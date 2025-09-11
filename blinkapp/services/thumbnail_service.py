@@ -23,6 +23,7 @@ from flask import Response
 from blinkapp.config import Config
 from blinkapp.models.ids import CameraId, ClipId
 from blinkapp.models.types import JsonDict
+from blinkapp.services.cache_service import get_thumbnail_cache_dir
 
 logger = logging.getLogger(__name__)
 
@@ -160,10 +161,6 @@ def get_camera_thumbnail(
     Returns:
         Response with thumbnail image or timestamp data
     """
-    from pathlib import Path
-
-    import blinkapp
-
     from ..services.cache_service import ensure_camera_thumbnail_cache_initialized
     from ..services.camera_service import find_camera_by_id
 
@@ -206,11 +203,10 @@ def get_camera_thumbnail(
             _download_camera_thumbnail(camera_id, camera.thumbnail, current_ts)
             cached_entry = cache.get(camera_id)
 
-        if cached_entry and blinkapp.THUMBNAIL_CACHE_DIR:
+        if cached_entry:
             # Serve cached thumbnail
-            thumbnail_path = (
-                Path(blinkapp.THUMBNAIL_CACHE_DIR) / cached_entry["filename"]
-            )
+            thumbnail_cache_dir = get_thumbnail_cache_dir()
+            thumbnail_path = thumbnail_cache_dir / cached_entry["filename"]
             if thumbnail_path.exists():
                 with open(thumbnail_path, "rb") as f:
                     return Response(f.read(), mimetype="image/jpeg")
@@ -233,10 +229,6 @@ def refresh_camera_thumbnail(camera_id: CameraId) -> JsonDict | tuple[JsonDict, 
     Returns:
         Success response or error
     """
-    from pathlib import Path
-
-    import blinkapp
-
     from ..services.cache_service import ensure_camera_thumbnail_cache_initialized
     from ..services.camera_service import find_camera_by_id
 
@@ -249,10 +241,10 @@ def refresh_camera_thumbnail(camera_id: CameraId) -> JsonDict | tuple[JsonDict, 
         cache = ensure_camera_thumbnail_cache_initialized()
         if camera_id in cache:
             old_entry = cache[camera_id]
-            if blinkapp.THUMBNAIL_CACHE_DIR:
-                old_path = Path(blinkapp.THUMBNAIL_CACHE_DIR) / old_entry["filename"]
-                if old_path.exists():
-                    old_path.unlink()
+            thumbnail_cache_dir = get_thumbnail_cache_dir()
+            old_path = thumbnail_cache_dir / old_entry["filename"]
+            if old_path.exists():
+                old_path.unlink()
             del cache[camera_id]
 
         # Extract current timestamp and download new thumbnail
@@ -285,15 +277,12 @@ def _download_camera_thumbnail(
         thumbnail_url: URL to download thumbnail from
         timestamp: Timestamp for cache entry
     """
-    from pathlib import Path
-
-    import blinkapp
-
     from ..models.cache import CameraThumbnailCacheEntry
     from ..services.cache_service import ensure_camera_thumbnail_cache_initialized
 
     try:
-        if not blinkapp.THUMBNAIL_CACHE_DIR:
+        thumbnail_cache_dir = get_thumbnail_cache_dir()
+        if not thumbnail_cache_dir:
             return
 
         # Check for race condition - another thread may have updated the cache
@@ -306,7 +295,7 @@ def _download_camera_thumbnail(
             )
             return
 
-        cache_dir = Path(blinkapp.THUMBNAIL_CACHE_DIR)
+        cache_dir = get_thumbnail_cache_dir()
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Clean up old thumbnail file if it exists

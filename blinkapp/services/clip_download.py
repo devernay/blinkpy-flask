@@ -117,9 +117,9 @@ def download_cloud_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
                 status_code=503,
             )
 
-        from blinkapp import CLIPS_CACHE_DIR
+        from blinkapp.services.cache_service import get_clips_cache_dir
 
-        clips_cache_dir = Path(CLIPS_CACHE_DIR)
+        clips_cache_dir = get_clips_cache_dir()
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if already cached
@@ -227,9 +227,9 @@ def download_local_clip(
             )
 
         # Check if clip is already cached
-        from blinkapp import CLIPS_CACHE_DIR
+        from blinkapp.services.cache_service import get_clips_cache_dir
 
-        clips_cache_dir = Path(CLIPS_CACHE_DIR).resolve()  # Use absolute path
+        clips_cache_dir = get_clips_cache_dir()  # Already resolved
         clips_cache_dir.mkdir(
             parents=True, exist_ok=True
         )  # Ensure cache directory exists

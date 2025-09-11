@@ -58,14 +58,6 @@ from blinkapp.utils.logging_config import setup_logging
 __all__ = [
     # Flask application instance
     "app",
-    # Configuration files and paths (defined in this module)
-    "SETTINGS_FILE",
-    "CREDENTIALS_FILE",
-    "CACHE_DIR",
-    "CLIPS_CACHE_DIR",
-    "THUMBNAIL_CACHE_DIR",
-    "HLS_OUTPUT_DIR",
-    "CLIPS_CACHE_SIZE",
     # Logger (defined in this module)
     "logger",
     # Functions expected by tests
@@ -112,12 +104,13 @@ setup_admin_routes(app)
 
 # File system paths for application data storage
 # Cache configuration - initialized in initialize_cache_paths()
-CACHE_DIR: str = ""  # Base cache directory
-CREDENTIALS_FILE: str = ""  # Encrypted credentials storage
-THUMBNAIL_CACHE_DIR: str = ""  # Camera thumbnail cache
-CLIPS_CACHE_DIR: str = ""  # Downloaded clips storage
-HLS_OUTPUT_DIR: str = ""  # HLS streaming output directory
-SETTINGS_FILE: str = ""  # User settings persistence
+# Resolved Path objects (set once during initialization to avoid chdir issues)
+_CACHE_DIR_PATH: Path | None = None
+_CLIPS_CACHE_DIR_PATH: Path | None = None
+_THUMBNAIL_CACHE_DIR_PATH: Path | None = None
+_HLS_OUTPUT_DIR_PATH: Path | None = None
+_CREDENTIALS_FILE_PATH: Path | None = None
+_SETTINGS_FILE_PATH: Path | None = None
 
 # ============================================================================
 # Error Handling and API Response Utilities

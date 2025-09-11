@@ -112,7 +112,8 @@ def handle_dump_system(
     import logging
     import sys
 
-    from blinkapp import CREDENTIALS_FILE, Config, logger
+    from blinkapp import Config, logger
+    from blinkapp.services.auth_service import get_credentials_file_path
     from blinkapp.services.blink_connection import get_blink_connection
     from blinkapp.services.blink_service import (
         cleanup_blink_session,
@@ -128,8 +129,7 @@ def handle_dump_system(
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
-    assert CREDENTIALS_FILE is not None
-    cred_file = Path(CREDENTIALS_FILE)
+    cred_file = get_credentials_file_path()
     if not credentials_checker(cred_file):
         logger.error("No saved credentials found.")
         sys.exit(1)
@@ -269,7 +269,6 @@ def handle_test_and_exit() -> None:
     6. Verifies all operations and exits with status code
     """
     import sys
-    from pathlib import Path
 
     from .lifecycle_service import startup
 
@@ -286,20 +285,25 @@ def handle_test_and_exit() -> None:
     try:
         # Step 1: Clear all caches
         print("🧹 Clearing all caches...")
-        from blinkapp import CLIPS_CACHE_DIR, THUMBNAIL_CACHE_DIR
+        from blinkapp.services.cache_service import (
+            get_clips_cache_dir,
+            get_thumbnail_cache_dir,
+        )
 
         # Clear thumbnail cache if it exists
-        if THUMBNAIL_CACHE_DIR and Path(THUMBNAIL_CACHE_DIR).exists():
+        thumbnail_cache_dir = get_thumbnail_cache_dir()
+        if thumbnail_cache_dir and thumbnail_cache_dir.exists():
             import shutil
 
-            shutil.rmtree(THUMBNAIL_CACHE_DIR)
+            shutil.rmtree(thumbnail_cache_dir)
             print("  ✅ Thumbnail cache cleared")
 
         # Clear clips cache if it exists
-        if CLIPS_CACHE_DIR and Path(CLIPS_CACHE_DIR).exists():
+        clips_cache_dir = get_clips_cache_dir()
+        if clips_cache_dir and clips_cache_dir.exists():
             import shutil
 
-            shutil.rmtree(CLIPS_CACHE_DIR)
+            shutil.rmtree(clips_cache_dir)
             print("  ✅ Clips cache cleared")
 
         # Step 2: Do full startup
@@ -344,7 +348,7 @@ def handle_test_and_exit() -> None:
                     # Show camera attributes
                     print(f"    🔍 Camera attributes for {name}:")
                     try:
-                        attributes = getattr(camera, 'attributes', None)
+                        attributes = getattr(camera, "attributes", None)
                         if attributes:
                             for key, value in attributes.items():
                                 print(f"      {key}: {value}")
@@ -424,10 +428,17 @@ def handle_test_and_exit() -> None:
             # Get local clips list
             local_clips_response = get_clips("local")  # type: ignore[misc]
 
-            if isinstance(local_clips_response, dict) and "clips" in local_clips_response:
+            if (
+                isinstance(local_clips_response, dict)
+                and "clips" in local_clips_response
+            ):
                 local_clips = local_clips_response.get("clips", [])
-                total_clips = sum(len(day_group.get("clips", [])) for day_group in local_clips)
-                print(f"  ✅ Found {total_clips} local clips in {len(local_clips)} day groups")
+                total_clips = sum(
+                    len(day_group.get("clips", [])) for day_group in local_clips
+                )
+                print(
+                    f"  ✅ Found {total_clips} local clips in {len(local_clips)} day groups"
+                )
             else:
                 print("  ⚠️ No local clips found")
 
@@ -437,16 +448,18 @@ def handle_test_and_exit() -> None:
         # Step 7: Verify cache directories were created and populated
         print("🔍 Verifying cache structure and content...")
 
-        if THUMBNAIL_CACHE_DIR and Path(THUMBNAIL_CACHE_DIR).exists():
-            thumbnail_files = list(Path(THUMBNAIL_CACHE_DIR).glob("*.jpg"))
+        thumbnail_cache_dir = get_thumbnail_cache_dir()
+        if thumbnail_cache_dir and thumbnail_cache_dir.exists():
+            thumbnail_files = list(thumbnail_cache_dir.glob("*.jpg"))
             print(
                 f"  ✅ Thumbnail cache directory created with {len(thumbnail_files)} files"
             )
         else:
             print("  ⚠️ Thumbnail cache directory not created")
 
-        if CLIPS_CACHE_DIR and Path(CLIPS_CACHE_DIR).exists():
-            clip_files = list(Path(CLIPS_CACHE_DIR).rglob("*"))
+        clips_cache_dir = get_clips_cache_dir()
+        if clips_cache_dir and clips_cache_dir.exists():
+            clip_files = list(clips_cache_dir.rglob("*"))
             print(f"  ✅ Clips cache directory created with {len(clip_files)} items")
         else:
             print("  ⚠️ Clips cache directory not created")

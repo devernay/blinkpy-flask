@@ -45,9 +45,13 @@ def startup() -> None:
         All errors are logged but don't prevent application startup.
     """
     # Import here to avoid circular imports
-    from blinkapp import CACHE_DIR, CLIPS_CACHE_DIR, THUMBNAIL_CACHE_DIR
     from blinkapp.config import Config
-    from blinkapp.services.cache_service import initialize_cache_paths
+    from blinkapp.services.cache_service import (
+        get_cache_dir,
+        get_clips_cache_dir,
+        get_thumbnail_cache_dir,
+        initialize_cache_paths,
+    )
     from blinkapp.utils.logging_config import setup_logging
 
     try:
@@ -65,22 +69,22 @@ def startup() -> None:
         initialize_cache_paths()
 
         # Create cache directories with proper permissions
-        assert CACHE_DIR is not None
+        cache_dir = get_cache_dir()
         try:
-            Path(CACHE_DIR).mkdir(exist_ok=True)
+            cache_dir.mkdir(exist_ok=True)
         except OSError as e:
-            logger.error(f"Failed to create cache directory {CACHE_DIR}: {e}")
+            logger.error(f"Failed to create cache directory {cache_dir}: {e}")
 
-        assert THUMBNAIL_CACHE_DIR is not None
-        assert CLIPS_CACHE_DIR is not None
+        thumbnail_cache_dir = get_thumbnail_cache_dir()
+        clips_cache_dir = get_clips_cache_dir()
         try:
-            Path(THUMBNAIL_CACHE_DIR).mkdir(exist_ok=True)
-            Path(CLIPS_CACHE_DIR).mkdir(exist_ok=True)
+            thumbnail_cache_dir.mkdir(exist_ok=True)
+            clips_cache_dir.mkdir(exist_ok=True)
         except OSError as e:
             logger.error(f"Failed to create cache subdirectories: {e}")
 
         # Configure logging with file rotation after cache paths are ready
-        setup_logging(CACHE_DIR)
+        setup_logging(str(cache_dir))
 
         # Initialize HLS streaming manager for live video transcoding
         from blinkapp.services.stream_service import initialize_stream_manager

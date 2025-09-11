@@ -247,7 +247,6 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         ...     print("2FA verified and credentials saved")
     """
     # Import here to avoid circular imports during module initialization
-    from blinkapp import CREDENTIALS_FILE
 
     with error_context("verify 2FA and save credentials", AuthenticationError):
         logger.debug(f"Starting 2FA verification with key: {tfa_key[:2]}***")
@@ -267,8 +266,8 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
 
         # Save encrypted credentials to disk for future sessions
         logger.debug("Saving credentials...")
-        assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
-        await blink_instance.save(CREDENTIALS_FILE)
+        credentials_file = get_credentials_file_path()
+        await blink_instance.save(str(credentials_file))
 
         logger.info("2FA verification and save completed successfully")
         return True
@@ -299,10 +298,9 @@ async def load_saved_blink() -> bool:
         ...     print("Need to login again")
     """
     # Import here to avoid circular imports during module initialization
-    from blinkapp import CREDENTIALS_FILE
 
-    assert CREDENTIALS_FILE is not None, "Credentials file path must be set"
-    cred_file = Path(CREDENTIALS_FILE)
+    credentials_file = get_credentials_file_path()
+    cred_file = credentials_file
 
     # Check if credentials file exists before attempting to load
     if cred_file.exists():
@@ -310,10 +308,10 @@ async def load_saved_blink() -> bool:
             from blinkpy.auth import Auth
             from blinkpy.helpers.util import json_load
 
-            assert CREDENTIALS_FILE is not None
+            credentials_file = get_credentials_file_path()
             # Load encrypted credentials from file
             # The json_load function handles decryption automatically
-            auth_data: SimpleJsonDict | None = await json_load(CREDENTIALS_FILE)
+            auth_data: SimpleJsonDict | None = await json_load(str(credentials_file))
 
             if auth_data is None:
                 logger.warning("No credentials found in file")
@@ -342,7 +340,8 @@ async def load_saved_blink() -> bool:
                     logger.info(f"Found {camera_count} cameras")
 
                     # Update saved credentials after successful authentication
-                    await blink.save(CREDENTIALS_FILE)
+                    credentials_file = get_credentials_file_path()
+                    await blink.save(str(credentials_file))
 
                     # Update the BlinkConnection's blink instance
                     from blinkapp.services.blink_service import (
@@ -490,6 +489,20 @@ def handle_2fa_verification(code: str) -> SimpleJsonDict:
     except Exception as e:
         logger.error(f"2FA verification error: {e}")
         return {"success": False, "error": "2FA verification failed"}
+
+
+def get_credentials_file_path() -> Path:
+    """Get the credentials file path.
+
+    Returns:
+        Path: Resolved path to the credentials file.
+    """
+    import blinkapp
+
+    assert blinkapp._CREDENTIALS_FILE_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._CREDENTIALS_FILE_PATH
 
 
 # Testability improvement functions - these provide injectable dependencies

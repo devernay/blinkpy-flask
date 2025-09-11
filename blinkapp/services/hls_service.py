@@ -303,3 +303,17 @@ class HLSStream:
 
             except OSError:
                 return None, None
+
+
+def get_hls_output_dir() -> Path:
+    """Get the HLS output directory path.
+
+    Returns:
+        Path: Resolved path to the HLS output directory.
+    """
+    import blinkapp
+
+    assert blinkapp._HLS_OUTPUT_DIR_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._HLS_OUTPUT_DIR_PATH

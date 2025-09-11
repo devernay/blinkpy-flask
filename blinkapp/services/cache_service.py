@@ -37,6 +37,8 @@ from blinkpy.camera import BlinkCamera
 if TYPE_CHECKING:
     from blinkapp.models.cache import CameraThumbnailCache, ClipsCache
 
+from blinkapp.models.ids import ClipId
+
 logger = logging.getLogger(__name__)
 
 # Global cache instances
@@ -110,13 +112,15 @@ def ensure_cache_paths_initialized() -> None:
         RuntimeError: If cache paths haven't been initialized
     """
     import blinkapp
+    from blinkapp.services.auth_service import get_credentials_file_path
+    from blinkapp.services.settings_service import get_settings_file_path
 
     if (
-        not blinkapp.CACHE_DIR
-        or not blinkapp.CREDENTIALS_FILE
-        or not blinkapp.THUMBNAIL_CACHE_DIR
-        or not blinkapp.CLIPS_CACHE_DIR
-        or not blinkapp.SETTINGS_FILE
+        not blinkapp._CACHE_DIR_PATH
+        or not get_credentials_file_path()
+        or not get_thumbnail_cache_dir()
+        or not get_clips_cache_dir()
+        or not get_settings_file_path()
     ):
         raise RuntimeError(
             "Cache paths not initialized. Call initialize_blink() first."
@@ -172,7 +176,6 @@ def load_camera_thumbnail_cache() -> None:
     """
     from pathlib import Path
 
-    import blinkapp
     from blinkapp.models.ids import CameraId
     from blinkapp.services.blink_service import ensure_blink_initialized
 
@@ -181,8 +184,8 @@ def load_camera_thumbnail_cache() -> None:
     # Ensure thumbnail cache is initialized
     camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
 
-    assert blinkapp.THUMBNAIL_CACHE_DIR is not None
-    cache_dir = Path(blinkapp.THUMBNAIL_CACHE_DIR)
+    assert get_thumbnail_cache_dir() is not None
+    cache_dir = Path(get_thumbnail_cache_dir())
     if not cache_dir.exists():
         logger.warning(f"Thumbnail cache directory does not exist: {cache_dir}")
         return
@@ -316,16 +319,22 @@ def initialize_cache_paths() -> None:
     cache_dir = pathlib.Path(cache_dir_config)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    blinkapp.CACHE_DIR = str(cache_dir)
-    blinkapp.CREDENTIALS_FILE = str(cache_dir / Config.CREDENTIALS_FILENAME)
-    blinkapp.THUMBNAIL_CACHE_DIR = str(cache_dir / Config.THUMBNAILS_SUBDIR)
-    blinkapp.CLIPS_CACHE_DIR = str(cache_dir / Config.CLIPS_SUBDIR)
-    blinkapp.HLS_OUTPUT_DIR = str(cache_dir / "hls")
-    blinkapp.SETTINGS_FILE = str(cache_dir / Config.SETTINGS_FILENAME)
+    # Store resolved Path objects to avoid chdir issues
+    blinkapp._CACHE_DIR_PATH = cache_dir.resolve()
+    blinkapp._CLIPS_CACHE_DIR_PATH = (cache_dir / Config.CLIPS_SUBDIR).resolve()
+    blinkapp._THUMBNAIL_CACHE_DIR_PATH = (
+        cache_dir / Config.THUMBNAILS_SUBDIR
+    ).resolve()
+    blinkapp._HLS_OUTPUT_DIR_PATH = (cache_dir / "hls").resolve()
+    blinkapp._CREDENTIALS_FILE_PATH = (
+        cache_dir / Config.CREDENTIALS_FILENAME
+    ).resolve()
+    blinkapp._SETTINGS_FILE_PATH = (cache_dir / Config.SETTINGS_FILENAME).resolve()
 
-    pathlib.Path(blinkapp.THUMBNAIL_CACHE_DIR).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(blinkapp.CLIPS_CACHE_DIR).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(blinkapp.HLS_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    # Create directories
+    blinkapp._THUMBNAIL_CACHE_DIR_PATH.mkdir(parents=True, exist_ok=True)
+    blinkapp._CLIPS_CACHE_DIR_PATH.mkdir(parents=True, exist_ok=True)
+    blinkapp._HLS_OUTPUT_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def clear_all_caches() -> dict[str, str]:
@@ -337,7 +346,6 @@ def clear_all_caches() -> dict[str, str]:
     import os
     import shutil
 
-    import blinkapp
     from blinkapp.services.connection_service import ensure_executor_initialized
 
     camera_thumbnail_cache_instance = ensure_camera_thumbnail_cache_initialized()
@@ -361,12 +369,12 @@ def clear_all_caches() -> dict[str, str]:
             logger.warning(f"Could not clear {cache_name} directory: {e}")
 
     executor_instance = ensure_executor_initialized()
-    if blinkapp.THUMBNAIL_CACHE_DIR:
+    if get_thumbnail_cache_dir():
         executor_instance.submit(
-            clear_file_cache, blinkapp.THUMBNAIL_CACHE_DIR, "thumbnail"
+            clear_file_cache, str(get_thumbnail_cache_dir()), "thumbnail"
         )
-    if blinkapp.CLIPS_CACHE_DIR:
-        executor_instance.submit(clear_file_cache, blinkapp.CLIPS_CACHE_DIR, "clips")
+    if get_clips_cache_dir():
+        executor_instance.submit(clear_file_cache, str(get_clips_cache_dir()), "clips")
 
     return {"status": "success", "message": "All caches cleared successfully"}
 
@@ -375,13 +383,12 @@ def load_clips_cache() -> None:
     """Load clips cache directory and populate memory cache."""
     from pathlib import Path
 
-    import blinkapp
     from blinkapp.models.ids import ClipId
 
-    if not blinkapp.CLIPS_CACHE_DIR:
+    if not get_clips_cache_dir():
         return
 
-    cache_dir = Path(blinkapp.CLIPS_CACHE_DIR)
+    cache_dir = Path(get_clips_cache_dir())
     if not cache_dir.exists():
         return
 
@@ -414,10 +421,8 @@ def clear_camera_thumbnail_cache_files() -> None:
     import shutil
     from pathlib import Path
 
-    import blinkapp
-
-    if blinkapp.THUMBNAIL_CACHE_DIR:
-        cache_path = Path(blinkapp.THUMBNAIL_CACHE_DIR)
+    if get_thumbnail_cache_dir():
+        cache_path = Path(get_thumbnail_cache_dir())
         if cache_path.exists():
             shutil.rmtree(cache_path)
             cache_path.mkdir(parents=True, exist_ok=True)
@@ -428,10 +433,8 @@ def clear_clips_cache_files() -> None:
     import shutil
     from pathlib import Path
 
-    import blinkapp
-
-    if blinkapp.CLIPS_CACHE_DIR:
-        cache_path = Path(blinkapp.CLIPS_CACHE_DIR)
+    if get_clips_cache_dir():
+        cache_path = Path(get_clips_cache_dir())
         if cache_path.exists():
             shutil.rmtree(cache_path)
             cache_path.mkdir(parents=True, exist_ok=True)
@@ -476,3 +479,57 @@ def validate_cache_directory(cache_dir: str) -> bool:
         return True
     except (OSError, PermissionError):
         return False
+
+
+def get_thumbnail_path(clip_id: ClipId) -> Path:
+    """Get the thumbnail file path for a clip.
+
+    Args:
+        clip_id: "ClipId" object representing the clip.
+
+    Returns:
+        Path: Path to the thumbnail file.
+    """
+    return get_clips_cache_dir() / f"{clip_id}.jpg"
+
+
+def get_clips_cache_dir() -> Path:
+    """Get the clips cache directory path.
+
+    Returns:
+        Path: Resolved path to the clips cache directory.
+    """
+    import blinkapp
+
+    assert blinkapp._CLIPS_CACHE_DIR_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._CLIPS_CACHE_DIR_PATH
+
+
+def get_thumbnail_cache_dir() -> Path:
+    """Get the thumbnail cache directory path.
+
+    Returns:
+        Path: Resolved path to the thumbnail cache directory.
+    """
+    import blinkapp
+
+    assert blinkapp._THUMBNAIL_CACHE_DIR_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._THUMBNAIL_CACHE_DIR_PATH
+
+
+def get_cache_dir() -> Path:
+    """Get the base cache directory path.
+
+    Returns:
+        Path: Resolved path to the base cache directory.
+    """
+    import blinkapp
+
+    assert blinkapp._CACHE_DIR_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._CACHE_DIR_PATH

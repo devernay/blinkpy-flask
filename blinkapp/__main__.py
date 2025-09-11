@@ -116,11 +116,11 @@ def run_app(args: argparse.Namespace) -> None:
         print(f"   Or locally at: http://localhost:{args.port}")
 
     # Only show credentials message if no saved credentials exist
-    from pathlib import Path
 
-    from blinkapp import CREDENTIALS_FILE
+    from blinkapp.services.auth_service import get_credentials_file_path
 
-    if CREDENTIALS_FILE is None or not Path(CREDENTIALS_FILE).exists():
+    credentials_path = get_credentials_file_path()
+    if credentials_path is None or not credentials_path.exists():
         print("🔐 You will need to enter your Blink credentials on first visit")
     else:
         print("🔐 Using saved Blink credentials")

@@ -25,7 +25,11 @@ if TYPE_CHECKING:
 
 from blinkapp.config import Config
 from blinkapp.models.cache import ClipCacheEntry
-from blinkapp.services.cache_service import ensure_clips_cache_initialized
+from blinkapp.services.cache_service import (
+    ensure_clips_cache_initialized,
+    get_clips_cache_dir,
+    get_thumbnail_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +45,9 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
     """
     try:
         # Check if thumbnail is already cached
-        from blinkapp import CLIPS_CACHE_DIR
+        from ..services.cache_service import get_thumbnail_path
 
-        clips_cache_dir = Path(CLIPS_CACHE_DIR)
-        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+        thumbnail_path = get_thumbnail_path(clip_id)
 
         if thumbnail_path.exists():
             logger.debug(f"Thumbnail already cached for clip {clip_id}")
@@ -62,6 +65,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
             logger.warning(f"Blink not available for processing clip {clip_id}")
             return
 
+        clips_cache_dir = get_clips_cache_dir()
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download clip if not cached
@@ -101,7 +105,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
         # Update cache entry
         try:
             clips_cache = ensure_clips_cache_initialized()
-            thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+            thumbnail_path = get_thumbnail_path(clip_id)
             clips_cache[clip_id] = ClipCacheEntry(
                 filepath=clip_path,
                 thumbnail=thumbnail_path if thumbnail_path.exists() else None,
@@ -135,10 +139,9 @@ def process_local_clip_background(
 
     try:
         # Check if thumbnail is already cached
-        from blinkapp import CLIPS_CACHE_DIR
 
-        clips_cache_dir = Path(CLIPS_CACHE_DIR)
-        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+        clips_cache_dir = get_clips_cache_dir()
+        thumbnail_path = get_thumbnail_path(clip_id)
 
         if thumbnail_path.exists():
             logger.debug(f"Thumbnail already cached for local clip {clip_id}")
@@ -180,7 +183,7 @@ def process_local_clip_background(
                 sync_name, item_id = clip_id.get_local_parts()
 
                 # First check if video is already cached
-                clips_cache_dir = Path(CLIPS_CACHE_DIR).resolve()
+                clips_cache_dir = get_clips_cache_dir().resolve()
                 video_pattern = f"local_{sync_name}_{item_id}_*.mp4"
                 video_files = list(clips_cache_dir.glob(video_pattern))
 
@@ -236,7 +239,7 @@ def process_local_clip_background(
                 return
 
         # Generate thumbnail
-        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+        thumbnail_path = get_thumbnail_path(clip_id)
         if not thumbnail_path.exists():
             try:
                 from blinkapp.services.thumbnail_service import (
@@ -295,12 +298,10 @@ def download_and_cache_cloud_thumbnail(
         return None
 
     try:
-        from blinkapp import CLIPS_CACHE_DIR
-
-        clips_cache_dir = Path(CLIPS_CACHE_DIR)
+        clips_cache_dir = get_clips_cache_dir()
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
-        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+        thumbnail_path = get_thumbnail_path(clip_id)
 
         # Download thumbnail if not cached
         if not thumbnail_path.exists():
@@ -335,10 +336,9 @@ def process_cloud_clip_thumbnail_only(clip_id: ClipId) -> None:
     """
     try:
         # Check if thumbnail is already cached
-        from blinkapp import CLIPS_CACHE_DIR
 
-        clips_cache_dir = Path(CLIPS_CACHE_DIR)
-        thumbnail_path = clips_cache_dir / f"{clip_id}.jpg"
+        clips_cache_dir = get_clips_cache_dir()
+        thumbnail_path = get_thumbnail_path(clip_id)
 
         if thumbnail_path.exists():
             logger.debug(f"Thumbnail already cached for clip {clip_id}")
