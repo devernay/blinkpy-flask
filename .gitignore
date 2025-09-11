@@ -5,6 +5,7 @@ __pycache__
 /blinkpy-source/
 .python-version
 *.log
+blink_app.log*
 tests/.coverage
 /blinkpy-stubs/blinkpy_stubs.egg-info
 /types-blinkpy/types_blinkpy.egg-info
