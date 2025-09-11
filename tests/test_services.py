@@ -27,6 +27,7 @@ from unittest.mock import AsyncMock, Mock, mock_open, patch
 import requests
 from aiohttp import ClientSession
 
+from blinkapp.models.ids import ClipId
 from tests.test_base import BaseTestCase, create_mock_thread_pool_executor
 
 
@@ -1837,6 +1838,8 @@ class TestHLSStream(BaseTestCase):
 class TestClipDownload(BaseTestCase):
     """Test clip download service functions."""
 
+    clip_id: ClipId
+
     def setUp(self) -> None:
         """Set up test fixtures."""
         from blinkapp.models.ids import ClipId
@@ -2313,6 +2316,9 @@ class TestClipDownload(BaseTestCase):
 class TestClipProcessing(BaseTestCase):
     """Test clip processing service functions."""
 
+    clip_id: ClipId
+    clips_cache_dir: Path
+
     def setUp(self) -> None:
         """Set up test fixtures."""
         from blinkapp.models.ids import ClipId
@@ -2771,6 +2777,8 @@ class TestClipProcessing(BaseTestCase):
 class TestClipService(BaseTestCase):
     """Test clip service functions."""
 
+    clip_id: ClipId
+
     def setUp(self) -> None:
         """Set up test fixtures."""
         from blinkapp.models.ids import ClipId
@@ -3130,6 +3138,8 @@ class TestClipDownloadService(BaseTestCase):
 
 class TestThumbnailService(BaseTestCase):
     """Test thumbnail service functions."""
+
+    mock_camera: Mock
 
     def setUp(self) -> None:
         """Set up test fixtures."""

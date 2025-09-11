@@ -210,6 +210,7 @@ def get_blink_connection() -> BlinkConnection | None:
     try:
         get_blink_instance()  # This will raise if not initialized
         from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
         return ensure_blink_connection_initialized()
     except RuntimeError:
         return None
