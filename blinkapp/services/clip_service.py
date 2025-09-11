@@ -228,21 +228,33 @@ def process_local_clips(
     clips_by_day: dict[str, dict[str, str | list[ClipApiData]]] = {}
 
     assert blink_instance is not None
+    logger.debug(f"Processing local clips from {len(blink_instance.sync)} sync modules")
+
     for sync_name, sync_module in blink_instance.sync.items():
+        logger.debug(
+            f"Checking sync module {sync_name}: local_storage={sync_module.local_storage}"
+        )
         try:
-            # Refresh sync module to update local storage manifest
-            # This ensures we have the latest clip information
-            if blink_connection_instance:
+            # Update local storage manifest specifically for local clips
+            # This ensures we have the latest clip information from USB storage
+            if blink_connection_instance and sync_module.local_storage:
+                logger.debug(f"Updating local storage manifest for {sync_name}")
                 try:
-                    blink_connection_instance.execute(sync_module.refresh())
-                except Exception as refresh_error:
-                    logger.warning(
-                        f"Failed to refresh sync module {sync_name}: {refresh_error}"
+                    result = blink_connection_instance.execute(
+                        sync_module.update_local_storage_manifest()
                     )
-                    # Continue processing even if refresh fails
+                    logger.debug(f"Manifest update result for {sync_name}: {result}")
+                except Exception as manifest_error:
+                    logger.warning(
+                        f"Failed to update local storage manifest for {sync_name}: {manifest_error}"
+                    )
+                    # Continue processing even if manifest update fails
 
             # Get clips from local storage manifest if ready
             if sync_module.local_storage and sync_module.local_storage_manifest_ready:
+                logger.debug(
+                    f"Processing manifest for {sync_name} with {len(sync_module._local_storage['manifest'])} clips"
+                )
                 manifest = sync_module._local_storage["manifest"]
                 for item in manifest:
                     try:
