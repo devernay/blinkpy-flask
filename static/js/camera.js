@@ -14,12 +14,13 @@ async function renderDevices(devices) {
     container.innerHTML = '';
 
     for (const device of devices) {
-        if (device.type === 'camera') {
-            const cameraCard = await createCameraCard(device);
-            container.appendChild(cameraCard);
-        } else if (device.type === 'sync_module') {
+        if (device.type === 'sync_module') {
             const syncCard = createSyncModuleCard(device);
             container.appendChild(syncCard);
+        } else {
+            // If it's not a sync module, it's a camera
+            const cameraCard = await createCameraCard(device);
+            container.appendChild(cameraCard);
         }
     }
 }
