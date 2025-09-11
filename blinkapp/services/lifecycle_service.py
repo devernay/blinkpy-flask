@@ -132,7 +132,12 @@ def startup() -> None:
             logger.error(f"Error loading saved Blink credentials: {e}")
             logger.info("Credentials preserved - log out if error persists")
     except Exception as e:
-        logger.warning(f"Could not initialize Blink system on startup: {e}")
+        # Only log as warning if it's not the expected "Blink not initialized" case
+        if "Blink not initialized" not in str(e):
+            logger.warning(f"Could not initialize Blink system on startup: {e}")
+        else:
+            logger.debug(f"Blink system not initialized on startup: {e}")
+            logger.info("No saved credentials found - user will need to login")
 
 
 def cleanup_resources() -> None:

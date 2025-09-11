@@ -82,6 +82,14 @@ def run_app(args: argparse.Namespace) -> None:
         app.config["CACHE_DIR"] = args.cache
 
     startup()
+
+    # Display user-friendly startup message
+    print("\n🏠 Blink Camera Web Interface")
+    print(f"📱 Access your cameras at: http://{args.host}:{args.port}")
+    if args.host == "0.0.0.0":
+        print(f"   Or locally at: http://localhost:{args.port}")
+    print("🔐 You will need to enter your Blink credentials on first visit\n")
+
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 
