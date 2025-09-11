@@ -254,7 +254,7 @@ def process_local_clips(
                     )
                     # Continue processing even if manifest update fails
 
-            # Get clips from local storage manifest if ready
+            # Get clips from local storage manifest directly (not from get_videos_metadata)
             if sync_module.local_storage and sync_module.local_storage_manifest_ready:
                 logger.debug(
                     f"Processing manifest for {sync_name} with {len(sync_module._local_storage['manifest'])} clips"
