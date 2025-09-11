@@ -1626,3 +1626,40 @@ class TestStrictPatching:
         """Test that strict_patch has object attribute for patch.object calls."""
         assert hasattr(strict_patch, "object")
         assert strict_patch.object is not None
+
+
+def mock_cache_paths(tmp_path: RealPath) -> Generator[None, None, None]:
+    """Context manager to mock all cache path accessor functions.
+
+    This replaces the old approach of patching module-level constants
+    with proper mocking of the accessor functions.
+
+    Args:
+        tmp_path: Temporary path to use for cache directories
+    """
+    from unittest.mock import patch
+
+    with (
+        patch("blinkapp.services.cache_service.get_cache_dir", return_value=tmp_path),
+        patch(
+            "blinkapp.services.cache_service.get_clips_cache_dir",
+            return_value=tmp_path / "clips",
+        ),
+        patch(
+            "blinkapp.services.cache_service.get_thumbnail_cache_dir",
+            return_value=tmp_path / "thumbnails",
+        ),
+        patch(
+            "blinkapp.services.hls_service.get_hls_output_dir",
+            return_value=tmp_path / "hls",
+        ),
+        patch(
+            "blinkapp.services.auth_service.get_credentials_file_path",
+            return_value=tmp_path / "blink.json",
+        ),
+        patch(
+            "blinkapp.services.settings_service.get_settings_file_path",
+            return_value=tmp_path / "settings.json",
+        ),
+    ):
+        yield

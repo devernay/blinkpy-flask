@@ -331,6 +331,14 @@ def initialize_cache_paths() -> None:
     ).resolve()
     blinkapp._SETTINGS_FILE_PATH = (cache_dir / Config.SETTINGS_FILENAME).resolve()
 
+    # Set backward compatibility constants for tests
+    blinkapp.CACHE_DIR = str(blinkapp._CACHE_DIR_PATH)
+    blinkapp.CLIPS_CACHE_DIR = str(blinkapp._CLIPS_CACHE_DIR_PATH)
+    blinkapp.THUMBNAIL_CACHE_DIR = str(blinkapp._THUMBNAIL_CACHE_DIR_PATH)
+    blinkapp.HLS_OUTPUT_DIR = str(blinkapp._HLS_OUTPUT_DIR_PATH)
+    blinkapp.CREDENTIALS_FILE = str(blinkapp._CREDENTIALS_FILE_PATH)
+    blinkapp.SETTINGS_FILE = str(blinkapp._SETTINGS_FILE_PATH)
+
     # Create directories
     blinkapp._THUMBNAIL_CACHE_DIR_PATH.mkdir(parents=True, exist_ok=True)
     blinkapp._CLIPS_CACHE_DIR_PATH.mkdir(parents=True, exist_ok=True)

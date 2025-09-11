@@ -14,6 +14,7 @@ DO NOT add Flask route tests here - those belong in test_integration_api.py.
 import threading
 import time
 import unittest
+from pathlib import Path
 
 from test_base import create_mock_camera
 
@@ -885,7 +886,10 @@ class TestThreadSafeLRUCache(BaseTestCase):
                 "blinkapp.services.blink_service.ensure_blink_connection_initialized"
             ),
             patch("blinkapp.services.connection_service.executor") as mock_executor,
-            patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"),
+            patch(
+                "blinkapp.services.cache_service.get_thumbnail_cache_dir",
+                return_value=Path("/tmp/thumbnails"),
+            ),
         ):
             # Setup mocks
             mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
