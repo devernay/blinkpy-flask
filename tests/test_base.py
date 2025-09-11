@@ -1628,6 +1628,7 @@ class TestStrictPatching:
         assert strict_patch.object is not None
 
 
+@contextmanager
 def mock_cache_paths(tmp_path: RealPath) -> Generator[None, None, None]:
     """Context manager to mock all cache path accessor functions.
 

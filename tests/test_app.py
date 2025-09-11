@@ -1365,28 +1365,8 @@ class TestAPIEndpoints(FlaskTestCase):
                     "blinkapp.services.connection_service.ensure_executor_initialized",
                     return_value=Mock(spec=ThreadPoolExecutor),
                 ):
-                    with patch(
-                        "blinkapp.services.cache_service.get_cache_dir",
-                        return_value=Path("/tmp/cache"),
-                    ):
-                        with patch(
-                            "blinkapp.services.auth_service.get_credentials_file_path",
-                            return_value=Path("/tmp/cache/blink.json"),
-                        ):
-                            with patch(
-                                "blinkapp.services.cache_service.get_thumbnail_cache_dir",
-                                return_value=Path("/tmp/thumbnails"),
-                            ):
-                                with patch(
-                                    "blinkapp.services.cache_service.get_clips_cache_dir",
-                                    return_value=Path("/tmp/clips"),
-                                ):
-                                    with patch(
-                                        "blinkapp.services.settings_service.get_settings_file_path",
-                                        return_value=Path("/tmp/cache/settings.json"),
-                                    ):
-                                        result = clear_all_caches()
-                                        self.assertIsInstance(result, dict)
+                    result = clear_all_caches()
+                    self.assertIsInstance(result, dict)
 
     """Test configuration and setup functions."""
 

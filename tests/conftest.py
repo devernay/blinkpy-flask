@@ -24,6 +24,34 @@ def enable_strict_patching_by_default() -> None:
 
 
 @pytest.fixture(autouse=True)
+def mock_cache_paths_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Automatically mock all cache path accessor functions for every test."""
+    # Mock all cache path accessor functions directly
+    monkeypatch.setattr(
+        "blinkapp.services.cache_service.get_cache_dir", lambda: tmp_path
+    )
+    monkeypatch.setattr(
+        "blinkapp.services.cache_service.get_clips_cache_dir",
+        lambda: tmp_path / "clips",
+    )
+    monkeypatch.setattr(
+        "blinkapp.services.cache_service.get_thumbnail_cache_dir",
+        lambda: tmp_path / "thumbnails",
+    )
+    monkeypatch.setattr(
+        "blinkapp.services.hls_service.get_hls_output_dir", lambda: tmp_path / "hls"
+    )
+    monkeypatch.setattr(
+        "blinkapp.services.auth_service.get_credentials_file_path",
+        lambda: tmp_path / "blink.json",
+    )
+    monkeypatch.setattr(
+        "blinkapp.services.settings_service.get_settings_file_path",
+        lambda: tmp_path / "settings.json",
+    )
+
+
+@pytest.fixture(autouse=True)
 def isolate_all_file_operations(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -96,38 +124,6 @@ def isolate_all_file_operations(
         blinkapp._HLS_OUTPUT_DIR_PATH = tmp_path / "hls"
         blinkapp._SETTINGS_FILE_PATH = tmp_path / "settings.json"
         blinkapp._CREDENTIALS_FILE_PATH = tmp_path / "blink.json"
-
-        # Set backward compatibility constants for tests
-        blinkapp.CACHE_DIR = str(tmp_path)
-        blinkapp.CLIPS_CACHE_DIR = str(tmp_path / "clips")
-        blinkapp.THUMBNAIL_CACHE_DIR = str(tmp_path / "thumbnails")
-        blinkapp.HLS_OUTPUT_DIR = str(tmp_path / "hls")
-        blinkapp.CREDENTIALS_FILE = str(tmp_path / "blink.json")
-        blinkapp.SETTINGS_FILE = str(tmp_path / "settings.json")
-
-    # Mock the cache path accessor functions to return the tmp_path values
-    monkeypatch.setattr(
-        "blinkapp.services.cache_service.get_cache_dir", lambda: tmp_path
-    )
-    monkeypatch.setattr(
-        "blinkapp.services.cache_service.get_clips_cache_dir",
-        lambda: tmp_path / "clips",
-    )
-    monkeypatch.setattr(
-        "blinkapp.services.cache_service.get_thumbnail_cache_dir",
-        lambda: tmp_path / "thumbnails",
-    )
-    monkeypatch.setattr(
-        "blinkapp.services.hls_service.get_hls_output_dir", lambda: tmp_path / "hls"
-    )
-    monkeypatch.setattr(
-        "blinkapp.services.auth_service.get_credentials_file_path",
-        lambda: tmp_path / "blink.json",
-    )
-    monkeypatch.setattr(
-        "blinkapp.services.settings_service.get_settings_file_path",
-        lambda: tmp_path / "settings.json",
-    )
 
     monkeypatch.setattr(
         "blinkapp.services.cache_service.initialize_cache_paths",
