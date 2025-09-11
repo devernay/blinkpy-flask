@@ -3283,7 +3283,7 @@ class TestLifecycleService(BaseTestCase):
 
 class TestConnectionService(BaseTestCase):
     """Test connection service functions."""
-    
+
     # Don't initialize blink objects for this test to test uninitialized state
     init_blink_objects = False
 

@@ -215,7 +215,10 @@ def process_local_clips(
     """
     # Use injected dependencies or defaults
     if blink_instance is None or blink_connection_instance is None:
-        from blinkapp.services.blink_service import ensure_blink_initialized, ensure_blink_connection_initialized
+        from blinkapp.services.blink_service import (
+            ensure_blink_connection_initialized,
+            ensure_blink_initialized,
+        )
 
         if blink_instance is None:
             blink_instance = ensure_blink_initialized()

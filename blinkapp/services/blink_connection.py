@@ -205,7 +205,7 @@ def get_blink_connection() -> BlinkConnection | None:
     """
     # Use the singleton from blink_service, but don't initialize if not present
     from blinkapp.services.blink_service import get_blink_instance
-    
+
     # Check if blink service has been initialized
     try:
         get_blink_instance()  # This will raise if not initialized
