@@ -1,0 +1,33 @@
+2025-09-11 11:19:19,992 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 11:19:19,995 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 11:19:21,137 - blinkpy.blinkpy - INFO - network = {
+  "network_id": 440889,
+  "name": "Maison",
+  "cameras": [
+    {
+      "id": 1010012,
+      "name": "Sud",
+      "usage": 36,
+      "lv_seconds": 36,
+      "clip_seconds": 0
+    },
+    {
+      "id": 1450849,
+      "name": "Nord",
+      "usage": 32,
+      "lv_seconds": 32,
+      "clip_seconds": 0
+    }
+  ]
+}
+2025-09-11 11:19:24,258 - blinkapp - INFO - Received signal 15, shutting down...
+2025-09-11 11:19:24,258 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 11:19:24,259 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 11:19:24,259 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 11:19:24,259 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 11:19:24,259 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 11:19:24,259 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 11:19:24,277 - asyncio - ERROR - Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x100348dd0>
+2025-09-11 11:19:24,278 - asyncio - ERROR - Task was destroyed but it is pending!
+task: <Task pending name='Task-1' coro=<load_saved_blink() done, defined at /Users/deverf/Documents/third_party/blinkpy-flask/blinkapp/services/auth_service.py:277> wait_for=<Future pending cb=[Task.task_wakeup()]> cb=[_chain_future.<locals>._call_set_state() at /Users/deverf/.pyenv/versions/3.12.9/lib/python3.12/asyncio/futures.py:396]>

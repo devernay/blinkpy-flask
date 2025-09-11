@@ -110,7 +110,17 @@ def run_app(args: argparse.Namespace) -> None:
     print(f"📱 Access your cameras at: http://{args.host}:{args.port}")
     if args.host == "0.0.0.0":
         print(f"   Or locally at: http://localhost:{args.port}")
-    print("🔐 You will need to enter your Blink credentials on first visit\n")
+
+    # Only show credentials message if no saved credentials exist
+    from pathlib import Path
+
+    from blinkapp import CREDENTIALS_FILE
+
+    if CREDENTIALS_FILE is None or not Path(CREDENTIALS_FILE).exists():
+        print("🔐 You will need to enter your Blink credentials on first visit")
+    else:
+        print("🔐 Using saved Blink credentials")
+    print()
 
     app.run(host=args.host, port=args.port, debug=args.debug)
 

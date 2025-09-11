@@ -1,0 +1,421 @@
+2025-09-11 11:36:56,218 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 11:36:56,221 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 11:36:57,892 - blinkpy.blinkpy - INFO - network = {
+  "network_id": 440889,
+  "name": "Maison",
+  "cameras": [
+    {
+      "id": 1010012,
+      "name": "Sud",
+      "usage": 36,
+      "lv_seconds": 36,
+      "clip_seconds": 0
+    },
+    {
+      "id": 1450849,
+      "name": "Nord",
+      "usage": 32,
+      "lv_seconds": 32,
+      "clip_seconds": 0
+    }
+  ]
+}
+2025-09-11 11:37:06,457 - blinkapp.services.auth_service - INFO - Blink system loaded from saved credentials
+2025-09-11 11:37:06,460 - blinkapp.services.auth_service - INFO - Found 10 cameras
+2025-09-11 11:37:06,464 - blinkapp - INFO - === BLINK SYSTEM DUMP ===
+2025-09-11 11:37:06,464 - blinkapp - INFO - Account ID: 200995
+2025-09-11 11:37:06,464 - blinkapp - INFO - Available: True
+2025-09-11 11:37:06,464 - blinkapp - INFO - Homescreen:
+2025-09-11 11:37:06,464 - blinkapp - INFO - {
+  "account": {
+    "id": 200995,
+    "email_verified": true,
+    "email_verification_required": true,
+    "amazon_account_linked": true
+  },
+  "networks": [
+    {
+      "id": 440889,
+      "created_at": "2022-12-13T12:14:38+00:00",
+      "updated_at": "2025-08-20T16:08:29+00:00",
+      "name": "Maison",
+      "time_zone": "Europe/Paris",
+      "dst": true,
+      "armed": false,
+      "lv_save": false
+    }
+  ],
+  "sync_modules": [
+    {
+      "id": 744654,
+      "created_at": "2023-01-02T11:55:12+00:00",
+      "updated_at": "2025-09-11T01:04:48+00:00",
+      "onboarded": true,
+      "status": "online",
+      "name": "My Blink Sync Module",
+      "serial": "G8T1LN0010541L4U",
+      "fw_version": "4.5.34",
+      "type": "sm2",
+      "subtype": "vinnie",
+      "last_hb": "2025-09-11T09:36:47+00:00",
+      "wifi_strength": 5,
+      "network_id": 440889,
+      "enable_temp_alerts": true,
+      "local_storage_enabled": true,
+      "local_storage_compatible": true,
+      "local_storage_status": "active",
+      "revision": "00"
+    }
+  ],
+  "cameras": [
+    {
+      "id": 1010012,
+      "created_at": "2022-12-20T12:04:31+00:00",
+      "updated_at": "2025-09-11T07:13:18+00:00",
+      "name": "Sud",
+      "serial": "G8T1GH00048250TX",
+      "fw_version": "10.70",
+      "type": "catalina",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/catalina/1010012/thumbnail/thumbnail.jpg?ts=1752215325&ext=",
+      "status": "done",
+      "battery": "ok",
+      "usage_rate": false,
+      "network_id": 440889,
+      "issues": [],
+      "signals": {
+        "lfr": 4,
+        "wifi": 5,
+        "temp": 65,
+        "battery": 3
+      },
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "00",
+      "color": "black"
+    },
+    {
+      "id": 1450849,
+      "created_at": "2025-02-15T10:32:38+00:00",
+      "updated_at": "2025-09-11T07:43:18+00:00",
+      "name": "Nord",
+      "serial": "G8T1JX0003110X37",
+      "fw_version": "10.70",
+      "type": "catalina_indoor",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/catalina/1450849/thumbnail/thumbnail.jpg?ts=1739619337&ext=",
+      "status": "done",
+      "battery": "ok",
+      "usage_rate": false,
+      "network_id": 440889,
+      "issues": [],
+      "signals": {
+        "lfr": 2,
+        "wifi": 5,
+        "temp": 65,
+        "battery": 3
+      },
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "00",
+      "color": "white"
+    }
+  ],
+  "sirens": [],
+  "chimes": [],
+  "video_stats": {
+    "storage": 0,
+    "auto_delete_days": 60,
+    "auto_delete_day_options": [
+      3,
+      7,
+      14,
+      30,
+      60
+    ]
+  },
+  "doorbell_buttons": [],
+  "owls": [
+    {
+      "id": 400658,
+      "created_at": "2022-12-19T13:04:09+00:00",
+      "updated_at": "2025-09-10T21:13:20+00:00",
+      "name": "V\u00e9randa",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8V1900115153L9N",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/400658/thumbnail/thumbnail.jpg?ts=1752759207&ext=",
+      "status": "online",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "01",
+      "color": "white"
+    },
+    {
+      "id": 400664,
+      "created_at": "2022-12-19T14:02:07+00:00",
+      "updated_at": "2025-09-10T23:13:24+00:00",
+      "name": "Salon 2",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8V1900011323NVK",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/400664/thumbnail/thumbnail.jpg?ts=1752053809&ext=",
+      "status": "online",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "00",
+      "color": "white"
+    },
+    {
+      "id": 401039,
+      "created_at": "2022-12-20T08:53:22+00:00",
+      "updated_at": "2025-09-10T17:13:36+00:00",
+      "name": "Chambre",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8V1900010955K7K",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/401039/thumbnail/thumbnail.jpg?ts=1693753278&ext=",
+      "status": "online",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "00",
+      "color": "white"
+    },
+    {
+      "id": 405577,
+      "created_at": "2023-01-01T12:51:56+00:00",
+      "updated_at": "2025-09-10T09:14:58+00:00",
+      "name": "Petite maison",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8V1900120752D2K",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/405577/thumbnail/thumbnail.jpg?ts=1702829286&ext=",
+      "status": "offline",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "01",
+      "color": "white"
+    },
+    {
+      "id": 493592,
+      "created_at": "2023-12-17T15:59:30+00:00",
+      "updated_at": "2025-09-10T11:16:21+00:00",
+      "name": "Bureau",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8V190001362LU78",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/493592/thumbnail/thumbnail.jpg?ts=1752215954&ext=",
+      "status": "online",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "00",
+      "color": "white"
+    },
+    {
+      "id": 495168,
+      "created_at": "2023-12-23T10:14:40+00:00",
+      "updated_at": "2025-09-11T03:16:02+00:00",
+      "name": "Cuisine",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8V190001362STR4",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/495168/thumbnail/thumbnail.jpg?ts=1703326817&ext=",
+      "status": "online",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "00",
+      "color": "white"
+    },
+    {
+      "id": 536368,
+      "created_at": "2024-07-20T07:19:08+00:00",
+      "updated_at": "2025-09-10T11:17:49+00:00",
+      "name": "Cam\u00e9ra salon",
+      "type": "owl",
+      "onboarded": true,
+      "serial": "G8T194014163022D",
+      "fw_version": "9.103",
+      "enabled": true,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/owl/536368/thumbnail/thumbnail.jpg?ts=1726069713&ext=",
+      "status": "online",
+      "network_id": 440889,
+      "local_storage_enabled": false,
+      "local_storage_compatible": true,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "01",
+      "color": "white"
+    }
+  ],
+  "doorbells": [
+    {
+      "id": 148021,
+      "created_at": "2024-03-06T13:03:30+00:00",
+      "updated_at": "2025-09-11T07:13:18+00:00",
+      "name": "Portail",
+      "type": "lotus",
+      "onboarded": true,
+      "serial": "G8T1SJ0221731M6M",
+      "fw_version": "12.83",
+      "enabled": false,
+      "thumbnail": "/api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext=",
+      "status": "done",
+      "network_id": 440889,
+      "battery": "ok",
+      "doorbell_mode": "lfr",
+      "changing_mode": false,
+      "signals": {
+        "lfr": 1,
+        "wifi": 1,
+        "battery": 3
+      },
+      "issues": [],
+      "local_storage_enabled": false,
+      "local_storage_compatible": false,
+      "config_out_of_sync": false,
+      "snooze": false,
+      "snooze_time_remaining": null,
+      "revision": "02",
+      "color": "white"
+    }
+  ],
+  "app_updates": {
+    "message": "OK",
+    "code": 103,
+    "update_available": false,
+    "update_required": false
+  },
+  "device_limits": {
+    "camera": 10,
+    "chime": 5,
+    "doorbell": 10,
+    "doorbell_button": 2,
+    "owl": 10,
+    "siren": 5,
+    "total_devices": 20
+  },
+  "whats_new": {
+    "updated_at": 20210204,
+    "url": ""
+  },
+  "subscriptions": {
+    "updated_at": "2025-08-26T10:00:56+00:00"
+  },
+  "entitlements": {
+    "updated_at": "2025-08-26T10:00:56+00:00"
+  },
+  "tiv_lock_enable": true,
+  "tiv_lock_status": {
+    "locked": true
+  },
+  "accessories": {
+    "storm": [],
+    "rosie": [
+      {
+        "id": 11622,
+        "serial": "GP11XN0142220257",
+        "type": "rosie",
+        "connected": true,
+        "calibrated": true,
+        "target": "owl",
+        "target_id": 536368,
+        "created_at": "2024-07-20T07:20:44+00:00",
+        "revision": "01"
+      }
+    ]
+  }
+}
+2025-09-11 11:37:06,464 - blinkapp - INFO - === SYNC MODULES (1) ===
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Sync Module: Maison ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Status: online
+2025-09-11 11:37:06,464 - blinkapp - INFO - Armed: False
+2025-09-11 11:37:06,464 - blinkapp - INFO - === CAMERAS (10) ===
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Sud ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Sud', 'camera_id': '1010012', 'serial': 'G8T1GH00048250TX', 'version': '10.70', 'temperature': 65, 'temperature_c': 18.3, 'temperature_calibrated': 65, 'battery': 'ok', 'battery_level': None, 'battery_voltage': 173, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/catalina/1010012/thumbnail/thumbnail.jpg?ts=1752215325&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': -40, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'catalina'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Nord ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Nord', 'camera_id': '1450849', 'serial': 'G8T1JX0003110X37', 'version': '10.70', 'temperature': 65, 'temperature_c': 18.3, 'temperature_calibrated': 65, 'battery': 'ok', 'battery_level': None, 'battery_voltage': 169, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/catalina/1450849/thumbnail/thumbnail.jpg?ts=1739619337&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': -53, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'catalina'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Véranda ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Véranda', 'camera_id': '400658', 'serial': 'G8V1900115153L9N', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/400658/thumbnail/thumbnail.jpg?ts=1752759207&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Salon 2 ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Salon 2', 'camera_id': '400664', 'serial': 'G8V1900011323NVK', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/400664/thumbnail/thumbnail.jpg?ts=1752053809&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Chambre ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Chambre', 'camera_id': '401039', 'serial': 'G8V1900010955K7K', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/401039/thumbnail/thumbnail.jpg?ts=1693753278&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Petite maison ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Petite maison', 'camera_id': '405577', 'serial': 'G8V1900120752D2K', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/405577/thumbnail/thumbnail.jpg?ts=1702829286&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Bureau ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Bureau', 'camera_id': '493592', 'serial': 'G8V190001362LU78', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/493592/thumbnail/thumbnail.jpg?ts=1752215954&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Cuisine ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Cuisine', 'camera_id': '495168', 'serial': 'G8V190001362STR4', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/495168/thumbnail/thumbnail.jpg?ts=1703326817&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Caméra salon ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Caméra salon', 'camera_id': '536368', 'serial': 'G8T194014163022D', 'version': '9.103', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': None, 'battery_level': None, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/owl/536368/thumbnail/thumbnail.jpg?ts=1726069713&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': True, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': None, 'last_record': None, 'type': 'owl'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - --- Camera: Portail ---
+2025-09-11 11:37:06,464 - blinkapp - INFO - Attributes: {'name': 'Portail', 'camera_id': '148021', 'serial': 'G8T1SJ0221731M6M', 'version': '12.83', 'temperature': None, 'temperature_c': None, 'temperature_calibrated': None, 'battery': 'ok', 'battery_level': 3, 'battery_voltage': None, 'thumbnail': 'https://rest-u009.immedia-semi.com/api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext=', 'video': None, 'recent_clips': [], 'motion_enabled': False, 'motion_detected': False, 'wifi_strength': None, 'network_id': 440889, 'sync_module': 'Maison', 'sync_signal_strength': 1, 'last_record': None, 'type': 'lotus'}
+2025-09-11 11:37:06,464 - blinkapp - INFO - === END DUMP ===
+2025-09-11 11:37:06,481 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.153:5001
+2025-09-11 11:37:06,481 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-11 11:37:12,922 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:12] "GET / HTTP/1.1" 200 -
+2025-09-11 11:37:12,966 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:12] "GET /static/js/clips.js HTTP/1.1" 200 -
+2025-09-11 11:37:12,966 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:12] "GET /static/js/camera.js HTTP/1.1" 200 -
+2025-09-11 11:37:12,966 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:12] "GET /static/js/app.js HTTP/1.1" 200 -
+2025-09-11 11:37:12,968 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:12] "GET /static/js/livestream.js HTTP/1.1" 200 -
+2025-09-11 11:37:13,033 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/config HTTP/1.1" 200 -
+2025-09-11 11:37:13,034 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/settings HTTP/1.1" 200 -
+2025-09-11 11:37:13,035 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/systems HTTP/1.1" 200 -
+2025-09-11 11:37:13,053 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/systems/440889/devices HTTP/1.1" 200 -
+2025-09-11 11:37:13,054 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 400664: Blink not authenticated
+2025-09-11 11:37:13,054 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 1010012: Blink not authenticated
+2025-09-11 11:37:13,055 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 1450849: Blink not authenticated
+2025-09-11 11:37:13,057 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 400658: Blink not authenticated
+2025-09-11 11:37:13,066 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 401039: Blink not authenticated
+2025-09-11 11:37:13,066 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 405577: Blink not authenticated
+2025-09-11 11:37:13,066 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 493592: Blink not authenticated
+2025-09-11 11:37:13,066 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 495168: Blink not authenticated
+2025-09-11 11:37:13,067 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 536368: Blink not authenticated
+2025-09-11 11:37:13,067 - blinkapp.services.thumbnail_service - ERROR - Error downloading thumbnail for camera 148021: Blink not authenticated
+2025-09-11 11:37:13,070 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/1010012/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,080 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/1450849/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,099 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/400658/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,116 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/400664/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,130 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/401039/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,146 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/405577/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,158 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/493592/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,167 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/495168/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,178 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/536368/thumbnail?timestamp=true HTTP/1.1" 200 -
+2025-09-11 11:37:13,183 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 11:37:13] "GET /api/cameras/148021/thumbnail?timestamp=true HTTP/1.1" 200 -
