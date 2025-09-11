@@ -292,6 +292,7 @@ def process_local_clips(
                         clip_data: JsonDict = {
                             "id": str(clip_id),
                             "camera_name": item.name,
+                            "created_at": item.created_at.isoformat(),  # Add this for proper date grouping
                             "system_name": sync_name,
                             "time": created_at.astimezone().strftime("%I:%M %p"),
                             "event_type": "Motion",
