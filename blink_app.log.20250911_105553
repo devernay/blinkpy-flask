@@ -1,0 +1,7 @@
+2025-09-11 10:48:48,772 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 10:48:48,775 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 10:48:48,776 - blinkapp.services.lifecycle_service - INFO - No saved credentials found - user will need to login
+2025-09-11 10:48:48,884 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:48:48,884 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 10:48:48,884 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:48:48,884 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed

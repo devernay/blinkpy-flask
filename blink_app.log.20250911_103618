@@ -1,0 +1,15 @@
+2025-09-11 10:06:27,426 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 10:06:27,429 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 10:06:27,429 - blinkapp.services.lifecycle_service - INFO - No saved credentials found - user will need to login
+2025-09-11 10:06:27,444 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.153:5001
+2025-09-11 10:06:27,444 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-11 10:34:11,349 - blinkapp - INFO - Received signal 2, shutting down...
+2025-09-11 10:34:11,354 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:34:11,461 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 10:34:11,462 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:34:11,462 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 10:34:11,462 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:34:11,462 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed

@@ -1,0 +1,24 @@
+2025-09-11 10:03:52,542 - blinkapp.utils.logging_config - INFO - Logging configuration completed successfully
+2025-09-11 10:03:52,546 - blinkapp.services.cache_service - INFO - Cache instances initialized successfully
+2025-09-11 10:03:52,546 - blinkapp.services.lifecycle_service - INFO - No saved credentials found - user will need to login
+2025-09-11 10:03:52,705 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.153:5001
+2025-09-11 10:03:52,706 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-09-11 10:03:56,528 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "GET / HTTP/1.1" 200 -
+2025-09-11 10:03:56,589 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "GET /static/js/app.js HTTP/1.1" 200 -
+2025-09-11 10:03:56,602 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "GET /static/js/camera.js HTTP/1.1" 200 -
+2025-09-11 10:03:56,602 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "GET /static/js/clips.js HTTP/1.1" 200 -
+2025-09-11 10:03:56,603 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "GET /static/js/livestream.js HTTP/1.1" 200 -
+2025-09-11 10:03:56,653 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "[35m[1mGET /api/config HTTP/1.1[0m" 500 -
+2025-09-11 10:03:56,657 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "[35m[1mGET /api/systems HTTP/1.1[0m" 500 -
+2025-09-11 10:03:56,659 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "[35m[1mGET /api/settings HTTP/1.1[0m" 500 -
+2025-09-11 10:03:56,666 - werkzeug - INFO - 127.0.0.1 - - [11/Sep/2025 10:03:56] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-09-11 10:04:05,418 - blinkapp - INFO - Received signal 2, shutting down...
+2025-09-11 10:04:05,418 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:04:05,521 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 10:04:05,521 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:04:05,521 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed
+2025-09-11 10:04:05,521 - blinkapp.services.lifecycle_service - INFO - Cleaning up resources...
+2025-09-11 10:04:05,521 - blinkapp.services.lifecycle_service - INFO - Resource cleanup completed

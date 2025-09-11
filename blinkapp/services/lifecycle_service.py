@@ -120,9 +120,18 @@ def startup() -> None:
 
             success = blink_connection.execute(load_saved_blink())
             if success is not True:
-                logger.info(
-                    "No valid saved credentials found - user will need to login"
-                )
+                # Check if credentials file exists to give better message
+                from ..config import Config
+
+                cred_file = Path(Config.DEFAULT_CACHE_DIR) / Config.CREDENTIALS_FILENAME
+
+                if cred_file.exists():
+                    logger.info(
+                        "Saved credentials found but authentication failed - "
+                        + "credentials may be expired. Please login again through the web interface."
+                    )
+                else:
+                    logger.info("No saved credentials found - user will need to login")
             elif logger.isEnabledFor(logging.INFO):
                 # Log system information for debugging if verbose logging enabled
                 from blinkapp.services.debug_service import dump_blink_system_info

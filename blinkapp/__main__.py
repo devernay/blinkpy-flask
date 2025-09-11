@@ -49,6 +49,16 @@ def create_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dump-system", action="store_true", help="Dump system info and exit"
     )
+    parser.add_argument(
+        "--test-credentials",
+        action="store_true",
+        help="Test credential loading and exit",
+    )
+    parser.add_argument(
+        "--test-and-exit",
+        action="store_true",
+        help="Full initialization test with camera list and exit",
+    )
     return parser
 
 
@@ -76,6 +86,18 @@ def run_app(args: argparse.Namespace) -> None:
         from blinkapp.services.debug_service import handle_dump_system
 
         handle_dump_system()
+        return
+
+    if args.test_credentials:
+        from blinkapp.services.debug_service import handle_test_credentials
+
+        handle_test_credentials()
+        return
+
+    if args.test_and_exit:
+        from blinkapp.services.debug_service import handle_test_and_exit
+
+        handle_test_and_exit()
         return
 
     if args.cache:
