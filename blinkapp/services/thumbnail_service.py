@@ -17,16 +17,12 @@ import logging
 import re
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from blinkapp.models.types import JsonDict, SimpleJsonDict
-
-if TYPE_CHECKING:
-    from flask import Response
-
-    from blinkapp.models.ids import CameraId, ClipId
+from flask import Response
 
 from blinkapp.config import Config
+from blinkapp.models.ids import CameraId, ClipId
+from blinkapp.models.types import JsonDict
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +141,7 @@ def notify_thumbnail_ready(clip_id: ClipId) -> None:
     """Thumbnail ready notification (no longer needed with polling approach).
 
     Args:
-        clip_id: ClipId object representing the clip with ready thumbnail.
+        clip_id: "ClipId" object representing the clip with ready thumbnail.
     """
     from blinkapp import logger
 
@@ -165,8 +161,6 @@ def get_camera_thumbnail(
         Response with thumbnail image or timestamp data
     """
     from pathlib import Path
-
-    from flask import Response
 
     import blinkapp
 

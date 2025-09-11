@@ -1,12 +1,14 @@
 """Connexion-compatible authentication handlers."""
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from flask.wrappers import Response as FlaskResponse
     from werkzeug.wrappers import Response as WerkzeugResponse
 
-type ResponseReturnValue = str | tuple[str, int] | "FlaskResponse" | "WerkzeugResponse"
+ResponseReturnValue = Union[str, tuple[str, int], "FlaskResponse", "WerkzeugResponse"]
 
 
 def main_page() -> ResponseReturnValue:
@@ -19,7 +21,7 @@ def main_page() -> ResponseReturnValue:
 
     if not session.get("authenticated"):
         # Check if credentials were loaded at startup and auto-authenticate
-        if current_app.config.get("CREDENTIALS_LOADED_AT_STARTUP"):
+        if current_app.config.get("CREDENTIALS_LOADED_AT_STARTUP"):  # type: ignore[misc]  # Flask config typing limitation
             session["authenticated"] = True
         else:
             return redirect(url_for("login_page_route"))

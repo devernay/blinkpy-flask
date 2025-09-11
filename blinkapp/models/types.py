@@ -67,8 +67,8 @@ JsonValue = (
     | list["SystemDict"]
     | list["DeviceDict"]
     | list["ClipDayGroup"]  # Add app-specific types
-    | tuple["Response", int]  # Flask response tuples
-    | tuple["Response", int, dict[str, str]]  # Flask response tuples with headers
+    | tuple[Response, int]  # Flask response tuples
+    | tuple[Response, int, dict[str, str]]  # Flask response tuples with headers
     | tuple["JsonDict", int]  # API response tuples
 )
 JsonDict = Mapping[str, JsonValue]  # Any dict-like object that can be JSON serialized

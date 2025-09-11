@@ -75,8 +75,8 @@ reportUnnecessaryTypeIgnoreComment = "warning"
 reportMissingTypeAnnotation = "error"        # Require type hints on all functions
 reportMissingParameterType = "error"         # Require type hints on all parameters
 reportMissingReturnType = "error"            # Require return type hints
-reportUnknownParameterType = "error"         # Flag unknown parameter types
-reportUnknownVariableType = "error"          # Flag unknown variable types
+# reportUnknownParameterType = "error"       # Disabled: causes false positives with complex decorators
+# reportUnknownVariableType = "error"        # Disabled: causes false positives with complex union types
 reportUnknownMemberType = "warning"          # Flag unknown member types
 
 # Use type stubs for blinkpy

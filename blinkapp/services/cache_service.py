@@ -293,7 +293,7 @@ def _get_cache_dir_config() -> str:
 
         # NOTE: pyright doesn't recognize Flask's config.get() return type properly
         # This is a known Flask typing limitation, method exists and works at runtime
-        cache_dir_raw: Any = current_app.config.get(  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        cache_dir_raw: Any = current_app.config.get(  # pyright: ignore[reportUnknownMemberType]
             "CACHE_DIR", Config.DEFAULT_CACHE_DIR
         )
         cache_dir_config: str = (

@@ -75,7 +75,7 @@ def create_mock_path(
     return mock_path
 
 
-def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:  # type: ignore[type-arg]
+def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:
     """Patch function that only allows patching symbols in __all__.
 
     Args:
@@ -145,11 +145,11 @@ def strict_patch_func(target: str, *args: Any, **kwargs: Any) -> _patch:  # type
 class StrictPatch:
     """Wrapper for patch that enforces __all__ exports."""
 
-    def __init__(self, patch_func: Callable[..., _patch]) -> None:  # type: ignore[type-arg]
+    def __init__(self, patch_func: Callable[..., _patch]) -> None:
         self._patch = patch_func
         self.object = original_patch.object
 
-    def __call__(self, *args: Any, **kwargs: Any) -> _patch:  # type: ignore[type-arg]
+    def __call__(self, *args: Any, **kwargs: Any) -> _patch:
         return self._patch(*args, **kwargs)
 
 

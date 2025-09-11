@@ -1,11 +1,8 @@
 """System management routes for the Blink Flask application."""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from flask import Flask, request
-
-if TYPE_CHECKING:
-    pass
 
 from blinkapp.models.ids import NetworkId
 from blinkapp.models.types import JsonDict
@@ -79,10 +76,10 @@ def setup_system_routes(app: Flask) -> None:
         # Get JSON body with proper type narrowing
         # NOTE: pyright doesn't recognize Flask's request.get_json() method properly
         # This is a known Flask typing limitation, method exists and works at runtime
-        body_data: Any = request.get_json()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType,reportUnknownVariableType]
+        body_data: Any = request.get_json()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]  # Flask typing limitation
         if body_data is None:
             body_data = {}
-        body: JsonDict = body_data if isinstance(body_data, dict) else {}  # pyright: ignore[reportUnknownVariableType]
+        body: JsonDict = body_data if isinstance(body_data, dict) else {}
         return update_system_settings(str(network_id), body)
 
     @app.route("/api/systems/<network_id>/devices")
