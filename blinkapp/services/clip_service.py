@@ -244,6 +244,10 @@ def process_local_clips(
                         sync_module.update_local_storage_manifest()
                     )
                     logger.debug(f"Manifest update result for {sync_name}: {result}")
+                    
+                    # Then check for new videos to populate last_records (blinkpy pattern)
+                    blink_connection_instance.execute(sync_module.check_new_videos())
+                    logger.debug(f"Checked new videos for {sync_name}")
                 except Exception as manifest_error:
                     logger.warning(
                         f"Failed to update local storage manifest for {sync_name}: {manifest_error}"
