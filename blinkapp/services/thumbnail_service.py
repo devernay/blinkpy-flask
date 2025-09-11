@@ -293,8 +293,6 @@ def _download_camera_thumbnail(
     """
     from pathlib import Path
 
-    import requests
-
     import blinkapp
 
     from ..models.cache import CameraThumbnailCacheEntry
@@ -332,13 +330,44 @@ def _download_camera_thumbnail(
         filename = f"{camera_id}_{timestamp}.jpg"
         file_path = cache_dir / filename
 
-        # Download thumbnail
-        response = requests.get(thumbnail_url, timeout=10)
-        response.raise_for_status()
+        # Download thumbnail using BlinkConnection for proper authentication
+        from blinkapp.services.blink_service import ensure_blink_connection_initialized
+
+        blink_connection = ensure_blink_connection_initialized()
+
+        async def download_thumbnail_with_auth() -> bytes | None:
+            blink = blink_connection.blink
+            if not blink or not blink.auth or not blink.auth.validate_login():
+                raise Exception("Blink not authenticated")
+
+            # Find the camera object
+            camera = None
+            for sync in blink.sync.values():
+                for cam in sync.cameras.values():
+                    if str(cam.camera_id) == str(camera_id):
+                        camera = cam
+                        break
+                if camera:
+                    break
+
+            if not camera:
+                raise Exception(f"Camera {camera_id} not found")
+
+            # Use blinkpy's authenticated thumbnail download
+            response = await camera.get_thumbnail(thumbnail_url)
+            if response:
+                return await response.read()
+            return None
+
+        # Execute the download through BlinkConnection
+        response_data = blink_connection.execute(download_thumbnail_with_auth())
+
+        if not response_data:
+            raise Exception("Failed to download thumbnail")
 
         # Save to cache
         with open(file_path, "wb") as f:
-            f.write(response.content)
+            f.write(response_data)
 
         # Update cache entry
         cache[camera_id] = CameraThumbnailCacheEntry(
