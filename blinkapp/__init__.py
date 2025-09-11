@@ -161,19 +161,6 @@ CLIPS_CACHE_SIZE = Config.CLIPS_CACHE_SIZE  # Maximum number of clips to cache
 
 # LRUCache automatically handles eviction, no manual cleanup needed
 
-# ============================================================================
-# Backward Compatibility Constants for Tests
-# ============================================================================
-# These constants provide backward compatibility for tests that patch the old constants
-# They are updated by initialize_cache_paths()
-
-CACHE_DIR: str | None = None
-CLIPS_CACHE_DIR: str | None = None
-THUMBNAIL_CACHE_DIR: str | None = None
-HLS_OUTPUT_DIR: str | None = None
-CREDENTIALS_FILE: str | None = None
-SETTINGS_FILE: str | None = None
-
 # Import main function for module execution
 if __name__ == "__main__":
     from blinkapp.__main__ import main
