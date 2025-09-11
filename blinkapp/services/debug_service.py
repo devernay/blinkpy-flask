@@ -425,11 +425,10 @@ def handle_test_and_exit() -> None:
             # Get local clips list
             local_clips_response = get_clips("local")  # type: ignore[misc]
 
-            if isinstance(local_clips_response, dict) and local_clips_response.get(
-                "success"
-            ):
-                local_clips = local_clips_response.get("data", [])
-                print(f"  ✅ Found {len(local_clips)} local clips")
+            if isinstance(local_clips_response, dict) and "clips" in local_clips_response:
+                local_clips = local_clips_response.get("clips", [])
+                total_clips = sum(len(day_group.get("clips", [])) for day_group in local_clips)
+                print(f"  ✅ Found {total_clips} local clips in {len(local_clips)} day groups")
             else:
                 print("  ⚠️ No local clips found")
 
