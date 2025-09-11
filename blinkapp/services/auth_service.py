@@ -323,6 +323,19 @@ async def load_saved_blink() -> bool:
             session_obj = ClientSession()
             try:
                 auth = Auth(auth_data, session=session_obj)
+                
+                # Check if we already have a Blink instance to avoid duplicates
+                from blinkapp.services.blink_service import (
+                    ensure_blink_connection_initialized,
+                )
+
+                blink_connection = ensure_blink_connection_initialized()
+                
+                if blink_connection.blink is not None:
+                    logger.warning("Blink instance already exists, closing old session")
+                    if blink_connection.blink.auth and blink_connection.blink.auth.session:
+                        await blink_connection.blink.auth.session.close()
+                
                 blink = Blink(session=session_obj)
                 blink.auth = auth
 
@@ -330,8 +343,6 @@ async def load_saved_blink() -> bool:
                 if success is True:
                     logger.info("Blink system loaded from saved credentials")
                     # Update the BlinkConnection's blink instance
-                    from blinkapp.services.blink_service import ensure_blink_connection_initialized
-                    blink_connection = ensure_blink_connection_initialized()
                     blink_connection.blink = blink
                     return True
                 else:

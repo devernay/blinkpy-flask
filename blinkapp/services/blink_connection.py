@@ -184,16 +184,16 @@ class BlinkConnection:
 
 
 # Global Blink connection instance
-blink_connection: BlinkConnection | None = None
+# Removed: Now using singleton from blink_service.py
+# blink_connection: BlinkConnection | None = None
 
 
 def initialize_blink_connection() -> None:
     """Initialize the global Blink connection."""
-    global blink_connection
-    if blink_connection is None:
-        blink_connection = BlinkConnection()
-        blink_connection.start()
-        logger.info("Blink connection initialized")
+    # Use the singleton from blink_service instead of creating our own
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    ensure_blink_connection_initialized()
+    logger.info("Blink connection initialized")
 
 
 def get_blink_connection() -> BlinkConnection | None:
@@ -202,13 +202,21 @@ def get_blink_connection() -> BlinkConnection | None:
     Returns:
         BlinkConnection | None: The global connection instance if available, None otherwise.
     """
-    return blink_connection
+    # Use the singleton from blink_service
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    try:
+        return ensure_blink_connection_initialized()
+    except RuntimeError:
+        return None
 
 
 def shutdown_blink_connection() -> None:
     """Shutdown the global Blink connection."""
-    global blink_connection
-    if blink_connection:
-        blink_connection.shutdown()
-        blink_connection = None
+    # Use the singleton from blink_service
+    from blinkapp.services.blink_service import ensure_blink_connection_initialized
+    try:
+        connection = ensure_blink_connection_initialized()
+        connection.shutdown()
         logger.info("Blink connection shutdown")
+    except RuntimeError:
+        pass  # Already shutdown
