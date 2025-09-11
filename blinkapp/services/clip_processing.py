@@ -168,20 +168,64 @@ def process_local_clip_background(
 
         if not clip_path.exists():
             try:
-                # Get local clip content
-                # TODO: Implement proper local clip access using blinkpy LocalStorageMediaItem API
-                # The get_local_clip_content method doesn't exist in blinkpy
-                # Need to use request_local_storage_clip and download_video methods instead
-                logger.warning(
-                    f"Local clip processing not fully implemented for {clip_id}"
+                # For local clips, check if video is already cached, then extract thumbnail
+                # Parse local clip ID to get sync name and item ID
+                sync_name, item_id = clip_id.get_local_parts()
+
+                # First check if video is already cached
+                clips_cache_dir = Path(CLIPS_CACHE_DIR).resolve()
+                video_pattern = f"local_{sync_name}_{item_id}_*.mp4"
+                video_files = list(clips_cache_dir.glob(video_pattern))
+
+                if video_files and video_files[0].exists():
+                    # Video already cached, use it directly
+                    video_path = video_files[0]
+                    logger.info(
+                        f"Using cached video for local clip {clip_id}: {video_path}"
+                    )
+                else:
+                    # Video not cached, download it first
+                    from blinkapp.services.clip_download import download_local_clip
+
+                    download_result = download_local_clip(
+                        clip_id, sync_name, str(item_id)
+                    )
+
+                    # Check if download was successful and we got a file response
+                    if hasattr(download_result, "status_code"):
+                        # It's an error response tuple
+                        logger.warning(
+                            f"Failed to download local clip {clip_id} for thumbnail generation"
+                        )
+                        return
+
+                    # Find the newly cached video file
+                    video_files = list(clips_cache_dir.glob(video_pattern))
+                    if not video_files:
+                        logger.warning(
+                            f"Cached video file not found after download for local clip {clip_id}"
+                        )
+                        return
+
+                    video_path = video_files[0]
+                    if not video_path.exists():
+                        logger.warning(
+                            f"Cached video file does not exist: {video_path}"
+                        )
+                        return
+
+                # Generate thumbnail from the cached video
+                from blinkapp.services.thumbnail_service import (
+                    generate_local_clip_thumbnail,
                 )
-                logger.warning(
-                    "Need to implement proper blinkpy LocalStorageMediaItem API usage"
+
+                generate_local_clip_thumbnail(clip_id, video_path, thumbnail_path)
+                logger.info(
+                    f"Generated thumbnail for local clip {clip_id} from cached video"
                 )
-                return
 
             except Exception as e:
-                logger.error(f"Error caching local clip {clip_id}: {e}")
+                logger.error(f"Error processing local clip {clip_id}: {e}")
                 return
 
         # Generate thumbnail

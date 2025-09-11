@@ -7,6 +7,7 @@ dedicated modules for better separation of concerns.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -56,7 +57,8 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
     """Download clip file by ID.
 
     This function serves as a bridge between the route handlers and the
-    actual download implementation in clip_download service.
+    actual download implementation in clip_download service. It first checks
+    the cache, and if not found, attempts to download based on clip type.
 
     Args:
         clip_id: ClipId object representing the clip to download.
@@ -65,18 +67,28 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
         Response | tuple[JsonDict, int]: File response or error response with status code.
     """
     from ..services.cache_service import ensure_clips_cache_initialized
-    from ..services.clip_download import download_clip_common
+    from ..services.clip_download import (
+        download_clip_common,
+        download_cloud_clip,
+        download_local_clip,
+    )
 
-    # Check if clip exists in cache
+    # Check if clip exists in cache first
     clips_cache = ensure_clips_cache_initialized()
     if clip_id in clips_cache:
         clip_entry = clips_cache[clip_id]
         if "filepath" not in clip_entry:
             return {"success": False, "error": "Clip file not cached"}, 404
-        return download_clip_common(clip_entry["filepath"], clip_id)
+        return download_clip_common(Path(clip_entry["filepath"]), clip_id)
+
+    # Not in cache - attempt to download based on clip type
+    if clip_id.is_local():
+        # Local clip - extract sync name and item ID
+        sync_name, item_id = clip_id.get_local_parts()
+        return download_local_clip(clip_id, sync_name, str(item_id))
     else:
-        # Return 404 for missing clips
-        return {"success": False, "error": "Clip not found"}, 404
+        # Cloud clip
+        return download_cloud_clip(clip_id)
 
 
 def process_cloud_clips(

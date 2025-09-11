@@ -229,7 +229,10 @@ def download_local_clip(
         # Check if clip is already cached
         from blinkapp import CLIPS_CACHE_DIR
 
-        clips_cache_dir = Path(CLIPS_CACHE_DIR)
+        clips_cache_dir = Path(CLIPS_CACHE_DIR).resolve()  # Use absolute path
+        clips_cache_dir.mkdir(
+            parents=True, exist_ok=True
+        )  # Ensure cache directory exists
         cache_filename = f"local_{sync_name}_{item_id_str}_{local_item.name}_{local_item.created_at.strftime('%Y%m%d_%H%M%S')}.mp4"
         cached_filepath = clips_cache_dir / cache_filename
 
