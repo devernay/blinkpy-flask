@@ -16,8 +16,6 @@ import time
 import unittest
 from pathlib import Path
 
-from test_base import create_mock_camera
-
 from blinkapp.models.cache import (
     CameraThumbnailCache,
     CameraThumbnailCacheEntry,
@@ -30,7 +28,7 @@ from blinkapp.models.cache import (
 from blinkapp.models.ids import BaseId, CameraId, ClipId, NetworkId
 from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import ClipDayGroup
-from tests.test_base import BaseTestCase
+from tests.test_base import BaseTestCase, create_mock_camera
 
 
 class TestBaseId(BaseTestCase):
@@ -1112,10 +1110,10 @@ class TestClipsCache(BaseTestCase):
 
         entry = self.cache[self.clip_id]
         # Cast to access optional fields that we know exist after add_clip
-        full_entry = cast(dict[str, object], entry)
+        full_entry = cast("dict[str, object]", entry)
         self.assertEqual(full_entry["clip_data"], self.clip_data)
-        self.assertGreaterEqual(cast(float, full_entry["cached_at"]), before_time)
-        self.assertLessEqual(cast(float, full_entry["cached_at"]), after_time)
+        self.assertGreaterEqual(cast("float", full_entry["cached_at"]), before_time)
+        self.assertLessEqual(cast("float", full_entry["cached_at"]), after_time)
         self.assertEqual(full_entry["access_count"], 0)
 
     def test_get_clip_existing(self) -> None:
@@ -1129,7 +1127,7 @@ class TestClipsCache(BaseTestCase):
         from typing import cast
 
         entry = self.cache[self.clip_id]
-        full_entry = cast(dict[str, object], entry)
+        full_entry = cast("dict[str, object]", entry)
         self.assertEqual(full_entry["access_count"], 1)
 
     def test_get_clip_missing(self) -> None:
@@ -1145,8 +1143,8 @@ class TestClipsCache(BaseTestCase):
         from typing import cast
 
         initial_entry = self.cache[self.clip_id]
-        full_initial_entry = cast(dict[str, object], initial_entry)
-        initial_access_time = cast(float, full_initial_entry["last_accessed"])
+        full_initial_entry = cast("dict[str, object]", initial_entry)
+        initial_access_time = cast("float", full_initial_entry["last_accessed"])
 
         # Wait a bit and access again
         time.sleep(0.01)
@@ -1156,9 +1154,9 @@ class TestClipsCache(BaseTestCase):
         from typing import cast
 
         updated_entry = self.cache[self.clip_id]
-        full_updated_entry = cast(dict[str, object], updated_entry)
+        full_updated_entry = cast("dict[str, object]", updated_entry)
         self.assertGreater(
-            cast(float, full_updated_entry["last_accessed"]), initial_access_time
+            cast("float", full_updated_entry["last_accessed"]), initial_access_time
         )
 
     def test_cleanup_old_clips(self) -> None:

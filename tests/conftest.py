@@ -56,7 +56,7 @@ def isolate_all_file_operations(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Redirect ALL file operations away from source directory."""
-    source_dir = Path(".").resolve()
+    source_dir = Path().resolve()
 
     # Store originals
     original_open = open
@@ -91,7 +91,7 @@ def isolate_all_file_operations(
             rel_path = path_obj.relative_to(source_dir)
             new_path = tmp_path / rel_path
             new_path.mkdir(parents=True, exist_ok=True)
-            return
+            return None
         return original_makedirs(name, mode, exist_ok)
 
     # Patch all file operations

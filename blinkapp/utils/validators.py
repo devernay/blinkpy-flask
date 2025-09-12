@@ -11,11 +11,11 @@ import re
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "validate_string_input",
-    "validate_camera_id",
-    "validate_tcp_url",
     "is_valid_email_format",
+    "validate_camera_id",
     "validate_credentials",
+    "validate_string_input",
+    "validate_tcp_url",
 ]
 
 

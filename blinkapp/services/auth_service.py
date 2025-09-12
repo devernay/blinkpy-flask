@@ -7,15 +7,15 @@ Blink system initialization, 2FA verification, and credential management.
 from __future__ import annotations
 
 __all__ = [
-    "is_blink_authenticated",
-    "initialize_blink",
-    "verify_2fa_and_save",
-    "load_saved_blink",
-    "validate_credentials",
-    "is_valid_email_format",
-    "handle_login",
     "handle_2fa_verification",
+    "handle_login",
+    "initialize_blink",
+    "is_blink_authenticated",
+    "is_valid_email_format",
+    "load_saved_blink",
     "logger",
+    "validate_credentials",
+    "verify_2fa_and_save",
 ]
 
 import logging
@@ -362,17 +362,16 @@ async def load_saved_blink() -> bool:
                     blink_connection.blink = blink
 
                     # Also update the global _blink variable so ensure_blink_initialized() works
-                    import blinkapp.services.blink_service as blink_service
+                    from blinkapp.services import blink_service
 
                     blink_service._blink = blink
 
                     return True
-                else:
-                    logger.warning(
-                        "Failed to load Blink system from saved credentials - token may be expired"
-                    )
-                    await session_obj.close()
-                    return False
+                logger.warning(
+                    "Failed to load Blink system from saved credentials - token may be expired"
+                )
+                await session_obj.close()
+                return False
             except Exception as inner_e:
                 logger.error(f"Exception in load_saved_blink: {inner_e}")
                 await session_obj.close()
@@ -417,7 +416,7 @@ def handle_login(username: str, password: str) -> SimpleJsonDict:
 
         if result is True:
             return {"success": True}
-        elif result == "2fa_required":
+        if result == "2fa_required":
             # Store credentials in Flask session for 2FA verification
             from flask import session
 
@@ -425,8 +424,7 @@ def handle_login(username: str, password: str) -> SimpleJsonDict:
             session["temp_username"] = username
             session["temp_password"] = password
             return {"success": False, "requires_2fa": True}
-        else:
-            return {"success": False, "error": "Authentication failed"}
+        return {"success": False, "error": "Authentication failed"}
 
     except Exception as e:
         logger.error(f"Login error: {e}")
@@ -484,8 +482,7 @@ def handle_2fa_verification(code: str) -> SimpleJsonDict:
             session.pop("temp_password", None)
             session["authenticated"] = True
             return {"success": True}
-        else:
-            return {"success": False, "error": "Invalid 2FA code"}
+        return {"success": False, "error": "Invalid 2FA code"}
     except Exception as e:
         logger.error(f"2FA verification error: {e}")
         return {"success": False, "error": "2FA verification failed"}

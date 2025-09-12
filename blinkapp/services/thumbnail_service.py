@@ -8,8 +8,8 @@ from __future__ import annotations
 
 __all__ = [
     "generate_local_clip_thumbnail",
-    "notify_thumbnail_ready",
     "get_camera_thumbnail",
+    "notify_thumbnail_ready",
     "refresh_camera_thumbnail",
 ]
 
@@ -188,10 +188,9 @@ def get_camera_thumbnail(
                     "success": True,
                     "timestamp": cached_entry["timestamp"],
                 }
-            elif current_ts:
+            if current_ts:
                 return {"success": True, "timestamp": current_ts}
-            else:
-                return {"success": False, "error": "No timestamp available"}, 404
+            return {"success": False, "error": "No timestamp available"}, 404
 
         # Check if we need to update cached thumbnail
         should_update = not cached_entry or (

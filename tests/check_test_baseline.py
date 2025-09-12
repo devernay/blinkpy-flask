@@ -14,6 +14,7 @@ def get_current_passing_tests() -> list[str]:
 
     result = subprocess.run(
         ["python", "-m", "pytest", "--tb=no", "-v", "--no-cov"],
+        check=False,
         capture_output=True,
         text=True,
         cwd=project_root,
@@ -25,8 +26,7 @@ def get_current_passing_tests() -> list[str]:
             test_name = line.split()[0]
             # Remove tests directory prefix if present
             prefix = f"{tests_dir_name}/"
-            if test_name.startswith(prefix):
-                test_name = test_name[len(prefix) :]
+            test_name = test_name.removeprefix(prefix)
             passing_tests.append(test_name)
 
     return sorted(passing_tests)

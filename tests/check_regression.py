@@ -14,6 +14,7 @@ def run_tests_and_get_results() -> list[str]:
     """Run tests and return sorted list of test results."""
     result = subprocess.run(
         ["python", "-m", "pytest", "--tb=no", "-v"],
+        check=False,
         capture_output=True,
         text=True,
         cwd=Path(__file__).parent,

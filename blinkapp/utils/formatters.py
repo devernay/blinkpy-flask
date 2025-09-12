@@ -70,14 +70,13 @@ def format_time_duration(seconds: int) -> str:
     """
     if seconds < 0:
         raise ValueError("Duration cannot be negative")
-    elif seconds < 60:
+    if seconds < 60:
         return f"{seconds}s"
-    elif seconds < 3600:
+    if seconds < 3600:
         minutes = seconds // 60
         return f"{minutes}m"
-    elif seconds < 86400:
+    if seconds < 86400:
         hours = seconds // 3600
         return f"{hours}h"
-    else:
-        days = seconds // 86400
-        return f"{days}d"
+    days = seconds // 86400
+    return f"{days}d"

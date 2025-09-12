@@ -24,12 +24,12 @@ from .blink_service import ensure_blink_initialized
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "dump_blink_system_info",
-    "handle_dump_system",
-    "handle_test_credentials",
-    "handle_test_and_exit",
     "check_credentials_file_exists",
+    "dump_blink_system_info",
     "dump_cloud_videos",
+    "handle_dump_system",
+    "handle_test_and_exit",
+    "handle_test_credentials",
 ]
 
 

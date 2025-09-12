@@ -143,7 +143,7 @@ class TestFormatters(BaseTestCase):
         from blinkapp.utils.formatters import format_clips_by_day
 
         clips = cast(
-            list[ClipApiData],
+            "list[ClipApiData]",
             [
                 {
                     "id": "1",

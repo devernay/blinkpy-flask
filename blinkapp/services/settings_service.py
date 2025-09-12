@@ -11,7 +11,7 @@ from blinkapp.models.types import JsonDict
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["get_user_settings", "get_temperature_unit", "get_app_config"]
+__all__ = ["get_app_config", "get_temperature_unit", "get_user_settings"]
 
 
 def get_app_config() -> JsonDict:

@@ -17,6 +17,7 @@ def main() -> int:
     # Run tests from project root and capture passing test names
     result = subprocess.run(
         ["python", "-m", "pytest", "--tb=no", "-v", "--no-cov"],
+        check=False,
         capture_output=True,
         text=True,
         cwd=project_root,
@@ -29,8 +30,7 @@ def main() -> int:
             test_name = line.split()[0]
             # Remove tests directory prefix if present
             prefix = f"{tests_dir_name}/"
-            if test_name.startswith(prefix):
-                test_name = test_name[len(prefix) :]
+            test_name = test_name.removeprefix(prefix)
             passing_tests.append(test_name)
 
     if not passing_tests:
@@ -43,8 +43,7 @@ def main() -> int:
     # Write baseline file
     baseline_file = Path(__file__).parent / "test_results_baseline.txt"
     with open(baseline_file, "w") as f:
-        for test in passing_tests:
-            f.write(f"{test}\n")
+        f.writelines(f"{test}\n" for test in passing_tests)
 
     print(f"✅ Updated baseline with {len(passing_tests)} passing tests")
     print(f"📁 Baseline saved to: {baseline_file}")

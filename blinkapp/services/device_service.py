@@ -24,7 +24,7 @@ def create_device_data(
         return {}
 
     # Calculate display timestamp
-    display_ts = cached_ts if cached_ts > current_ts else current_ts
+    display_ts = max(current_ts, cached_ts)
 
     return {
         "id": camera.camera_id,

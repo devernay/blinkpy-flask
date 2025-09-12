@@ -14,9 +14,9 @@ from blinkpy.camera import BlinkCamera
 from ..models.types import DeviceDict, JsonDict, SystemDict
 
 __all__ = [
-    "get_systems",
-    "get_devices",
     "arm_system",
+    "get_devices",
+    "get_systems",
     "refresh_system",
 ]
 

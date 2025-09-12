@@ -63,12 +63,11 @@ def authenticate_user() -> ResponseReturnValue:
 
     if auth_result.get("requires_2fa"):
         return redirect(url_for("twofa_page_route"))
-    elif auth_result.get("success"):
+    if auth_result.get("success"):
         return redirect(url_for("main_page_route"))
-    else:
-        return render_template(
-            "auth.html", error=auth_result.get("error", "Authentication failed")
-        ), 400
+    return render_template(
+        "auth.html", error=auth_result.get("error", "Authentication failed")
+    ), 400
 
 
 def twofa_page() -> ResponseReturnValue:
@@ -109,12 +108,11 @@ def verify_twofa() -> ResponseReturnValue:
 
     if verify_result.get("success"):
         return redirect(url_for("main_page_route"))
-    else:
-        return render_template(
-            "auth.html",
-            show_2fa=True,
-            error=verify_result.get("error", "2FA verification failed"),
-        ), 400
+    return render_template(
+        "auth.html",
+        show_2fa=True,
+        error=verify_result.get("error", "2FA verification failed"),
+    ), 400
 
 
 def logout_user() -> ResponseReturnValue:

@@ -7,11 +7,11 @@ cloud clip processing, and local clip processing.
 from __future__ import annotations
 
 __all__ = [
-    "process_cloud_clip_background",
-    "process_local_clip_background",
     "download_and_cache_cloud_thumbnail",
-    "process_cloud_clip_thumbnail_only",
     "logger",
+    "process_cloud_clip_background",
+    "process_cloud_clip_thumbnail_only",
+    "process_local_clip_background",
 ]
 
 import logging

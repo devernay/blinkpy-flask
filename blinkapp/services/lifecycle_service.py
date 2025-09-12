@@ -8,8 +8,8 @@ Extracted from main __init__.py to improve separation of concerns.
 from __future__ import annotations
 
 __all__ = [
-    "startup",
     "cleanup_resources",
+    "startup",
 ]
 
 import logging

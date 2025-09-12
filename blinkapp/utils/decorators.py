@@ -32,10 +32,10 @@ from blinkapp.models.types import (
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "check_blink_availability",
+    "ensure_blink_available",
     "error_context",
     "safe_execute",
-    "ensure_blink_available",
-    "check_blink_availability",
 ]
 
 
@@ -73,7 +73,7 @@ def error_context(
         logger.error(f"Exception type: {type(e).__name__}, args: {e.args}")
         if isinstance(e, BlinkError):
             raise
-        raise reraise_as(f"Failed to {operation}: {str(e)}") from e
+        raise reraise_as(f"Failed to {operation}: {e!s}") from e
 
 
 def safe_execute(

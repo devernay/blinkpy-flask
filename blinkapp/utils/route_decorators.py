@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "api_route",
     "api_route_with_validation",
-    "simple_success_response",
     "file_response_route",
     "method_dispatch_route",
+    "simple_success_response",
     "template_route_with_validation",
 ]
 
@@ -86,12 +86,9 @@ def _handle_response_formatting(result: RouteResult) -> RouteResult:
         dict_result = result
         response, status_code = create_api_response(success=True, data=dict_result)
         return jsonify(response), status_code
-    else:
-        # For non-dict results, wrap in success response
-        response, status_code = create_api_response(
-            success=True, data={"result": result}
-        )
-        return jsonify(response), status_code
+    # For non-dict results, wrap in success response
+    response, status_code = create_api_response(success=True, data={"result": result})
+    return jsonify(response), status_code
 
 
 def _handle_error(e: Exception, operation_name: str) -> ErrorResponse:
@@ -285,23 +282,21 @@ def _create_base_decorator(
                     # Type assertion: when skip_response_formatting=True, result must be FlaskResponse
                     if isinstance(result, Response | tuple):
                         return result
+                    # This should not happen with proper usage, but handle gracefully
+                    logger.warning(
+                        f"Expected FlaskResponse but got {type(result)} in {op_name}"
+                    )
+                    # Convert object to RouteResult through type narrowing
+                    if (
+                        isinstance(result, dict | str | int | float | bool)
+                        or result is None
+                    ):
+                        route_result: RouteResult = result
                     else:
-                        # This should not happen with proper usage, but handle gracefully
-                        logger.warning(
-                            f"Expected FlaskResponse but got {type(result)} in {op_name}"
-                        )
-                        # Convert object to RouteResult through type narrowing
-                        if (
-                            isinstance(result, dict | str | int | float | bool)
-                            or result is None
-                        ):
-                            route_result: RouteResult = result
-                        else:
-                            # For other types, convert to dict
-                            route_result = {"result": str(result)}
-                        return _handle_response_formatting(route_result)
-                else:
-                    return _handle_response_formatting(result)
+                        # For other types, convert to dict
+                        route_result = {"result": str(result)}
+                    return _handle_response_formatting(route_result)
+                return _handle_response_formatting(result)
 
             except Exception as e:
                 return _handle_error(e, op_name)

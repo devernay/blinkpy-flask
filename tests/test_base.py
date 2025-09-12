@@ -171,18 +171,18 @@ def disable_strict_patching() -> None:
 
 
 __all__ = [
-    "create_mock_cache_instance",
-    "create_mock_blink_instance",
-    "create_mock_sync",
-    "create_mock_camera",
-    "create_mock_live_stream",
-    "initialize_for_testing",
     "BaseTestCase",
     "FlaskTestCase",
-    "with_blink_auth",
-    "strict_patch",
-    "enable_strict_patching",
+    "create_mock_blink_instance",
+    "create_mock_cache_instance",
+    "create_mock_camera",
+    "create_mock_live_stream",
+    "create_mock_sync",
     "disable_strict_patching",
+    "enable_strict_patching",
+    "initialize_for_testing",
+    "strict_patch",
+    "with_blink_auth",
 ]
 
 
@@ -262,7 +262,7 @@ def create_mock_camera(
     camera_id: int | str = 12345,
     name: str = "Test Camera",
     battery: str | None = "ok",
-    temperature: int | float | None = 72,
+    temperature: float | None = 72,
     wifi_strength: int | None = -45,
     motion_enabled: bool = True,
     thumbnail: str | None = None,
@@ -921,7 +921,7 @@ def initialize_for_testing() -> None:
 
         initialize_caches({"camera_thumbnail_cache_size": 10, "clips_cache_size": 10})
     except Exception:
-        import blinkapp.services.cache_service as cache_service
+        from blinkapp.services import cache_service
 
         assert cache_service is not None
         if cache_service.clips_cache is None:
@@ -978,9 +978,23 @@ def with_blink_auth(test_func: Callable[..., None]) -> Callable[..., None]:
         with patch(
             "blinkapp.services.blink_service.ensure_blink_initialized"
         ) as mock_ensure_blink:
-            # Set up the mock to return a properly configured blink instance
-            mock_ensure_blink.return_value = create_mock_blink_instance()
-            return test_func(*args, **kwargs)
+            with patch(
+                "blinkapp.services.blink_connection.get_blink_connection"
+            ) as mock_get_connection:
+                with patch(
+                    "blinkapp.services.blink_service.get_blink_instance"
+                ) as mock_get_instance:
+                    # Set up the mock to return a properly configured blink instance
+                    mock_blink_instance = create_mock_blink_instance()
+                    mock_ensure_blink.return_value = mock_blink_instance
+                    mock_get_instance.return_value = mock_blink_instance
+
+                    # Set up connection mock
+                    mock_connection = Mock()
+                    mock_connection.execute = Mock()
+                    mock_get_connection.return_value = mock_connection
+
+                    return test_func(*args, **kwargs)
 
     return wrapper
 
@@ -1359,10 +1373,8 @@ class FlaskTestCase(BaseTestCase):
         ):
             if expected_status == 200:
                 return self.assert_api_success(response)
-            else:
-                return self.assert_api_error(response, expected_status)
-        else:
-            return response
+            return self.assert_api_error(response, expected_status)
+        return response
 
     def mock_blink_system(
         self, available: bool = True, systems: dict[str, Any] | None = None
@@ -1469,8 +1481,7 @@ def mock_execute_with_coroutine_cleanup(
         if side_effect:
             if isinstance(side_effect, Exception):
                 raise side_effect
-            else:
-                raise side_effect
+            raise side_effect
         return return_value
 
     return Mock(spec=callable, side_effect=mock_execute)
@@ -1628,6 +1639,9 @@ def mock_cache_paths(tmp_path: RealPath) -> Generator[None, None, None]:
 
     Args:
         tmp_path: Temporary path to use for cache directories
+
+    Returns:
+        Generator[None, None, None]: Context manager that yields None
     """
     from unittest.mock import patch
 

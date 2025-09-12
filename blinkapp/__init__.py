@@ -31,6 +31,7 @@ from pathlib import Path
 # Type alias for Flask responses
 from flask import (
     Flask,
+    Response,
 )
 
 # Authentication and session management
@@ -56,14 +57,11 @@ from blinkapp.utils.logging_config import setup_logging
 
 # Explicitly define what this module exports
 __all__ = [
-    # Flask application instance
-    "app",
-    # Logger (defined in this module)
-    "logger",
-    # Functions expected by tests
-    "clear_all_caches",
-    "setup_logging",
     "Path",
+    "app",
+    "clear_all_caches",
+    "logger",
+    "setup_logging",
 ]
 
 # ============================================================================
@@ -73,6 +71,19 @@ __all__ = [
 # Create Flask app instance with secure configuration
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
+
+
+# Favicon route
+@app.route("/favicon.ico")
+def favicon() -> "Response":
+    """Serve favicon from static directory."""
+    from flask import send_from_directory
+
+    static_folder = app.static_folder
+    if static_folder is None:
+        raise RuntimeError("Static folder not configured")
+    return send_from_directory(static_folder, "favicon.ico")
+
 
 # Set up authentication routes
 setup_auth_routes(app)

@@ -37,8 +37,8 @@ T = TypeVar("T")
 
 __all__ = [
     "BlinkConnection",
-    "initialize_blink_connection",
     "get_blink_connection",
+    "initialize_blink_connection",
     "shutdown_blink_connection",
 ]
 
@@ -125,9 +125,9 @@ class BlinkConnection:
             result = future.result(timeout=operation_timeout)
             return result
         except (TimeoutError, concurrent.futures.TimeoutError) as e:
-            raise BlinkError(f"Blink operation timed out: {str(e)}") from e
+            raise BlinkError(f"Blink operation timed out: {e!s}") from e
         except (RuntimeError, OSError) as e:
-            raise BlinkError(f"Blink operation failed: {str(e)}") from e
+            raise BlinkError(f"Blink operation failed: {e!s}") from e
 
     def cleanup_active_streams(self) -> None:
         """Clean up all active livestreams.

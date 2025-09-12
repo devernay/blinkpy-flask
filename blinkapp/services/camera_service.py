@@ -8,9 +8,9 @@ from __future__ import annotations
 
 __all__ = [
     "find_camera_by_id",
-    "require_camera",
     "get_camera_details",
     "record_camera",
+    "require_camera",
 ]
 
 import logging
@@ -172,6 +172,6 @@ async def record_camera(camera_id: CameraId) -> tuple[JsonDict, int]:
     except Exception as e:
         logger.error(f"Failed to start recording for camera {camera_id}: {e}")
         response, status_code = create_api_response(
-            success=False, error=f"Failed to start recording: {str(e)}", status_code=500
+            success=False, error=f"Failed to start recording: {e!s}", status_code=500
         )
         return response, status_code

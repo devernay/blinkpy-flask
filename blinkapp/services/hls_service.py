@@ -18,12 +18,12 @@ from blinkapp.config import Config
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    "parse_tcp_url",
-    "generate_hls_url",
-    "HLSStreamConfig",
     "HLSStream",
-    "_create_ffmpeg_process",
+    "HLSStreamConfig",
     "_build_ffmpeg_command",
+    "_create_ffmpeg_process",
+    "generate_hls_url",
+    "parse_tcp_url",
 ]
 
 
@@ -203,7 +203,7 @@ class HLSStream:
 
             except Exception as e:
                 self.cleanup()
-                return None, f"Failed to start stream: {str(e)}"
+                return None, f"Failed to start stream: {e!s}"
 
     def stop(self) -> None:
         """Stop HLS stream and cleanup resources."""

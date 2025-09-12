@@ -2,12 +2,12 @@
 
 # Explicitly define what this module exports
 __all__ = [
-    "BlinkError",
-    "ValidationError",
     "AuthenticationError",
+    "BlinkError",
+    "CacheError",
     "CameraError",
     "StreamError",
-    "CacheError",
+    "ValidationError",
 ]
 
 

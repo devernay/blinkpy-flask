@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 __all__ = [
-    "initialize_connections",
+    "BlinkError",
     "ensure_executor_initialized",
     "ensure_http_session_initialized",
     "executor",  # Global executor instance used in tests
-    "BlinkError",
+    "initialize_connections",
 ]
 
 logger = logging.getLogger(__name__)

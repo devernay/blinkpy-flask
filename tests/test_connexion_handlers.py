@@ -87,8 +87,10 @@ class TestSystemHandlers(BaseTestCase):
         self.assertIsInstance(result, tuple)
         data, status = result
         self.assertEqual(status, 400)
-        self.assertFalse(cast(JsonDict, data)["success"])
-        self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
+        self.assertFalse(cast("JsonDict", data)["success"])
+        self.assertIn(
+            "Invalid network ID", cast("str", cast("JsonDict", data)["error"])
+        )
 
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_devices_valid_id(self, mock_validator: Mock) -> None:
@@ -122,8 +124,10 @@ class TestSystemHandlers(BaseTestCase):
         self.assertIsInstance(result, tuple)
         data, status = result
         self.assertEqual(status, 400)
-        self.assertFalse(cast(JsonDict, data)["success"])
-        self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
+        self.assertFalse(cast("JsonDict", data)["success"])
+        self.assertIn(
+            "Invalid network ID", cast("str", cast("JsonDict", data)["error"])
+        )
 
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.blink_validators.require_sync_module")
@@ -160,8 +164,10 @@ class TestSystemHandlers(BaseTestCase):
         self.assertIsInstance(result, tuple)
         data, status = result
         self.assertEqual(status, 400)
-        self.assertFalse(cast(JsonDict, data)["success"])
-        self.assertIn("Invalid network ID", cast(str, cast(JsonDict, data)["error"]))
+        self.assertFalse(cast("JsonDict", data)["success"])
+        self.assertIn(
+            "Invalid network ID", cast("str", cast("JsonDict", data)["error"])
+        )
 
     def test_update_system_missing_armed(self) -> None:
         """Test update_system with missing armed field."""
@@ -172,9 +178,10 @@ class TestSystemHandlers(BaseTestCase):
         self.assertIsInstance(result, tuple)
         data, status = result
         self.assertEqual(status, 400)
-        self.assertFalse(cast(JsonDict, data)["success"])
+        self.assertFalse(cast("JsonDict", data)["success"])
         self.assertIn(
-            "Missing required field: armed", cast(str, cast(JsonDict, data)["error"])
+            "Missing required field: armed",
+            cast("str", cast("JsonDict", data)["error"]),
         )
 
     def test_update_system_invalid_armed_type(self) -> None:
@@ -186,9 +193,10 @@ class TestSystemHandlers(BaseTestCase):
         self.assertIsInstance(result, tuple)
         data, status = result
         self.assertEqual(status, 400)
-        self.assertFalse(cast(JsonDict, data)["success"])
+        self.assertFalse(cast("JsonDict", data)["success"])
         self.assertIn(
-            "Field 'armed' must be boolean", cast(str, cast(JsonDict, data)["error"])
+            "Field 'armed' must be boolean",
+            cast("str", cast("JsonDict", data)["error"]),
         )
 
     @patch("blinkapp.services.system_service.refresh_system")
@@ -234,7 +242,7 @@ class TestCameraHandlers(BaseTestCase):
 
         result = camera.list_cameras()
 
-        cameras = cast(list[Any], result["cameras"])
+        cameras = cast("list[Any]", result["cameras"])
         self.assertEqual(len(cameras), 2)
         self.assertEqual(cameras[0]["id"], "cam1")
         self.assertEqual(cameras[1]["id"], "cam2")
@@ -376,8 +384,10 @@ class TestClipsHandlers(BaseTestCase):
         self.assertIsInstance(result, tuple)
         data, status = result
         self.assertEqual(status, 400)
-        self.assertFalse(cast(JsonDict, data)["success"])
-        self.assertIn("Invalid storage type", cast(str, cast(JsonDict, data)["error"]))
+        self.assertFalse(cast("JsonDict", data)["success"])
+        self.assertIn(
+            "Invalid storage type", cast("str", cast("JsonDict", data)["error"])
+        )
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch(

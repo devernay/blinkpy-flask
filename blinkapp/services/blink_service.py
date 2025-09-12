@@ -7,13 +7,13 @@ Blink API client management, connection management, and initialization.
 from __future__ import annotations
 
 __all__ = [
-    "initialize_blink_objects",
-    "ensure_blink_initialized",
-    "ensure_blink_connection_initialized",
-    "initialize_blink_instance",
-    "cleanup_blink_session",
-    "get_blink_instance",
     "cleanup_blink_instances",
+    "cleanup_blink_session",
+    "ensure_blink_connection_initialized",
+    "ensure_blink_initialized",
+    "get_blink_instance",
+    "initialize_blink_instance",
+    "initialize_blink_objects",
 ]
 
 import logging

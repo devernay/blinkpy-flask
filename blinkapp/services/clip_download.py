@@ -17,11 +17,11 @@ from blinkapp.models.responses import create_api_response
 from blinkapp.models.types import JsonDict
 
 __all__ = [
-    "download_cloud_clip",
-    "download_local_clip",
-    "download_clip_common",
     "_download_cloud_clip_core",
     "_download_cloud_clip_core_sync",
+    "download_clip_common",
+    "download_cloud_clip",
+    "download_local_clip",
 ]
 
 if TYPE_CHECKING:
@@ -294,12 +294,11 @@ def download_local_clip(
                 download_name=f"clip_{clip_id}.mp4",
                 mimetype="video/mp4",
             )
-        else:
-            return create_api_response(
-                success=False,
-                error="Downloaded file not found",
-                status_code=500,
-            )
+        return create_api_response(
+            success=False,
+            error="Downloaded file not found",
+            status_code=500,
+        )
 
     except Exception as e:
         logger.error(f"Error in download_local_clip: {e}")

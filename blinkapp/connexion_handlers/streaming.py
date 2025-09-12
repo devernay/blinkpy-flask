@@ -33,8 +33,7 @@ def start_live_stream(camera_id: str) -> JsonDict | tuple[JsonDict, int]:
         stream_obj, hls_url = init_camera_stream(camera, camera_id_obj)
         if hls_url:
             return {"success": True, "stream_url": hls_url, "playlist_url": hls_url}
-        else:
-            return {"success": False, "error": "Failed to start stream"}, 500
+        return {"success": False, "error": "Failed to start stream"}, 500
 
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400
@@ -85,7 +84,6 @@ def get_hls_stream_segments(
             from flask import Response
 
             return Response(result[0], mimetype=result[1])
-        else:
-            return {"success": False, "error": "HLS file not found"}, 404
+        return {"success": False, "error": "HLS file not found"}, 404
     except ValueError:
         return {"success": False, "error": "Invalid camera ID"}, 400

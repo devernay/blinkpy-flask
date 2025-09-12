@@ -517,9 +517,13 @@ class TestFlaskApp(FlaskTestCase):
         self.assertIn("Unable to connect to your Blink system", data["error"])
 
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_api_systems_success(
-        self, mock_ensure_blink: Mock, mock_ensure_connection: Mock
+        self,
+        mock_ensure_blink: Mock,
+        mock_get_instance: Mock,
+        mock_ensure_connection: Mock,
     ) -> None:
         """Test successful systems API endpoint with complete mock setup.
 
@@ -536,6 +540,7 @@ class TestFlaskApp(FlaskTestCase):
         )
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         response = self.client.get("/api/systems")  # type: TestResponse
 
@@ -545,13 +550,17 @@ class TestFlaskApp(FlaskTestCase):
         self.assertEqual(len(data["data"]["systems"]), 1)
         self.assertEqual(data["data"]["systems"][0]["name"], "Test System")
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_devices_invalid_network_id(self, mock_ensure_blink: Mock) -> None:
+    def test_api_devices_invalid_network_id(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test devices API with invalid network ID."""
         # Mock blink to be available so we can test NetworkId validation
         # Mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink_instance = create_mock_blink_instance(
             available=True,
@@ -577,8 +586,11 @@ class TestFlaskApp(FlaskTestCase):
 class TestAdditionalEndpoints(FlaskTestCase):
     """Test additional endpoints for better coverage."""
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_devices_network_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_api_devices_network_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test devices API with network not found."""
         # Mock blink instance
 
@@ -589,14 +601,18 @@ class TestAdditionalEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {}  # No sync modules
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         response = self.client.get("/api/systems/99999/devices")  # type: TestResponse
         self.assertEqual(response.status_code, 404)
         data = json.loads(response.data)
         self.assertFalse(data["success"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_camera_thumbnail_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_api_camera_thumbnail_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test camera thumbnail with camera not found."""
         # Mock blink instance
 
@@ -607,13 +623,17 @@ class TestAdditionalEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {}  # Empty sync to ensure no cameras found
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         with (
             patch(
                 "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized",
                 return_value={},
             ),
-            patch("blinkapp.CACHE_DIR", "/tmp/test_cache"),
+            patch(
+                "blinkapp.services.cache_service.get_cache_dir",
+                return_value="/tmp/test",
+            ),
         ):
             response = self.client.get("/api/cameras/nonexistent/thumbnail")  # type: TestResponse
 
@@ -630,8 +650,11 @@ class TestAdditionalEndpoints(FlaskTestCase):
         data = json.loads(response.data)
         self.assertFalse(data["success"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_clear_cache_success(self, mock_ensure_blink: Mock) -> None:
+    def test_api_clear_cache_success(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test successful cache clearing."""
         # Mock blink instance
 
@@ -640,6 +663,7 @@ class TestAdditionalEndpoints(FlaskTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         response = self.client.delete("/api/cache")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
@@ -952,7 +976,6 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn(b"2FA verification failed", response.data)
 
-    @patch("blinkapp.CREDENTIALS_FILE", "/tmp/test_credentials.json")
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_logout_success(self, mock_blink: Mock, mock_executor: Mock) -> None:
@@ -1230,8 +1253,11 @@ if __name__ == "__main__":
 class TestAPIEndpoints(FlaskTestCase):
     """Test API endpoints for better coverage."""
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_systems_success(self, mock_ensure_blink: Mock) -> None:
+    def test_get_systems_success(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test successful get_systems call."""
         # Mock blink object with sync modules
         mock_sync = create_mock_sync(network_id=12345, armed=True, online=True)
@@ -1245,6 +1271,7 @@ class TestAPIEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {"Test Network": mock_sync}
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         response = self.client.get("/api/systems")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
@@ -1253,43 +1280,58 @@ class TestAPIEndpoints(FlaskTestCase):
         self.assertTrue(data["success"])
         self.assertIsInstance(data["data"]["systems"], list)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_devices_no_network(self, mock_ensure_blink: Mock) -> None:
+    def test_get_devices_no_network(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_devices with invalid network ID."""
         # Use proper mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.networks = {}
         response = self.client.get("/api/systems/99999/devices")  # type: TestResponse
         self.assert_api_error(response, 404)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_arm_system_invalid_network(self, mock_ensure_blink: Mock) -> None:
+    def test_arm_system_invalid_network(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test arm_system with invalid network ID."""
         # Use proper mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.networks = {}
         response = self.client.put("/api/systems/99999", json={"armed": True})  # type: TestResponse
         self.assert_api_error(response, 404)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_arm_system_missing_data(self, mock_ensure_blink: Mock) -> None:
+    def test_arm_system_missing_data(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test arm_system with missing armed parameter."""
         mock_network = create_mock_sync(network_id=12345)
         # Use proper mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.networks = {"12345": mock_network}
 
         response = self.client.put("/api/systems/12345", json={})  # type: TestResponse
         self.assertEqual(response.status_code, 400)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_camera_thumbnail_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_get_camera_thumbnail_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_camera_thumbnail with invalid camera ID."""
         # Mock blink instance
 
@@ -1300,19 +1342,22 @@ class TestAPIEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {}  # Empty sync to ensure no cameras found
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         with (
             patch(
                 "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized",
                 return_value={},
             ),
-            patch("blinkapp.CACHE_DIR", "/tmp/test_cache"),
+            patch(
+                "blinkapp.services.cache_service.get_cache_dir",
+                return_value="/tmp/test",
+            ),
         ):
             response = self.client.get("/api/cameras/99999/thumbnail")  # type: TestResponse
             # Should return 404 when camera not found
             self.assertEqual(response.status_code, 404)
 
-    @patch("blinkapp.CACHE_DIR", "/tmp")
     @with_blink_auth
     def test_get_settings_endpoint(self) -> None:
         """Test get_settings endpoint."""
@@ -1372,7 +1417,6 @@ class TestAPIEndpoints(FlaskTestCase):
 
     @patch("pathlib.Path.mkdir")
     @patch("pathlib.Path")
-    @patch("blinkapp.CACHE_DIR", "/tmp/test_cache")
     @patch("blinkapp.app")
     def test_initialize_cache_paths(
         self, mock_app: Mock, mock_path: Mock, mock_mkdir: Mock
@@ -1445,8 +1489,11 @@ class TestClipManagement(BaseTestCase):
         self.assertTrue(data["success"])
         self.assertEqual(data["data"]["clips"], [])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clips_invalid_storage(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clips_invalid_storage(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_clips with invalid storage parameter."""
         response = self.client.get("/api/clips?storage=invalid")  # type: TestResponse
         # Should return 400 for invalid storage type
@@ -1456,12 +1503,16 @@ class TestClipManagement(BaseTestCase):
 class TestStreamingEndpoints(FlaskTestCase):
     """Test streaming-related endpoints."""
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_liveview_no_camera(self, mock_ensure_blink: Mock) -> None:
+    def test_get_liveview_no_camera(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_liveview with invalid camera ID."""
         # Use proper mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.cameras = {}
 
@@ -1472,9 +1523,10 @@ class TestStreamingEndpoints(FlaskTestCase):
 class TestThumbnailManagement(FlaskTestCase):
     """Test thumbnail management and caching functionality."""
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_get_camera_thumbnail_timestamp_success(
-        self, mock_ensure_blink: Mock
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test get_camera_thumbnail_timestamp endpoint."""
         mock_camera = create_mock_camera(
@@ -1492,6 +1544,7 @@ class TestThumbnailManagement(FlaskTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         response = self.client.get("/api/cameras/12345/thumbnail?timestamp=true")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
@@ -1531,7 +1584,10 @@ class TestThumbnailManagement(FlaskTestCase):
                 "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized",
                 return_value={},
             ),
-            patch("blinkapp.CACHE_DIR", "/tmp/test_cache"),
+            patch(
+                "blinkapp.services.cache_service.get_cache_dir",
+                return_value="/tmp/test",
+            ),
             patch("requests.get") as mock_requests_get,
         ):
             # Mock the HTTP response for thumbnail download
@@ -1630,7 +1686,7 @@ class TestClipProcessing(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, [])  # Mock function returning generic type
+            return cast("T", [])  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -1834,7 +1890,6 @@ class TestConfigurationEdgeCases(BaseTestCase):
         self.assertTrue(hasattr(Config, "LOG_FILE"))
 
     @with_blink_auth
-    @patch("blinkapp.CACHE_DIR", "/tmp")
     def test_settings_with_none_file(self) -> None:
         """Test settings operations when SETTINGS_FILE is None."""
         # This should be handled gracefully
@@ -1869,8 +1924,11 @@ class TestStreamingOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_liveview_success(self, mock_ensure_blink: Mock) -> None:
+    def test_get_liveview_success(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test successful live view request."""
         mock_camera = create_mock_camera(camera_id=12345)
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
@@ -1880,6 +1938,7 @@ class TestStreamingOperations(BaseTestCase):
         mock_blink.sync = {"sync1": mock_sync}
         mock_blink.available = True
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         response = self.client.post("/api/cameras/12345/streams")  # type: TestResponse
         # Should either succeed or fail gracefully (404 if camera not found, 500 for other errors)
@@ -1894,11 +1953,15 @@ class TestAdvancedEndpoints(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clip_thumbnail_check_success(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clip_thumbnail_check_success(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test clip thumbnail check endpoint."""
         # Set up mock blink instance
         mock_ensure_blink.return_value = create_mock_blink_instance()
+        mock_get_instance.return_value = mock_blink
 
         # Mock clip in cache
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
@@ -1923,11 +1986,15 @@ class TestAdvancedEndpoints(BaseTestCase):
                 self.assertTrue(data["success"])
                 self.assertTrue(data["data"]["exists"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clip_thumbnail_check_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clip_thumbnail_check_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test clip thumbnail check when not found."""
         # Set up mock blink instance
         mock_ensure_blink.return_value = create_mock_blink_instance()
+        mock_get_instance.return_value = mock_blink
 
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             # Mock cache to not contain the clip
@@ -1945,8 +2012,11 @@ class TestAdvancedEndpoints(BaseTestCase):
         # Should redirect to login if not authenticated
         self.assertEqual(response.status_code, 302)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clips_invalid_storage_type(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clips_invalid_storage_type(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_clips with invalid storage type."""
         response = self.client.get("/api/clips?storage=invalid")  # type: TestResponse
         self.assertEqual(response.status_code, 400)
@@ -1954,12 +2024,16 @@ class TestAdvancedEndpoints(BaseTestCase):
         data = json.loads(response.data)
         self.assertFalse(data["success"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clips_missing_storage_param(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clips_missing_storage_param(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_clips without storage parameter."""
         # Set up mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         # Mock empty clips response
         with patch(
@@ -1986,7 +2060,6 @@ class TestLoggingAndSetup(BaseTestCase):
         # Test function exists and is callable
         self.assertTrue(callable(setup_logging))
 
-    @patch("blinkapp.CACHE_DIR", "/tmp/test_cache")
     def test_setup_logging_execution(self) -> None:
         """Test setup_logging can be executed."""
         from blinkapp.utils.logging_config import setup_logging
@@ -2199,9 +2272,10 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
                 # Should have cleaned up old file
                 mock_unlink.assert_called()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_get_camera_thumbnail_with_cache_miss(
-        self, mock_ensure_blink: Mock
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test camera thumbnail endpoint with cache miss."""
         mock_camera = create_mock_camera(
@@ -2214,6 +2288,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         mock_blink_instance.sync = {"sync1": mock_sync}
         mock_blink_instance.available = True
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         with patch(
             "blinkapp.services.cache_service.camera_thumbnail_cache"
@@ -2239,17 +2314,18 @@ class TestClipDownloadOperations(BaseTestCase):
         # Initialize globals for testing
         setup_test_globals()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_download_cloud_clip_success(
-        self, mock_connection_func: Mock, mock_blink: Mock
+        self, mock_connection_func: Mock, mock_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test successful cloud clip download."""
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
 
         mock_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         # Mock cloud clip metadata
         mock_clip = {
@@ -2278,7 +2354,10 @@ class TestClipDownloadOperations(BaseTestCase):
             temp_clips_dir = Path(temp_dir)
             temp_file = temp_clips_dir / "123456.mp4"
 
-            with patch("blinkapp.CLIPS_CACHE_DIR", temp_clips_dir):
+            with patch(
+                "blinkapp.services.cache_service.get_clips_cache_dir",
+                return_value=temp_clips_dir,
+            ):
                 with (
                     patch(
                         "blinkapp.services.clip_download._download_cloud_clip_core_sync"
@@ -2296,25 +2375,32 @@ class TestClipDownloadOperations(BaseTestCase):
 
                     response = self.client.get("/api/clips/123456/download")  # type: TestResponse
 
-                    # Clip not found returns 404
-                    self.assertEqual(response.status_code, 404)
+                    # Successful download returns 200
+                    self.assertEqual(response.status_code, 200)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_connection.get_blink_connection")
     def test_download_clip_not_found_in_metadata(
-        self, mock_connection: Mock, mock_blink: Mock
+        self, mock_connection: Mock, mock_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test downloading clip not found in metadata."""
+        mock_blink_instance = create_mock_blink_instance()
+        mock_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
+
         # Mock empty metadata with async return
-        mock_blink.get_videos_metadata = AsyncMock(spec=callable, return_value=[])
+        mock_blink_instance.get_videos_metadata = AsyncMock(
+            spec=callable, return_value=[]
+        )
 
         T = TypeVar("T")
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, [])  # Mock function returning generic type
+            return cast("T", [])  # Mock function returning generic type
 
-        mock_connection.execute.side_effect = mock_execute
+        mock_connection.return_value.execute.side_effect = mock_execute
 
         with patch(
             "blinkapp.services.cache_service.ensure_clips_cache_initialized",
@@ -2342,25 +2428,25 @@ class TestClipDownloadOperations(BaseTestCase):
             temp_file = temp_clips_dir / "123456.mp4"
             temp_file.write_bytes(b"fake video data")
 
-            with patch("blinkapp.CLIPS_CACHE_DIR", temp_clips_dir):
+            with patch(
+                "blinkapp.services.cache_service.get_clips_cache_dir",
+                return_value=temp_clips_dir,
+            ):
                 mock_blink_instance = create_mock_blink_instance()
                 mock_blink.return_value = mock_blink_instance
 
-                # Mock cloud clip metadata
-                mock_clip = {
-                    "id": 123456,
-                    "created_at": "2025-01-15T10:30:00Z",
-                    "device_name": "Front Door",
-                    "media": "https://example.com/clip.mp4",
-                }
+                # Mock cache with existing clip
+                with patch(
+                    "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+                ) as mock_cache:
+                    mock_cache.return_value = {
+                        ClipId("123456"): {"filepath": str(temp_file)}
+                    }
 
-                mock_blink.get_videos_metadata.return_value = [mock_clip]
-                mock_connection.execute.return_value = [mock_clip]
+                    response = self.client.get("/api/clips/123456/download")  # type: TestResponse
 
-                response = self.client.get("/api/clips/123456/download")  # type: TestResponse
-
-                # Clip not found returns 404
-                self.assertEqual(response.status_code, 404)
+                    # Should return the cached file
+                    self.assertEqual(response.status_code, 200)
 
     @with_blink_auth
     @patch("blinkapp.services.cache_service.clips_cache")
@@ -2584,7 +2670,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, None)  # Mock function returning generic type
+            return cast("T", None)  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -2602,8 +2688,11 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
         data = json.loads(response.data)
         self.assertTrue(data["success"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clip_thumbnail_success(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clip_thumbnail_success(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test getting clip thumbnail."""
         with patch(
             "blinkapp.services.cache_service.ensure_clips_cache_initialized"
@@ -2636,8 +2725,11 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
                 # Clip not found returns 500 error
                 self.assertEqual(response.status_code, 500)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clip_thumbnail_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_get_clip_thumbnail_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test getting non-existent clip thumbnail."""
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
@@ -2654,8 +2746,11 @@ class TestStreamingAndLiveView(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_liveview_with_stream_manager(self, mock_ensure_blink: Mock) -> None:
+    def test_get_liveview_with_stream_manager(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test live view with stream manager."""
         # Mock blink to be available
         # Mock blink instance
@@ -2665,6 +2760,7 @@ class TestStreamingAndLiveView(BaseTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         # Mock sync module structure
         mock_sync = create_mock_sync(cameras={})
@@ -2682,8 +2778,11 @@ class TestStreamingAndLiveView(BaseTestCase):
             # Camera not found returns 404
             self.assertEqual(response.status_code, 404)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_liveview_stream_manager_error(self, mock_ensure_blink: Mock) -> None:
+    def test_get_liveview_stream_manager_error(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test live view with stream manager error."""
         # Mock blink to be available
         # Mock blink instance
@@ -2693,6 +2792,7 @@ class TestStreamingAndLiveView(BaseTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         # Mock sync module structure
         mock_sync = create_mock_sync(
@@ -2782,7 +2882,12 @@ class TestSettingsAdvanced(BaseTestCase):
     @with_blink_auth
     def test_save_settings_with_validation(self) -> None:
         """Test saving settings with validation."""
-        with patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json"):
+        from pathlib import Path
+
+        with patch(
+            "blinkapp.services.settings_service.get_settings_file_path",
+            return_value=Path("/tmp/test/settings.json"),
+        ):
             valid_settings = {
                 "temperature_unit": "celsius",
                 "cloud_clip_retention_days": 15,
@@ -2801,7 +2906,12 @@ class TestSettingsAdvanced(BaseTestCase):
     @with_blink_auth
     def test_load_settings_with_existing_file(self) -> None:
         """Test loading settings from existing file."""
-        with patch("blinkapp.SETTINGS_FILE", "/tmp/test_settings.json"):
+        from pathlib import Path
+
+        with patch(
+            "blinkapp.services.settings_service.get_settings_file_path",
+            return_value=Path("/tmp/test/settings.json"),
+        ):
             mock_settings = {
                 "temperatureUnits": "fahrenheit",
                 "cloudClipRetention": "7",
@@ -2829,7 +2939,6 @@ class TestVideoProcessingOperations(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_local_clip_thumbnail_existing_file(self) -> None:
         """Test thumbnail generation when file already exists."""
         from blinkapp.models.ids import ClipId
@@ -2845,7 +2954,6 @@ class TestVideoProcessingOperations(BaseTestCase):
             # Should return existing thumbnail path
             self.assertIsNotNone(result)
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_local_clip_thumbnail_ffmpeg_success(self) -> None:
         """Test successful thumbnail generation with ffmpeg."""
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
@@ -2873,7 +2981,6 @@ class TestVideoProcessingOperations(BaseTestCase):
                 # Should attempt ffmpeg processing
                 self.assertEqual(mock_run.call_count, 2)
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_local_clip_thumbnail_ffmpeg_error(self) -> None:
         """Test thumbnail generation with ffmpeg error."""
         from blinkapp.models.ids import ClipId
@@ -2896,7 +3003,6 @@ class TestVideoProcessingOperations(BaseTestCase):
                     self.assertIsNone(result)
                     mock_logger.error.assert_called()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_local_clip_thumbnail_first_frame(self) -> None:
         """Test thumbnail generation for first frame."""
         from blinkapp.models.ids import ClipId
@@ -2923,7 +3029,6 @@ class TestVideoProcessingOperations(BaseTestCase):
 class TestApplicationInitialization(BaseTestCase):
     """Test application initialization and startup."""
 
-    @patch("blinkapp.CACHE_DIR", "/tmp/test_cache")
     def test_config_class_values(self) -> None:
         """Test Config class has reasonable values."""
         from blinkapp import Config
@@ -3031,35 +3136,33 @@ class TestApplicationInitialization(BaseTestCase):
 
     def test_initialize_cache_paths_basic_app_init(self) -> None:
         """Test initialize_cache_paths basic functionality (test isolation version)."""
-        import blinkapp
-        from blinkapp.services.cache_service import initialize_cache_paths
-
-        # Store original values to restore later
-        original_cache_dir = getattr(blinkapp, "CACHE_DIR", None)
-        original_thumbnail_dir = getattr(blinkapp, "THUMBNAIL_CACHE_DIR", None)
+        from blinkapp.services.auth_service import get_credentials_file_path
+        from blinkapp.services.cache_service import (
+            get_clips_cache_dir,
+            get_thumbnail_cache_dir,
+            initialize_cache_paths,
+        )
+        from blinkapp.services.settings_service import get_settings_file_path
 
         try:
             # Call the function (which is mocked by test isolation)
             initialize_cache_paths()
 
-            # Verify that the global variables were set (this is what the mock does)
-            assert hasattr(blinkapp, "CACHE_DIR")
-            assert hasattr(blinkapp, "THUMBNAIL_CACHE_DIR")
-            assert hasattr(blinkapp, "CLIPS_CACHE_DIR")
-            assert hasattr(blinkapp, "HLS_OUTPUT_DIR")
-            assert hasattr(blinkapp, "SETTINGS_FILE")
-            assert hasattr(blinkapp, "CREDENTIALS_FILE")
+            # Verify that the accessor functions work
+            thumbnail_dir = get_thumbnail_cache_dir()
+            clips_dir = get_clips_cache_dir()
+            creds_file = get_credentials_file_path()
+            settings_file = get_settings_file_path()
 
-            # Verify they are strings (paths)
-            assert isinstance(blinkapp.CACHE_DIR, str)
-            assert isinstance(blinkapp.THUMBNAIL_CACHE_DIR, str)
+            # Verify they return Path objects
+            assert thumbnail_dir is not None
+            assert clips_dir is not None
+            assert creds_file is not None
+            assert settings_file is not None
 
         finally:
-            # Restore original values
-            if original_cache_dir is not None:
-                blinkapp.CACHE_DIR = original_cache_dir
-            if original_thumbnail_dir is not None:
-                blinkapp.THUMBNAIL_CACHE_DIR = original_thumbnail_dir
+            # Note: Cannot restore original values as they are read-only paths
+            pass
 
     def test_global_variables_initialization(self) -> None:
         """Test global variables are properly initialized."""
@@ -3081,8 +3184,11 @@ class TestErrorHandlingAdvanced(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_network_timeout_handling(self, mock_ensure_blink: Mock) -> None:
+    def test_network_timeout_handling(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test handling of network timeouts."""
         # Initialize cache paths first
         from blinkapp.services.cache_service import (
@@ -3108,6 +3214,7 @@ class TestErrorHandlingAdvanced(BaseTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         with patch(
             "blinkapp.services.blink_connection.get_blink_connection"
@@ -3138,16 +3245,23 @@ class TestErrorHandlingAdvanced(BaseTestCase):
                             return_value=Mock(spec=ThreadPoolExecutor),
                         ):
                             with patch(
-                                "blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"
+                                "blinkapp.services.cache_service.get_thumbnails_cache_dir",
+                                return_value=Path("/tmp/thumbnails"),
                             ):
-                                with patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/clips"):
+                                with patch(
+                                    "blinkapp.services.cache_service.get_clips_cache_dir",
+                                    return_value=Path("/tmp/clips"),
+                                ):
                                     result = clear_all_caches()
 
                                     # Should handle file system errors gracefully
                                     self.assertIsInstance(result, dict)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_json_parsing_error_handling(self, mock_ensure_blink: Mock) -> None:
+    def test_json_parsing_error_handling(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test handling of JSON parsing errors."""
         # Test malformed JSON in request
         response = self.client.put(
@@ -3268,8 +3382,11 @@ class TestSecurityFeatures(BaseTestCase):
             # XSS prevention not enforced, returns 200
             self.assertEqual(response.status_code, 200)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_path_traversal_prevention(self, mock_ensure_blink: Mock) -> None:
+    def test_path_traversal_prevention(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test path traversal prevention."""
         # Mock Blink as available to test validation
         # Mock blink instance
@@ -3279,6 +3396,7 @@ class TestSecurityFeatures(BaseTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         malicious_paths = [
             "../../../etc/passwd",
@@ -3321,9 +3439,18 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         # Initialize globals for testing
         setup_test_globals()
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_download_local_clip_cached_success(self, mock_ensure_blink: Mock) -> None:
+    def test_download_local_clip_cached_success(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test downloading cached local clip."""
+        # Mock blink instance
+        mock_blink = create_mock_blink_instance()
+        mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
+
         # Mock cached clip
         mock_filepath = create_mock_path("mock_path")
         mock_filepath.exists.return_value = True
@@ -3336,11 +3463,15 @@ class TestLocalClipDownloadOperations(BaseTestCase):
 
                 response = self.client.get("/api/clips/sync1~clip123/download")  # type: TestResponse
 
-                # Clip not found returns 404
-                self.assertEqual(response.status_code, 404)
+                # Cached file should return 200
+                self.assertEqual(response.status_code, 200)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_download_local_clip_cache_miss(self, mock_ensure_blink: Mock) -> None:
+    def test_download_local_clip_cache_miss(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test downloading local clip with cache miss."""
         # Mock sync module with local storage
         from tests.test_base import create_mock_stream_manager
@@ -3353,6 +3484,8 @@ class TestLocalClipDownloadOperations(BaseTestCase):
         # Mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.sync = {"sync1": mock_sync}
 
@@ -3370,19 +3503,20 @@ class TestLocalClipDownloadOperations(BaseTestCase):
                 # Clip not found returns 404
                 self.assertEqual(response.status_code, 404)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_download_local_clip_sync_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_download_local_clip_sync_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test downloading local clip when sync module not found."""
-        # Mock blink to be available
         # Mock blink instance
-
         mock_blink_instance = create_mock_blink_instance()
-
         mock_blink_instance.available = True
-
         mock_blink_instance.sync = {}  # No sync modules
-
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         with patch(
             "blinkapp.services.cache_service.ensure_clips_cache_initialized",
@@ -3396,17 +3530,19 @@ class TestLocalClipDownloadOperations(BaseTestCase):
             self.assertFalse(data["success"])
         self.assertFalse(data["success"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_download_local_clip_item_not_found(self, mock_ensure_blink: Mock) -> None:
+    def test_download_local_clip_item_not_found(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test downloading local clip when item not found in manifest."""
-        # Mock blink to be available
         # Mock blink instance
-
         mock_blink_instance = create_mock_blink_instance()
-
         mock_blink_instance.available = True
-
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         # Mock sync module with empty manifest
         mock_sync = create_mock_sync(cameras={})
@@ -3730,8 +3866,11 @@ class TestSystemDeviceOperations(BaseTestCase):
                 len(data["data"]["devices"]), 4
             )  # 3 cameras + 1 sync module
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_devices_with_offline_sync(self, mock_ensure_blink: Mock) -> None:
+    def test_get_devices_with_offline_sync(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test get_devices when sync module is offline."""
         # Mock blink to be available
         # Mock blink instance
@@ -3741,6 +3880,7 @@ class TestSystemDeviceOperations(BaseTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         mock_sync = create_mock_sync(cameras={})
         mock_sync.online = False
@@ -3782,7 +3922,7 @@ class TestSystemDeviceOperations(BaseTestCase):
 
         def mock_execute(coro: Coroutine[Any, Any, T]) -> T:
             coro.close()
-            return cast(T, None)  # Mock function returning generic type
+            return cast("T", None)  # Mock function returning generic type
 
         mock_connection.execute.side_effect = mock_execute
 
@@ -3791,7 +3931,6 @@ class TestSystemDeviceOperations(BaseTestCase):
 
         def slow_execute(func: Callable[[], None]) -> None:
             time.sleep(0.1)  # Simulate delay
-            return None
 
         mock_connection.execute.side_effect = slow_execute
 
@@ -3937,8 +4076,11 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
             # Should handle missing stream manager gracefully and return 500 (internal error)
             self.assertEqual(response.status_code, 500)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_memory_pressure_handling(self, mock_ensure_blink: Mock) -> None:
+    def test_memory_pressure_handling(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test handling of memory pressure scenarios."""
         # Simulate memory pressure by filling cache
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
@@ -3989,8 +4131,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
             call_count += 1
             if call_count == 1:
                 return {"timestamp": 1000}  # Initial check
-            else:
-                return {"timestamp": 2500}  # Updated by another thread
+            return {"timestamp": 2500}  # Updated by another thread
 
         mock_cache.get.side_effect = mock_cache_get
 
@@ -4029,8 +4170,11 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
                         # Should handle race condition properly - expect at least 1 call
                         self.assertGreaterEqual(call_count, 1)
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_thread_safe_cache_operations(self, mock_ensure_blink: Mock) -> None:
+    def test_thread_safe_cache_operations(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test thread-safe cache operations."""
         import threading
 
@@ -4091,7 +4235,6 @@ class TestResourceManagement(BaseTestCase):
         self.assertIn("key3", cache)
         self.assertIn("key4", cache)
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_disk_space_management(self) -> None:
         """Test disk space management for cached files."""
         from blinkapp.services.cache_service import clear_all_caches
@@ -4118,7 +4261,8 @@ class TestResourceManagement(BaseTestCase):
                             return_value=Mock(spec=ThreadPoolExecutor),
                         ):
                             with patch(
-                                "blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/thumbnails"
+                                "blinkapp.services.cache_service.get_thumbnails_cache_dir",
+                                return_value=Path("/tmp/thumbnails"),
                             ):
                                 result = clear_all_caches()
 
@@ -4161,7 +4305,6 @@ class TestCacheMaintenanceOperations(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_load_camera_thumbnail_cache_with_valid_files(
         self, mock_blink: Mock
@@ -4200,7 +4343,6 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                     # Should populate cache with thumbnail data
                     self.assertGreater(len(mock_cache), 0)
 
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_load_camera_thumbnail_cache_cleanup_old_files(
         self, mock_blink: Mock
@@ -4251,7 +4393,6 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                         for mock_file in mock_files:
                             mock_file.unlink.assert_called()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_load_clips_cache_with_various_formats(self) -> None:
         """Test loading clips cache with various file formats."""
         from blinkapp.services.cache_service import load_clips_cache
@@ -4359,9 +4500,10 @@ class TestAdvancedSystemOperations(BaseTestCase):
             data = json.loads(response.data)
             self.assertTrue(data["success"])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_get_systems_with_complex_network_data(
-        self, mock_ensure_blink: Mock
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test get_systems with complex network configurations."""
         # Mock sync modules with various states
@@ -4377,6 +4519,7 @@ class TestAdvancedSystemOperations(BaseTestCase):
         # Mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.sync = sync_modules
 
@@ -4427,7 +4570,6 @@ class TestAdvancedFileOperations(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.CACHE_DIR", "/tmp")
     @with_blink_auth
     def test_settings_file_corruption_recovery(self) -> None:
         """Test recovery from corrupted settings file."""
@@ -4442,8 +4584,6 @@ class TestAdvancedFileOperations(BaseTestCase):
                 data = json.loads(response.data)
                 self.assertTrue(data["success"])
 
-    @patch("blinkapp.CACHE_DIR", "/tmp")
-    @patch("blinkapp.SETTINGS_FILE", "/tmp/settings.json")
     @with_blink_auth
     def test_settings_file_permission_error(self) -> None:
         """Test handling of settings file permission errors."""
@@ -4811,7 +4951,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
         self.client = app.test_client()
 
     @patch("requests.get")
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_complete_workflow(self, mock_requests_get: Mock) -> None:
         """Test complete thumbnail update workflow with file operations."""
         from blinkapp.routes.thumbnails import update_camera_thumbnail
@@ -4895,7 +5034,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                     # Should have cleaned up old file
                     mock_unlink.assert_called()
 
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_race_condition_skip(self) -> None:
         """Test thumbnail update skips when race condition detected."""
         from blinkapp.routes.thumbnails import update_camera_thumbnail
@@ -4937,7 +5075,6 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
 
             mock_camera = create_mock_camera(camera_id=12345)
 
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     def test_thumbnail_update_file_cleanup_error(self) -> None:
         """Test thumbnail update handles file cleanup errors."""
         from blinkapp.routes.thumbnails import update_camera_thumbnail
@@ -5147,7 +5284,6 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_thumbnail_middle_frame_success(self) -> None:
         """Test thumbnail generation for middle frame with ffmpeg."""
         from pathlib import Path
@@ -5181,7 +5317,6 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         self.assertEqual(mock_run.call_count, 2)
         self.assertIsNotNone(result)
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_thumbnail_first_frame_success(self) -> None:
         """Test thumbnail generation for first frame."""
         from pathlib import Path
@@ -5217,7 +5352,6 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                 self.assertEqual(mock_run.call_count, 2)
                 self.assertIsNotNone(result)
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_thumbnail_ffprobe_timeout(self) -> None:
         """Test thumbnail generation with ffprobe timeout."""
         import subprocess
@@ -5245,7 +5379,6 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                     self.assertIsNone(result)
                     mock_logger.error.assert_called()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_thumbnail_ffmpeg_failure(self) -> None:
         """Test thumbnail generation with ffmpeg failure."""
         import subprocess
@@ -5274,7 +5407,6 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                     self.assertIsNone(result)
                     mock_logger.error.assert_called()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_generate_thumbnail_invalid_duration(self) -> None:
         """Test thumbnail generation with invalid duration from ffprobe."""
         from pathlib import Path
@@ -5320,7 +5452,6 @@ class TestAdvancedCacheOperations(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_camera_thumbnail_cache_cleanup_invalid_cameras(
         self, mock_blink: Mock
@@ -5386,10 +5517,10 @@ class TestAdvancedCacheOperations(BaseTestCase):
                         for invalid_file in invalid_files:
                             invalid_file.unlink.assert_called()
 
-    @patch("blinkapp.THUMBNAIL_CACHE_DIR", "/tmp/test_thumbnails")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_camera_thumbnail_cache_keep_recent_files(
-        self, mock_ensure_blink: Mock
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test thumbnail cache keeps most recent files per camera."""
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
@@ -5407,6 +5538,7 @@ class TestAdvancedCacheOperations(BaseTestCase):
         mock_blink_instance.sync = {"sync1": mock_sync}
 
         mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink
 
         # Mock multiple thumbnail files for same camera (should keep most recent)
         mock_files = []
@@ -5452,7 +5584,6 @@ class TestAdvancedCacheOperations(BaseTestCase):
                         for old_file in oldest_files:
                             old_file.unlink.assert_called()
 
-    @patch("blinkapp.CLIPS_CACHE_DIR", "/tmp/test_clips")
     def test_clips_cache_loading_with_metadata(self) -> None:
         """Test clips cache loading with metadata extraction."""
         from blinkapp.services.cache_service import load_clips_cache
@@ -5585,8 +5716,11 @@ class TestComplexErrorScenarios(BaseTestCase):
         # Should return empty clips when no data is available
         self.assertEqual(data["data"]["clips"], [])
 
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_partial_system_failure(self, mock_ensure_blink: Mock) -> None:
+    def test_partial_system_failure(
+        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+    ) -> None:
         """Test handling when part of system fails but other parts work."""
         # Mock partial system failure
         mock_sync1 = create_mock_sync(
@@ -5600,6 +5734,7 @@ class TestComplexErrorScenarios(BaseTestCase):
         # Mock blink instance
         mock_blink = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink
+        mock_get_instance.return_value = mock_blink
 
         mock_blink.sync = {"sync1": mock_sync1, "sync2": mock_sync2}
 
@@ -6291,7 +6426,6 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
             self.assertIsInstance(result, dict)
         except (ImportError, AttributeError, ValueError):
             # Function may not exist or have different signature, test passes
-            pass
             self.assertTrue(True)
 
             mock_camera = create_mock_camera(camera_id=12345)

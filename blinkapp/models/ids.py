@@ -9,8 +9,8 @@ from blinkapp.config import Config
 __all__ = [
     "BaseId",
     "CameraId",
-    "NetworkId",
     "ClipId",
+    "NetworkId",
 ]
 
 

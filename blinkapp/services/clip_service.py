@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     from blinkapp.models.types import JsonDict
 
 __all__ = [
+    "download_clip",
     "process_cloud_clips",
     "process_local_clips",
-    "download_clip",
 ]
 
 import logging
@@ -112,9 +112,8 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
         # Local clip - extract sync name and item ID
         sync_name, item_id = clip_id.get_local_parts()
         return download_local_clip(clip_id, sync_name, str(item_id))
-    else:
-        # Cloud clip
-        return download_cloud_clip(clip_id)
+    # Cloud clip
+    return download_cloud_clip(clip_id)
 
 
 def process_cloud_clips(
@@ -440,6 +439,6 @@ async def delete_clip(clip_id: ClipId) -> tuple[JsonDict, int]:
     except Exception as e:
         logger.error(f"Failed to delete clip {clip_id}: {e}")
         response, status_code = create_api_response(
-            success=False, error=f"Failed to delete clip: {str(e)}", status_code=500
+            success=False, error=f"Failed to delete clip: {e!s}", status_code=500
         )
         return response, status_code

@@ -19,18 +19,18 @@ from blinkapp.services.hls_service import (
 )
 
 __all__ = [
-    "initialize_stream_manager",
+    "StreamManager",
     "create_stream_manager",
     "ensure_stream_manager_initialized",
-    "start_camera_stream",
-    "stop_camera_stream",
-    "is_stream_active",
+    "generate_hls_url",
     "get_hls_file",
     "init_camera_stream",
-    "StreamManager",
-    "stream_manager",
-    "generate_hls_url",
+    "initialize_stream_manager",
+    "is_stream_active",
     "parse_tcp_url",
+    "start_camera_stream",
+    "stop_camera_stream",
+    "stream_manager",
     "validate_camera_id",
     "validate_tcp_url",
 ]
@@ -270,8 +270,7 @@ class StreamManager:
             if hls_url:
                 self.streams[camera_id] = stream
                 return hls_url, None
-            else:
-                return None, error
+            return None, error
 
     def stop_stream(self, camera_id: str) -> None:
         """Stop stream for camera.
@@ -470,9 +469,8 @@ def init_camera_stream(
         if hls_url is not None:
             logger.info(f"Started live stream for camera {camera_id}: {hls_url}")
             return camera_stream, hls_url
-        else:
-            logger.error(f"Failed to start stream for camera {camera_id}: {error}")
-            return None, None
+        logger.error(f"Failed to start stream for camera {camera_id}: {error}")
+        return None, None
 
     except Exception as e:
         logger.error(f"Error initializing stream for camera {camera_id}: {e}")

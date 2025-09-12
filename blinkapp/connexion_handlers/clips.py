@@ -47,8 +47,7 @@ def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int
             else:
                 videos_metadata = []
             return {"clips": process_cloud_clips(videos_metadata)}
-        else:
-            return {"clips": process_local_clips()}
+        return {"clips": process_local_clips()}
 
 
 def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
@@ -121,10 +120,8 @@ def get_clip_thumbnail(
                     and thumbnail_path.exists()
                 ):
                     return {"success": True, "exists": True, "available": True}
-                else:
-                    return {"success": True, "exists": False, "available": False}
-            else:
                 return {"success": True, "exists": False, "available": False}
+            return {"success": True, "exists": False, "available": False}
 
         # For non-check requests, return the actual file or 404
         if clip_id_obj not in clips_cache:
@@ -140,8 +137,7 @@ def get_clip_thumbnail(
             and thumbnail_path.exists()
         ):
             return send_file(thumbnail_path, mimetype="image/jpeg")
-        else:
-            return {"success": False, "error": "Thumbnail not found"}, 404
+        return {"success": False, "error": "Thumbnail not found"}, 404
 
     except ValueError:
         return {"success": False, "error": "Invalid clip ID"}, 400
@@ -183,5 +179,5 @@ def generate_clip_thumbnail(clip_id: str) -> JsonDict | tuple[JsonDict, int]:
     except Exception as e:
         return {
             "success": False,
-            "error": f"Failed to generate thumbnail: {str(e)}",
+            "error": f"Failed to generate thumbnail: {e!s}",
         }, 500

@@ -46,8 +46,7 @@ def setup_auth_routes(app: Flask) -> None:
 
         if request.method == "GET":
             return login_page()
-        else:
-            return authenticate_user()
+        return authenticate_user()
 
     @app.route("/2fa", methods=["GET", "POST"])
     def twofa_page_route() -> ResponseReturnValue:
@@ -65,8 +64,7 @@ def setup_auth_routes(app: Flask) -> None:
 
         if request.method == "GET":
             return twofa_page()
-        else:
-            return verify_twofa()
+        return verify_twofa()
 
     @app.route("/logout", methods=["POST"])
     def logout_user_route() -> ResponseReturnValue:
