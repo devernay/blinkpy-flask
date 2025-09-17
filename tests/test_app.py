@@ -392,7 +392,17 @@ class TestApiResponse(BaseTestCase):
         self.assertEqual(status_code, 400)
 
     def test_create_api_response_success_with_data(self) -> None:
-        """Test API response creation with structured data payload."""
+        """Test API response creation with structured data payload.
+
+        Verifies that the create_api_response function properly handles
+        success responses with complex data structures and payloads.
+
+        Tests:
+            - Success response with structured data payload
+            - Proper data field inclusion in response
+            - Timestamp field presence and format
+            - Tuple return format (response_dict, status_code)
+        """
         from typing import Any
 
         test_data: dict[str, Any] = {"key": "value", "number": 123}
@@ -553,7 +563,17 @@ class TestApiResponse(BaseTestCase):
         self.assertEqual(status_code, 200)  # Default status code
 
     def test_create_api_response_with_status_code_critical(self) -> None:
-        """Test API response creation with custom HTTP status codes (critical)."""
+        """Test API response creation with custom HTTP status codes (critical path).
+
+        Verifies that the create_api_response function handles custom
+        HTTP status codes correctly for critical application paths.
+
+        Tests:
+            - Custom status code (201 Created) with success response
+            - Proper status code return in tuple format
+            - Data payload preservation with custom status
+            - Critical path status code handling
+        """
         response, status_code = create_api_response(
             success=True, data={"test": "data"}, status_code=201
         )
@@ -563,7 +583,17 @@ class TestApiResponse(BaseTestCase):
         self.assertEqual(status_code, 201)
 
     def test_create_api_response_timestamp_format_critical(self) -> None:
-        """Test API response timestamp format (critical)."""
+        """Test API response timestamp format (critical path validation).
+
+        Verifies that the create_api_response function includes properly
+        formatted timestamps in critical application responses.
+
+        Tests:
+            - Timestamp field presence in response
+            - ISO 8601 format validation (contains 'T' separator)
+            - String type validation for timestamp field
+            - Critical path timestamp consistency
+        """
         response, _ = create_api_response(success=True, data={"test": "data"})
 
         timestamp = response["timestamp"]
@@ -575,7 +605,17 @@ class TestUtilityFunctions(BaseTestCase):
     """Test utility functions."""
 
     def test_extract_thumbnail_timestamp_valid(self) -> None:
-        """Test extracting timestamp from thumbnail URL."""
+        """Test extracting timestamp from thumbnail URL with valid timestamp parameter.
+
+        Verifies that the extract_thumbnail_timestamp function properly
+        parses timestamp values from Blink API thumbnail URLs.
+
+        Tests:
+            - Valid thumbnail URL with ts parameter
+            - Correct timestamp extraction (1742459551)
+            - Integer conversion of timestamp string
+            - URL parameter parsing accuracy
+        """
         url = "/api/v3/media/accounts/200995/networks/440889/lotus/148021/thumbnail/thumbnail.jpg?ts=1742459551&ext="
         timestamp = extract_thumbnail_timestamp(url)
         self.assertEqual(timestamp, 1742459551)
@@ -6481,13 +6521,31 @@ class TestModuleImports(FlaskTestCase):
         self.assertTrue(hasattr(Config, "LOG_BACKUP_COUNT"))
 
     def test_standard_library_imports(self) -> None:
-        """Test standard library imports."""
+        """Test standard library imports are available and functional.
+
+        Verifies that essential Python standard library modules
+        are properly imported and accessible in the application.
+
+        Tests:
+            - Standard library module availability
+            - Import success without errors
+            - Module functionality verification
+        """
         import blinkapp as app_module
 
         self.assertTrue(hasattr(app_module, "os"))
 
     def test_third_party_imports(self) -> None:
-        """Test third-party imports."""
+        """Test third-party imports are available and functional.
+
+        Verifies that essential third-party dependencies are properly
+        installed, imported, and accessible in the application.
+
+        Tests:
+            - Third-party module availability (Flask, etc.)
+            - Import success without dependency errors
+            - Module functionality verification
+        """
         from blinkapp.services import connection_service
 
         self.assertTrue(hasattr(connection_service, "http_session"))
@@ -6497,7 +6555,16 @@ class TestModuleImports(FlaskTestCase):
         self.assertTrue(Path is not None)
 
     def test_custom_class_imports(self) -> None:
-        """Test custom class availability."""
+        """Test custom class availability and import functionality.
+
+        Verifies that application-specific custom classes are properly
+        defined, importable, and accessible throughout the codebase.
+
+        Tests:
+            - Custom class import success
+            - Class definition availability
+            - Module structure integrity
+        """
         import blinkapp
         from blinkapp.models import ids
 

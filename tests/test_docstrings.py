@@ -145,7 +145,18 @@ class TestDocstrings:
     """Test class for docstring completeness."""
 
     def test_all_functions_have_complete_docstrings(self) -> None:
-        """Test that all public functions and classes have complete Google-style docstrings."""
+        """Test that all public functions and classes have complete Google-style docstrings.
+
+        Verifies that the codebase maintains high documentation standards
+        by ensuring all public functions and classes include comprehensive
+        Google-style docstrings with proper formatting and content.
+
+        Tests:
+            - Public function docstring presence and completeness
+            - Google-style format compliance (Args, Returns, etc.)
+            - Class docstring availability and quality
+            - Documentation coverage across modules
+        """
         all_files = get_all_python_files()
         all_issues = []
 
@@ -174,7 +185,17 @@ class TestDocstrings:
             )
 
     def test_docstring_examples(self) -> None:
-        """Test that demonstrates proper Google-style docstring format."""
+        """Test that demonstrates proper Google-style docstring format.
+
+        Provides examples and validation of proper Google-style docstring
+        formatting to ensure consistency across the codebase.
+
+        Tests:
+            - Google-style docstring format examples
+            - Proper section formatting (Args, Returns, Raises)
+            - Docstring structure validation
+            - Format consistency verification
+        """
         # This test serves as documentation for the expected format
 
         def good_example(param1: str, param2: int = 5) -> bool:
