@@ -5,8 +5,8 @@ This log tracks the systematic verification and enhancement of test docstrings a
 
 ## Progress Summary
 - **Total Tests**: 727 (estimated)
-- **Tests Verified**: 108/727 (14.9%)
-- **Tests Enhanced**: 108 with comprehensive Google-style docstrings
+- **Tests Verified**: 114/727 (15.7%)
+- **Tests Enhanced**: 114 with comprehensive Google-style docstrings
 
 ## Critical Issues Resolved
 1. **Unspec'd Mock() Usage**: Fixed 5 instances in test_services.py
@@ -28,7 +28,7 @@ This log tracks the systematic verification and enhancement of test docstrings a
 - Blink service tests (13 tests)
 - **Critical fixes**: 5 unspec'd Mock() instances replaced with proper factories
 
-### test_app.py (27 tests verified)
+### test_app.py (29 tests verified)
 **Status**: 🔄 IN PROGRESS - Core API response and utility tests completed
 - API response creation tests (8 tests)
 - Timestamp extraction tests (3 tests)
@@ -38,19 +38,22 @@ This log tracks the systematic verification and enhancement of test docstrings a
 - Authentication and endpoint tests (4 tests)
 - Security validation tests (4 tests)
 - Error context management tests (1 test)
+- Safe execution and login tests (2 tests)
 - **Critical fix**: Consolidated duplicate create_api_response functions
 
-### test_models.py (8 tests verified)
+### test_models.py (10 tests verified)
 **Status**: 🔄 IN PROGRESS - ID validation and model tests completed
 - CameraId validation tests (6 tests)
 - Cache model edge case tests (1 test)
 - Custom class import tests (1 test)
+- Hash consistency and collection tests (2 tests)
 
-### test_utils.py (7 tests verified)
+### test_utils.py (9 tests verified)
 **Status**: 🔄 IN PROGRESS - Safe execution and logging tests completed
 - Safe execution utility tests (3 tests)
 - Logging configuration tests (2 tests)
 - Decorator and operation name tests (2 tests)
+- Error response detection tests (2 tests)
 
 ### test_routes.py (5 tests verified)
 **Status**: 🔄 IN PROGRESS - Core routing tests completed

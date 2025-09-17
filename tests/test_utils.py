@@ -145,7 +145,17 @@ class TestRouteDecorators(BaseTestCase):
         self.assertIn("len", result)
 
     def test_is_error_response_true(self) -> None:
-        """Test _is_error_response returns True for error responses."""
+        """Test _is_error_response returns True for error responses.
+
+        Verifies that the error response detection utility correctly
+        identifies error responses and returns True for error conditions.
+
+        Tests:
+            - Error response detection and identification
+            - True return value for error conditions
+            - Proper error response validation logic
+            - Error condition recognition accuracy
+        """
         from blinkapp.utils.route_decorators import _is_error_response
 
         error_response = ({"success": False, "error": "Test error"}, 400)
@@ -153,7 +163,17 @@ class TestRouteDecorators(BaseTestCase):
         self.assertTrue(result)
 
     def test_is_error_response_success_response(self) -> None:
-        """Test _is_error_response with success response tuple."""
+        """Test _is_error_response with success response tuple.
+
+        Verifies that the error response detection utility correctly
+        identifies success responses and returns False for non-error conditions.
+
+        Tests:
+            - Success response detection and validation
+            - False return value for success conditions
+            - Proper success response tuple handling
+            - Non-error condition recognition accuracy
+        """
         from blinkapp.utils.route_decorators import _is_error_response
 
         # The function checks if result is Response or tuple, so tuples return True

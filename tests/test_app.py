@@ -1090,7 +1090,17 @@ class TestErrorHandlingExtended(BaseTestCase):
                 raise ValueError("Test error")
 
     def test_safe_execute_with_different_exceptions(self) -> None:
-        """Test safe_execute with different exception types."""
+        """Test safe_execute with different exception types and handling.
+
+        Verifies that the safe execution utility properly handles and
+        manages different types of exceptions that may occur during execution.
+
+        Tests:
+            - Different exception type handling (ValueError, TypeError, etc.)
+            - Exception-specific error processing and recovery
+            - Graceful degradation for various error scenarios
+            - Consistent error handling across exception types
+        """
         from blinkapp.utils.decorators import safe_execute
 
         # Test with ValueError - safe_execute returns operation name on failure
@@ -1112,7 +1122,17 @@ class TestAuthenticationFlows(FlaskTestCase):
     """Test comprehensive authentication flows including login, 2FA, and logout."""
 
     def test_login_get_request(self) -> None:
-        """Test GET request to login page."""
+        """Test GET request to login page renders correctly.
+
+        Verifies that GET requests to the login endpoint properly
+        render the login page with expected content and status.
+
+        Tests:
+            - GET request handling for login endpoint
+            - Login page rendering and template processing
+            - Proper HTTP status code return (200 OK)
+            - Login form presentation and accessibility
+        """
         response = self.client.get("/login")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Blink Camera System", response.data)

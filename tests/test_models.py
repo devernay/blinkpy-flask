@@ -161,13 +161,33 @@ class TestBaseId(BaseTestCase):
         self.assertNotEqual(test_id, None)
 
     def test_hash_consistency(self) -> None:
-        """Test ID hashing consistency."""
+        """Test ID hashing consistency across multiple calls.
+
+        Verifies that camera ID objects produce consistent hash values
+        across multiple hash operations for the same ID value.
+
+        Tests:
+            - Hash value consistency for identical IDs
+            - Stable hashing behavior across multiple calls
+            - Hash function reliability and determinism
+            - Proper __hash__ method implementation
+        """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
         self.assertEqual(hash(id1), hash(id2))
 
     def test_hash_in_set(self) -> None:
-        """Test ID hashing in sets."""
+        """Test ID hashing in sets for proper collection behavior.
+
+        Verifies that camera ID objects work correctly in set collections
+        through proper hash implementation and equality comparison.
+
+        Tests:
+            - Set membership and uniqueness validation
+            - Hash-based collection behavior (sets, dicts)
+            - Proper deduplication in hash-based collections
+            - Collection compatibility through __hash__ and __eq__
+        """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
         id_set = {id1, id2}
