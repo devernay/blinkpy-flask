@@ -308,7 +308,17 @@ class TestCameraHandlers(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_list_cameras_no_blink(self, mock_ensure: Mock) -> None:
-        """Test list_cameras when blink is None."""
+        """Test list_cameras when blink is None or unavailable.
+
+        Verifies that the camera listing handler properly handles scenarios
+        where the Blink instance is None or unavailable.
+
+        Tests:
+            - Null Blink instance handling in camera listing
+            - Graceful degradation when Blink service unavailable
+            - Proper error response for missing Blink connection
+            - Service availability validation for camera operations
+        """
         from tests.test_base import create_mock_blink_connection
 
         mock_connection = create_mock_blink_connection()

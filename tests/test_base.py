@@ -1625,7 +1625,17 @@ class TestStrictPatching:
             assert isinstance(mock_patch, Mock)
 
     def test_strict_patch_blocks_non_exported_symbols(self) -> None:
-        """Test that strict_patch blocks patching non-exported symbols."""
+        """Test that strict_patch blocks patching non-exported symbols.
+
+        Verifies that strict patching properly blocks access to symbols
+        that are not explicitly exported through the module's __all__ list.
+
+        Tests:
+            - Non-exported symbol blocking and access prevention
+            - Strict patching enforcement for private symbols
+            - Symbol visibility validation for non-exported items
+            - Module interface protection through __all__ enforcement
+        """
         import pytest
 
         # This should fail - '_patch_object' is not in unittest.mock.__all__
@@ -1634,7 +1644,17 @@ class TestStrictPatching:
                 pass
 
     def test_strict_patch_allows_modules_without_all(self) -> None:
-        """Test that strict_patch allows patching modules without __all__."""
+        """Test that strict_patch allows patching modules without __all__.
+
+        Verifies that strict patching gracefully handles modules that
+        don't define an __all__ list and allows normal patching behavior.
+
+        Tests:
+            - Module patching without __all__ list definition
+            - Graceful handling of modules lacking export lists
+            - Fallback behavior for modules without explicit exports
+            - Compatibility with modules that don't use __all__
+        """
         from unittest.mock import Mock
 
         # This should work - modules without __all__ are allowed

@@ -1174,7 +1174,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_login_validation_xss_prevention_username(self) -> None:
-        """Test XSS prevention in username field."""
+        """Test XSS prevention in username field validation.
+
+        Verifies that the login validation properly prevents XSS attacks
+        through malicious content in the username input field.
+
+        Tests:
+            - XSS attack prevention in username field
+            - Malicious script injection blocking in login forms
+            - Input sanitization for username validation
+            - Security validation for login form fields
+        """
         response = self.client.post(
             "/login",
             data={
