@@ -108,7 +108,17 @@ class TestSystemHandlers(BaseTestCase):
         mock_validator.assert_called_once()
 
     def test_get_system_devices_invalid_id(self) -> None:
-        """Test get_system_devices with invalid network ID."""
+        """Test get_system_devices with invalid network ID handling.
+
+        Verifies that the system devices handler properly validates
+        network IDs and handles invalid ID scenarios gracefully.
+
+        Tests:
+            - Invalid network ID validation and rejection
+            - Proper error response for malformed network IDs
+            - Input validation for system device requests
+            - Error handling for non-existent network references
+        """
         result = system.get_system_devices("invalid")
 
         self.assertIsInstance(result, tuple)
@@ -121,7 +131,17 @@ class TestSystemHandlers(BaseTestCase):
 
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_devices_valid_id(self, mock_validator: Mock) -> None:
-        """Test get_devices with valid network ID."""
+        """Test get_devices with valid network ID processing.
+
+        Verifies that the devices handler properly processes valid
+        network IDs and returns appropriate device information.
+
+        Tests:
+            - Valid network ID processing and validation
+            - Successful device retrieval for valid IDs
+            - Proper response formatting for device data
+            - Network ID validation success path
+        """
         from requests.structures import CaseInsensitiveDict
 
         from tests.test_base import create_mock_sync
@@ -145,7 +165,17 @@ class TestSystemHandlers(BaseTestCase):
         mock_validator.assert_called_once()
 
     def test_get_devices_invalid_id(self) -> None:
-        """Test get_devices with invalid network ID."""
+        """Test get_devices with invalid network ID validation.
+
+        Verifies that the devices handler properly validates network
+        IDs and rejects invalid or malformed ID values.
+
+        Tests:
+            - Invalid network ID detection and rejection
+            - Proper error response for invalid IDs
+            - Input validation enforcement for device requests
+            - Error handling for malformed network identifiers
+        """
         result = system.get_system_devices("invalid")
 
         self.assertIsInstance(result, tuple)

@@ -1065,7 +1065,17 @@ class TestErrorHandlingExtended(BaseTestCase):
     """Test extended error handling scenarios."""
 
     def test_error_context_manager_with_different_operations(self) -> None:
-        """Test error context manager with different operation names."""
+        """Test error context manager with different operation names.
+
+        Verifies that the error context manager properly handles and
+        differentiates between various operation types and names.
+
+        Tests:
+            - Error context manager with multiple operation types
+            - Operation name differentiation and handling
+            - Context-specific error management
+            - Operation-aware error reporting
+        """
         from blinkapp.utils.decorators import error_context
         from blinkapp.utils.errors import BlinkError
 

@@ -996,8 +996,8 @@ def with_blink_auth(test_func: Callable[..., None]) -> Callable[..., None]:
                     mock_get_instance.return_value = mock_blink_instance
 
                     # Set up connection mock
-                    mock_connection = Mock()
-                    mock_connection.execute = Mock()
+                    mock_connection = Mock(spec=["execute"])
+                    mock_connection.execute = Mock(spec=[])
                     mock_get_connection.return_value = mock_connection
 
                     return test_func(*args, **kwargs)
@@ -1607,7 +1607,17 @@ class TestStrictPatching:
             enable_strict_patching()
 
     def test_strict_patch_allows_exported_symbols(self) -> None:
-        """Test that strict_patch allows patching exported symbols."""
+        """Test that strict_patch allows patching exported symbols from __all__.
+
+        Verifies that strict patching allows access to symbols that
+        are explicitly exported through the module's __all__ list.
+
+        Tests:
+            - Exported symbol access through __all__ list
+            - Strict patching compliance with module exports
+            - Symbol visibility validation for exported items
+            - Module interface enforcement through __all__
+        """
         from unittest.mock import Mock
 
         # This should work - 'patch' is in unittest.mock.__all__
