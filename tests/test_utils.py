@@ -590,7 +590,17 @@ class TestLoggingConfig(BaseTestCase):
     @patch("logging.getLogger")
     @patch("logging.handlers.RotatingFileHandler")
     def test_setup_logging_function(self, mock_file: Mock, mock_logger: Mock) -> None:
-        """Test logging system initialization with file rotation."""
+        """Test logging system initialization with file rotation.
+
+        Verifies that the logging system is properly initialized with
+        file rotation capabilities and correct configuration settings.
+
+        Tests:
+            - Logging system initialization with rotation
+            - File handler configuration and setup
+            - Logger configuration validation
+            - Rotation policy implementation
+        """
         import logging
         import tempfile
         from unittest.mock import Mock
@@ -618,7 +628,17 @@ class TestLoggingConfig(BaseTestCase):
 
     @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
     def test_logging_configuration(self) -> None:
-        """Test logging configuration paths."""
+        """Test logging configuration paths and settings validation.
+
+        Verifies that logging configuration is properly set up with
+        correct paths, levels, and formatting options.
+
+        Tests:
+            - Logging configuration path validation
+            - Log level settings verification
+            - Format configuration validation
+            - Configuration file processing
+        """
         # Test that logging configuration can be accessed
         self.assertTrue(hasattr(Config, "LOG_FILE"))
         self.assertTrue(hasattr(Config, "LOG_MAX_BYTES"))

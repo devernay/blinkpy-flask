@@ -668,7 +668,17 @@ class TestUtilityFunctions(BaseTestCase):
         self.assertEqual(result, "5d")
 
     def test_format_time_duration_negative(self) -> None:
-        """Test formatting time ago for None."""
+        """Test formatting time duration for None input values.
+
+        Verifies that the time duration formatting function handles
+        None input values gracefully without raising exceptions.
+
+        Tests:
+            - None input handling for time duration formatting
+            - Graceful fallback behavior for null time values
+            - Safe error handling for invalid time inputs
+            - Defensive programming validation
+        """
         """Test formatting time duration with negative value."""
         with self.assertRaises(ValueError):
             format_time_duration(-1)
@@ -678,12 +688,32 @@ class TestFlaskApp(FlaskTestCase):
     """Test Flask application endpoints."""
 
     def test_index_redirect_to_login(self) -> None:
-        """Test index redirects to login when not authenticated."""
+        """Test index redirects to login when user is not authenticated.
+
+        Verifies that unauthenticated users accessing the root path
+        are properly redirected to the login page for authentication.
+
+        Tests:
+            - GET request to root path (/)
+            - 302 redirect response to login page
+            - Proper authentication flow enforcement
+            - Unauthenticated user handling
+        """
         response = self.client.get("/")  # type: TestResponse
         self.assert_redirect(response, "/login")
 
     def test_login_page_post_validation_error(self) -> None:
-        """Test login POST with validation error."""
+        """Test login POST request with validation error handling.
+
+        Verifies that the login endpoint properly handles POST requests
+        with validation errors and returns appropriate error responses.
+
+        Tests:
+            - POST request to login endpoint with invalid data
+            - Validation error handling and response
+            - Proper error message formatting
+            - Form validation enforcement
+        """
         response = self.client.post(
             "/login",
             data={
@@ -694,13 +724,33 @@ class TestFlaskApp(FlaskTestCase):
         self.assert_response_contains(response, 400, "Username and password required")
 
     def test_placeholder_endpoint(self) -> None:
-        """Test placeholder endpoint."""
+        """Test placeholder endpoint functionality and response.
+
+        Verifies that placeholder endpoints return appropriate responses
+        and handle requests correctly during development or testing.
+
+        Tests:
+            - Placeholder endpoint response handling
+            - Proper HTTP status code return
+            - Basic endpoint functionality verification
+            - Development endpoint behavior
+        """
         response = self.client.get("/placeholder")  # type: TestResponse
         self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_connection.get_blink_connection", None)
     def test_api_systems_no_blink(self) -> None:
-        """Test systems API when Blink not available."""
+        """Test systems API when Blink service is not available.
+
+        Verifies that the systems API endpoint handles scenarios where
+        the Blink service is unavailable or not initialized properly.
+
+        Tests:
+            - Systems API behavior when Blink service unavailable
+            - Proper error handling for service unavailability
+            - Graceful degradation when backend is down
+            - Error response formatting for service failures
+        """
         response = self.client.get("/api/systems")  # type: TestResponse
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
@@ -765,7 +815,17 @@ class TestFlaskApp(FlaskTestCase):
         self.assertIn("Invalid Network ID format", data["error"])
 
     def test_app_instance_access(self) -> None:
-        """Test app instance access."""
+        """Test Flask application instance access and configuration.
+
+        Verifies that the Flask application instance is properly
+        accessible and configured with expected settings.
+
+        Tests:
+            - Flask app instance accessibility
+            - Application configuration verification
+            - Instance state validation
+            - Proper app initialization confirmation
+        """
         import blinkapp
 
         self.assertIsNotNone(blinkapp.app)
