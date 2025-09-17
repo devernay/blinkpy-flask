@@ -5,8 +5,8 @@ This log tracks the systematic verification and enhancement of test docstrings a
 
 ## Progress Summary
 - **Total Tests**: 727 (estimated)
-- **Tests Verified**: 123/727 (16.9%)
-- **Tests Enhanced**: 123 with comprehensive Google-style docstrings
+- **Tests Verified**: 128/727 (17.6%)
+- **Tests Enhanced**: 128 with comprehensive Google-style docstrings
 
 ## Critical Issues Resolved
 1. **Unspec'd Mock() Usage**: Fixed 5 instances in test_services.py
@@ -28,7 +28,7 @@ This log tracks the systematic verification and enhancement of test docstrings a
 - Blink service tests (13 tests)
 - **Critical fixes**: 5 unspec'd Mock() instances replaced with proper factories
 
-### test_app.py (32 tests verified)
+### test_app.py (34 tests verified)
 **Status**: 🔄 IN PROGRESS - Core API response and utility tests completed
 - API response creation tests (8 tests)
 - Timestamp extraction tests (3 tests)
@@ -39,15 +39,16 @@ This log tracks the systematic verification and enhancement of test docstrings a
 - Security validation tests (5 tests)
 - Error context management tests (1 test)
 - Safe execution and login tests (2 tests)
-- Login error handling and 2FA tests (3 tests)
+- Login error handling and 2FA tests (5 tests)
 - **Critical fix**: Consolidated duplicate create_api_response functions
 
-### test_models.py (10 tests verified)
+### test_models.py (11 tests verified)
 **Status**: 🔄 IN PROGRESS - ID validation and model tests completed
 - CameraId validation tests (6 tests)
 - Cache model edge case tests (1 test)
 - Custom class import tests (1 test)
 - Hash consistency and collection tests (2 tests)
+- String representation tests (1 test)
 
 ### test_utils.py (9 tests verified)
 **Status**: 🔄 IN PROGRESS - Safe execution and logging tests completed
@@ -61,13 +62,14 @@ This log tracks the systematic verification and enhancement of test docstrings a
 - Route registration and accessibility tests (3 tests)
 - System and thumbnail route setup tests (2 tests)
 
-### test_connexion_handlers.py (10 tests verified)
+### test_connexion_handlers.py (12 tests verified)
 **Status**: 🔄 IN PROGRESS - Handler delegation tests completed
 - Template rendering and service delegation tests (3 tests)
 - Stream handling error tests (2 tests)
 - Device ID validation tests (3 tests)
 - Camera listing availability tests (1 test)
 - Cloud storage clip retrieval tests (1 test)
+- Storage validation and system handler tests (2 tests)
 
 ### test_docstrings.py (2 tests verified)
 **Status**: 🔄 IN PROGRESS - Docstring validation tests completed

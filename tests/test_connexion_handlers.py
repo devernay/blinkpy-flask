@@ -455,7 +455,17 @@ class TestClipsHandlers(BaseTestCase):
         mock_process.assert_called_once()
 
     def test_get_clips_invalid_storage(self) -> None:
-        """Test get_clips with invalid storage type."""
+        """Test get_clips with invalid storage type validation.
+
+        Verifies that the clips handler properly validates storage
+        types and rejects invalid storage type specifications.
+
+        Tests:
+            - Invalid storage type validation and rejection
+            - Proper error response for unsupported storage types
+            - Input validation for storage type parameters
+            - Error handling for malformed storage specifications
+        """
         result = clips.get_clips("invalid")
 
         self.assertIsInstance(result, tuple)
@@ -495,7 +505,17 @@ class TestClipsHandlers(BaseTestCase):
         mock_process.assert_called_once_with([])
 
     def test_system_handler_get_systems(self) -> None:
-        """Test systems handler."""
+        """Test systems handler for system retrieval functionality.
+
+        Verifies that the systems handler properly retrieves and
+        processes system information through the handler interface.
+
+        Tests:
+            - System handler import and availability
+            - System retrieval functionality through handler
+            - Proper system data processing and formatting
+            - Handler interface compatibility for system operations
+        """
         try:
             from blinkapp.connexion_handlers.system import get_systems
 

@@ -1250,7 +1250,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertIn("/login", response.location or "")
 
     def test_2fa_get_with_session(self) -> None:
-        """Test GET request to 2FA page with proper session."""
+        """Test GET request to 2FA page with proper session state.
+
+        Verifies that the 2FA page properly renders when accessed
+        with the correct session state for 2FA verification.
+
+        Tests:
+            - 2FA page rendering with valid session state
+            - Proper session validation for 2FA flow
+            - Correct page display for authenticated 2FA requests
+            - Session-based 2FA page access control
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
@@ -1259,7 +1269,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertIn(b"verification code", response.data)
 
     def test_2fa_validation_empty_key(self) -> None:
-        """Test 2FA with empty verification key."""
+        """Test 2FA with empty verification key validation.
+
+        Verifies that the 2FA validation properly handles and rejects
+        empty verification keys with appropriate error messages.
+
+        Tests:
+            - Empty verification key validation and rejection
+            - Proper error handling for missing 2FA codes
+            - Input validation for 2FA verification process
+            - User feedback for empty verification attempts
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 

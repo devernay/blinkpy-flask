@@ -194,7 +194,17 @@ class TestBaseId(BaseTestCase):
         self.assertEqual(len(id_set), 1)
 
     def test_repr_format(self) -> None:
-        """Test string representation format."""
+        """Test string representation format for camera ID objects.
+
+        Verifies that camera ID objects produce properly formatted
+        string representations for debugging and logging purposes.
+
+        Tests:
+            - String representation format and content
+            - Proper __repr__ method implementation
+            - Debugging-friendly object representation
+            - Consistent string formatting across instances
+        """
         test_id = self.TestId("test123")
         repr_str = repr(test_id)
         self.assertIn("test123", repr_str)
