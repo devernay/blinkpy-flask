@@ -503,7 +503,17 @@ class TestStreamingHandlers(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.stop_camera_stream")
     def test_stop_live_stream_failure(self, mock_stop_stream: Mock) -> None:
-        """Test stop_live_stream with stream stop failure."""
+        """Test stop_live_stream with stream stop failure handling.
+
+        Verifies that the stop live stream handler properly handles
+        failures when attempting to stop streaming operations.
+
+        Tests:
+            - Stream stop failure handling
+            - Error response for failed stream termination
+            - Graceful degradation when stop operation fails
+            - Proper error reporting for streaming issues
+        """
         from blinkapp.connexion_handlers.streaming import stop_live_stream
 
         mock_stop_stream.return_value = False
@@ -516,7 +526,17 @@ class TestStreamingHandlers(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.get_hls_file")
     def test_get_hls_stream_segments_not_found(self, mock_get_hls: Mock) -> None:
-        """Test get_hls_stream_segments with file not found."""
+        """Test get_hls_stream_segments with file not found error.
+
+        Verifies that the HLS stream segments handler properly handles
+        scenarios where requested stream segment files are not found.
+
+        Tests:
+            - File not found error handling for HLS segments
+            - Proper error response for missing stream files
+            - Graceful degradation when segments unavailable
+            - Stream file availability validation
+        """
         from blinkapp.connexion_handlers.streaming import get_hls_stream_segments
 
         mock_get_hls.return_value = (None, None)

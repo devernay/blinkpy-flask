@@ -558,7 +558,17 @@ class TestSystemRoutes(FlaskTestCase):
     """Test system route setup and registration."""
 
     def test_setup_system_routes(self) -> None:
-        """Test setup_system_routes function."""
+        """Test setup_system_routes function configuration and registration.
+
+        Verifies that the system routes setup function properly
+        configures and registers all system-related API endpoints.
+
+        Tests:
+            - System routes configuration and setup
+            - Route registration for system endpoints
+            - Proper endpoint mapping and configuration
+            - System API route availability
+        """
         from flask import Flask
 
         from blinkapp.routes.system import setup_system_routes
@@ -577,7 +587,17 @@ class TestThumbnailsRoutes(FlaskTestCase):
     """Test thumbnails route functions."""
 
     def test_setup_thumbnails_routes(self) -> None:
-        """Test thumbnails routes setup."""
+        """Test thumbnails routes setup and configuration.
+
+        Verifies that the thumbnail routes setup function properly
+        configures and registers all thumbnail-related API endpoints.
+
+        Tests:
+            - Thumbnail routes configuration and setup
+            - Route registration for thumbnail endpoints
+            - Proper endpoint mapping for image handling
+            - Thumbnail API route availability
+        """
         from flask import Flask
 
         from blinkapp.routes.thumbnails import setup_camera_thumbnail_routes

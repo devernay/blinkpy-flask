@@ -892,7 +892,17 @@ class TestAdditionalEndpoints(FlaskTestCase):
             self.assertFalse(data["success"])
 
     def test_api_clips_invalid_storage(self) -> None:
-        """Test clips API with invalid storage type."""
+        """Test clips API with invalid storage type parameter.
+
+        Verifies that the clips API endpoint properly handles and
+        rejects invalid storage type parameters with appropriate errors.
+
+        Tests:
+            - Invalid storage type parameter handling
+            - Proper error response for unsupported storage types
+            - Input validation for storage parameter
+            - API error handling for malformed requests
+        """
         response = self.client.get("/api/clips?storage=invalid")  # type: TestResponse
         # Returns 500 due to validation error, not 400
         self.assertEqual(response.status_code, 500)
@@ -920,7 +930,17 @@ class TestAdditionalEndpoints(FlaskTestCase):
         self.assertTrue(data["success"])
 
     def test_api_settings_post_invalid_content_type(self) -> None:
-        """Test settings update with invalid content type."""
+        """Test settings update with invalid content type header.
+
+        Verifies that the settings API endpoint properly validates
+        content type headers and rejects invalid content types.
+
+        Tests:
+            - Invalid content type header handling
+            - Content type validation enforcement
+            - Proper error response for unsupported content types
+            - HTTP header validation for API requests
+        """
         response = self.client.put("/api/settings", data="invalid")  # type: TestResponse
         # Should return 500 due to content type error, not 400
         self.assertEqual(response.status_code, 500)
@@ -932,14 +952,34 @@ class TestValidationExtended(BaseTestCase):
     """Test extended validation scenarios."""
 
     def test_validate_string_input_xss_prevention_raises_error(self) -> None:
-        """Test XSS prevention raises error for malicious input."""
+        """Test XSS prevention raises error for malicious input.
+
+        Verifies that the string input validation function properly
+        detects and raises errors for potential XSS attack vectors.
+
+        Tests:
+            - XSS attack vector detection and prevention
+            - Malicious input validation and rejection
+            - Security error raising for dangerous content
+            - Input sanitization enforcement
+        """
         malicious_input = "<script>alert('xss')</script>"
         with self.assertRaises(ValueError) as context:
             validate_string_input(malicious_input, 100, "test_field")
         self.assertIn("invalid characters", str(context.exception))
 
     def test_validate_string_input_html_tags_prevention(self) -> None:
-        """Test HTML tags prevention."""
+        """Test HTML tags prevention in string input validation.
+
+        Verifies that the string input validation function properly
+        detects and prevents HTML tag injection attempts.
+
+        Tests:
+            - HTML tag detection and prevention
+            - Tag injection attempt blocking
+            - Input sanitization for HTML content
+            - Security validation for markup prevention
+        """
         html_input = "<div>test</div>"
         with self.assertRaises(ValueError) as context:
             validate_string_input(html_input, 100, "test_field")
