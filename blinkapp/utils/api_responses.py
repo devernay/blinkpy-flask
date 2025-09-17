@@ -1,31 +1,9 @@
-"""Utility functions for creating standardized API responses."""
+"""Utility functions for creating standardized API responses.
 
-from datetime import UTC, datetime
+This module has been deprecated. Use blinkapp.models.responses.create_api_response instead.
+"""
 
-from ..models.types import JsonDict, JsonValue
+# Re-export the canonical version from models
+from blinkapp.models.responses import create_api_response
 
-
-def create_api_response(
-    success: bool, data: JsonValue = None, error: str | None = None
-) -> JsonDict:
-    """Create a standardized API response with timestamp.
-
-    Args:
-        success: Whether the operation was successful
-        data: Response data (for successful responses)
-        error: Error message (for failed responses)
-
-    Returns:
-        Standardized API response dict with timestamp
-    """
-    response: dict[str, JsonValue] = {
-        "success": success,
-        "timestamp": datetime.now(UTC).isoformat(),
-    }
-
-    if success and data is not None:
-        response["data"] = data
-    elif not success and error:
-        response["error"] = error
-
-    return response
+__all__ = ["create_api_response"]

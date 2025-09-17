@@ -421,7 +421,15 @@ class TestApiResponse(BaseTestCase):
         self.assertIn("timestamp", response)
 
     def test_create_api_response_with_status_code(self) -> None:
-        """Test API response creation with custom HTTP status codes."""
+        """Test API response creation with custom HTTP status codes.
+
+        Verifies that the create_api_response function properly handles
+        custom HTTP status codes for both success and error responses.
+
+        Tests:
+            - Custom status codes (201, 404, 500)
+            - Asserts correct status code is returned with response
+        """
         response, status_code = create_api_response(
             success=True, data={"created": True}, status_code=201
         )
@@ -449,7 +457,15 @@ class TestApiResponse(BaseTestCase):
         self.assertIn("T", timestamp)  # ISO format contains T
 
     def test_create_api_response_with_status_code_detailed(self) -> None:
-        """Test API response creation with custom HTTP status codes."""
+        """Test API response creation with detailed custom HTTP status code handling.
+
+        Verifies that the create_api_response function handles various
+        HTTP status codes correctly with proper response structure.
+
+        Tests:
+            - Multiple custom status codes with different response types
+            - Asserts proper status code mapping and response structure
+        """
         response, status_code = create_api_response(
             success=True, data={"created": True}, status_code=201
         )
@@ -458,7 +474,16 @@ class TestApiResponse(BaseTestCase):
         self.assertEqual(status_code, 201)
 
     def test_create_api_response_timestamp_format_detailed(self) -> None:
-        """Test API response timestamp format."""
+        """Test API response timestamp format validation and ISO 8601 compliance.
+
+        Verifies that the create_api_response function includes properly
+        formatted timestamps in all responses with detailed format checking.
+
+        Tests:
+            - Timestamp field presence and string type
+            - ISO 8601 format validation (contains 'T' separator)
+            - Asserts timestamp is properly formatted for API consumption
+        """
         response, _ = create_api_response(success=True, data={"test": "data"})
 
         # Should have ISO format timestamp
@@ -469,33 +494,63 @@ class TestApiResponse(BaseTestCase):
         self.assertIn("T", timestamp)  # ISO format contains T
 
     def test_create_api_response_success_expansion(self) -> None:
-        """Test create_api_response with success (expansion)."""
-        from blinkapp.utils.api_responses import create_api_response
+        """Test create_api_response success response (expansion test).
 
-        result = create_api_response(success=True, data={"test": "data"})
+        Verifies that the create_api_response function creates proper
+        success responses with correct structure and data payload.
 
-        self.assertTrue(result["success"])
-        self.assertEqual(result["data"], {"test": "data"})
-        self.assertIn("timestamp", result)
+        Tests:
+            - Success response with data payload
+            - Asserts success=True, correct data, and timestamp presence
+            - Verifies tuple return format (response_dict, status_code)
+        """
+        from blinkapp.models.responses import create_api_response
+
+        response, status_code = create_api_response(success=True, data={"test": "data"})
+
+        self.assertTrue(response["success"])
+        self.assertEqual(response["data"], {"test": "data"})
+        self.assertIn("timestamp", response)
+        self.assertEqual(status_code, 200)
 
     def test_create_api_response_error_expansion(self) -> None:
-        """Test create_api_response with error (expansion)."""
-        from blinkapp.utils.api_responses import create_api_response
+        """Test create_api_response error response (expansion test).
 
-        result = create_api_response(success=False, error="Test error")
+        Verifies that the create_api_response function creates proper
+        error responses with correct structure and error messages.
 
-        self.assertFalse(result["success"])
-        self.assertEqual(result["error"], "Test error")
-        self.assertIn("timestamp", result)
+        Tests:
+            - Error response with error message
+            - Asserts success=False, correct error, and timestamp presence
+            - Verifies tuple return format (response_dict, status_code)
+        """
+        from blinkapp.models.responses import create_api_response
+
+        response, status_code = create_api_response(success=False, error="Test error")
+
+        self.assertFalse(response["success"])
+        self.assertEqual(response["error"], "Test error")
+        self.assertIn("timestamp", response)
+        self.assertEqual(status_code, 200)  # Default status code
 
     def test_create_api_response_success_no_data_expansion(self) -> None:
-        """Test create_api_response success without data (expansion)."""
-        from blinkapp.utils.api_responses import create_api_response
+        """Test create_api_response success without data payload (expansion test).
 
-        result = create_api_response(success=True)
+        Verifies that the create_api_response function handles success
+        responses correctly when no data payload is provided.
 
-        self.assertTrue(result["success"])
-        self.assertIn("timestamp", result)
+        Tests:
+            - Success response without data parameter
+            - Asserts success=True, data=None, and timestamp presence
+            - Verifies tuple return format (response_dict, status_code)
+        """
+        from blinkapp.models.responses import create_api_response
+
+        response, status_code = create_api_response(success=True)
+
+        self.assertTrue(response["success"])
+        self.assertIn("timestamp", response)
+        self.assertEqual(status_code, 200)  # Default status code
 
     def test_create_api_response_with_status_code_critical(self) -> None:
         """Test API response creation with custom HTTP status codes (critical)."""
