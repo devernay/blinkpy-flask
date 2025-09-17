@@ -196,14 +196,34 @@ class TestFormatters(BaseTestCase):
     """Test formatter functions."""
 
     def test_format_clips_by_day_empty(self) -> None:
-        """Test format_clips_by_day with empty list."""
+        """Test format_clips_by_day with empty list handling.
+
+        Verifies that the clip formatting utility properly handles
+        empty clip lists and returns appropriate empty results.
+
+        Tests:
+            - Empty clip list handling and processing
+            - Proper return value for empty input data
+            - Graceful handling of no-clip scenarios
+            - Edge case validation for empty collections
+        """
         from blinkapp.utils.formatters import format_clips_by_day
 
         result = format_clips_by_day([])
         self.assertEqual(result, [])
 
     def test_format_clips_by_day_single_clip(self) -> None:
-        """Test format_clips_by_day with single clip."""
+        """Test format_clips_by_day with single clip processing.
+
+        Verifies that the clip formatting utility properly processes
+        a single clip and formats it correctly by day grouping.
+
+        Tests:
+            - Single clip processing and formatting
+            - Proper day grouping for individual clips
+            - Correct data structure creation for single items
+            - Basic functionality validation with minimal data
+        """
         from typing import cast
 
         from blinkapp.models.types import ClipApiData

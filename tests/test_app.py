@@ -1307,7 +1307,17 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     @patch("blinkapp.services.auth_service.handle_2fa_verification")
     def test_2fa_success(self, mock_handle_2fa: Mock) -> None:
-        """Test successful 2FA verification flow."""
+        """Test successful 2FA verification flow and completion.
+
+        Verifies that the 2FA verification process completes successfully
+        when provided with valid verification codes and proper session state.
+
+        Tests:
+            - Successful 2FA verification with valid codes
+            - Proper session state management during verification
+            - Correct redirect behavior after successful 2FA
+            - Authentication completion and session establishment
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
@@ -1322,7 +1332,17 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     @patch("blinkapp.services.auth_service.handle_2fa_verification")
     def test_2fa_failure_invalid_code(self, mock_handle_2fa: Mock) -> None:
-        """Test 2FA failure with invalid code."""
+        """Test 2FA failure with invalid code handling.
+
+        Verifies that the 2FA verification process properly handles
+        and rejects invalid verification codes with appropriate error responses.
+
+        Tests:
+            - Invalid 2FA code rejection and error handling
+            - Proper error response for incorrect verification codes
+            - Session state preservation during failed verification
+            - User feedback for invalid 2FA attempts
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
