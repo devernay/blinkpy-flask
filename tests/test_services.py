@@ -367,7 +367,17 @@ class TestAuthService(BaseTestCase):
             mock_factory.assert_called_once()
 
     def test_is_blink_authenticated_no_instance_expansion(self) -> None:
-        """Test is_blink_authenticated when no blink instance (expansion)."""
+        """Test is_blink_authenticated when no blink instance available (expansion test).
+
+        Verifies that the is_blink_authenticated function handles the case
+        where ensure_blink_initialized returns None, indicating no Blink
+        instance is available.
+
+        Tests:
+            - Mocks ensure_blink_initialized to return None
+            - Calls is_blink_authenticated() without parameters
+            - Asserts the function returns False for None instance
+        """
         from unittest.mock import patch
 
         from blinkapp.services import auth_service
@@ -380,7 +390,15 @@ class TestAuthService(BaseTestCase):
             self.assertFalse(result)
 
     def test_is_valid_email_format_valid_expansion(self) -> None:
-        """Test is_valid_email_format with valid email (expansion)."""
+        """Test is_valid_email_format with valid email (expansion test).
+
+        Additional test for email format validation to expand coverage
+        of valid email formats beyond the basic test cases.
+
+        Tests:
+            - Standard valid email format
+            - Asserts the function returns True for valid email
+        """
         from blinkapp.services import auth_service
 
         result = auth_service.is_valid_email_format("test@example.com")
