@@ -1589,7 +1589,9 @@ class TestThumbnailManagement(FlaskTestCase):
             patch("requests.get") as mock_requests_get,
         ):
             # Mock the HTTP response for thumbnail download
-            mock_response = Mock()
+            import requests
+
+            mock_response = Mock(spec=requests.Response)
             mock_response.status_code = 200
             mock_response.content = b"fake_image_data"
             mock_requests_get.return_value = mock_response
@@ -2202,10 +2204,12 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         mock_requests_get: Mock,
     ) -> None:
         """Test thumbnail cache file cleanup operations."""
+        # Mock requests.get response
+        import requests
+
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        # Mock requests.get response
-        mock_response = Mock()
+        mock_response = Mock(spec=requests.Response)
         mock_response.status_code = 200
         mock_response.content = b"fake_image_data"
         mock_requests_get.return_value = mock_response
@@ -4846,10 +4850,12 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
     @patch("requests.get")
     def test_thumbnail_update_complete_workflow(self, mock_requests_get: Mock) -> None:
         """Test complete thumbnail update workflow with file operations."""
+        # Mock requests.get response
+        import requests
+
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
-        # Mock requests.get response
-        mock_response = Mock()
+        mock_response = Mock(spec=requests.Response)
         mock_response.status_code = 200
         mock_response.content = b"fake_image_data"
         mock_requests_get.return_value = mock_response
@@ -6191,7 +6197,9 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         mock_blink_instance = create_mock_blink_instance()
 
         # Mock the connection to return the blink instance and execute coroutines properly
-        mock_connection_instance = Mock()
+        from tests.test_base import create_mock_blink_connection
+
+        mock_connection_instance = create_mock_blink_connection()
         mock_connection_instance.execute.side_effect = (
             lambda coro: []
         )  # Return empty list for any coroutine

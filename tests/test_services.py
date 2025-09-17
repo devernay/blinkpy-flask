@@ -36,7 +36,17 @@ class TestTimeService(BaseTestCase):
     """Test time service functions."""
 
     def test_seconds_since_now_from_datetime(self) -> None:
-        """Test calculating seconds since now from datetime."""
+        """Test calculating seconds elapsed since a given datetime.
+
+        Verifies that the seconds_since_now_from_datetime function correctly
+        calculates the time difference between a past datetime and the current
+        time, returning the elapsed seconds as a float.
+
+        Tests:
+            - Creates a datetime 60 seconds in the past
+            - Calls the function with this past datetime
+            - Asserts the result is approximately 60 seconds (55-65 range for tolerance)
+        """
         from datetime import UTC, timedelta
 
         from blinkapp.services.time_service import seconds_since_now_from_datetime
@@ -51,7 +61,18 @@ class TestTimeService(BaseTestCase):
         self.assertLess(result, 65)
 
     def test_time_difference_calculation(self) -> None:
-        """Test time difference calculation for thumbnails."""
+        """Test time difference calculation and formatting for thumbnail timestamps.
+
+        Verifies that time difference calculations work correctly for determining
+        how long ago a thumbnail was created, which is used in the UI to show
+        relative timestamps like "30m ago".
+
+        Tests:
+            - Creates a timestamp 30 minutes in the past
+            - Calculates the time difference using datetime operations
+            - Formats the result as minutes with "m ago" suffix
+            - Asserts the formatted string contains the expected pattern
+        """
         from datetime import datetime, timedelta
 
         # Test recent timestamp (minutes ago)
@@ -67,7 +88,18 @@ class TestTimeService(BaseTestCase):
         self.assertIn("m ago", expected)
 
     def test_time_formatting_hours(self) -> None:
-        """Test time formatting for hours."""
+        """Test time formatting for hour-based time differences.
+
+        Verifies that time differences measured in hours are correctly
+        calculated and formatted with the "h ago" suffix for display
+        in the user interface.
+
+        Tests:
+            - Creates a datetime 3 hours in the past
+            - Calculates the time difference in hours
+            - Formats the result with "h ago" suffix
+            - Asserts the formatted string contains the expected pattern
+        """
         from datetime import datetime, timedelta
 
         now = datetime.now()
@@ -80,7 +112,18 @@ class TestTimeService(BaseTestCase):
         self.assertIn("h ago", expected)
 
     def test_time_formatting_days(self) -> None:
-        """Test time formatting for days."""
+        """Test time formatting for day-based time differences.
+
+        Verifies that time differences measured in days are correctly
+        calculated and formatted with the "d ago" suffix for display
+        in the user interface when timestamps are older.
+
+        Tests:
+            - Creates a datetime 2 days in the past
+            - Calculates the time difference in days
+            - Formats the result with "d ago" suffix
+            - Asserts the formatted string contains the expected pattern
+        """
         from datetime import datetime, timedelta
 
         now = datetime.now()
@@ -97,7 +140,16 @@ class TestAuthService(BaseTestCase):
     """Test authentication service functions."""
 
     def test_is_blink_authenticated_true(self) -> None:
-        """Test blink authentication check returns true."""
+        """Test blink authentication check returns true for authenticated instance.
+
+        Verifies that the is_blink_authenticated function correctly identifies
+        when a Blink instance is properly authenticated and available for use.
+
+        Tests:
+            - Creates a mock Blink instance with available=True
+            - Calls is_blink_authenticated with the mock instance
+            - Asserts the function returns True for authenticated instance
+        """
         from blinkapp.services.auth_service import is_blink_authenticated
         from tests.test_base import create_mock_blink_instance
 
@@ -106,7 +158,16 @@ class TestAuthService(BaseTestCase):
         self.assertTrue(result)
 
     def test_is_blink_authenticated_false_no_token(self) -> None:
-        """Test blink authentication check returns false when no token."""
+        """Test blink authentication check returns false when no authentication token.
+
+        Verifies that the is_blink_authenticated function correctly identifies
+        when a Blink instance lacks proper authentication credentials.
+
+        Tests:
+            - Creates a mock Blink instance with available=False (no token)
+            - Calls is_blink_authenticated with the unauthenticated mock
+            - Asserts the function returns False for unauthenticated instance
+        """
         from blinkapp.services.auth_service import is_blink_authenticated
         from tests.test_base import create_mock_blink_instance
 
@@ -264,7 +325,18 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(result)
 
     def test_is_blink_authenticated_runtime_error(self) -> None:
-        """Test is_blink_authenticated when ensure_blink_initialized raises RuntimeError."""
+        """Test is_blink_authenticated handles RuntimeError gracefully.
+
+        Verifies that when the underlying Blink initialization fails with
+        a RuntimeError, the authentication check returns False instead of
+        propagating the exception, providing graceful error handling.
+
+        Tests:
+            - Mocks ensure_blink_initialized to raise RuntimeError
+            - Calls is_blink_authenticated() without parameters
+            - Asserts the function returns False instead of raising exception
+            - Verifies graceful error handling in authentication flow
+        """
         from blinkapp.services.auth_service import is_blink_authenticated
 
         with patch(
@@ -360,7 +432,7 @@ class TestAuthService(BaseTestCase):
         from tests.test_base import create_mock_auth
 
         mock_auth = create_mock_auth()
-        mock_auth_factory = Mock()
+        mock_auth_factory = Mock(spec=callable)
         mock_auth_factory.return_value = mock_auth
 
         result = _create_auth_object(
@@ -763,7 +835,19 @@ class TestAuthService(BaseTestCase):
     )
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_handle_2fa_verification_success(self, mock_ensure_conn: Mock) -> None:
-        """Test handle_2fa_verification success."""
+        """Test successful 2FA verification and authentication completion.
+
+        Verifies that the handle_2fa_verification function correctly processes
+        a valid 2FA code and completes the authentication flow, clearing
+        temporary session data and returning success.
+
+        Tests:
+            - Mocks a Blink connection that returns True for execute()
+            - Sets up Flask session with pending 2FA state
+            - Calls handle_2fa_verification with a valid code
+            - Asserts the function returns success response
+            - Verifies session cleanup occurs
+        """
         from blinkapp.services.auth_service import handle_2fa_verification
         from tests.test_base import create_mock_blink_connection
 
