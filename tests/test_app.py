@@ -294,24 +294,56 @@ class TestValidation(BaseTestCase):
     """Test input validation functions."""
 
     def test_validate_string_input_strips_whitespace(self) -> None:
-        """Test string input strips whitespace."""
+        """Test string input validation strips leading and trailing whitespace.
+
+        Verifies that the validate_string_input function automatically
+        removes whitespace from the beginning and end of input strings.
+
+        Tests:
+            - Input string with leading and trailing spaces
+            - Asserts the returned string has whitespace stripped
+        """
         result = validate_string_input("  test  ", 50, "Field")
         self.assertEqual(result, "test")
 
     def test_validate_string_input_empty_error(self) -> None:
-        """Test empty string raises error."""
+        """Test string input validation raises error for empty strings.
+
+        Verifies that the validate_string_input function properly rejects
+        empty strings and raises ValueError with descriptive message.
+
+        Tests:
+            - Empty string input
+            - Asserts ValueError is raised with "cannot be empty" message
+        """
         with self.assertRaises(ValueError) as cm:
             validate_string_input("", 50, "Field")
         self.assertIn("cannot be empty", str(cm.exception))
 
     def test_validate_string_input_too_long_error(self) -> None:
-        """Test too long string raises error."""
+        """Test string input validation raises error for overly long strings.
+
+        Verifies that the validate_string_input function enforces maximum
+        length limits and raises ValueError for strings exceeding the limit.
+
+        Tests:
+            - String longer than specified maximum length
+            - Asserts ValueError is raised with "too long" message
+        """
         with self.assertRaises(ValueError) as cm:
             validate_string_input("x" * 51, 50, "Field")
         self.assertIn("too long", str(cm.exception))
 
     def test_validate_string_input_xss_prevention(self) -> None:
-        """Test XSS prevention."""
+        """Test string input validation XSS attack prevention.
+
+        Verifies that the validate_string_input function properly detects
+        and rejects inputs containing potential XSS attack patterns.
+
+        Tests:
+            - Input strings with script tags and JavaScript
+            - Asserts ValueError is raised for XSS patterns
+        """
         with self.assertRaises(ValueError) as cm:
             validate_string_input("<script>alert('xss')</script>", 50, "Field")
         self.assertIn("invalid characters", str(cm.exception))
@@ -321,7 +353,16 @@ class TestApiResponse(BaseTestCase):
     """Test API response creation."""
 
     def test_success_response(self) -> None:
-        """Test successful API response."""
+        """Test successful API response creation and structure.
+
+        Verifies that the create_api_response function generates properly
+        structured success responses with correct fields and status codes.
+
+        Tests:
+            - Success response with data payload
+            - Asserts success=True, correct data, null error, 200 status
+            - Verifies timestamp field is included
+        """
         response, status_code = create_api_response(success=True, data={"test": "data"})
 
         self.assertTrue(response["success"])
@@ -331,7 +372,16 @@ class TestApiResponse(BaseTestCase):
         self.assertIn("timestamp", response)
 
     def test_error_response(self) -> None:
-        """Test error API response."""
+        """Test error API response creation and structure.
+
+        Verifies that the create_api_response function generates properly
+        structured error responses with correct fields and status codes.
+
+        Tests:
+            - Error response with error message and custom status code
+            - Asserts success=False, correct error message, null data
+            - Verifies custom status code (400) is returned
+        """
         response, status_code = create_api_response(
             success=False, error="Test error", status_code=400
         )
@@ -354,7 +404,15 @@ class TestApiResponse(BaseTestCase):
         self.assertEqual(status_code, 200)
 
     def test_create_api_response_error_detailed(self) -> None:
-        """Test API response creation with error."""
+        """Test API response creation with detailed error information.
+
+        Verifies that the create_api_response function handles error
+        scenarios with detailed error messages and appropriate status codes.
+
+        Tests:
+            - Error response with specific error message
+            - Asserts proper error structure and status code handling
+        """
         error_msg = "Test error message"
         response, _ = create_api_response(success=False, error=error_msg)
 
@@ -372,7 +430,15 @@ class TestApiResponse(BaseTestCase):
         self.assertEqual(status_code, 201)
 
     def test_create_api_response_timestamp_format(self) -> None:
-        """Test API response timestamp format."""
+        """Test API response timestamp format and ISO 8601 compliance.
+
+        Verifies that the create_api_response function includes properly
+        formatted timestamps in ISO 8601 format for all responses.
+
+        Tests:
+            - Response timestamp field presence
+            - Asserts timestamp follows ISO 8601 format with timezone
+        """
         response, _ = create_api_response(success=True, data={"test": "data"})
 
         # Should have ISO format timestamp
