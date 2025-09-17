@@ -76,7 +76,11 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
 # Favicon route
 @app.route("/favicon.ico")
 def favicon() -> "Response":
-    """Serve favicon from static directory."""
+    """Serve favicon from static directory.
+
+    Returns:
+        Response: Flask response serving the favicon.ico file.
+    """
     from flask import send_from_directory
 
     static_folder = app.static_folder

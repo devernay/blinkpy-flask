@@ -606,7 +606,13 @@ def create_mock_sync(
 
     mock_sync = Mock(spec=BlinkSyncModule)
     mock_sync.network_id = network_id
-    mock_sync.sync_id = sync_id or (network_id + 100000)  # Different from network_id
+    # Fix: Handle string network_id properly
+    if isinstance(network_id, str):
+        mock_sync.sync_id = sync_id or (hash(network_id) % 100000)
+    else:
+        mock_sync.sync_id = sync_id or (
+            network_id + 100000
+        )  # Different from network_id
     mock_sync.arm = armed
     mock_sync.online = online
     mock_sync.status = status

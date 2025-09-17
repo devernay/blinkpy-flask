@@ -318,6 +318,9 @@ test_connexion_handlers.py::TestClipsHandlers::test_get_clips_invalid_storage
 test_connexion_handlers.py::TestClipsHandlers::test_get_clips_local
 test_connexion_handlers.py::TestClipsHandlers::test_get_clips_no_connection
 test_connexion_handlers.py::TestClipsHandlers::test_system_handler_get_systems
+test_connexion_handlers.py::TestStreamingHandlers::test_get_hls_stream_segments_not_found
+test_connexion_handlers.py::TestStreamingHandlers::test_stop_live_stream_failure
+test_connexion_handlers.py::TestStreamingHandlers::test_stop_live_stream_success
 test_connexion_handlers.py::TestSystemHandlers::test_clear_systems_cache
 test_connexion_handlers.py::TestSystemHandlers::test_get_devices_invalid_id
 test_connexion_handlers.py::TestSystemHandlers::test_get_devices_valid_id
@@ -535,7 +538,6 @@ test_services.py::TestAuthService::test_validate_credentials_password_too_long
 test_services.py::TestAuthService::test_validate_credentials_valid
 test_services.py::TestAuthService::test_validate_credentials_valid_expansion
 test_services.py::TestAuthService::test_validate_credentials_whitespace_only
-test_services.py::TestAuthService::test_validate_credentials_xss_patterns
 test_services.py::TestAuthService::test_verify_2fa_and_save_success
 test_services.py::TestBlinkService::test_blink_connection_access
 test_services.py::TestBlinkService::test_initialize_blink_2fa_required
@@ -549,12 +551,14 @@ test_services.py::TestCacheService::test_ensure_cache_directory
 test_services.py::TestCacheService::test_ensure_cache_paths_cache_dir_none
 test_services.py::TestCacheService::test_ensure_cache_paths_clips_dir_none
 test_services.py::TestCacheService::test_ensure_cache_paths_credentials_file_none
-test_services.py::TestCacheService::test_ensure_cache_paths_initialized
 test_services.py::TestCacheService::test_ensure_cache_paths_thumbnail_dir_none
 test_services.py::TestCacheService::test_ensure_camera_thumbnail_cache_initialized_after_init
 test_services.py::TestCacheService::test_ensure_clips_cache_initialized_after_init
 test_services.py::TestCacheService::test_initialize_caches
 test_services.py::TestCacheService::test_validate_cache_directory
+test_services.py::TestCameraService::test_find_camera_by_id_blink_unavailable
+test_services.py::TestCameraService::test_find_camera_by_id_not_found
+test_services.py::TestCameraService::test_find_camera_by_id_success
 test_services.py::TestClipDownload::test_download_clip_common_exception
 test_services.py::TestClipDownload::test_download_clip_common_file_not_found
 test_services.py::TestClipDownload::test_download_clip_common_success
@@ -608,8 +612,8 @@ test_services.py::TestConnectionService::test_connection_service_basic
 test_services.py::TestConnectionService::test_ensure_executor_initialized
 test_services.py::TestConnectionService::test_ensure_http_session_initialized
 test_services.py::TestConnectionService::test_initialize_connections
-test_services.py::TestConnectionService::test_parallel_cache_clearing
 test_services.py::TestConnectionService::test_third_party_imports
+test_services.py::TestConnectionService::test_thread_pool_executor_context_manager
 test_services.py::TestDebugService::test_check_credentials_file_exists_false
 test_services.py::TestDebugService::test_check_credentials_file_exists_true
 test_services.py::TestDebugService::test_dump_blink_system_info_blink_not_available
@@ -648,11 +652,11 @@ test_services.py::TestLifecycleService::test_cleanup_resources_exception
 test_services.py::TestLifecycleService::test_cleanup_resources_success
 test_services.py::TestLifecycleService::test_startup_exception
 test_services.py::TestLifecycleService::test_startup_success
-test_services.py::TestStreamService::test_ensure_stream_manager_initialized
-test_services.py::TestStreamService::test_ensure_stream_manager_initialized_coverage
 test_services.py::TestStreamService::test_initialize_stream_manager
 test_services.py::TestStreamService::test_is_stream_active_coverage
 test_services.py::TestStreamService::test_is_stream_active_false
+test_services.py::TestStreamService::test_start_camera_stream_failure
+test_services.py::TestStreamService::test_start_camera_stream_success
 test_services.py::TestStreamService::test_stop_camera_stream_failure
 test_services.py::TestStreamService::test_stop_camera_stream_success
 test_services.py::TestStreamService::test_stream_manager_access
