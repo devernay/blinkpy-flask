@@ -5,8 +5,8 @@ This log tracks the systematic verification and enhancement of test docstrings a
 
 ## Progress Summary
 - **Total Tests**: 727 (estimated)
-- **Tests Verified**: 65/727 (8.9%)
-- **Tests Enhanced**: 65 with comprehensive Google-style docstrings
+- **Tests Verified**: 73/727 (10.0%)
+- **Tests Enhanced**: 73 with comprehensive Google-style docstrings
 
 ## Critical Issues Resolved
 1. **Unspec'd Mock() Usage**: Fixed 5 instances in test_services.py
@@ -54,6 +54,18 @@ This log tracks the systematic verification and enhancement of test docstrings a
 ### test_docstrings.py (2 tests verified)
 **Status**: 🔄 IN PROGRESS - Docstring validation tests completed
 - Google-style docstring format validation tests (2 tests)
+
+### test_connexion.py (3 tests verified)
+**Status**: 🔄 IN PROGRESS - Connexion integration tests completed
+- OpenAPI specification loading and validation tests (3 tests)
+
+### test_connexion_schema.py (3 tests verified)
+**Status**: 🔄 IN PROGRESS - Schema validation tests completed
+- OpenAPI schema compliance tests (3 tests)
+
+### test_base.py (2 tests verified)
+**Status**: 🔄 IN PROGRESS - Test framework configuration tests completed
+- Strict patching configuration tests (2 tests)
 
 ## Files Pending
 - test_base.py (test factories and utilities)

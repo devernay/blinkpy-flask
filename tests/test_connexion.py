@@ -28,7 +28,18 @@ class TestConnexionIntegration(unittest.TestCase):
         self.api_path = os.path.join(self.project_root, "api.json")
 
     def test_api_loads_successfully(self) -> None:
-        """Test that connexion can load api.json without errors."""
+        """Test that connexion can load api.json without errors.
+
+        Verifies that the Connexion framework can successfully load
+        and parse the OpenAPI specification file without configuration
+        or validation errors.
+
+        Tests:
+            - OpenAPI specification file loading
+            - Connexion configuration validation
+            - API definition parsing success
+            - No configuration errors during startup
+        """
         app = AsyncApp(__name__)
 
         # This should not raise any exceptions
@@ -38,7 +49,18 @@ class TestConnexionIntegration(unittest.TestCase):
         self.assertTrue(True)
 
     def test_all_handlers_resolved(self) -> None:
-        """Test that all x-openapi-router-controller handlers are properly resolved."""
+        """Test that all x-openapi-router-controller handlers are properly resolved.
+
+        Verifies that all OpenAPI operation handlers defined in the
+        specification can be successfully resolved to their corresponding
+        Python functions without import or resolution errors.
+
+        Tests:
+            - Handler function resolution for all endpoints
+            - x-openapi-router-controller directive processing
+            - Import path validation for handler modules
+            - No missing handler function errors
+        """
         app = AsyncApp(__name__)
 
         # This will raise an exception if any handlers can't be resolved
@@ -48,7 +70,17 @@ class TestConnexionIntegration(unittest.TestCase):
         self.assertTrue(True)
 
     def test_expected_endpoints_present(self) -> None:
-        """Test that expected API endpoints are present."""
+        """Test that expected API endpoints are present in the specification.
+
+        Verifies that all critical API endpoints are properly defined
+        in the OpenAPI specification and available through Connexion.
+
+        Tests:
+            - Core API endpoint presence (systems, cameras, clips)
+            - Authentication endpoint availability
+            - Streaming and thumbnail endpoint definitions
+            - Complete API surface coverage
+        """
         with open(self.api_path) as f:
             spec = json.load(f)
 

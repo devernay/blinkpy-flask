@@ -65,7 +65,17 @@ class TestConnexionSchemaValidation(unittest.TestCase):
         return schema
 
     def test_admin_clear_cache_response_schema(self) -> None:
-        """Test clear cache response matches OpenAPI schema exactly."""
+        """Test clear cache response matches OpenAPI schema exactly.
+
+        Verifies that the admin clear cache endpoint response structure
+        conforms precisely to the OpenAPI schema specification.
+
+        Tests:
+            - Response structure matches OpenAPI schema
+            - Required fields presence and types
+            - Schema validation compliance
+            - API contract adherence for cache operations
+        """
         from blinkapp.connexion_handlers.admin import clear_thumbnail_cache
 
         # Get expected schema from OpenAPI spec
@@ -87,7 +97,17 @@ class TestConnexionSchemaValidation(unittest.TestCase):
             self.fail(f"Response validation failed: {e.message}")
 
     def test_camera_list_response_schema(self) -> None:
-        """Test camera list response matches OpenAPI schema exactly."""
+        """Test camera list response matches OpenAPI schema exactly.
+
+        Verifies that the camera list endpoint response structure
+        conforms precisely to the OpenAPI schema specification.
+
+        Tests:
+            - Camera list response structure validation
+            - Required camera fields presence and types
+            - Schema compliance for camera data
+            - API contract adherence for camera operations
+        """
         from blinkapp.connexion_handlers.camera import list_cameras
 
         with (
@@ -121,7 +141,17 @@ class TestConnexionSchemaValidation(unittest.TestCase):
                 self.fail(f"Camera list response validation failed: {e.message}")
 
     def test_settings_response_schema(self) -> None:
-        """Test settings response matches OpenAPI schema exactly."""
+        """Test settings response matches OpenAPI schema exactly.
+
+        Verifies that the settings endpoint response structure
+        conforms precisely to the OpenAPI schema specification.
+
+        Tests:
+            - Settings response structure validation
+            - Required settings fields presence and types
+            - Schema compliance for configuration data
+            - API contract adherence for settings operations
+        """
         from blinkapp.connexion_handlers.settings import get_user_settings
 
         with patch("blinkapp.services.settings_service.get_user_settings") as mock_get:

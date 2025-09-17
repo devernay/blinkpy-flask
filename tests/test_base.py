@@ -1537,7 +1537,17 @@ class TestStrictPatching:
     """
 
     def test_strict_patching_enabled_by_default(self) -> None:
-        """Test that strict patching is enabled by default."""
+        """Test that strict patching is enabled by default.
+
+        Verifies that the test framework enforces strict patching
+        by default to prevent unspec'd Mock usage and improve
+        test reliability.
+
+        Tests:
+            - Strict patching default configuration
+            - Mock specification enforcement
+            - Test framework safety defaults
+        """
         import unittest.mock
 
         # Strict patching should be enabled by default
@@ -1546,7 +1556,17 @@ class TestStrictPatching:
         )
 
     def test_strict_patching_environment_variable_control(self) -> None:
-        """Test that strict patching can be controlled via STRICT_PATCHING environment variable."""
+        """Test that strict patching can be controlled via STRICT_PATCHING environment variable.
+
+        Verifies that the strict patching behavior can be configured
+        through environment variables for different testing scenarios.
+
+        Tests:
+            - Environment variable configuration support
+            - STRICT_PATCHING variable processing
+            - Dynamic patching behavior control
+            - Configuration flexibility for testing
+        """
         import os
         import unittest.mock
 
