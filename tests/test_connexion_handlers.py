@@ -362,7 +362,17 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection_init: Mock,
         mock_blink_init: Mock,
     ) -> None:
-        """Test get_clips with default (cloud) storage."""
+        """Test get_clips with default (cloud) storage retrieval.
+
+        Verifies that the clips handler properly retrieves clips from
+        cloud storage when no explicit storage type is specified.
+
+        Tests:
+            - Default cloud storage clip retrieval
+            - Proper cloud storage selection when unspecified
+            - Cloud clip listing and metadata processing
+            - Default storage behavior validation
+        """
         # Setup mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance

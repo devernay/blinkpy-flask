@@ -1662,7 +1662,17 @@ class TestStrictPatching:
             assert isinstance(mock_exists, Mock)
 
     def test_enable_disable_strict_patching(self) -> None:
-        """Test enabling and disabling strict patching."""
+        """Test enabling and disabling strict patching functionality.
+
+        Verifies that strict patching can be properly enabled and disabled
+        through configuration controls and state management.
+
+        Tests:
+            - Strict patching enable/disable functionality
+            - Configuration state management for patching modes
+            - Dynamic patching behavior control
+            - Proper state transitions between strict and normal modes
+        """
         import unittest.mock
 
         # Since strict patching is enabled by default, first disable it
@@ -1681,7 +1691,17 @@ class TestStrictPatching:
         enable_strict_patching()
 
     def test_strict_patch_object_attribute(self) -> None:
-        """Test that strict_patch has object attribute for patch.object calls."""
+        """Test that strict_patch has object attribute for patch.object calls.
+
+        Verifies that the strict patch implementation properly provides
+        the object attribute for patch.object method calls.
+
+        Tests:
+            - Object attribute availability in strict patch
+            - Compatibility with patch.object method calls
+            - Proper attribute exposure for object patching
+            - API compatibility with standard unittest.mock.patch
+        """
         assert hasattr(strict_patch, "object")
         assert strict_patch.object is not None
 

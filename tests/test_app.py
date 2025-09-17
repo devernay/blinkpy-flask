@@ -1208,7 +1208,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_login_unexpected_error(self) -> None:
-        """Test login with unexpected error."""
+        """Test login with unexpected error handling and recovery.
+
+        Verifies that the login process properly handles unexpected
+        errors and provides appropriate error responses to users.
+
+        Tests:
+            - Unexpected error handling during login process
+            - Graceful error recovery and user feedback
+            - Proper error response formatting for login failures
+            - System stability during unexpected login errors
+        """
         # Mock the function that actually gets called in auth_service
         with patch(
             "blinkapp.services.blink_service.ensure_blink_connection_initialized"
@@ -1223,7 +1233,17 @@ class TestAuthenticationFlows(FlaskTestCase):
             self.assertIn(b"System not ready", response.data)
 
     def test_2fa_get_without_session(self) -> None:
-        """Test accessing 2FA page without proper session."""
+        """Test accessing 2FA page without proper session state.
+
+        Verifies that the 2FA page properly handles requests from users
+        who don't have the required session state for 2FA verification.
+
+        Tests:
+            - 2FA page access without proper session state
+            - Session validation for 2FA authentication flow
+            - Proper redirect or error for invalid session access
+            - Security validation for 2FA page access control
+        """
         response = self.client.get("/2fa")  # type: TestResponse
         # Should redirect to login
         self.assertEqual(response.status_code, 302)
