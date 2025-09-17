@@ -29,7 +29,16 @@ class TestAuthHandlers(BaseTestCase):
     @patch("flask.session", {"authenticated": True})
     @patch("flask.render_template")
     def test_main_page(self, mock_render: Mock) -> None:
-        """Test main page handler returns rendered template."""
+        """Test main page handler returns rendered template.
+
+        Verifies that the main page handler properly delegates to
+        Flask's render_template and returns the rendered HTML content.
+
+        Tests:
+            - Template rendering delegation to render_template
+            - Correct template name ('index.html') passed to renderer
+            - Return value matches rendered template output
+        """
         mock_render.return_value = "<html>Main Page</html>"
 
         result = auth.main_page()
@@ -43,7 +52,16 @@ class TestSystemHandlers(BaseTestCase):
 
     @patch("blinkapp.services.system_service.get_systems")
     def test_get_systems(self, mock_service: Mock) -> None:
-        """Test get_systems handler delegates to service."""
+        """Test get_systems handler delegates to service layer.
+
+        Verifies that the get_systems connexion handler properly
+        delegates system retrieval to the service layer.
+
+        Tests:
+            - Service layer delegation for system retrieval
+            - Return value matches service layer response
+            - Proper separation of concerns between handler and service
+        """
         mock_service.return_value = {"systems": []}
 
         result = system.get_systems()
@@ -53,7 +71,16 @@ class TestSystemHandlers(BaseTestCase):
 
     @patch("blinkapp.services.blink_validators.require_sync_module")
     def test_get_system_devices_valid_id(self, mock_validator: Mock) -> None:
-        """Test get_system_devices with valid network ID."""
+        """Test get_system_devices with valid network ID.
+
+        Verifies that the get_system_devices handler properly processes
+        valid network IDs and delegates to the validation service.
+
+        Tests:
+            - Valid network ID processing
+            - Service delegation for device retrieval
+            - Return value matches validator service response
+        """
         from requests.structures import CaseInsensitiveDict
 
         from tests.test_base import create_mock_sync

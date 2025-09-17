@@ -14,7 +14,18 @@ class TestRouteExistence(FlaskTestCase):
     """Test that expected routes are registered."""
 
     def test_routes_exist(self) -> None:
-        """Test that expected routes are registered in the Flask app."""
+        """Test that expected routes are registered in the Flask app.
+
+        Verifies that all critical application routes are properly
+        registered and accessible through the Flask URL routing system.
+
+        Tests:
+            - Core web routes (/, /login, /2fa, /logout)
+            - API system routes (/api/systems, /api/systems/<id>/devices)
+            - API camera routes (/api/cameras, /api/cameras/<id>/*)
+            - API clip and streaming routes
+            - Asserts all expected routes are present in URL map
+        """
         with self.app.app_context():
             # Get all registered routes
             routes = [rule.rule for rule in self.app.url_map.iter_rules()]
@@ -44,13 +55,31 @@ class TestAuthRoutes(FlaskTestCase):
     """Test authentication routes basic functionality."""
 
     def test_index_redirect_to_login(self) -> None:
-        """Test index redirects to login when not authenticated."""
+        """Test index redirects to login when user is not authenticated.
+
+        Verifies that unauthenticated users accessing the root path
+        are properly redirected to the login page for authentication.
+
+        Tests:
+            - GET request to root path (/)
+            - 302 redirect response to login page
+            - Proper authentication flow enforcement
+        """
         response = self.client.get("/")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.location)
 
     def test_login_page_accessible(self) -> None:
-        """Test login page is accessible."""
+        """Test login page is accessible without authentication.
+
+        Verifies that the login page can be accessed by unauthenticated
+        users and returns the expected response status.
+
+        Tests:
+            - GET request to /login endpoint
+            - 200 OK response status
+            - Login page accessibility for unauthenticated users
+        """
         response = self.client.get("/login")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"login", response.data.lower())
