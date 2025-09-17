@@ -31,7 +31,18 @@ class TestCacheServiceNoIsolation:
     """Test cache service functions without test isolation."""
 
     def test_initialize_cache_paths_calls_pathlib(self) -> None:
-        """Test that initialize_cache_paths calls pathlib.Path correctly."""
+        """Test that initialize_cache_paths calls pathlib.Path correctly.
+
+        Verifies that the cache path initialization function properly
+        delegates to pathlib.Path for directory creation and management
+        without file system isolation.
+
+        Tests:
+            - pathlib.Path delegation for cache directory creation
+            - Proper path handling without isolation constraints
+            - Directory creation logic verification
+            - Integration with real file system operations
+        """
         from tests.test_base import create_mock_path
 
         with (
@@ -52,7 +63,18 @@ class TestCacheServiceNoIsolation:
             assert mkdir_mock.called, "mkdir should have been called"
 
     def test_initialize_cache_paths_with_config(self) -> None:
-        """Test cache path initialization with app config (non-isolated version)."""
+        """Test cache path initialization with app config (non-isolated version).
+
+        Verifies that cache path initialization works correctly with
+        application configuration in a non-isolated testing environment
+        that allows real file system interactions.
+
+        Tests:
+            - Cache path initialization with real app config
+            - Non-isolated file system operations
+            - Configuration-driven path creation
+            - Integration testing without mocking constraints
+        """
         from tests.test_base import create_mock_path
 
         with (

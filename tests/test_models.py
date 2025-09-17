@@ -1370,7 +1370,17 @@ class TestCacheStatsAndMethods(BaseTestCase):
         self.assertIn("cached_at", result)
 
     def test_cache_model_edge_cases(self) -> None:
-        """Test cache model edge cases."""
+        """Test cache model edge cases and boundary conditions.
+
+        Verifies that the cache model handles edge cases and
+        boundary conditions gracefully without failures.
+
+        Tests:
+            - Edge case handling in cache operations
+            - Boundary condition validation
+            - Error resilience for unusual inputs
+            - Graceful degradation for edge scenarios
+        """
         from blinkapp.models.cache import ThreadSafeLRUCache
 
         # Test with small capacity using maxsize parameter
@@ -1388,7 +1398,17 @@ class TestModuleImports(BaseTestCase):
     """Test model module imports."""
 
     def test_custom_class_imports(self) -> None:
-        """Test custom class availability."""
+        """Test custom class availability and import functionality.
+
+        Verifies that application-specific custom classes are properly
+        defined, importable, and accessible throughout the models module.
+
+        Tests:
+            - Custom class import success
+            - Class definition availability in models
+            - Module structure integrity for custom types
+            - Model class accessibility verification
+        """
         import blinkapp
         from blinkapp.models import ids
 

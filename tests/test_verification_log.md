@@ -5,8 +5,8 @@ This log tracks the systematic verification and enhancement of test docstrings a
 
 ## Progress Summary
 - **Total Tests**: 727 (estimated)
-- **Tests Verified**: 73/727 (10.0%)
-- **Tests Enhanced**: 73 with comprehensive Google-style docstrings
+- **Tests Verified**: 82/727 (11.3%)
+- **Tests Enhanced**: 82 with comprehensive Google-style docstrings
 
 ## Critical Issues Resolved
 1. **Unspec'd Mock() Usage**: Fixed 5 instances in test_services.py
@@ -28,16 +28,20 @@ This log tracks the systematic verification and enhancement of test docstrings a
 - Blink service tests (13 tests)
 - **Critical fixes**: 5 unspec'd Mock() instances replaced with proper factories
 
-### test_app.py (10 tests verified)
+### test_app.py (15 tests verified)
 **Status**: 🔄 IN PROGRESS - Core API response and utility tests completed
 - API response creation tests (6 tests)
-- Thumbnail timestamp extraction tests (1 test)
+- Thumbnail timestamp extraction tests (3 tests)
+- Time duration formatting tests (1 test)
 - Import validation tests (3 tests)
+- Cache optimization tests (2 tests)
 - **Critical fix**: Consolidated duplicate create_api_response functions
 
-### test_models.py (3 tests verified)
-**Status**: 🔄 IN PROGRESS - ID validation tests completed
+### test_models.py (5 tests verified)
+**Status**: 🔄 IN PROGRESS - ID validation and model tests completed
 - CameraId validation tests (3 tests)
+- Cache model edge case tests (1 test)
+- Custom class import tests (1 test)
 
 ### test_utils.py (3 tests verified)
 **Status**: 🔄 IN PROGRESS - Safe execution tests completed
@@ -66,6 +70,10 @@ This log tracks the systematic verification and enhancement of test docstrings a
 ### test_base.py (2 tests verified)
 **Status**: 🔄 IN PROGRESS - Test framework configuration tests completed
 - Strict patching configuration tests (2 tests)
+
+### test_services_no_isolation.py (2 tests verified)
+**Status**: 🔄 IN PROGRESS - Non-isolated integration tests completed
+- Cache path initialization tests (2 tests)
 
 ## Files Pending
 - test_base.py (test factories and utilities)

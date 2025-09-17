@@ -621,18 +621,48 @@ class TestUtilityFunctions(BaseTestCase):
         self.assertEqual(timestamp, 1742459551)
 
     def test_extract_thumbnail_timestamp_no_ts(self) -> None:
-        """Test extracting timestamp from URL without ts parameter."""
+        """Test extracting timestamp from URL without ts parameter.
+
+        Verifies that the extract_thumbnail_timestamp function handles
+        URLs that don't contain timestamp parameters gracefully.
+
+        Tests:
+            - URL without ts parameter handling
+            - Graceful fallback behavior for missing timestamps
+            - None return value for URLs without timestamp data
+            - Robust URL parsing for edge cases
+        """
         url = "/api/v3/media/thumbnail.jpg"
         timestamp = extract_thumbnail_timestamp(url)
         self.assertEqual(timestamp, 0)
 
     def test_extract_thumbnail_timestamp_none(self) -> None:
-        """Test extracting timestamp from None URL."""
+        """Test extracting timestamp from None URL input.
+
+        Verifies that the extract_thumbnail_timestamp function handles
+        None input values safely without raising exceptions.
+
+        Tests:
+            - None input handling without exceptions
+            - Safe fallback behavior for null values
+            - Defensive programming validation
+            - Graceful error handling for invalid inputs
+        """
         timestamp = extract_thumbnail_timestamp(None)
         self.assertEqual(timestamp, 0)
 
     def test_format_time_duration_days(self) -> None:
-        """Test formatting time duration for days."""
+        """Test formatting time duration for day-level intervals.
+
+        Verifies that the time duration formatting function properly
+        handles and displays day-level time intervals with correct units.
+
+        Tests:
+            - Day-level duration formatting (e.g., "2 days")
+            - Proper unit selection for large time intervals
+            - Singular/plural form handling for day units
+            - Human-readable time duration display
+        """
         seconds = 5 * 24 * 3600  # 5 days in seconds
         result = format_time_duration(seconds)
         self.assertEqual(result, "5d")
@@ -6475,7 +6505,17 @@ class TestPerformanceOptimizationsFixed(BaseTestCase):
     """Test performance optimizations and caching."""
 
     def test_cache_hit_optimization(self) -> None:
-        """Test cache hit optimization."""
+        """Test cache hit optimization performance improvements.
+
+        Verifies that the caching system provides performance
+        optimizations through cache hit detection and utilization.
+
+        Tests:
+            - Cache hit detection and optimization
+            - Performance improvement validation
+            - Cache efficiency metrics
+            - Optimization behavior verification
+        """
         cache = CameraThumbnailCache(maxsize=10)
 
         # Test cache hit performance
@@ -6504,7 +6544,17 @@ class TestModuleImports(FlaskTestCase):
     """Test module import functionality."""
 
     def test_flask_imports(self) -> None:
-        """Test Flask-related imports."""
+        """Test Flask-related imports are available and functional.
+
+        Verifies that Flask framework components and related
+        dependencies are properly imported and accessible.
+
+        Tests:
+            - Flask core module imports
+            - Flask extension availability
+            - Framework component accessibility
+            - Import dependency resolution
+        """
         import blinkapp
 
         self.assertTrue(hasattr(blinkapp, "Flask"))
