@@ -51,19 +51,46 @@ class TestBaseId(BaseTestCase):
         self.TestId = TestId
 
     def test_valid_id_creation(self) -> None:
-        """Test valid ID creation and string representation."""
+        """Test valid ID creation and string representation.
+
+        Verifies that CameraId can be created with valid string inputs
+        and properly converts to string representation.
+
+        Tests:
+            - Valid camera ID string creation
+            - String representation matches input
+            - ID object behaves correctly as string
+        """
         test_id = self.TestId("test123")
         self.assertEqual(str(test_id), "test123")
         self.assertEqual(test_id.value, "test123")
 
     def test_numeric_id_conversion(self) -> None:
-        """Test numeric ID conversion to string."""
+        """Test numeric ID conversion to string format.
+
+        Verifies that CameraId properly handles numeric inputs
+        by converting them to string representation.
+
+        Tests:
+            - Numeric input (integer) conversion to string
+            - String representation of converted numeric ID
+            - Proper type handling for numeric inputs
+        """
         test_id = self.TestId(12345)
         self.assertEqual(str(test_id), "12345")
         self.assertEqual(test_id.value, "12345")
 
     def test_empty_id_raises_error(self) -> None:
-        """Test empty ID raises ValueError."""
+        """Test empty ID raises ValueError with descriptive message.
+
+        Verifies that CameraId properly rejects empty string inputs
+        and raises appropriate validation errors.
+
+        Tests:
+            - Empty string input rejection
+            - ValueError exception with descriptive message
+            - Proper validation of required ID values
+        """
         with self.assertRaises(ValueError) as cm:
             self.TestId("")
         self.assertIn("cannot be empty", str(cm.exception))

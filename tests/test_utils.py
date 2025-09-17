@@ -34,7 +34,16 @@ class TestDecorators(BaseTestCase):
     """Test decorator functions."""
 
     def test_safe_execute_success(self) -> None:
-        """Test safe_execute with successful function."""
+        """Test safe_execute with successful function execution.
+
+        Verifies that safe_execute properly handles successful function
+        calls and returns the expected result without modification.
+
+        Tests:
+            - Successful function execution
+            - Return value matches function output
+            - No exception handling interference
+        """
         from blinkapp.utils.decorators import safe_execute
 
         def success_func() -> str:
@@ -44,7 +53,16 @@ class TestDecorators(BaseTestCase):
         self.assertEqual(result, "success")
 
     def test_safe_execute_exception_with_default(self) -> None:
-        """Test safe_execute with exception and default value."""
+        """Test safe_execute exception handling with default value fallback.
+
+        Verifies that safe_execute properly catches exceptions and
+        returns the specified default value when function execution fails.
+
+        Tests:
+            - Exception handling during function execution
+            - Default value return on exception
+            - Graceful error recovery behavior
+        """
         from blinkapp.utils.decorators import safe_execute
 
         def failing_func() -> Never:
@@ -54,7 +72,16 @@ class TestDecorators(BaseTestCase):
         self.assertEqual(result, "default_value")
 
     def test_safe_execute_exception_no_default(self) -> None:
-        """Test safe_execute with exception and no default."""
+        """Test safe_execute exception handling without default value.
+
+        Verifies that safe_execute properly catches exceptions and
+        returns None when no default value is specified.
+
+        Tests:
+            - Exception handling during function execution
+            - None return value when no default specified
+            - Graceful error recovery without fallback value
+        """
         from blinkapp.utils.decorators import safe_execute
 
         def failing_func() -> Never:
