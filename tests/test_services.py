@@ -405,28 +405,60 @@ class TestAuthService(BaseTestCase):
         self.assertTrue(result)
 
     def test_is_valid_email_format_invalid_expansion(self) -> None:
-        """Test is_valid_email_format with invalid email (expansion)."""
+        """Test is_valid_email_format with invalid email (expansion test).
+
+        Additional test for email format validation to expand coverage
+        of invalid email formats beyond the basic test cases.
+
+        Tests:
+            - Invalid email format without @ symbol
+            - Asserts the function returns False for invalid email
+        """
         from blinkapp.services import auth_service
 
         result = auth_service.is_valid_email_format("invalid-email")
         self.assertFalse(result)
 
     def test_validate_credentials_empty_expansion(self) -> None:
-        """Test validate_credentials with empty credentials (expansion)."""
+        """Test validate_credentials with empty credentials (expansion test).
+
+        Additional test for credential validation to expand coverage
+        of empty credential scenarios beyond the basic test cases.
+
+        Tests:
+            - Both email and password empty
+            - Asserts the function returns False for empty credentials
+        """
         from blinkapp.services import auth_service
 
         result = auth_service.validate_credentials("", "")
         self.assertFalse(result)
 
     def test_validate_credentials_valid_expansion(self) -> None:
-        """Test validate_credentials with valid credentials (expansion)."""
+        """Test validate_credentials with valid credentials (expansion test).
+
+        Additional test for credential validation to expand coverage
+        of valid credential scenarios beyond the basic test cases.
+
+        Tests:
+            - Valid email and password combination
+            - Asserts the function returns True for valid credentials
+        """
         from blinkapp.services import auth_service
 
         result = auth_service.validate_credentials("test@example.com", "password123")
         self.assertTrue(result)
 
     def test_validate_credentials_invalid_email_expansion(self) -> None:
-        """Test validate_credentials with invalid email format (expansion)."""
+        """Test validate_credentials with invalid email format (expansion test).
+
+        Additional test for credential validation to expand coverage
+        of invalid email scenarios beyond the basic test cases.
+
+        Tests:
+            - Invalid email format with valid password
+            - Asserts the function returns False for invalid email
+        """
         from blinkapp.services import auth_service
 
         result = auth_service.validate_credentials("invalid-email", "password123")
@@ -455,7 +487,15 @@ class TestAuthService(BaseTestCase):
             self.assertFalse(result)
 
     def test_is_valid_email_format_edge_cases(self) -> None:
-        """Test email validation edge cases."""
+        """Test email validation with edge case scenarios.
+
+        Verifies that the is_valid_email_format function handles
+        unusual but potentially valid edge cases correctly.
+
+        Tests:
+            - Edge case email formats that might be borderline valid/invalid
+            - Ensures robust validation behavior for unusual inputs
+        """
         from blinkapp.services.auth_service import is_valid_email_format
 
         # Non-string input - intentionally testing invalid types for robustness
@@ -470,7 +510,16 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(is_valid_email_format("user@domain"))
 
     def test_validate_credentials_non_string_inputs(self) -> None:
-        """Test validate_credentials with non-string inputs."""
+        """Test validate_credentials with non-string input types.
+
+        Verifies that the validate_credentials function handles
+        non-string inputs gracefully without crashing.
+
+        Tests:
+            - None values for email and password
+            - Numeric values for email and password
+            - Asserts all non-string inputs return False
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         # Non-string inputs - intentionally testing invalid types for robustness
@@ -478,7 +527,16 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(validate_credentials("user@example.com", None))  # type: ignore[arg-type]
         self.assertFalse(validate_credentials(123, "password"))  # type: ignore[arg-type]
         self.assertFalse(validate_credentials("user@example.com", 123))  # type: ignore[arg-type]    def test_validate_credentials_xss_patterns(self) -> None:
-        """Test validate_credentials XSS pattern detection."""
+        """Test validate_credentials XSS pattern detection and prevention.
+
+        Verifies that the validate_credentials function properly rejects
+        inputs containing potential XSS attack patterns for security.
+
+        Tests:
+            - Various XSS patterns in email and password fields
+            - Script tags, JavaScript URLs, and event handlers
+            - Asserts all XSS patterns are rejected (return False)
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         xss_patterns = [
@@ -496,7 +554,16 @@ class TestAuthService(BaseTestCase):
 
     @patch("blinkapp.config.Config.MAX_PASSWORD_LENGTH", 10)
     def test_validate_credentials_password_too_long(self) -> None:
-        """Test validate_credentials with password exceeding max length."""
+        """Test validate_credentials with password exceeding maximum length.
+
+        Verifies that the validate_credentials function enforces password
+        length limits by rejecting passwords that exceed the configured maximum.
+
+        Tests:
+            - Patches MAX_PASSWORD_LENGTH to 10 characters
+            - Tests password longer than the limit
+            - Asserts overly long passwords are rejected
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         long_password = "a" * 11  # Exceeds mocked MAX_PASSWORD_LENGTH of 10
@@ -504,7 +571,17 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(result)
 
     def test_validate_credentials_whitespace_only(self) -> None:
-        """Test validate_credentials with whitespace-only inputs."""
+        """Test validate_credentials with whitespace-only input strings.
+
+        Verifies that the validate_credentials function properly rejects
+        inputs that contain only whitespace characters.
+
+        Tests:
+            - Whitespace-only email with valid password
+            - Valid email with whitespace-only password
+            - Both email and password as whitespace-only
+            - Asserts all whitespace-only inputs are rejected
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         self.assertFalse(validate_credentials("   ", "password"))
@@ -512,7 +589,16 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(validate_credentials("   ", "   "))
 
     def test_create_auth_object_default_factory(self) -> None:
-        """Test _create_auth_object with default factory."""
+        """Test _create_auth_object with default Auth factory.
+
+        Verifies that the _create_auth_object function creates a new
+        blinkpy Auth instance using the default factory when called.
+
+        Tests:
+            - Mocks blinkpy.auth.Auth constructor
+            - Calls _create_auth_object with session parameter
+            - Asserts the function returns the mocked Auth instance
+        """
         from blinkapp.services.auth_service import _create_auth_object
 
         mock_session = Mock(spec=ClientSession)
