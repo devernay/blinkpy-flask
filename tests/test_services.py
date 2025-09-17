@@ -619,7 +619,16 @@ class TestAuthService(BaseTestCase):
             )
 
     def test_create_auth_object_custom_factory(self) -> None:
-        """Test _create_auth_object with custom factory."""
+        """Test _create_auth_object with custom Auth factory function.
+
+        Verifies that the _create_auth_object function works correctly
+        when provided with a custom Auth factory instead of the default.
+
+        Tests:
+            - Uses custom mock factory instead of blinkpy.auth.Auth
+            - Calls _create_auth_object with custom factory parameter
+            - Asserts the custom factory is called with correct parameters
+        """
         from blinkapp.services.auth_service import _create_auth_object
 
         mock_session = Mock(spec=ClientSession)
@@ -655,7 +664,17 @@ class TestAuthService(BaseTestCase):
         mock_create_session: Mock,
         mock_get_blink: Mock,
     ) -> None:
-        """Test initialize_blink success without 2FA."""
+        """Test initialize_blink successful authentication without 2FA requirement.
+
+        Verifies that the initialize_blink function completes successfully
+        when authentication succeeds and no 2FA verification is required.
+
+        Tests:
+            - Mocks successful session and auth object creation
+            - Mocks Blink instance with available=True, key_required=False
+            - Calls initialize_blink with valid credentials
+            - Asserts successful initialization without 2FA prompts
+        """
         from blinkapp.services.auth_service import initialize_blink
         from tests.test_base import create_mock_auth, create_mock_blink_instance
 
@@ -999,7 +1018,16 @@ class TestAuthService(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.validate_credentials")
     def test_handle_login_exception(self, mock_validate: Mock) -> None:
-        """Test handle_login when exception occurs."""
+        """Test handle_login graceful exception handling during authentication.
+
+        Verifies that the handle_login function handles unexpected exceptions
+        gracefully and returns appropriate error responses.
+
+        Tests:
+            - Mocks validate_credentials to raise an exception
+            - Calls handle_login with valid-looking credentials
+            - Asserts function returns error response instead of crashing
+        """
         from blinkapp.services.auth_service import handle_login
 
         mock_validate.side_effect = Exception("Validation error")
@@ -1010,7 +1038,16 @@ class TestAuthService(BaseTestCase):
         self.assertEqual(result, expected)
 
     def test_handle_logout(self) -> None:
-        """Test handle_logout."""
+        """Test handle_logout session cleanup and credential clearing.
+
+        Verifies that the handle_logout function properly clears session
+        data and performs necessary cleanup operations.
+
+        Tests:
+            - Mocks Flask session object
+            - Calls handle_logout function
+            - Asserts session.clear() is called for cleanup
+        """
         from blinkapp.services.auth_service import handle_logout
 
         mock_session = Mock()
@@ -1068,7 +1105,15 @@ class TestAuthService(BaseTestCase):
 
     @patch("flask.session", {})
     def test_handle_2fa_verification_no_session(self) -> None:
-        """Test handle_2fa_verification when no session data."""
+        """Test handle_2fa_verification when no session data is available.
+
+        Verifies that the handle_2fa_verification function handles the case
+        where no temporary session data exists (no pending 2FA state).
+
+        Tests:
+            - Calls handle_2fa_verification without setting up session data
+            - Asserts function returns error response for missing session
+        """
         from blinkapp.services.auth_service import handle_2fa_verification
 
         result = handle_2fa_verification("123456")
@@ -1100,7 +1145,17 @@ class TestAuthService(BaseTestCase):
     )
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_handle_2fa_verification_invalid_code(self, mock_ensure_conn: Mock) -> None:
-        """Test handle_2fa_verification with invalid code."""
+        """Test handle_2fa_verification with invalid 2FA verification code.
+
+        Verifies that the handle_2fa_verification function properly handles
+        invalid 2FA codes and returns appropriate error responses.
+
+        Tests:
+            - Mocks Blink connection to return False for execute() (invalid code)
+            - Sets up Flask session with pending 2FA state
+            - Calls handle_2fa_verification with invalid code
+            - Asserts function returns error response for invalid code
+        """
         from blinkapp.services.auth_service import handle_2fa_verification
         from tests.test_base import create_mock_blink_connection
 
@@ -1118,7 +1173,16 @@ class TestAuthService(BaseTestCase):
         {"temp_username": "user@example.com", "temp_password": "password"},
     )
     def test_handle_2fa_verification_exception(self) -> None:
-        """Test handle_2fa_verification when exception occurs."""
+        """Test handle_2fa_verification graceful exception handling.
+
+        Verifies that the handle_2fa_verification function handles unexpected
+        exceptions gracefully and returns appropriate error responses.
+
+        Tests:
+            - Mocks Flask session to raise an exception
+            - Calls handle_2fa_verification with valid-looking code
+            - Asserts function returns error response instead of crashing
+        """
         from blinkapp.services.auth_service import handle_2fa_verification
 
         with patch(
@@ -1148,7 +1212,16 @@ class TestBlinkService(BaseTestCase):
         super().setUp()
 
     def test_blink_connection_access(self) -> None:
-        """Test blink_connection access."""
+        """Test blink_connection module access and availability.
+
+        Verifies that the blink_connection module can be accessed through
+        the blink_service and provides the expected interface.
+
+        Tests:
+            - Imports blink_service module
+            - Accesses blink_connection attribute
+            - Asserts the connection object is available
+        """
         from blinkapp.services import blink_service
 
         # Test that we can get a blink connection instance
@@ -1256,7 +1329,16 @@ class TestCacheService(BaseTestCase):
         cleanup_global_caches()
 
     def test_initialize_caches(self) -> None:
-        """Test cache initialization."""
+        """Test cache initialization and setup process.
+
+        Verifies that the initialize_caches function properly sets up
+        all required cache instances for the application.
+
+        Tests:
+            - Calls initialize_caches function
+            - Asserts cache initialization completes without errors
+            - Verifies cache objects are properly configured
+        """
         from blinkapp.services.cache_service import initialize_caches
 
         config: dict[str, object] = {
