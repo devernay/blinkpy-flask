@@ -91,7 +91,17 @@ class TestDecorators(BaseTestCase):
         self.assertIsNone(result)
 
     def test_decorators_basic_usage(self) -> None:
-        """Test basic decorator usage."""
+        """Test basic decorator usage and functionality.
+
+        Verifies that utility decorators work correctly with basic
+        function decoration and provide expected behavior.
+
+        Tests:
+            - Basic decorator application and functionality
+            - Decorator behavior with simple functions
+            - Proper function wrapping and execution
+            - Decorator utility validation
+        """
         from blinkapp.utils.decorators import error_context
 
         @error_context("test operation")
@@ -106,7 +116,17 @@ class TestRouteDecorators(BaseTestCase):
     """Test route decorator functions."""
 
     def test_get_operation_name_basic(self) -> None:
-        """Test _get_operation_name with basic function."""
+        """Test _get_operation_name with basic function name extraction.
+
+        Verifies that the operation name extraction utility properly
+        extracts and formats function names for operation identification.
+
+        Tests:
+            - Basic function name extraction
+            - Operation name formatting and processing
+            - Function metadata extraction
+            - Name resolution utility validation
+        """
         from blinkapp.utils.route_decorators import _get_operation_name
 
         def test_function() -> None:

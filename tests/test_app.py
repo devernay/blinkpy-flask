@@ -1011,7 +1011,17 @@ class TestUtilityFunctionsExtended(BaseTestCase):
     """Test extended utility functions."""
 
     def test_format_time_duration_edge_cases(self) -> None:
-        """Test format_time_duration with edge cases."""
+        """Test format_time_duration with edge cases and boundary conditions.
+
+        Verifies that the time duration formatting function handles
+        edge cases and boundary conditions gracefully without errors.
+
+        Tests:
+            - Edge case handling for extreme time values
+            - Boundary condition validation (zero, negative values)
+            - Graceful degradation for unusual inputs
+            - Robust error handling for edge scenarios
+        """
         # Test very recent time (30 seconds)
         result = format_time_duration(30)
         self.assertEqual(result, "30s")
@@ -1025,7 +1035,17 @@ class TestUtilityFunctionsExtended(BaseTestCase):
         self.assertEqual(result, "1d")
 
     def test_create_api_response_with_custom_status(self) -> None:
-        """Test API response creation with custom status codes."""
+        """Test API response creation with custom status codes.
+
+        Verifies that the API response creation function properly
+        handles custom HTTP status codes beyond standard success/error.
+
+        Tests:
+            - Custom HTTP status code handling (201, 204, etc.)
+            - Proper status code propagation in responses
+            - Non-standard status code support
+            - Status code validation and formatting
+        """
         # Test with custom success status
         response, status = create_api_response(
             success=True, data={"test": "data"}, status_code=201

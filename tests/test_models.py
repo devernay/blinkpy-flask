@@ -96,19 +96,49 @@ class TestBaseId(BaseTestCase):
         self.assertIn("cannot be empty", str(cm.exception))
 
     def test_whitespace_id_raises_error(self) -> None:
-        """Test whitespace-only ID raises ValueError."""
+        """Test whitespace-only ID raises ValueError with proper validation.
+
+        Verifies that camera ID validation properly rejects whitespace-only
+        strings and raises appropriate ValueError exceptions.
+
+        Tests:
+            - Whitespace-only string rejection
+            - ValueError exception raising for invalid input
+            - Input validation for empty/whitespace content
+            - Proper error handling for malformed IDs
+        """
         with self.assertRaises(ValueError) as cm:
             self.TestId("   ")
         self.assertIn("cannot be empty", str(cm.exception))
 
     def test_invalid_pattern_raises_error(self) -> None:
-        """Test invalid pattern raises ValueError."""
+        """Test invalid pattern raises ValueError with pattern validation.
+
+        Verifies that camera ID validation properly rejects strings that
+        don't match the expected pattern format and raises ValueError.
+
+        Tests:
+            - Invalid pattern rejection and validation
+            - ValueError exception raising for pattern mismatch
+            - Pattern matching enforcement for ID format
+            - Input format validation and error handling
+        """
         with self.assertRaises(ValueError) as cm:
             self.TestId("test-invalid!")
         self.assertIn("Invalid Test ID format", str(cm.exception))
 
     def test_equality_with_same_id(self) -> None:
-        """Test ID equality with same value."""
+        """Test ID equality with same value comparison.
+
+        Verifies that camera ID objects with identical values
+        are properly recognized as equal through equality comparison.
+
+        Tests:
+            - Equality comparison for identical ID values
+            - Proper __eq__ method implementation
+            - Value-based equality validation
+            - Object comparison behavior verification
+        """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
         self.assertEqual(id1, id2)
