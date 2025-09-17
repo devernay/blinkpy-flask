@@ -14,10 +14,10 @@
 - tests/test_services.py: 180 tests
 - tests/test_utils.py: 55 tests
 
-## Progress: 8/727 tests verified and enhanced
+## Progress: 17/727 tests verified and enhanced
 
 ## Current File: test_services.py
-## Current Test: 9/180
+## Current Test: 18/180
 
 ## Verified Tests:
 ✅ test_seconds_since_now_from_datetime - Added Google-style docstring
@@ -28,6 +28,14 @@
 ✅ test_is_blink_authenticated_false_no_token - Added Google-style docstring
 ✅ test_handle_2fa_verification_success - Added Google-style docstring
 ✅ test_is_blink_authenticated_runtime_error - Added Google-style docstring
+✅ test_is_blink_authenticated_false_no_blink - Added Google-style docstring
+✅ test_is_valid_email_format_valid - Added Google-style docstring
+✅ test_is_valid_email_format_invalid - Added Google-style docstring
+✅ test_validate_credentials_valid - Added Google-style docstring
+✅ test_validate_credentials_invalid_email - Added Google-style docstring
+✅ test_validate_credentials_empty_password - Added Google-style docstring
+✅ test_is_valid_email_format_comprehensive - Added Google-style docstring
+✅ test_validate_credentials_cases - Added Google-style docstring
 
 ## Issues Found and Fixed:
 ✅ Fixed unspec'd mock_auth_factory - Added spec=callable

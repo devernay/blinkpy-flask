@@ -176,21 +176,47 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(result)
 
     def test_is_blink_authenticated_false_no_blink(self) -> None:
-        """Test blink authentication check returns false when no blink instance."""
+        """Test blink authentication check returns false when no blink instance provided.
+
+        Verifies that the is_blink_authenticated function handles None input
+        gracefully and returns False when no Blink instance is provided.
+
+        Tests:
+            - Calls is_blink_authenticated with None parameter
+            - Asserts the function returns False for None input
+            - Verifies graceful handling of missing Blink instance
+        """
         from blinkapp.services.auth_service import is_blink_authenticated
 
         result = is_blink_authenticated(None)
         self.assertFalse(result)
 
     def test_is_valid_email_format_valid(self) -> None:
-        """Test valid email format validation."""
+        """Test email format validation with valid email addresses.
+
+        Verifies that the is_valid_email_format function correctly identifies
+        valid email addresses including standard and complex formats.
+
+        Tests:
+            - Standard email format: test@example.com
+            - Complex email format: user.name@domain.co.uk
+            - Asserts both return True for valid formats
+        """
         from blinkapp.services.auth_service import is_valid_email_format
 
         self.assertTrue(is_valid_email_format("test@example.com"))
         self.assertTrue(is_valid_email_format("user.name@domain.co.uk"))
 
     def test_is_valid_email_format_invalid(self) -> None:
-        """Test invalid email format validation."""
+        """Test email format validation with invalid email addresses.
+
+        Verifies that the is_valid_email_format function correctly rejects
+        malformed email addresses and edge cases.
+
+        Tests:
+            - Invalid formats that should return False
+            - Ensures proper validation of email structure
+        """
         from blinkapp.services.auth_service import is_valid_email_format
 
         self.assertFalse(is_valid_email_format("invalid"))
@@ -199,7 +225,16 @@ class TestAuthService(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.logger")
     def test_validate_credentials_valid(self, mock_logger: Mock) -> None:
-        """Test credential validation with valid inputs."""
+        """Test credential validation with valid email and password.
+
+        Verifies that the validate_credentials function accepts valid
+        email and password combinations and returns True.
+
+        Tests:
+            - Valid email format and non-empty password
+            - Asserts function returns True for valid credentials
+            - Verifies no error logging occurs for valid input
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         result = validate_credentials("test@example.com", "password123")
@@ -207,7 +242,16 @@ class TestAuthService(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.logger")
     def test_validate_credentials_invalid_email(self, mock_logger: Mock) -> None:
-        """Test credential validation with invalid email."""
+        """Test credential validation with invalid email format.
+
+        Verifies that the validate_credentials function rejects invalid
+        email formats and logs appropriate error messages.
+
+        Tests:
+            - Invalid email format with valid password
+            - Asserts function returns False for invalid email
+            - Verifies error logging occurs for invalid input
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         result = validate_credentials("invalid", "password123")
@@ -215,14 +259,32 @@ class TestAuthService(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.logger")
     def test_validate_credentials_empty_password(self, mock_logger: Mock) -> None:
-        """Test credential validation with empty password."""
+        """Test credential validation with empty password.
+
+        Verifies that the validate_credentials function rejects empty
+        passwords even with valid email formats.
+
+        Tests:
+            - Valid email format with empty password
+            - Asserts function returns False for empty password
+            - Verifies error logging occurs for invalid input
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         result = validate_credentials("test@example.com", "")
         self.assertFalse(result)
 
     def test_is_valid_email_format_comprehensive(self) -> None:
-        """Test email validation comprehensively."""
+        """Test email validation with comprehensive test cases.
+
+        Verifies that the is_valid_email_format function handles a wide
+        range of valid and invalid email formats correctly.
+
+        Tests:
+            - Multiple valid email formats including tags and subdomains
+            - Invalid formats like empty strings and malformed addresses
+            - Uses subTest for detailed failure reporting
+        """
         from blinkapp.services.auth_service import is_valid_email_format
 
         # Valid emails
@@ -240,7 +302,17 @@ class TestAuthService(BaseTestCase):
         self.assertFalse(is_valid_email_format("@domain.com"))
 
     def test_validate_credentials_cases(self) -> None:
-        """Test credential validation."""
+        """Test credential validation with various input combinations.
+
+        Verifies that the validate_credentials function handles different
+        combinations of valid and invalid email/password pairs correctly.
+
+        Tests:
+            - Empty email and password combinations
+            - Valid email with empty password (should fail)
+            - Empty email with valid password (should fail)
+            - Valid email and password combination (should pass)
+        """
         from blinkapp.services.auth_service import validate_credentials
 
         # Empty credentials
@@ -252,7 +324,16 @@ class TestAuthService(BaseTestCase):
         self.assertTrue(validate_credentials("user@example.com", "password123"))
 
     def test_create_blink_session_default(self) -> None:
-        """Test creating blink session with default factory."""
+        """Test creating blink session with default ClientSession factory.
+
+        Verifies that the _create_blink_session function creates a new
+        aiohttp ClientSession when called without parameters.
+
+        Tests:
+            - Mocks aiohttp.ClientSession constructor
+            - Calls _create_blink_session() without parameters
+            - Asserts the function returns the mocked session instance
+        """
         from blinkapp.services import auth_service
 
         with patch("aiohttp.ClientSession") as mock_session_class:
@@ -265,7 +346,16 @@ class TestAuthService(BaseTestCase):
             mock_session_class.assert_called_once()
 
     def test_create_blink_session_custom_factory(self) -> None:
-        """Test creating blink session with custom factory."""
+        """Test creating blink session with custom session factory.
+
+        Verifies that the _create_blink_session function works correctly
+        when the ClientSession constructor is mocked/replaced.
+
+        Tests:
+            - Patches aiohttp.ClientSession with custom mock
+            - Calls _create_blink_session()
+            - Asserts the function uses the patched factory
+        """
         from blinkapp.services import auth_service
 
         with patch(
