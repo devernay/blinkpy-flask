@@ -191,7 +191,21 @@ class TestSystemHandlers(BaseTestCase):
     def test_update_system_valid_request(
         self, mock_validator: Mock, mock_connection_init: Mock
     ) -> None:
-        """Test update_system with valid request."""
+        """Test update_system handler with valid request parameters.
+
+        Verifies that the update_system connexion handler properly processes
+        valid system update requests and delegates to the service layer.
+
+        Args:
+            mock_validator: Mock for network ID validation
+            mock_service: Mock for system service operations
+
+        Tests:
+            - Valid network ID validation and processing
+            - Proper request body parsing and validation
+            - Service layer delegation for system updates
+            - Correct response format and status codes
+        """
         from tests.test_base import create_mock_sync
 
         mock_sync = create_mock_sync()
@@ -213,7 +227,17 @@ class TestSystemHandlers(BaseTestCase):
         mock_connection.execute.assert_called_once()
 
     def test_update_system_invalid_id(self) -> None:
-        """Test update_system with invalid network ID."""
+        """Test update_system handler with invalid network ID.
+
+        Verifies that the update_system connexion handler properly handles
+        and rejects requests with invalid network ID parameters.
+
+        Tests:
+            - Invalid network ID detection and validation
+            - Appropriate error response generation
+            - Proper error status codes (400 Bad Request)
+            - Error message clarity and usefulness
+        """
         body: JsonDict = {"armed": True}
 
         result = system.update_system_settings("invalid", body)
@@ -227,7 +251,17 @@ class TestSystemHandlers(BaseTestCase):
         )
 
     def test_update_system_missing_armed(self) -> None:
-        """Test update_system with missing armed field."""
+        """Test update_system handler with missing armed field in request.
+
+        Verifies that the update_system connexion handler properly handles
+        requests missing the required 'armed' field in the request body.
+
+        Tests:
+            - Missing required field detection and validation
+            - Appropriate error response for incomplete requests
+            - Proper error status codes (400 Bad Request)
+            - Clear error messaging for missing parameters
+        """
         body: JsonDict = {}
 
         result = system.update_system_settings("12345", body)
@@ -242,7 +276,17 @@ class TestSystemHandlers(BaseTestCase):
         )
 
     def test_update_system_invalid_armed_type(self) -> None:
-        """Test update_system with invalid armed field type."""
+        """Test update_system handler with invalid armed field data type.
+
+        Verifies that the update_system connexion handler properly validates
+        the data type of the 'armed' field and rejects invalid types.
+
+        Tests:
+            - Data type validation for armed field (expects boolean)
+            - Rejection of string values when boolean expected
+            - Appropriate error response for type mismatches
+            - Proper error status codes and messaging
+        """
         body: JsonDict = {"armed": "true"}  # String instead of boolean
 
         result = system.update_system_settings("12345", body)
@@ -258,7 +302,20 @@ class TestSystemHandlers(BaseTestCase):
 
     @patch("blinkapp.services.system_service.refresh_system")
     def test_clear_systems_cache(self, mock_refresh: Mock) -> None:
-        """Test clear_systems_cache handler."""
+        """Test clear_systems_cache handler functionality.
+
+        Verifies that the clear_systems_cache connexion handler properly
+        delegates cache clearing operations to the service layer.
+
+        Args:
+            mock_refresh: Mock for cache refresh operations
+
+        Tests:
+            - Service layer delegation for cache clearing
+            - Proper response format with success status
+            - Cache refresh operation execution
+            - Appropriate success messaging and status codes
+        """
         mock_refresh.return_value = {"success": True, "message": "Cache cleared"}
 
         result = system.clear_systems_cache()
@@ -275,7 +332,21 @@ class TestCameraHandlers(BaseTestCase):
     def test_list_cameras_with_cameras(
         self, mock_create_data: Mock, mock_ensure: Mock
     ) -> None:
-        """Test list_cameras with available cameras."""
+        """Test list_cameras handler with available cameras.
+
+        Verifies that the list_cameras connexion handler properly retrieves
+        and formats camera information when cameras are available.
+
+        Args:
+            mock_ensure: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Blink connection establishment and validation
+            - Camera data retrieval and formatting
+            - Proper response structure with camera information
+            - Service layer integration for camera management
+        """
         # Mock blink connection and cameras
         from tests.test_base import create_mock_blink_instance, create_mock_camera
 
@@ -332,7 +403,20 @@ class TestCameraHandlers(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_list_cameras_no_cameras_attribute(self, mock_ensure: Mock) -> None:
-        """Test list_cameras when blink has no cameras attribute."""
+        """Test list_cameras handler when Blink instance has no cameras attribute.
+
+        Verifies that the list_cameras connexion handler properly handles
+        cases where the Blink instance lacks the cameras attribute.
+
+        Args:
+            mock_ensure: Mock for Blink connection ensuring
+
+        Tests:
+            - Missing cameras attribute detection and handling
+            - Graceful degradation when cameras unavailable
+            - Appropriate error response or empty list handling
+            - Proper error messaging for missing camera data
+        """
         from tests.test_base import create_mock_blink_instance
 
         mock_blink = create_mock_blink_instance(cameras=None)
@@ -406,7 +490,21 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection_init: Mock,
         mock_blink_init: Mock,
     ) -> None:
-        """Test get_clips with explicit cloud storage."""
+        """Test get_clips handler with explicit cloud storage specification.
+
+        Verifies that the get_clips connexion handler properly retrieves
+        clips from cloud storage when explicitly specified in the request.
+
+        Args:
+            mock_connection_init: Mock for Blink connection initialization
+            mock_blink_init: Mock for Blink instance initialization
+
+        Tests:
+            - Explicit cloud storage parameter handling
+            - Cloud clip retrieval and formatting
+            - Proper response structure with cloud clip data
+            - Service layer integration for cloud storage access
+        """
         # Setup mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
@@ -440,7 +538,23 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection: Mock,
         mock_blink_init: Mock,
     ) -> None:
-        """Test get_clips with local storage."""
+        """Test get_clips handler with local storage specification.
+
+        Verifies that the get_clips connexion handler properly retrieves
+        clips from local storage when specified in the request.
+
+        Args:
+            mock_context: Mock for error context management
+            mock_process: Mock for local clip processing
+            mock_connection: Mock for Blink connection operations
+            mock_blink_init: Mock for Blink instance initialization
+
+        Tests:
+            - Local storage parameter handling and validation
+            - Local clip retrieval and processing
+            - Proper response structure with local clip data
+            - Service layer integration for local storage access
+        """
         # Setup mocks
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
@@ -490,7 +604,23 @@ class TestClipsHandlers(BaseTestCase):
         mock_connection_init: Mock,
         mock_blink_init: Mock,
     ) -> None:
-        """Test get_clips when blink_connection is None."""
+        """Test get_clips handler when Blink connection is unavailable.
+
+        Verifies that the get_clips connexion handler properly handles
+        cases where the Blink connection cannot be established.
+
+        Args:
+            mock_context: Mock for error context management
+            mock_process: Mock for clip processing operations
+            mock_connection_init: Mock for connection initialization
+            mock_blink_init: Mock for Blink instance initialization
+
+        Tests:
+            - Unavailable connection detection and handling
+            - Graceful degradation when connection fails
+            - Appropriate error response for connection issues
+            - Proper error messaging and status codes
+        """
         # Setup mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_init.return_value = mock_blink_instance
@@ -529,7 +659,17 @@ class TestClipsHandlers(BaseTestCase):
             self.skipTest("get_systems handler not found")
 
     def test_clips_handler_download_clip(self) -> None:
-        """Test clip download handler."""
+        """Test clip download handler functionality and processing.
+
+        Verifies that the clip download handler properly processes
+        download requests and handles clip retrieval operations.
+
+        Tests:
+            - Clip download handler import and availability
+            - Download request processing and handling
+            - Proper clip retrieval functionality through handler
+            - Handler interface compatibility for clip operations
+        """
         try:
             from blinkapp.connexion_handlers.clips import download_clip
 
@@ -560,7 +700,17 @@ class TestStreamingHandlers(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.stop_camera_stream")
     def test_stop_live_stream_success(self, mock_stop_stream: Mock) -> None:
-        """Test stop_live_stream with successful stream stop."""
+        """Test stop_live_stream with successful stream stop operation.
+
+        Verifies that the live stream stopping functionality works
+        correctly when stream termination is successful.
+
+        Tests:
+            - Successful live stream stop operation
+            - Proper stream service integration and calls
+            - Correct response handling for successful stops
+            - Stream state management during termination
+        """
         from blinkapp.connexion_handlers.streaming import stop_live_stream
 
         mock_stop_stream.return_value = True

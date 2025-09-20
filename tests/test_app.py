@@ -118,6 +118,11 @@ class TestBaseId(BaseTestCase):
 
         Verifies that valid IDs are created correctly and that
         both str() and .value property return the expected value.
+
+        Tests:
+            - Valid alphanumeric ID creation
+            - String representation matches input value
+            - Value property returns correct string
         """
         test_id = self.TestId("test123")
         self.assertEqual(str(test_id), "test123")
@@ -128,6 +133,11 @@ class TestBaseId(BaseTestCase):
 
         Ensures that empty strings are rejected during ID creation
         with a clear error message for debugging.
+
+        Tests:
+            - Empty string input raises ValueError
+            - Error message contains "cannot be empty"
+            - Proper exception handling for invalid input
         """
         with self.assertRaises(ValueError) as cm:
             self.TestId("")
@@ -138,6 +148,11 @@ class TestBaseId(BaseTestCase):
 
         Verifies that IDs not matching the required pattern are rejected
         with error messages that include the specific ID type name.
+
+        Tests:
+            - Invalid characters in ID raise ValueError
+            - Error message includes type-specific format information
+            - Pattern validation works correctly
         """
         with self.assertRaises(ValueError) as cm:
             self.TestId("test-invalid!")
@@ -149,6 +164,11 @@ class TestBaseId(BaseTestCase):
         Ensures that IDs with the same value are considered equal
         and IDs with different values are not equal. This is
         important for using IDs as dictionary keys and in sets.
+
+        Tests:
+            - IDs with same value are equal
+            - IDs with different values are not equal
+            - Equality comparison works for dictionary keys
         """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
@@ -163,6 +183,11 @@ class TestBaseId(BaseTestCase):
         Verifies that equal IDs have the same hash value and that
         duplicate IDs are properly deduplicated in sets. This is
         critical for using IDs as cache keys.
+
+        Tests:
+            - Equal IDs have identical hash values
+            - Duplicate IDs are deduplicated in sets
+            - Hash consistency for cache key usage
         """
         id1 = self.TestId("test123")
         id2 = self.TestId("test123")
@@ -185,6 +210,11 @@ class TestCameraId(BaseTestCase):
 
         Verifies that standard alphanumeric camera IDs are
         accepted and stored correctly.
+
+        Tests:
+            - Valid alphanumeric camera ID creation
+            - String representation matches input
+            - Camera ID validation accepts standard format
         """
         camera_id = CameraId("camera123")
         self.assertEqual(str(camera_id), "camera123")
@@ -195,6 +225,11 @@ class TestCameraId(BaseTestCase):
         Ensures that camera IDs containing underscores (which
         are common in Blink camera IDs) are properly validated
         and accepted.
+
+        Tests:
+            - Camera ID with underscore character is accepted
+            - String representation preserves underscore
+            - Underscore validation works correctly
         """
         camera_id = CameraId("camera_123")
         self.assertEqual(str(camera_id), "camera_123")
@@ -213,6 +248,11 @@ class TestNetworkId(BaseTestCase):
 
         Verifies that numeric network IDs (the standard format
         from Blink API) are accepted and stored correctly.
+
+        Tests:
+            - Numeric network ID creation
+            - String representation matches input
+            - Network ID validation accepts numeric format
         """
         network_id = NetworkId("12345")
         self.assertEqual(str(network_id), "12345")
@@ -222,6 +262,11 @@ class TestNetworkId(BaseTestCase):
 
         Ensures that non-numeric network IDs are rejected since
         the Blink API only provides numeric network identifiers.
+
+        Tests:
+            - Non-numeric network ID raises ValueError
+            - Letter characters in network ID are rejected
+            - Validation enforces numeric-only format
         """
         with self.assertRaises(ValueError):
             NetworkId("abc123")
@@ -240,6 +285,11 @@ class TestClipId(BaseTestCase):
 
         Verifies that standard numeric cloud clip IDs are
         properly validated and identified as non-local clips.
+
+        Tests:
+            - Numeric cloud clip ID creation
+            - String representation matches input
+            - is_local() returns False for cloud clips
         """
         clip_id = ClipId("123456")
         self.assertEqual(str(clip_id), "123456")
@@ -250,6 +300,11 @@ class TestClipId(BaseTestCase):
 
         Verifies that local clip IDs with the sync~item format
         are properly validated and identified as local clips.
+
+        Tests:
+            - Local clip ID with sync~item format creation
+            - String representation matches input
+            - is_local() returns True for local clips
         """
         clip_id = ClipId("sync1~789")
         self.assertEqual(str(clip_id), "sync1~789")
@@ -261,6 +316,11 @@ class TestClipId(BaseTestCase):
         Verifies that the convenience constructor for local clips
         properly formats the sync module name and item ID into
         the expected local clip ID format.
+
+        Tests:
+            - from_local constructor creates proper format
+            - Sync module name and item ID are combined correctly
+            - Resulting clip ID is identified as local
         """
         clip_id = ClipId.from_local("sync_module", 123)
         self.assertEqual(str(clip_id), "sync_module~123")
@@ -272,6 +332,11 @@ class TestClipId(BaseTestCase):
         Verifies that local clip IDs can be properly parsed
         back into their sync module name and item ID components
         for use with the Blink local storage API.
+
+        Tests:
+            - get_local_parts extracts sync module name correctly
+            - get_local_parts extracts item ID correctly
+            - Parsing works for local clip format
         """
         clip_id = ClipId("sync1~456")
         sync_name, item_id = clip_id.get_local_parts()
@@ -284,6 +349,11 @@ class TestClipId(BaseTestCase):
         Ensures that attempting to parse cloud clip IDs as local
         clips raises an appropriate error, preventing incorrect
         API calls to the local storage endpoints.
+
+        Tests:
+            - get_local_parts raises ValueError for cloud clips
+            - Error prevents incorrect local storage API calls
+            - Cloud clip format is properly rejected
         """
         clip_id = ClipId("123456")
         with self.assertRaises(ValueError):
@@ -768,9 +838,19 @@ class TestFlaskApp(FlaskTestCase):
     ) -> None:
         """Test successful systems API endpoint with complete mock setup.
 
-        Why: Systems API is the primary endpoint for retrieving Blink system information.
-        What: Verifies proper API response format and data structure for system listing.
-        How: Mocks both blink service and connection, validates JSON response structure.
+        Verifies that the systems API endpoint returns properly formatted
+        system information when Blink service is available and configured.
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+            mock_ensure_connection: Mock for Blink connection initialization
+
+        Tests:
+            - GET request to /api/systems endpoint
+            - Successful API response with system data
+            - Proper JSON response structure and format
+            - System name and configuration in response
         """
         # Use helper to create mock objects
         mock_sync = create_mock_sync(network_id=12345, armed=False, online=True)
@@ -796,7 +876,21 @@ class TestFlaskApp(FlaskTestCase):
     def test_api_devices_invalid_network_id(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test devices API with invalid network ID."""
+        """Test devices API endpoint with invalid network ID format.
+
+        Verifies that the devices API properly handles and rejects
+        invalid network ID formats with appropriate error responses.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Invalid network ID format rejection and validation
+            - Proper error response for malformed network identifiers
+            - API input validation and parameter sanitization
+            - Error message clarity for invalid network ID formats
+        """
         # Mock blink to be available so we can test NetworkId validation
         # Mock blink instance
         mock_blink_instance = create_mock_blink_instance()
@@ -840,7 +934,27 @@ class TestAdditionalEndpoints(FlaskTestCase):
     def test_api_devices_network_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test devices API with network not found."""
+        """Test devices API endpoint when specified network is not found.
+
+        Verifies that the devices API properly handles cases where
+        the requested network ID does not exist in the system.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Network not found error handling and response
+            - Proper 404 status code for missing network resources
+            - API error response format for non-existent networks
+            - User feedback for unavailable network identifiers
+        """
         # Mock blink instance
 
         mock_blink_instance = create_mock_blink_instance()
@@ -862,7 +976,21 @@ class TestAdditionalEndpoints(FlaskTestCase):
     def test_api_camera_thumbnail_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test camera thumbnail with camera not found."""
+        """Test camera thumbnail API endpoint when camera is not found.
+
+        Verifies that the camera thumbnail API properly handles cases
+        where the requested camera ID does not exist in the system.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Camera not found error handling for thumbnail requests
+            - Proper 404 status code for missing camera resources
+            - API error response format for non-existent cameras
+            - User feedback for unavailable camera identifiers
+        """
         # Mock blink instance
 
         mock_blink_instance = create_mock_blink_instance()
@@ -914,7 +1042,21 @@ class TestAdditionalEndpoints(FlaskTestCase):
     def test_api_clear_cache_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test successful cache clearing."""
+        """Test successful cache clearing through API endpoint.
+
+        Verifies that the cache clearing API endpoint successfully
+        clears application caches and returns appropriate success response.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Successful cache clearing operation through API
+            - Proper success response format and status code
+            - Cache state reset and memory cleanup verification
+            - API response consistency for cache management operations
+        """
         # Mock blink instance
 
         mock_blink_instance = create_mock_blink_instance()
@@ -934,6 +1076,11 @@ class TestAdditionalEndpoints(FlaskTestCase):
 
         Verifies that the settings API endpoint properly validates
         content type headers and rejects invalid content types.
+
+
+
+        Args:
+            mock_save_settings: Mock for settings save service
 
         Tests:
             - Invalid content type header handling
@@ -986,17 +1133,47 @@ class TestValidationExtended(BaseTestCase):
         self.assertIn("invalid characters", str(context.exception))
 
     def test_camera_id_validation_with_special_chars(self) -> None:
-        """Test camera ID validation with special characters."""
+        """Test camera ID validation with special characters and invalid formats.
+
+        Verifies that the CameraId validation properly rejects
+        camera IDs containing special characters and invalid formats.
+
+        Tests:
+            - Special character rejection in camera ID validation
+            - Proper ValueError exception for invalid character sets
+            - Camera ID format enforcement and pattern matching
+            - Input sanitization for camera identifier creation
+        """
         with self.assertRaises(ValueError):
             CameraId("camera@#$%")
 
     def test_network_id_validation_with_letters(self) -> None:
-        """Test network ID validation with letters."""
+        """Test network ID validation with letter characters and invalid formats.
+
+        Verifies that the NetworkId validation properly handles
+        network IDs containing letters and non-numeric characters.
+
+        Tests:
+            - Letter character handling in network ID validation
+            - Network ID format flexibility and character acceptance
+            - Proper validation rules for network identifier formats
+            - Input processing for alphanumeric network identifiers
+        """
         with self.assertRaises(ValueError):
             NetworkId("abc123")
 
     def test_clip_id_validation_edge_cases(self) -> None:
-        """Test clip ID validation edge cases."""
+        """Test clip ID validation with edge cases and boundary conditions.
+
+        Verifies that the ClipId validation properly handles edge cases
+        including boundary values, special formats, and unusual inputs.
+
+        Tests:
+            - Edge case clip ID formats and boundary conditions
+            - Special character handling in clip identifiers
+            - Validation behavior for unusual but valid clip IDs
+            - Proper error handling for edge case validation failures
+        """
         # Valid clip ID with all allowed characters
         valid_id = "clip_123-test~456"
         clip_id = ClipId(valid_id)
@@ -1140,7 +1317,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertIn(b"Password", response.data)
 
     def test_login_validation_empty_username(self) -> None:
-        """Test login with empty username."""
+        """Test login validation with empty username field.
+
+        Verifies that the login validation properly rejects empty
+        username inputs and provides appropriate error responses.
+
+        Tests:
+            - Empty username field rejection and validation
+            - Proper error response for missing username input
+            - Login form validation for required username field
+            - User feedback for incomplete login credentials
+        """
         response = self.client.post(
             "/login", data={"username": "", "password": "password123"}
         )  # type: TestResponse
@@ -1148,7 +1335,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertIn(b"Username and password required", response.data)
 
     def test_login_validation_empty_password(self) -> None:
-        """Test login with empty password."""
+        """Test login validation with empty password field.
+
+        Verifies that the login validation properly rejects empty
+        password inputs and provides appropriate error responses.
+
+        Tests:
+            - Empty password field rejection and validation
+            - Proper error response for missing password input
+            - Login form validation for required password field
+            - User feedback for incomplete login credentials
+        """
         response = self.client.post(
             "/login", data={"username": "test@example.com", "password": ""}
         )  # type: TestResponse
@@ -1156,7 +1353,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertIn(b"Username and password required", response.data)
 
     def test_login_validation_username_too_long(self) -> None:
-        """Test login with overly long username."""
+        """Test login validation with excessively long username.
+
+        Verifies that the login validation properly rejects usernames
+        that exceed maximum length limits and provides appropriate errors.
+
+        Tests:
+            - Overly long username rejection and length validation
+            - Proper error response for username length violations
+            - Input length limits enforcement for username field
+            - Security measures for oversized username inputs
+        """
         long_username = "a" * 101  # Exceeds MAX_USERNAME_LENGTH
         response = self.client.post(
             "/login", data={"username": long_username, "password": "password123"}
@@ -1165,7 +1372,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_login_validation_password_too_long(self) -> None:
-        """Test login with overly long password."""
+        """Test login validation with excessively long password.
+
+        Verifies that the login validation properly rejects passwords
+        that exceed maximum length limits and provides appropriate errors.
+
+        Tests:
+            - Overly long password rejection and length validation
+            - Proper error response for password length violations
+            - Input length limits enforcement for password field
+            - Security measures for oversized password inputs
+        """
         long_password = "a" * 101  # Exceeds MAX_PASSWORD_LENGTH
         response = self.client.post(
             "/login", data={"username": "test@example.com", "password": long_password}
@@ -1196,7 +1413,17 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_login_validation_xss_prevention_password(self) -> None:
-        """Test XSS prevention in password field."""
+        """Test XSS attack prevention in password field validation.
+
+        Verifies that the login validation properly prevents XSS attacks
+        through password field inputs and sanitizes malicious content.
+
+        Tests:
+            - XSS attack prevention in password field inputs
+            - Malicious script injection detection and blocking
+            - Input sanitization for password field security
+            - Security validation against code injection attempts
+        """
         response = self.client.post(
             "/login",
             data={
@@ -1289,7 +1516,20 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     @patch("blinkapp.services.auth_service.handle_2fa_verification")
     def test_2fa_validation_key_too_long(self, mock_handle_2fa: Mock) -> None:
-        """Test 2FA with overly long verification key."""
+        """Test 2FA validation with excessively long verification key.
+
+        Verifies that the 2FA validation properly rejects verification keys
+        that exceed maximum length limits and provides appropriate errors.
+
+        Args:
+            mock_handle_2fa: Mock for 2FA handling function
+
+        Tests:
+            - Overly long 2FA key rejection and length validation
+            - Proper error response for verification key length violations
+            - Input length limits enforcement for 2FA verification
+            - Security measures for oversized verification key inputs
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
@@ -1311,6 +1551,9 @@ class TestAuthenticationFlows(FlaskTestCase):
 
         Verifies that the 2FA verification process completes successfully
         when provided with valid verification codes and proper session state.
+
+        Args:
+            mock_handle_2fa: Mock for 2FA verification handling service
 
         Tests:
             - Successful 2FA verification with valid codes
@@ -1337,6 +1580,9 @@ class TestAuthenticationFlows(FlaskTestCase):
         Verifies that the 2FA verification process properly handles
         and rejects invalid verification codes with appropriate error responses.
 
+        Args:
+            mock_handle_2fa: Mock for 2FA verification handling service
+
         Tests:
             - Invalid 2FA code rejection and error handling
             - Proper error response for incorrect verification codes
@@ -1355,7 +1601,20 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     @patch("blinkapp.services.auth_service.handle_2fa_verification")
     def test_2fa_authentication_error(self, mock_handle_2fa: Mock) -> None:
-        """Test 2FA with authentication error."""
+        """Test 2FA verification with authentication error scenarios.
+
+        Verifies that the 2FA verification process properly handles
+        authentication errors and provides appropriate error responses.
+
+        Args:
+            mock_handle_2fa: Mock for 2FA handling function
+
+        Tests:
+            - 2FA authentication error handling and response
+            - Proper error messaging for failed 2FA verification
+            - Authentication failure recovery and user feedback
+            - Security measures for invalid 2FA verification attempts
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
@@ -1371,7 +1630,20 @@ class TestAuthenticationFlows(FlaskTestCase):
 
     @patch("blinkapp.services.auth_service.handle_2fa_verification")
     def test_2fa_unexpected_error(self, mock_handle_2fa: Mock) -> None:
-        """Test 2FA with unexpected error."""
+        """Test 2FA with unexpected error handling and recovery.
+
+        Verifies that the 2FA verification process properly handles
+        unexpected errors and provides appropriate error responses.
+
+        Args:
+            mock_handle_2fa: Mock for 2FA verification handling service
+
+        Tests:
+            - Unexpected error handling during 2FA verification
+            - Graceful error recovery and user feedback
+            - Proper error response formatting for 2FA failures
+            - System stability during unexpected 2FA errors
+        """
         with get_session_transaction(self.client) as sess:
             sess["pending_2fa"] = True
 
@@ -1390,9 +1662,18 @@ class TestAuthenticationFlows(FlaskTestCase):
     def test_logout_success(self, mock_blink: Mock, mock_executor: Mock) -> None:
         """Test complete logout workflow with credential cleanup.
 
-        Why: Logout must properly clean up credentials and session state for security.
-        What: Verifies credential file deletion, session clearing, and executor cleanup.
-        How: Mocks file operations and services, validates cleanup sequence and redirects.
+        Verifies that the logout endpoint properly cleans up credentials,
+        session state, and resources when processing logout requests.
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+            mock_executor: Mock for thread pool executor service
+
+        Tests:
+            - POST request to logout endpoint
+            - Credential cleanup and session clearing
+            - Executor cleanup and resource management
+            - Proper redirect response after logout
         """
         # Mock executor and blink
         mock_executor.submit = Mock(spec=callable)
@@ -1402,12 +1683,32 @@ class TestAuthenticationFlows(FlaskTestCase):
         self.assertEqual(response.status_code, 302)  # Logout redirects
 
     def test_logout_get_method_not_allowed(self) -> None:
-        """Test that GET method is not allowed for logout."""
+        """Test that GET method is not allowed for logout endpoint.
+
+        Verifies that the logout endpoint properly restricts access
+        to POST methods only for security and proper workflow.
+
+        Tests:
+            - GET method restriction for logout endpoint
+            - Proper HTTP method validation and rejection
+            - Security enforcement for logout operations
+            - Method-based access control validation
+        """
         response = self.client.get("/logout")  # type: TestResponse
         self.assertEqual(response.status_code, 405)  # Method Not Allowed
 
     def test_session_management(self) -> None:
-        """Test session management during authentication flow."""
+        """Test session management during authentication flow.
+
+        Verifies that session data is properly managed throughout
+        the authentication process with correct state transitions.
+
+        Tests:
+            - Session state management during authentication
+            - Proper session data handling and transitions
+            - Authentication flow session consistency
+            - Session security and data integrity
+        """
         # Test that session is properly managed
         with get_session_transaction(self.client) as sess:
             sess["test_key"] = "test_value"
@@ -1428,7 +1729,17 @@ class TestAuthenticationHelpers(BaseTestCase):
         setup_test_globals()
 
     def test_authentication_error_class(self) -> None:
-        """Test AuthenticationError exception class."""
+        """Test AuthenticationError exception class functionality.
+
+        Verifies that the custom AuthenticationError exception
+        class works properly for authentication-related errors.
+
+        Tests:
+            - AuthenticationError exception creation and handling
+            - Proper error message handling and storage
+            - Exception class inheritance and behavior
+            - Authentication-specific error handling patterns
+        """
         from blinkapp.utils.errors import AuthenticationError
 
         error = AuthenticationError("Test auth error")
@@ -1436,7 +1747,17 @@ class TestAuthenticationHelpers(BaseTestCase):
         self.assertIsInstance(error, Exception)
 
     def test_cache_error_class(self) -> None:
-        """Test CacheError exception class."""
+        """Test CacheError exception class functionality.
+
+        Verifies that the custom CacheError exception class
+        works properly for cache-related operations and errors.
+
+        Tests:
+            - CacheError exception creation and handling
+            - Proper error message handling and storage
+            - Exception class inheritance and behavior
+            - Cache-specific error handling patterns
+        """
         from blinkapp.utils.errors import CacheError
 
         error = CacheError("Test cache error")
@@ -1448,41 +1769,101 @@ class TestAuthenticationValidation(BaseTestCase):
     """Test authentication input validation edge cases."""
 
     def test_validate_string_input_with_html_entities(self) -> None:
-        """Test validation with HTML entities."""
+        """Test validation with HTML entities and XSS prevention.
+
+        Verifies that string validation properly detects and rejects
+        HTML entities that could be used for XSS attacks.
+
+        Tests:
+            - HTML entity detection and validation
+            - XSS prevention through input validation
+            - Security validation for encoded HTML content
+            - Proper rejection of potentially malicious input
+        """
         html_input = "&lt;script&gt;alert('test')&lt;/script&gt;"
         with self.assertRaises(ValueError) as context:
             validate_string_input(html_input, 100, "test_field")
         self.assertIn("invalid characters", str(context.exception))
 
     def test_validate_string_input_with_unicode(self) -> None:
-        """Test validation with unicode characters."""
+        """Test validation with unicode characters and encoding.
+
+        Verifies that string validation properly handles unicode
+        characters and encoding scenarios in user input.
+
+        Tests:
+            - Unicode character validation and handling
+            - Proper encoding support for international characters
+            - Character set validation and acceptance
+            - Input validation for non-ASCII characters
+        """
         unicode_input = "test\u2603snowman"  # Contains snowman unicode
         # Unicode characters are allowed in the current validation
         result = validate_string_input(unicode_input, 100, "test_field")
         self.assertEqual(result, unicode_input)
 
     def test_validate_string_input_with_newlines(self) -> None:
-        """Test validation with newline characters."""
+        """Test string validation with newline character handling.
+
+        Verifies that string validation properly handles newline characters
+        in input strings and processes them according to validation rules.
+
+        Tests:
+            - Newline character handling in string validation
+            - Multi-line input processing and validation behavior
+            - String formatting preservation with newline characters
+            - Input sanitization for newline-containing strings
+        """
         newline_input = "test\nwith\nnewlines"
         # Newlines are allowed in the current validation
         result = validate_string_input(newline_input, 100, "test_field")
         self.assertEqual(result, newline_input)
 
     def test_validate_string_input_with_tabs(self) -> None:
-        """Test validation with tab characters."""
+        """Test string validation with tab character handling.
+
+        Verifies that string validation properly handles tab characters
+        in input strings and processes them according to validation rules.
+
+        Tests:
+            - Tab character handling in string validation
+            - Whitespace processing and validation behavior
+            - String formatting preservation with tab characters
+            - Input sanitization for tab-containing strings
+        """
         tab_input = "test\twith\ttabs"
         # Tabs are allowed in the current validation
         result = validate_string_input(tab_input, 100, "test_field")
         self.assertEqual(result, tab_input)
 
     def test_validate_string_input_normal_email(self) -> None:
-        """Test validation with normal email address."""
+        """Test string validation with normal email address format.
+
+        Verifies that string validation properly handles standard
+        email address formats and accepts valid email inputs.
+
+        Tests:
+            - Normal email address validation and acceptance
+            - Standard email format processing and validation
+            - Email input sanitization and format verification
+            - Valid email address handling in string validation
+        """
         email_input = "test@example.com"
         result = validate_string_input(email_input, 100, "email")
         self.assertEqual(result, "test@example.com")
 
     def test_validate_string_input_normal_password(self) -> None:
-        """Test validation with normal password."""
+        """Test string validation with normal password format.
+
+        Verifies that string validation properly handles standard
+        password formats and accepts valid password inputs.
+
+        Tests:
+            - Normal password validation and acceptance
+            - Standard password format processing and validation
+            - Password input sanitization and format verification
+            - Valid password handling in string validation
+        """
         password_input = "MySecurePassword123!"
         result = validate_string_input(password_input, 100, "password")
         self.assertEqual(result, "MySecurePassword123!")
@@ -1496,7 +1877,17 @@ class TestCacheOperations(BaseTestCase):
         self.cache = CameraThumbnailCache(maxsize=10)
 
     def test_cache_set_get(self) -> None:
-        """Test cache set and get operations."""
+        """Test cache set and get operations functionality.
+
+        Verifies that the cache system properly stores and retrieves
+        values using set and get operations.
+
+        Tests:
+            - Cache value storage and retrieval operations
+            - Data persistence and accuracy in cache operations
+            - Cache key-value pair management and access
+            - Cache operation consistency and reliability
+        """
         key = CameraId("key1")
         self.cache[key] = {"timestamp": 1234567890, "filename": "test.jpg"}
         result = self.cache.get(key)
@@ -1505,7 +1896,17 @@ class TestCacheOperations(BaseTestCase):
         self.assertEqual(result["filename"], "test.jpg")
 
     def test_cache_get_default(self) -> None:
-        """Test cache get with default value."""
+        """Test cache get operation with default value handling.
+
+        Verifies that the cache get operation properly returns
+        default values when requested keys are not found.
+
+        Tests:
+            - Cache get operation with default value specification
+            - Default value return when cache keys are missing
+            - Cache miss handling and fallback behavior
+            - Default value type preservation and accuracy
+        """
         key = CameraId("nonexistent")
         default_entry = {"timestamp": 0, "filename": "default.jpg"}
         result = self.cache.get(key, default_entry)
@@ -1513,7 +1914,17 @@ class TestCacheOperations(BaseTestCase):
         self.assertEqual(result["filename"], "default.jpg")
 
     def test_cache_contains(self) -> None:
-        """Test cache contains operation."""
+        """Test cache contains operation and membership checking.
+
+        Verifies that the cache properly supports membership testing
+        and contains operations for stored items.
+
+        Tests:
+            - Cache membership testing and contains operations
+            - Proper key existence checking in cache
+            - Cache item presence validation functionality
+            - Contains operation accuracy and reliability
+        """
         key1 = CameraId("key1")
         key2 = CameraId("key2")
         self.cache[key1] = {"timestamp": 1234567890, "filename": "test1.jpg"}
@@ -1521,7 +1932,17 @@ class TestCacheOperations(BaseTestCase):
         self.assertNotIn(key2, self.cache)
 
     def test_cache_pop(self) -> None:
-        """Test cache pop operation."""
+        """Test cache pop operation and item removal.
+
+        Verifies that the cache properly supports pop operations
+        for removing and retrieving items simultaneously.
+
+        Tests:
+            - Cache pop operation and item removal
+            - Proper item retrieval during pop operations
+            - Cache state management after pop operations
+            - Pop operation return value accuracy
+        """
         key = CameraId("key1")
         self.cache[key] = {"timestamp": 1234567890, "filename": "test.jpg"}
         result = self.cache.pop(key)
@@ -1530,7 +1951,17 @@ class TestCacheOperations(BaseTestCase):
         self.assertNotIn(key, self.cache)
 
     def test_cache_clear(self) -> None:
-        """Test cache clear operation."""
+        """Test cache clear operation and complete cleanup.
+
+        Verifies that the cache properly supports clear operations
+        for removing all stored items at once.
+
+        Tests:
+            - Cache clear operation and complete cleanup
+            - Proper removal of all cached items
+            - Cache state reset after clear operations
+            - Complete cache cleanup functionality
+        """
         key1 = CameraId("key1")
         key2 = CameraId("key2")
         self.cache[key1] = {"timestamp": 1234567890, "filename": "test1.jpg"}
@@ -1543,7 +1974,17 @@ class TestErrorHandling(BaseTestCase):
     """Test error handling mechanisms."""
 
     def test_error_context_manager(self) -> None:
-        """Test error context manager."""
+        """Test error context manager functionality and error handling.
+
+        Verifies that the error context manager properly handles
+        exceptions and provides appropriate error context.
+
+        Tests:
+            - Error context manager functionality and operation
+            - Proper exception handling and context provision
+            - Error context creation and management
+            - Context manager error handling patterns
+        """
         from blinkapp.utils.decorators import error_context
         from blinkapp.utils.errors import BlinkError
 
@@ -1552,7 +1993,17 @@ class TestErrorHandling(BaseTestCase):
                 raise ValueError("Test error")
 
     def test_safe_execute_failure(self) -> None:
-        """Test safe_execute with failing function."""
+        """Test safe_execute with failing function and error handling.
+
+        Verifies that the safe_execute decorator properly handles
+        function failures and provides appropriate error responses.
+
+        Tests:
+            - Safe execution with failing function handling
+            - Proper error handling and response generation
+            - Function failure recovery and error reporting
+            - Safe execution decorator error management
+        """
         from blinkapp.utils.decorators import safe_execute
 
         def fail_func() -> None:
@@ -1566,7 +2017,17 @@ class TestConfig(BaseTestCase):
     """Test configuration constants."""
 
     def test_config_constants_exist(self) -> None:
-        """Test that all expected config constants exist."""
+        """Test that all expected config constants exist and are defined.
+
+        Verifies that all required configuration constants are properly
+        defined and available for application use.
+
+        Tests:
+            - Configuration constants existence and availability
+            - Proper constant definition and accessibility
+            - Required configuration values presence validation
+            - Configuration completeness and integrity checking
+        """
         required_constants = [
             "CLIPS_CACHE_SIZE",
             "THUMBNAIL_CACHE_SIZE",
@@ -1583,19 +2044,49 @@ class TestConfig(BaseTestCase):
             self.assertIsNotNone(getattr(Config, constant))
 
     def test_config_values_reasonable(self) -> None:
-        """Test that config values are reasonable."""
+        """Test that config values are reasonable and within expected ranges.
+
+        Verifies that configuration values are set to reasonable
+        values that make sense for application operation.
+
+        Tests:
+            - Configuration values reasonableness and validity
+            - Proper value ranges for configuration settings
+            - Configuration value sanity checking
+            - Application configuration integrity validation
+        """
         self.assertGreater(Config.CLIPS_CACHE_SIZE, 0)
         self.assertGreater(Config.HTTP_TIMEOUT, 0)
         self.assertGreater(Config.MAX_USERNAME_LENGTH, 10)
         self.assertIsInstance(Config.DEFAULT_SYSTEM_NAME, str)
 
     def test_config_filename_constants(self) -> None:
-        """Test filename constants."""
+        """Test filename constants definition and validity.
+
+        Verifies that filename constants are properly defined
+        and contain valid filename patterns for application use.
+
+        Tests:
+            - Filename constants definition and availability
+            - Proper filename pattern validation
+            - Configuration filename constant integrity
+            - File naming convention consistency checking
+        """
         self.assertTrue(hasattr(Config, "CREDENTIALS_FILENAME"))
         self.assertTrue(hasattr(Config, "SETTINGS_FILENAME"))
 
     def test_config_regex_patterns(self) -> None:
-        """Test Config regex patterns work correctly."""
+        """Test Config regex patterns work correctly and validate input.
+
+        Verifies that configuration regex patterns are properly
+        defined and work correctly for input validation.
+
+        Tests:
+            - Configuration regex patterns functionality
+            - Proper pattern matching and validation
+            - Regex pattern correctness and effectiveness
+            - Input validation pattern reliability
+        """
         import re
 
         from blinkapp.config import Config
@@ -1618,7 +2109,17 @@ class TestConfig(BaseTestCase):
         self.assertTrue(hasattr(Config, "THUMBNAILS_SUBDIR"))
 
     def test_config_http_constants(self) -> None:
-        """Test HTTP status constants."""
+        """Test HTTP status code constants definition and accessibility.
+
+        Verifies that the configuration properly defines HTTP status
+        code constants and makes them accessible throughout the application.
+
+        Tests:
+            - HTTP status code constant definition and values
+            - Constant accessibility and import functionality
+            - Status code accuracy and standard compliance
+            - Configuration constant organization and structure
+        """
         from blinkapp.config import Config
 
         if hasattr(Config, "HTTP_STATUS_OK"):
@@ -1667,7 +2168,21 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_get_systems_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test successful get_systems call."""
+        """Test successful get_systems call.
+
+        Verifies that the get_systems function returns properly formatted
+        system data when Blink service is available and configured.
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Successful systems retrieval from Blink API
+            - Proper system data formatting and structure
+            - Available sync modules in response
+            - JSON response format validation
+        """
         # Mock blink object with sync modules
         mock_sync = create_mock_sync(network_id=12345, armed=True, online=True)
 
@@ -1694,7 +2209,23 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_get_devices_no_network(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_devices with invalid network ID."""
+        """Test get_devices with invalid network ID.
+
+        Verifies that the get_devices function properly handles requests
+        for non-existent network IDs and returns appropriate error responses.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Request for non-existent network ID
+            - Proper error handling and response format
+            - Network validation and error messages
+            - API error response structure
+        """
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -1709,7 +2240,23 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_arm_system_invalid_network(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test arm_system with invalid network ID."""
+        """Test arm_system with invalid network ID.
+
+        Verifies that the arm_system function properly handles requests
+        for non-existent network IDs and returns appropriate error responses.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Request to arm non-existent network
+            - Proper 404 error response for invalid network
+            - Network validation and error handling
+            - API error response format
+        """
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -1724,7 +2271,23 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_arm_system_missing_data(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test arm_system with missing armed parameter."""
+        """Test arm_system with missing armed parameter.
+
+        Verifies that the arm_system function properly validates request
+        data and returns appropriate errors when required parameters are missing.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Request with missing armed parameter
+            - Proper 400 error response for invalid data
+            - Request validation and error handling
+            - Required parameter enforcement
+        """
         mock_network = create_mock_sync(network_id=12345)
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
@@ -1741,7 +2304,23 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_get_camera_thumbnail_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_camera_thumbnail with invalid camera ID."""
+        """Test get_camera_thumbnail with invalid camera ID handling.
+
+        Verifies that camera thumbnail retrieval properly handles
+        invalid camera IDs and returns appropriate error responses.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Invalid camera ID handling in thumbnail retrieval
+            - Proper error response for non-existent cameras
+            - Camera thumbnail error handling and recovery
+            - Invalid camera ID validation and rejection
+        """
         # Mock blink instance
 
         mock_blink_instance = create_mock_blink_instance()
@@ -1769,7 +2348,17 @@ class TestAPIEndpoints(FlaskTestCase):
 
     @with_blink_auth
     def test_get_settings_endpoint(self) -> None:
-        """Test get_settings endpoint."""
+        """Test get_settings endpoint functionality and response.
+
+        Verifies that the settings endpoint properly retrieves
+        and returns application settings data.
+
+        Tests:
+            - Settings endpoint functionality and operation
+            - Proper settings data retrieval and response
+            - Settings endpoint response format validation
+            - Application settings access and management
+        """
         with patch("pathlib.Path.exists", return_value=False):
             response = self.client.get("/api/settings")  # type: TestResponse
             self.assertEqual(response.status_code, 200)
@@ -1781,7 +2370,17 @@ class TestAPIEndpoints(FlaskTestCase):
 
     @with_blink_auth
     def test_save_settings_missing_data(self) -> None:
-        """Test save_settings with missing data."""
+        """Test save_settings with missing data handling and validation.
+
+        Verifies that the save settings endpoint properly handles
+        requests with missing or incomplete data.
+
+        Tests:
+            - Missing data handling in save settings endpoint
+            - Proper validation and error response for incomplete data
+            - Settings save error handling and recovery
+            - Data validation and completeness checking
+        """
         response = self.client.put("/api/settings", json={})  # type: TestResponse
         # This should return 400 for missing required fields, but app may accept empty settings
         self.assertIn(
@@ -1790,7 +2389,17 @@ class TestAPIEndpoints(FlaskTestCase):
 
     @with_blink_auth
     def test_clear_cache_success(self) -> None:
-        """Test successful cache clearing."""
+        """Test successful cache clearing operation and validation.
+
+        Verifies that the cache clearing operation successfully
+        removes cached data and resets cache state.
+
+        Tests:
+            - Successful cache clearing operation and execution
+            - Cache state reset and data removal validation
+            - Cache clearing confirmation and status reporting
+            - Post-clearing cache state verification and accuracy
+        """
         with patch("blinkapp.connexion_handlers.admin.clear_all_caches") as mock_clear:
             mock_clear.return_value = {"success": True, "data": {"cleared": True}}
 
@@ -1803,7 +2412,17 @@ class TestAPIEndpoints(FlaskTestCase):
     """Test cache management functions."""
 
     def test_clear_all_caches_function(self) -> None:
-        """Test clear_all_caches function exists and works."""
+        """Test clear_all_caches function existence and functionality.
+
+        Verifies that the clear_all_caches function exists and
+        properly clears all cache instances in the application.
+
+        Tests:
+            - clear_all_caches function existence and accessibility
+            - Comprehensive cache clearing across all cache types
+            - Function execution and cache state reset validation
+            - All cache instance clearing and memory cleanup
+        """
         from blinkapp.services.cache_service import clear_all_caches
         from tests.test_base import create_mock_camera_cache, create_mock_clips_cache
 
@@ -1830,7 +2449,24 @@ class TestAPIEndpoints(FlaskTestCase):
     def test_initialize_cache_paths(
         self, mock_app: Mock, mock_path: Mock, mock_mkdir: Mock
     ) -> None:
-        """Test cache path initialization."""
+        """Test cache path initialization.
+
+        Verifies that cache directory paths are properly initialized
+        and created during application startup.
+
+
+
+        Args:
+            mock_app: Mock for Flask application instance
+            mock_path: Mock for Path object
+            mock_mkdir: Mock for directory creation
+
+        Tests:
+            - Cache path initialization from app config
+            - Directory creation with proper permissions
+            - Path construction and validation
+            - Mock path operations and setup
+        """
         from tests.test_base import create_mock_path
 
         # Setup mock app config
@@ -1859,7 +2495,17 @@ class TestAPIEndpoints(FlaskTestCase):
         self.assertTrue(success)
 
     def test_config_class_attributes(self) -> None:
-        """Test Config class has expected attributes."""
+        """Test Config class attribute definition and accessibility.
+
+        Verifies that the Config class properly defines all expected
+        attributes and makes them accessible for application configuration.
+
+        Tests:
+            - Config class attribute definition and presence
+            - Attribute accessibility and value validation
+            - Configuration parameter completeness and accuracy
+            - Class structure and attribute organization
+        """
         from blinkapp import Config
 
         # Test that Config class has expected attributes
@@ -1881,7 +2527,23 @@ class TestClipManagement(BaseTestCase):
     def test_get_clips_no_storage_param(
         self, mock_blink: Mock, mock_connection_func: Mock
     ) -> None:
-        """Test get_clips without storage parameter defaults to cloud."""
+        """Test get_clips without storage parameter defaults to cloud.
+
+        Verifies that when no storage parameter is provided, the clips
+        endpoint defaults to retrieving cloud clips.
+
+
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+            mock_connection_func: Mock for connection function
+
+        Tests:
+            - Default behavior when storage parameter is missing
+            - Cloud clips retrieval as default option
+            - Proper API response with default storage type
+            - Connection and service initialization
+        """
         # Set up mock blink instance
         mock_blink.return_value = create_mock_blink_instance()
 
@@ -1903,7 +2565,23 @@ class TestClipManagement(BaseTestCase):
     def test_get_clips_invalid_storage(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_clips with invalid storage parameter."""
+        """Test get_clips with invalid storage parameter.
+
+        Verifies that the clips endpoint properly validates storage
+        parameters and returns appropriate errors for invalid values.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Invalid storage parameter validation
+            - Proper 400 error response for invalid storage type
+            - Parameter validation and error handling
+            - API error response format
+        """
         response = self.client.get("/api/clips?storage=invalid")  # type: TestResponse
         # Should return 400 for invalid storage type
         self.assertEqual(response.status_code, 400)
@@ -1917,7 +2595,23 @@ class TestStreamingEndpoints(FlaskTestCase):
     def test_get_liveview_no_camera(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_liveview with invalid camera ID."""
+        """Test get_liveview with invalid camera ID.
+
+        Verifies that the liveview endpoint properly handles requests
+        for non-existent cameras and returns appropriate error responses.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Request for non-existent camera ID
+            - Proper error handling for invalid camera
+            - Camera validation and error responses
+            - API error response format
+        """
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -1937,7 +2631,23 @@ class TestThumbnailManagement(FlaskTestCase):
     def test_get_camera_thumbnail_timestamp_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_camera_thumbnail_timestamp endpoint."""
+        """Test get_camera_thumbnail_timestamp endpoint.
+
+        Verifies that the thumbnail timestamp endpoint properly extracts
+        and returns timestamp information from camera thumbnail URLs.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Thumbnail timestamp extraction from URL
+            - Successful timestamp retrieval and response
+            - Camera thumbnail URL processing
+            - API response format for timestamps
+        """
         mock_camera = create_mock_camera(
             camera_id=12345, thumbnail="https://example.com/thumb.jpg?ts=1234567890"
         )
@@ -1969,9 +2679,20 @@ class TestThumbnailManagement(FlaskTestCase):
     ) -> None:
         """Test camera thumbnail refresh with snap_picture API call.
 
-        Why: Thumbnails become stale and users need to trigger fresh captures.
-        What: Verifies thumbnail refresh triggers camera snap and cache update.
-        How: Mocks snap_picture API call and validates cache invalidation workflow.
+        Verifies that thumbnail refresh properly triggers camera snap
+        and updates the cache with fresh thumbnail data.
+
+
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+            mock_connection: Mock for Blink connection service
+
+        Tests:
+            - Camera thumbnail refresh functionality
+            - snap_picture API call execution
+            - Cache invalidation and update workflow
+            - Successful refresh response handling
         """
         # Use helpers to create mock objects
         mock_sync = create_mock_sync(
@@ -2030,9 +2751,21 @@ class TestClipProcessing(BaseTestCase):
     ) -> None:
         """Test local clips retrieval from USB storage with manifest processing.
 
-        Why: Local clips are stored on USB drives and require manifest file parsing.
-        What: Verifies complete local storage workflow from sync module to clip listing.
-        How: Mocks sync module with local storage and validates manifest processing.
+        Verifies complete local storage workflow from sync module to
+        clip listing with proper manifest file processing.
+
+
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_ensure_connection: Mock for connection initialization
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Local clips retrieval from USB storage
+            - Sync module local storage functionality
+            - Manifest file processing and parsing
+            - Local clip listing and response format
         """
         from datetime import datetime
 
@@ -2077,9 +2810,22 @@ class TestClipProcessing(BaseTestCase):
     ) -> None:
         """Test clip download when requested clip doesn't exist in metadata.
 
-        Why: Users may request clips that have been deleted or never existed.
-        What: Verifies proper 404 error handling for missing clip requests.
-        How: Mocks empty video metadata and validates error response format.
+        Verifies proper error handling when users request clips that
+        have been deleted or never existed in the system.
+
+
+
+        Args:
+            mock_get_blink: Mock for Blink instance retrieval
+            mock_connection: Mock for Blink connection service
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_check_blink: Mock for Blink availability check
+
+        Tests:
+            - Clip download for non-existent clip ID
+            - Proper 404 error response for missing clips
+            - Error handling for deleted or invalid clips
+            - API error response format validation
         """
         # Mock blink availability check to pass
         mock_check_blink.return_value = None
@@ -2118,7 +2864,17 @@ class TestAsyncOperations(BaseTestCase):
         self.client = app.test_client()
 
     def test_async_functions_exist(self) -> None:
-        """Test that async functions exist and are callable."""
+        """Test that async functions exist and are callable.
+
+        Verifies that all required asynchronous functions are properly
+        defined and can be called for async operations.
+
+        Tests:
+            - Async function existence and definition validation
+            - Function callability and async operation support
+            - Async function signature and parameter validation
+            - Asynchronous operation capability and functionality
+        """
         import inspect
 
         from blinkapp.services.auth_service import initialize_blink, verify_2fa_and_save
@@ -2135,9 +2891,21 @@ class TestAsyncOperations(BaseTestCase):
     ) -> None:
         """Test system refresh endpoint with background task execution.
 
-        Why: System refresh updates camera states and requires background processing.
-        What: Verifies proper task submission to executor and response handling.
-        How: Mocks executor service and validates async task submission workflow.
+        Verifies that system refresh properly updates camera states
+        and handles background processing through the executor service.
+
+
+
+        Args:
+            mock_connection_init: Mock for connection initialization
+            mock_blink: Mock for Blink service initialization
+            mock_executor: Mock for thread pool executor
+
+        Tests:
+            - System refresh endpoint functionality
+            - Background task submission to executor
+            - Async task execution and response handling
+            - System state update workflow
         """
         # Mock the executor and blink refresh
         mock_executor.submit.return_value = Mock(spec=Future)
@@ -2177,7 +2945,17 @@ class TestFileOperations(BaseTestCase):
         self.client = app.test_client()
 
     def test_camera_id_class(self) -> None:
-        """Test CameraId class functionality."""
+        """Test CameraId class functionality and validation.
+
+        Verifies that the CameraId class properly handles camera
+        identifier creation, validation, and operations.
+
+        Tests:
+            - CameraId class instantiation and object creation
+            - Camera identifier validation and format checking
+            - Class method functionality and operation support
+            - Camera ID object behavior and string representation
+        """
         from blinkapp.models.ids import CameraId
 
         # Test CameraId creation and usage
@@ -2188,7 +2966,20 @@ class TestFileOperations(BaseTestCase):
 
     @patch("pathlib.Path.mkdir")
     def test_cache_directory_creation(self, mock_mkdir: Mock) -> None:
-        """Test cache directory creation."""
+        """Test cache directory creation functionality.
+
+        Verifies that the cache system properly creates cache
+        directories when they don't exist.
+
+        Args:
+            mock_mkdir: Mock for directory creation operations
+
+        Tests:
+            - Cache directory creation when directories are missing
+            - Directory path validation and creation logic
+            - File system operation handling for cache setup
+            - Directory permission and access validation
+        """
         from blinkapp.services.lifecycle_service import startup
 
         # Mock other startup operations to avoid side effects
@@ -2204,7 +2995,17 @@ class TestFileOperations(BaseTestCase):
             self.assertTrue(mock_mkdir.called)
 
     def test_cache_cleanup_operations(self) -> None:
-        """Test cache cleanup operations."""
+        """Test cache cleanup operations and maintenance functionality.
+
+        Verifies that the cache system properly performs cleanup
+        operations to maintain cache size and performance.
+
+        Tests:
+            - Cache cleanup operation execution and effectiveness
+            - Cache size management and memory optimization
+            - Expired cache entry removal and maintenance
+            - Cache performance optimization through cleanup
+        """
         with patch(
             "blinkapp.services.cache_service.clear_all_caches"
         ) as mock_clear_caches:
@@ -2229,7 +3030,17 @@ class TestErrorScenarios(BaseTestCase):
 
     @with_blink_auth
     def test_invalid_json_requests(self) -> None:
-        """Test endpoints with invalid JSON."""
+        """Test API endpoint handling of invalid JSON requests.
+
+        Verifies that API endpoints properly handle and reject
+        requests with malformed or invalid JSON data.
+
+        Tests:
+            - Invalid JSON request detection and rejection
+            - Malformed JSON handling and error responses
+            - JSON parsing error handling and user feedback
+            - Request validation and format compliance checking
+        """
         endpoints = [
             ("/api/systems/12345", "PUT"),
             ("/api/settings", "PUT"),
@@ -2254,7 +3065,23 @@ class TestErrorScenarios(BaseTestCase):
     def test_camera_operations_with_missing_camera(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test camera operations with missing camera."""
+        """Test camera operations with missing camera.
+
+        Verifies that camera operations properly handle requests for
+        non-existent cameras and return appropriate error responses.
+
+
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Camera operations with missing camera ID
+            - Proper error handling for non-existent cameras
+            - Camera validation and error responses
+            - API error response format for missing cameras
+        """
         mock_blink_instance = create_mock_blink_instance()
 
         mock_blink_instance.sync = {}  # Empty sync to ensure no cameras found
@@ -2289,7 +3116,17 @@ class TestConfigurationEdgeCases(BaseTestCase):
         self.client = app.test_client()
 
     def test_config_class_completeness(self) -> None:
-        """Test Config class has expected attributes."""
+        """Test Config class completeness and attribute coverage.
+
+        Verifies that the Config class contains all expected
+        attributes and configuration parameters for the application.
+
+        Tests:
+            - Config class attribute completeness and coverage
+            - Required configuration parameter presence and validation
+            - Configuration class structure and organization
+            - Missing configuration detection and validation
+        """
         from blinkapp import Config
 
         # Test that Config class exists and has some expected attributes
@@ -2298,14 +3135,34 @@ class TestConfigurationEdgeCases(BaseTestCase):
 
     @with_blink_auth
     def test_settings_with_none_file(self) -> None:
-        """Test settings operations when SETTINGS_FILE is None."""
+        """Test settings operations when SETTINGS_FILE is None.
+
+        Verifies that the settings system properly handles cases
+        where the SETTINGS_FILE configuration is set to None.
+
+        Tests:
+            - Settings operation handling when SETTINGS_FILE is None
+            - Fallback behavior for missing settings file configuration
+            - Settings system resilience with null file paths
+            - Default settings behavior when file path is unavailable
+        """
         # This should be handled gracefully
         response = self.client.get("/api/settings")  # type: TestResponse
         # Should either work with defaults or return an error
         self.assertEqual(response.status_code, 200)  # Settings work with defaults
 
     def test_create_device_data_function(self) -> None:
-        """Test create_device_data utility function."""
+        """Test create_device_data utility function.
+
+        Verifies that the create_device_data utility function properly
+        formats device information for API responses.
+
+        Tests:
+            - create_device_data function import and availability
+            - Device data formatting functionality
+            - Utility function behavior and output
+            - Device information processing
+        """
         from blinkapp.services.device_service import create_device_data
 
         mock_camera = create_mock_camera(
@@ -2336,7 +3193,23 @@ class TestStreamingOperations(BaseTestCase):
     def test_get_liveview_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test successful live view request."""
+        """Test successful live view request.
+
+        Verifies that live view requests are properly handled when
+        cameras are available and streaming can be initiated.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Successful live view stream initiation
+            - Camera availability and stream setup
+            - Live streaming endpoint functionality
+            - Proper response format for successful streams
+        """
         mock_camera = create_mock_camera(camera_id=12345)
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
 
@@ -2365,7 +3238,23 @@ class TestAdvancedEndpoints(BaseTestCase):
     def test_get_clip_thumbnail_check_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test clip thumbnail check endpoint."""
+        """Test clip thumbnail check endpoint.
+
+        Verifies that the clip thumbnail check endpoint properly
+        validates thumbnail availability and returns appropriate status.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Clip thumbnail availability checking
+            - Thumbnail existence validation
+            - Proper response format for thumbnail checks
+            - Cache integration for thumbnail status
+        """
         # Set up mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -2399,7 +3288,23 @@ class TestAdvancedEndpoints(BaseTestCase):
     def test_get_clip_thumbnail_check_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test clip thumbnail check when not found."""
+        """Test clip thumbnail check when not found.
+
+        Verifies that the clip thumbnail check endpoint properly
+        handles cases where thumbnails don't exist or clips are missing.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Clip thumbnail check for non-existent thumbnails
+            - Proper response format when thumbnails not found
+            - Cache miss handling for thumbnail checks
+            - Error handling for missing clips
+        """
         # Set up mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -2416,7 +3321,17 @@ class TestAdvancedEndpoints(BaseTestCase):
             self.assertFalse(data["data"]["available"])
 
     def test_index_route(self) -> None:
-        """Test the main index route."""
+        """Test the main index route.
+
+        Verifies that the main index route properly handles requests
+        and redirects unauthenticated users to the login page.
+
+        Tests:
+            - GET request to root path (/)
+            - Redirect response for unauthenticated users
+            - Proper authentication flow enforcement
+            - Index route accessibility and behavior
+        """
         response = self.client.get("/")  # type: TestResponse
         # Should redirect to login if not authenticated
         self.assertEqual(response.status_code, 302)
@@ -2426,7 +3341,23 @@ class TestAdvancedEndpoints(BaseTestCase):
     def test_get_clips_invalid_storage_type(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_clips with invalid storage type."""
+        """Test get_clips with invalid storage type.
+
+        Verifies that the get_clips endpoint properly validates storage
+        type parameters and returns appropriate errors for invalid values.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Request with invalid storage type parameter
+            - Proper validation error response
+            - Storage type parameter validation
+            - API error handling for invalid parameters
+        """
         response = self.client.get("/api/clips?storage=invalid")  # type: TestResponse
         self.assertEqual(response.status_code, 400)
 
@@ -2438,7 +3369,23 @@ class TestAdvancedEndpoints(BaseTestCase):
     def test_get_clips_missing_storage_param(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_clips without storage parameter."""
+        """Test get_clips without storage parameter.
+
+        Verifies that the get_clips endpoint properly handles requests
+        without the required storage parameter and returns appropriate errors.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Request without storage parameter
+            - Proper validation error response
+            - Required parameter enforcement
+            - API error handling for missing parameters
+        """
         # Set up mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -2463,14 +3410,34 @@ class TestLoggingAndSetup(BaseTestCase):
     """Test logging setup and configuration functions."""
 
     def test_setup_logging_function_exists(self) -> None:
-        """Test that setup_logging function exists."""
+        """Test that setup_logging function exists.
+
+        Verifies that the setup_logging function is properly imported
+        and available for configuring application logging.
+
+        Tests:
+            - setup_logging function import from logging_config
+            - Function existence and availability
+            - Logging configuration module accessibility
+            - Function callable verification
+        """
         from blinkapp.utils.logging_config import setup_logging
 
         # Test function exists and is callable
         self.assertTrue(callable(setup_logging))
 
     def test_setup_logging_execution(self) -> None:
-        """Test setup_logging can be executed."""
+        """Test setup_logging can be executed.
+
+        Verifies that the setup_logging function can be executed
+        without errors and properly configures application logging.
+
+        Tests:
+            - setup_logging function execution without errors
+            - Logging configuration initialization
+            - Function execution success
+            - Error-free logging setup
+        """
         from blinkapp.utils.logging_config import setup_logging
 
         with patch("logging.getLogger") as mock_get_logger:
@@ -2499,7 +3466,17 @@ class TestDataTypes(BaseTestCase):
     """Test custom data types and classes."""
 
     def test_clip_id_types(self) -> None:
-        """Test ClipId type functionality."""
+        """Test ClipId type functionality.
+
+        Verifies that ClipId types work correctly for both cloud
+        and local clip identification and validation.
+
+        Tests:
+            - ClipId type creation and validation
+            - Cloud and local clip ID differentiation
+            - Type functionality and behavior
+            - ID type system integration
+        """
         from blinkapp.models.ids import ClipId
 
         # Test ClipId creation methods
@@ -2507,7 +3484,17 @@ class TestDataTypes(BaseTestCase):
         self.assertIsInstance(local_id, ClipId)
 
     def test_camera_id_functionality(self) -> None:
-        """Test CameraId functionality."""
+        """Test CameraId functionality.
+
+        Verifies that CameraId types work correctly for camera
+        identification and validation throughout the application.
+
+        Tests:
+            - CameraId type creation and validation
+            - Camera identifier format validation
+            - Type functionality and behavior
+            - Camera ID system integration
+        """
         from blinkapp.models.ids import CameraId
 
         # Test basic functionality
@@ -2522,7 +3509,17 @@ class TestErrorContextManager(BaseTestCase):
     """Test the error_context context manager."""
 
     def test_error_context_success(self) -> None:
-        """Test error_context with successful operation."""
+        """Test error_context with successful operation.
+
+        Verifies that the error_context context manager properly
+        handles successful operations without interfering with results.
+
+        Tests:
+            - error_context with successful operation
+            - Context manager success path handling
+            - Result preservation through context
+            - No interference with successful execution
+        """
         from blinkapp.utils.decorators import error_context
 
         with error_context("test operation"):
@@ -2532,7 +3529,17 @@ class TestErrorContextManager(BaseTestCase):
         self.assertEqual(result, "success")
 
     def test_error_context_with_exception(self) -> None:
-        """Test error_context with exception."""
+        """Test error_context with exception.
+
+        Verifies that the error_context context manager properly
+        handles exceptions and provides appropriate error handling.
+
+        Tests:
+            - error_context with exception handling
+            - Context manager exception path handling
+            - Proper exception propagation
+            - Error context management functionality
+        """
         from blinkapp.utils.decorators import error_context
         from blinkapp.utils.errors import BlinkError
 
@@ -2550,13 +3557,33 @@ class TestTemplateRoutes(BaseTestCase):
         self.client = app.test_client()
 
     def test_index_template_rendering(self) -> None:
-        """Test index template redirects when not authenticated."""
+        """Test index template redirects when not authenticated.
+
+        Verifies that the index template properly handles unauthenticated
+        users by redirecting them to the login page.
+
+        Tests:
+            - Index template rendering for unauthenticated users
+            - Proper redirect response to login page
+            - Authentication flow enforcement
+            - Template rendering behavior
+        """
         response = self.client.get("/")  # type: TestResponse
         # Should redirect to login when not authenticated
         self.assertEqual(response.status_code, 302)
 
     def test_static_file_serving(self) -> None:
-        """Test that static files can be served."""
+        """Test that static files can be served.
+
+        Verifies that the Flask application properly serves static
+        files and handles static file requests correctly.
+
+        Tests:
+            - Static file serving functionality
+            - Static file request handling
+            - Proper static file response
+            - Static file accessibility
+        """
         # Test a common static file path
         response = self.client.get("/static/nonexistent.css")  # type: TestResponse
         # Should return 404 for non-existent file, but route should exist
@@ -2582,7 +3609,23 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
     def test_update_camera_thumbnail_race_condition(
         self, mock_logger: Mock, mock_executor: Mock, mock_cache: Mock
     ) -> None:
-        """Test thumbnail update with race condition handling."""
+        """Test thumbnail update with race condition handling.
+
+        Verifies that thumbnail updates properly handle race conditions
+        and prevent concurrent updates from interfering with each other.
+
+
+
+        Args:
+            mock_cache: Mock for camera thumbnail cache
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Race condition detection in thumbnail updates
+            - Concurrent update prevention
+            - Proper race condition handling logic
+            - Thread-safe thumbnail update operations
+        """
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -2614,7 +3657,23 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         mock_cache: Mock,
         mock_requests_get: Mock,
     ) -> None:
-        """Test thumbnail cache file cleanup operations."""
+        """Test thumbnail cache file cleanup operations.
+
+        Verifies that thumbnail cache file cleanup properly removes
+        old files and manages cache storage efficiently.
+
+
+
+        Args:
+            mock_cache: Mock for camera thumbnail cache
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Thumbnail cache file cleanup operations
+            - Old file removal and cleanup logic
+            - Cache storage management
+            - File system cleanup operations
+        """
         # Mock requests.get response
         import requests
 
@@ -2688,7 +3747,23 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
     def test_get_camera_thumbnail_with_cache_miss(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test camera thumbnail endpoint with cache miss."""
+        """Test camera thumbnail endpoint with cache miss.
+
+        Verifies that the camera thumbnail endpoint properly handles
+        cache misses and retrieves thumbnails from the Blink API.
+
+
+
+        Args:
+            mock_cache: Mock for camera thumbnail cache
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Camera thumbnail endpoint with cache miss
+            - Thumbnail retrieval from Blink API
+            - Cache miss handling and fallback logic
+            - Proper thumbnail response generation
+        """
         mock_camera = create_mock_camera(
             camera_id=12345, thumbnail="https://example.com/thumb.jpg?ts=1234567890"
         )
@@ -2731,7 +3806,23 @@ class TestClipDownloadOperations(BaseTestCase):
     def test_download_cloud_clip_success(
         self, mock_connection_func: Mock, mock_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test successful cloud clip download."""
+        """Test successful cloud clip download.
+
+        Verifies that cloud clip downloads work correctly when all
+        services are available and the clip exists in cloud storage.
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Successful cloud clip download process
+            - Clip metadata retrieval and validation
+            - Download service integration
+            - Proper response generation for downloads
+        """
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
 
@@ -2794,7 +3885,17 @@ class TestClipDownloadOperations(BaseTestCase):
     def test_download_clip_not_found_in_metadata(
         self, mock_connection: Mock, mock_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test downloading clip not found in metadata."""
+        """Test downloading clip not found in metadata.
+
+        Verifies that clip download requests properly handle cases
+        where the requested clip doesn't exist in the metadata.
+
+        Tests:
+            - Clip download for non-existent clip in metadata
+            - Proper error handling for missing clip metadata
+            - API response format for missing clips
+            - Metadata validation and error responses
+        """
         mock_blink_instance = create_mock_blink_instance()
         mock_get_instance.return_value = mock_blink_instance
 
@@ -2827,7 +3928,17 @@ class TestClipDownloadOperations(BaseTestCase):
     def test_download_clip_cached_file_exists(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test downloading clip when cached file exists."""
+        """Test downloading clip when cached file exists.
+
+        Verifies that clip downloads properly utilize cached files
+        when they exist, avoiding unnecessary re-downloads.
+
+        Tests:
+            - Clip download with existing cached file
+            - Cache hit optimization for clip downloads
+            - File serving from cache directory
+            - Performance optimization through caching
+        """
         import tempfile
         from pathlib import Path
 
@@ -2859,7 +3970,17 @@ class TestClipDownloadOperations(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.cache_service.clips_cache")
     def test_process_clip_thumbnail_generation(self, mock_cache: Mock) -> None:
-        """Test clip processing for thumbnail generation."""
+        """Test clip processing for thumbnail generation.
+
+        Verifies that clip processing properly generates thumbnails
+        for cached clips and handles the thumbnail creation workflow.
+
+        Tests:
+            - Clip processing for thumbnail generation
+            - Thumbnail creation from video clips
+            - Cache integration for clip processing
+            - Thumbnail generation workflow
+        """
         # Mock cached clip
         mock_cache.get.return_value = {
             "file_path": "/tmp/test_clip.mp4",
@@ -2887,7 +4008,17 @@ class TestLocalClipOperations(BaseTestCase):
         self.client = app.test_client()
 
     def test_get_local_clips_with_manifest(self) -> None:
-        """Test getting local clips with manifest data."""
+        """Test getting local clips with manifest data.
+
+        Verifies that local clips are properly retrieved and processed
+        when manifest data is available from USB storage.
+
+        Tests:
+            - Local clips retrieval with manifest data
+            - Manifest file processing and parsing
+            - USB storage integration and clip listing
+            - Local storage workflow with manifest
+        """
         from datetime import datetime
 
         # Mock the blink service functions that clips handler imports
@@ -2933,7 +4064,17 @@ class TestLocalClipOperations(BaseTestCase):
             self.assertIsInstance(data["data"]["clips"], list)
 
     def test_get_local_clips_no_manifest(self) -> None:
-        """Test getting local clips when manifest not ready."""
+        """Test getting local clips when manifest not ready.
+
+        Verifies that local clips requests are properly handled when
+        the manifest file is not ready or available on USB storage.
+
+        Tests:
+            - Local clips retrieval without manifest data
+            - Manifest unavailability handling
+            - USB storage without ready manifest
+            - Error handling for missing manifest
+        """
         # Mock the blink service functions that clips handler imports
         with (
             patch(
@@ -2964,7 +4105,17 @@ class TestLocalClipOperations(BaseTestCase):
             self.assertEqual(data["data"]["clips"], [])
 
     def test_get_local_clips_sync_error(self) -> None:
-        """Test getting local clips with sync error."""
+        """Test getting local clips with sync error.
+
+        Verifies that local clips requests properly handle sync module
+        errors and return appropriate error responses.
+
+        Tests:
+            - Local clips retrieval with sync module errors
+            - Sync module error handling and responses
+            - Error recovery for sync module failures
+            - API error response format for sync errors
+        """
         # Mock the blink service functions that clips handler imports
         with (
             patch(
@@ -3011,7 +4162,17 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
     def test_get_devices_with_cameras(
         self, mock_blink: Mock, mock_executor: Mock
     ) -> None:
-        """Test get_devices endpoint with camera data."""
+        """Test get_devices endpoint with camera data.
+
+        Verifies that the devices endpoint properly retrieves and
+        formats camera data from sync modules.
+
+        Tests:
+            - Device endpoint with camera data retrieval
+            - Camera data formatting and response structure
+            - Sync module integration with camera listing
+            - Device information processing and display
+        """
         # Mock executor to prevent async submission warnings
 
         mock_executor_instance = create_mock_thread_pool_executor()
@@ -3062,7 +4223,17 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_connection.get_blink_connection")
     def test_arm_system_success(self, mock_connection: Mock, mock_blink: Mock) -> None:
-        """Test successful system arm/disarm."""
+        """Test successful system arm/disarm.
+
+        Verifies that system arm/disarm operations are properly
+        executed and return appropriate success responses.
+
+        Tests:
+            - System arm/disarm functionality
+            - Successful arm/disarm operation execution
+            - API response format for system operations
+            - System state change handling
+        """
         # Mock blink availability
         mock_blink_instance = create_mock_blink_instance()
         mock_blink.return_value = mock_blink_instance
@@ -3099,7 +4270,17 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
     def test_get_clip_thumbnail_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test getting clip thumbnail."""
+        """Test getting clip thumbnail.
+
+        Verifies that clip thumbnails are properly retrieved and
+        served when they exist in the cache.
+
+        Tests:
+            - Clip thumbnail retrieval from cache
+            - Thumbnail file serving and response
+            - Cache integration for thumbnail access
+            - Successful thumbnail response format
+        """
         with patch(
             "blinkapp.services.cache_service.ensure_clips_cache_initialized"
         ) as mock_ensure_cache:
@@ -3136,7 +4317,17 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
     def test_get_clip_thumbnail_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test getting non-existent clip thumbnail."""
+        """Test getting non-existent clip thumbnail.
+
+        Verifies that requests for non-existent clip thumbnails
+        return appropriate 404 error responses.
+
+        Tests:
+            - Clip thumbnail request for non-existent clip
+            - Proper 404 error response for missing thumbnails
+            - Cache miss handling for thumbnail requests
+            - Error handling for invalid clip IDs
+        """
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             mock_cache.get.return_value = None
 
@@ -3157,7 +4348,17 @@ class TestStreamingAndLiveView(BaseTestCase):
     def test_get_liveview_with_stream_manager(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test live view with stream manager."""
+        """Test live view with stream manager.
+
+        Verifies that live view functionality properly integrates
+        with the stream manager for video streaming.
+
+        Tests:
+            - Live view integration with stream manager
+            - Stream manager initialization and setup
+            - Video streaming coordination and management
+            - Live view response format with stream manager
+        """
         # Mock blink to be available
         # Mock blink instance
 
@@ -3189,7 +4390,17 @@ class TestStreamingAndLiveView(BaseTestCase):
     def test_get_liveview_stream_manager_error(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test live view with stream manager error."""
+        """Test live view with stream manager error.
+
+        Verifies that live view properly handles stream manager
+        errors and returns appropriate error responses.
+
+        Tests:
+            - Live view with stream manager error handling
+            - Stream manager error recovery and responses
+            - Error handling for streaming failures
+            - API error response format for stream errors
+        """
         # Mock blink to be available
         # Mock blink instance
 
@@ -3231,7 +4442,17 @@ class TestBackgroundTaskExecution(BaseTestCase):
     def test_background_task_submission(
         self, mock_thumb_ensure: Mock, mock_clips_ensure: Mock, mock_executor: Mock
     ) -> None:
-        """Test background task submission."""
+        """Test background task submission.
+
+        Verifies that background tasks are properly submitted to
+        the executor service for asynchronous processing.
+
+        Tests:
+            - Background task submission to executor
+            - Executor service integration and task handling
+            - Asynchronous task processing workflow
+            - Task submission and future handling
+        """
         from blinkapp.services.cache_service import clear_all_caches
 
         # Mock executor
@@ -3254,7 +4475,17 @@ class TestBackgroundTaskExecution(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.camera_service.find_camera_by_id")
     def test_blink_connection_error_handling(self, mock_find_camera: Mock) -> None:
-        """Test blink connection error handling."""
+        """Test blink connection error handling.
+
+        Verifies that Blink connection errors are properly handled
+        and appropriate error responses are returned.
+
+        Tests:
+            - Blink connection error handling and recovery
+            - Connection failure response format
+            - Error handling for network connectivity issues
+            - API error responses for connection failures
+        """
         # Initialize cache paths first
         from blinkapp.services.cache_service import (
             initialize_cache_paths,
@@ -3287,7 +4518,17 @@ class TestSettingsAdvanced(BaseTestCase):
 
     @with_blink_auth
     def test_save_settings_with_validation(self) -> None:
-        """Test saving settings with validation."""
+        """Test saving settings with validation.
+
+        Verifies that settings are properly validated and saved
+        with appropriate validation checks and error handling.
+
+        Tests:
+            - Settings validation and saving functionality
+            - Input validation for settings data
+            - Settings persistence and storage
+            - Validation error handling and responses
+        """
         from pathlib import Path
 
         with patch(
@@ -3311,7 +4552,17 @@ class TestSettingsAdvanced(BaseTestCase):
 
     @with_blink_auth
     def test_load_settings_with_existing_file(self) -> None:
-        """Test loading settings from existing file."""
+        """Test loading settings from existing file.
+
+        Verifies that settings are properly loaded from existing
+        configuration files with appropriate parsing and validation.
+
+        Tests:
+            - Settings loading from existing configuration file
+            - File parsing and data extraction
+            - Settings validation and error handling
+            - Configuration file processing
+        """
         from pathlib import Path
 
         with patch(
@@ -3346,7 +4597,17 @@ class TestVideoProcessingOperations(BaseTestCase):
         self.client = app.test_client()
 
     def test_generate_local_clip_thumbnail_existing_file(self) -> None:
-        """Test thumbnail generation when file already exists."""
+        """Test thumbnail generation when file already exists.
+
+        Verifies that thumbnail generation properly handles cases
+        where thumbnail files already exist and avoids regeneration.
+
+        Tests:
+            - Thumbnail generation with existing file handling
+            - File existence checking and optimization
+            - Thumbnail cache hit optimization
+            - Duplicate thumbnail generation prevention
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
@@ -3361,7 +4622,17 @@ class TestVideoProcessingOperations(BaseTestCase):
             self.assertIsNotNone(result)
 
     def test_generate_local_clip_thumbnail_ffmpeg_success(self) -> None:
-        """Test successful thumbnail generation with ffmpeg."""
+        """Test successful thumbnail generation with ffmpeg.
+
+        Verifies that thumbnail generation properly uses FFmpeg
+        to create thumbnails from video clips successfully.
+
+        Tests:
+            - Thumbnail generation using FFmpeg
+            - Successful FFmpeg execution and output
+            - Video processing and thumbnail creation
+            - FFmpeg integration and command execution
+        """
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
         with patch("pathlib.Path.exists") as mock_exists:
@@ -3388,7 +4659,17 @@ class TestVideoProcessingOperations(BaseTestCase):
                 self.assertEqual(mock_run.call_count, 2)
 
     def test_generate_local_clip_thumbnail_ffmpeg_error(self) -> None:
-        """Test thumbnail generation with ffmpeg error."""
+        """Test thumbnail generation with ffmpeg error.
+
+        Verifies that thumbnail generation properly handles FFmpeg
+        errors and provides appropriate error handling and recovery.
+
+        Tests:
+            - Thumbnail generation with FFmpeg errors
+            - FFmpeg error handling and recovery
+            - Error response format for thumbnail failures
+            - Graceful degradation on FFmpeg failures
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
@@ -3410,7 +4691,17 @@ class TestVideoProcessingOperations(BaseTestCase):
                     mock_logger.error.assert_called()
 
     def test_generate_local_clip_thumbnail_first_frame(self) -> None:
-        """Test thumbnail generation for first frame."""
+        """Test thumbnail generation for first frame.
+
+        Verifies that thumbnail generation properly extracts the
+        first frame from video clips for thumbnail creation.
+
+        Tests:
+            - First frame extraction for thumbnail generation
+            - Video frame processing and extraction
+            - Frame-based thumbnail creation workflow
+            - First frame selection and processing
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
 
@@ -3436,7 +4727,17 @@ class TestApplicationInitialization(BaseTestCase):
     """Test application initialization and startup."""
 
     def test_config_class_values(self) -> None:
-        """Test Config class has reasonable values."""
+        """Test Config class has reasonable values.
+
+        Verifies that the application configuration class contains
+        reasonable default values and proper configuration settings.
+
+        Tests:
+            - Config class default values validation
+            - Configuration parameter reasonableness
+            - Application configuration settings
+            - Default configuration value verification
+        """
         from blinkapp import Config
 
         # Test that config values are reasonable
@@ -3446,7 +4747,17 @@ class TestApplicationInitialization(BaseTestCase):
         self.assertGreater(Config.LOG_BACKUP_COUNT, 0)
 
     def test_create_argument_parser_defaults_main(self) -> None:
-        """Test argument parser with default values (from main)."""
+        """Test argument parser with default values (from main).
+
+        Verifies that the command-line argument parser properly
+        handles default values and argument parsing functionality.
+
+        Tests:
+            - Argument parser creation and default values
+            - Command-line argument handling and parsing
+            - Default parameter validation and setup
+            - Main module argument parser functionality
+        """
         from blinkapp.__main__ import create_argument_parser
 
         parser = create_argument_parser()
@@ -3456,7 +4767,17 @@ class TestApplicationInitialization(BaseTestCase):
         self.assertEqual(args.port, 5001)
 
     def test_create_argument_parser_custom_args_main(self) -> None:
-        """Test argument parser with custom arguments (from main)."""
+        """Test argument parser with custom arguments (from main).
+
+        Verifies that the command-line argument parser properly
+        handles custom arguments and parameter overrides.
+
+        Tests:
+            - Argument parser with custom argument values
+            - Custom parameter parsing and validation
+            - Command-line argument override functionality
+            - Custom configuration handling
+        """
         from blinkapp.__main__ import create_argument_parser
 
         parser = create_argument_parser()
@@ -3467,7 +4788,17 @@ class TestApplicationInitialization(BaseTestCase):
         self.assertTrue(args.debug)
 
     def test_run_app_dump_system_main(self) -> None:
-        """Test run_app with dump system option (from main)."""
+        """Test run_app with dump system option (from main).
+
+        Verifies that the application properly handles the dump
+        system option for debugging and system information display.
+
+        Tests:
+            - Application run with dump system option
+            - System information dumping functionality
+            - Debug mode system information display
+            - Main module dump system handling
+        """
         import argparse
         from unittest.mock import Mock, patch
 
@@ -3481,7 +4812,17 @@ class TestApplicationInitialization(BaseTestCase):
             mock_dump.assert_called_once()
 
     def test_run_app_normal_mode_main(self) -> None:
-        """Test run_app in normal mode (from main)."""
+        """Test run_app in normal mode (from main).
+
+        Verifies that the application properly runs in normal mode
+        with standard configuration and startup procedures.
+
+        Tests:
+            - Application run in normal mode
+            - Standard startup and initialization
+            - Normal mode configuration and setup
+            - Main module normal operation handling
+        """
         import argparse
         from unittest.mock import Mock, patch
 
@@ -3505,7 +4846,17 @@ class TestApplicationInitialization(BaseTestCase):
             )
 
     def test_configure_logging_levels_main(self) -> None:
-        """Test logging configuration (from main)."""
+        """Test logging configuration (from main).
+
+        Verifies that logging configuration is properly set up
+        with appropriate levels and formatting options.
+
+        Tests:
+            - Logging configuration and level setup
+            - Log level validation and configuration
+            - Logging system initialization
+            - Main module logging configuration
+        """
         from unittest.mock import patch
 
         from blinkapp.__main__ import configure_logging
@@ -3518,7 +4869,17 @@ class TestApplicationInitialization(BaseTestCase):
             mock_logger.setLevel.assert_called()
 
     def test_clear_all_caches_basic_app_init(self) -> None:
-        """Test clear_all_caches basic functionality (from app_init)."""
+        """Test clear_all_caches basic functionality (from app_init).
+
+        Verifies that the cache clearing functionality properly
+        clears all application caches during initialization.
+
+        Tests:
+            - Cache clearing functionality during app initialization
+            - All cache types clearing and cleanup
+            - Cache service integration and management
+            - Application initialization cache handling
+        """
         from blinkapp.services.cache_service import clear_all_caches
 
         # Should not raise exception
@@ -3528,7 +4889,17 @@ class TestApplicationInitialization(BaseTestCase):
             pass
 
     def test_setup_logging_with_mock_app_init(self) -> None:
-        """Test setup_logging basic functionality (from app_init)."""
+        """Test setup_logging basic functionality (from app_init).
+
+        Verifies that logging setup functionality properly
+        configures logging during application initialization.
+
+        Tests:
+            - Logging setup during application initialization
+            - Logging configuration and handler setup
+            - Log level and format configuration
+            - Application initialization logging setup
+        """
         from blinkapp.utils.logging_config import setup_logging
 
         # Simple smoke test that works with strict patching
@@ -3541,7 +4912,17 @@ class TestApplicationInitialization(BaseTestCase):
             pytest.fail(f"setup_logging raised an exception: {e}")
 
     def test_initialize_cache_paths_basic_app_init(self) -> None:
-        """Test initialize_cache_paths basic functionality (test isolation version)."""
+        """Test initialize_cache_paths basic functionality (test isolation version).
+
+        Verifies that cache path initialization properly sets up
+        directory structures during application initialization.
+
+        Tests:
+            - Cache path initialization during app startup
+            - Directory structure creation and validation
+            - Path configuration and setup
+            - Application initialization cache path handling
+        """
         from blinkapp.services.auth_service import get_credentials_file_path
         from blinkapp.services.cache_service import (
             get_clips_cache_dir,
@@ -3571,7 +4952,17 @@ class TestApplicationInitialization(BaseTestCase):
             pass
 
     def test_global_variables_initialization(self) -> None:
-        """Test global variables are properly initialized."""
+        """Test global variables are properly initialized.
+
+        Verifies that global variables are properly initialized
+        and available throughout the application lifecycle.
+
+        Tests:
+            - Global variable initialization and availability
+            - Application-wide variable setup and access
+            - Global state management and initialization
+            - Variable initialization during startup
+        """
         # Test that key global variables exist in their respective services
         from blinkapp.services import blink_service, cache_service, connection_service
 
@@ -3595,7 +4986,17 @@ class TestErrorHandlingAdvanced(BaseTestCase):
     def test_network_timeout_handling(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test handling of network timeouts."""
+        """Test handling of network timeouts.
+
+        Verifies that network timeout errors are properly handled
+        and appropriate error responses are returned to users.
+
+        Tests:
+            - Network timeout error handling and recovery
+            - Timeout error response format and messaging
+            - Network connectivity error management
+            - Graceful degradation on network timeouts
+        """
         # Initialize cache paths first
         from blinkapp.services.cache_service import (
             initialize_cache_paths,
@@ -3633,7 +5034,17 @@ class TestErrorHandlingAdvanced(BaseTestCase):
             self.assertEqual(response.status_code, 404)
 
     def test_file_system_error_handling(self) -> None:
-        """Test handling of file system errors."""
+        """Test handling of file system errors.
+
+        Verifies that file system errors are properly handled
+        and appropriate error responses are returned.
+
+        Tests:
+            - File system error handling and recovery
+            - File operation error management
+            - Disk I/O error handling and responses
+            - File system failure graceful degradation
+        """
         from blinkapp.services.cache_service import clear_all_caches
 
         with patch("pathlib.Path.unlink", side_effect=OSError("Permission denied")):
@@ -3668,7 +5079,17 @@ class TestErrorHandlingAdvanced(BaseTestCase):
     def test_json_parsing_error_handling(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test handling of JSON parsing errors."""
+        """Test handling of JSON parsing errors.
+
+        Verifies that JSON parsing errors are properly handled
+        and appropriate error responses are returned for malformed JSON.
+
+        Tests:
+            - JSON parsing error handling and recovery
+            - Malformed JSON request handling
+            - JSON validation and error responses
+            - Request parsing error management
+        """
         # Test malformed JSON in request
         response = self.client.put(
             "/api/settings", data="{invalid json", content_type="application/json"
@@ -3694,7 +5115,17 @@ class TestPerformanceOptimizations(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.camera_service.find_camera_by_id")
     def test_cache_hit_optimization(self, mock_find_camera: Mock) -> None:
-        """Test cache hit optimization."""
+        """Test cache hit optimization.
+
+        Verifies that cache hit optimization properly improves
+        performance by avoiding redundant operations and API calls.
+
+        Tests:
+            - Cache hit optimization and performance improvement
+            - Redundant operation avoidance through caching
+            - Cache efficiency and hit rate optimization
+            - Performance enhancement through intelligent caching
+        """
         # Initialize cache and add camera
         from blinkapp.services.cache_service import (
             initialize_cache_paths,
@@ -3714,7 +5145,18 @@ class TestPerformanceOptimizations(BaseTestCase):
         self.assertEqual(response.status_code, 404)  # No cached thumbnail available
 
     def test_fifo_cache_management(self) -> None:
-        """Test FIFO cache management."""
+        """Test FIFO cache management and eviction behavior.
+
+        Verifies that the camera thumbnail cache properly implements
+        FIFO (First In, First Out) eviction when the cache reaches
+        its maximum size limit.
+
+        Tests:
+            - Cache eviction when maximum size is exceeded
+            - FIFO ordering of cache entries during eviction
+            - Proper retention of most recently added items
+            - Cache size limit enforcement and validation
+        """
         # Test FIFO cache behavior
         cache = CameraThumbnailCache(maxsize=2)
 
@@ -3733,7 +5175,17 @@ class TestPerformanceOptimizations(BaseTestCase):
         self.assertIn("key3", cache)
 
     def test_cache_size_limits(self) -> None:
-        """Test cache size limits are enforced."""
+        """Test cache size limits are enforced and maintained.
+
+        Verifies that the cache system properly enforces size
+        limits and prevents unlimited cache growth.
+
+        Tests:
+            - Cache size limit enforcement and boundary validation
+            - Cache capacity management and overflow prevention
+            - Size limit compliance and cache growth control
+            - Memory management through cache size restrictions
+        """
         from blinkapp import Config
 
         # Test that cache sizes are reasonable
@@ -3793,7 +5245,22 @@ class TestSecurityFeatures(BaseTestCase):
     def test_path_traversal_prevention(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test path traversal prevention."""
+        """Test path traversal attack prevention and security validation.
+
+        Verifies that the application properly prevents path traversal
+        attacks by rejecting malicious file paths that attempt to access
+        files outside the intended directory structure.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Path traversal attack prevention for various malicious paths
+            - Security validation for file path parameters
+            - Proper rejection of directory traversal attempts
+            - Cross-platform path traversal attack mitigation
+        """
         # Mock Blink as available to test validation
         # Mock blink instance
 
@@ -3820,7 +5287,18 @@ class TestSecurityFeatures(BaseTestCase):
 
     @with_blink_auth
     def test_input_length_limits(self) -> None:
-        """Test input length limits are enforced."""
+        """Test input length limits enforcement and validation.
+
+        Verifies that the application properly handles and validates
+        input length limits to prevent buffer overflow attacks and
+        ensure data integrity for API requests.
+
+        Tests:
+            - Input length validation for API parameters
+            - Handling of extremely long input strings
+            - Buffer overflow prevention mechanisms
+            - Input sanitization and length enforcement
+        """
         # Test very long input
         long_input = "a" * 10000
 
@@ -3850,7 +5328,22 @@ class TestLocalClipDownloadOperations(BaseTestCase):
     def test_download_local_clip_cached_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test downloading cached local clip."""
+        """Test successful download of cached local clip files.
+
+        Verifies that local clips that are already cached can be
+        successfully retrieved and served without re-downloading
+        from the Blink storage system.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Cached local clip file retrieval and serving
+            - Cache hit optimization for local clip downloads
+            - File serving functionality for cached clips
+            - Local storage cache efficiency validation
+        """
         # Mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
@@ -3877,7 +5370,22 @@ class TestLocalClipDownloadOperations(BaseTestCase):
     def test_download_local_clip_cache_miss(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test downloading local clip with cache miss."""
+        """Test local clip download when cache miss occurs.
+
+        Verifies that when a local clip is not found in the cache,
+        the system properly retrieves it from local storage and
+        caches it for future requests.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Cache miss handling for local clip requests
+            - Local storage retrieval when cache is empty
+            - Clip caching after successful download
+            - Local storage manifest processing and validation
+        """
         # Mock sync module with local storage
         from tests.test_base import create_mock_stream_manager
 
@@ -3913,7 +5421,22 @@ class TestLocalClipDownloadOperations(BaseTestCase):
     def test_download_local_clip_sync_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test downloading local clip when sync module not found."""
+        """Test local clip download when sync module is not found.
+
+        Verifies that the system properly handles requests for local
+        clips when the specified sync module does not exist in the
+        Blink system configuration.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Error handling when sync module is not found
+            - Proper 404 response for non-existent sync modules
+            - Local clip request validation and error responses
+            - Sync module existence checking and validation
+        """
         # Mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.available = True
@@ -3939,7 +5462,22 @@ class TestLocalClipDownloadOperations(BaseTestCase):
     def test_download_local_clip_item_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test downloading local clip when item not found in manifest."""
+        """Test local clip download when item is not found in manifest.
+
+        Verifies that the system properly handles requests for local
+        clips that do not exist in the sync module's local storage
+        manifest, returning appropriate error responses.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Error handling when clip item is not in manifest
+            - Local storage manifest validation and searching
+            - Proper error response for non-existent clip items
+            - Manifest processing and item lookup functionality
+        """
         # Mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.available = True
@@ -3975,7 +5513,22 @@ class TestLiveStreamOperations(BaseTestCase):
     def test_get_liveview_stream_initialization(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test live view stream initialization."""
+        """Test live view stream initialization and setup process.
+
+        Verifies that live view streams are properly initialized
+        with correct camera configuration and stream parameters
+        for real-time video streaming functionality.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Live view stream initialization process
+            - Camera stream setup and configuration
+            - Stream object creation and parameter validation
+            - Live streaming service integration and setup
+        """
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.available = True
@@ -4021,7 +5574,22 @@ class TestLiveStreamOperations(BaseTestCase):
     def test_get_liveview_stream_init_failure(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test live view when stream initialization fails."""
+        """Test live view stream initialization failure handling.
+
+        Verifies that the system properly handles failures during
+        live view stream initialization and returns appropriate
+        error responses to the client.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Stream initialization failure detection and handling
+            - Error response generation for failed stream setup
+            - Proper cleanup when stream initialization fails
+            - Client error notification for streaming failures
+        """
         # Set up proper sync structure for find_camera_by_id
         mock_camera = create_mock_camera(camera_id=12345)
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
@@ -4047,7 +5615,22 @@ class TestLiveStreamOperations(BaseTestCase):
     def test_get_liveview_stream_manager_integration(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test live view with stream manager integration."""
+        """Test live view stream manager integration and coordination.
+
+        Verifies that the live view functionality properly integrates
+        with the stream manager service to coordinate streaming
+        operations and resource management.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Stream manager integration with live view functionality
+            - Coordination between streaming services and camera management
+            - Resource allocation and management for streaming operations
+            - Service integration validation and error handling
+        """
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.available = True
@@ -4092,7 +5675,22 @@ class TestAdvancedClipOperations(BaseTestCase):
     def test_get_cloud_clips_with_pagination(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test getting cloud clips with pagination support."""
+        """Test getting cloud clips with pagination support.
+
+        Verifies that the cloud clips API endpoint properly handles
+        pagination when retrieving multiple clips from the Blink service.
+        Tests the system's ability to process and return paginated clip data.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Cloud clips retrieval with multiple clips
+            - Pagination support for large clip collections
+            - Proper handling of clip metadata formatting
+            - Error handling when Blink service is not initialized
+        """
         # Mock multiple clips
         mock_clips = []
         for i in range(10):
@@ -4117,7 +5715,22 @@ class TestAdvancedClipOperations(BaseTestCase):
     def test_get_cloud_clips_empty_result(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test getting cloud clips when no clips exist."""
+        """Test getting cloud clips when no clips exist.
+
+        Verifies that the cloud clips API endpoint properly handles
+        the case where no clips are available in cloud storage.
+        Tests empty result handling and appropriate response formatting.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Empty cloud clips collection handling
+            - Proper response format for no clips available
+            - Service availability validation
+            - Error handling when Blink service is not initialized
+        """
         mock_blink.get_videos_metadata.return_value = []
         mock_connection.execute.return_value = []
 
@@ -4130,7 +5743,22 @@ class TestAdvancedClipOperations(BaseTestCase):
     def test_get_cloud_clips_api_error(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test getting cloud clips when API returns error."""
+        """Test getting cloud clips when API returns error.
+
+        Verifies that the cloud clips API endpoint properly handles
+        errors returned by the Blink API service. Tests error propagation
+        and appropriate error response formatting.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - API error handling during cloud clips retrieval
+            - Proper error response format for API failures
+            - BlinkError exception handling and propagation
+            - Graceful degradation when API is unavailable
+        """
         from blinkapp.utils.errors import BlinkError
 
         mock_connection.execute = mock_execute_with_coroutine_cleanup(
@@ -4145,7 +5773,21 @@ class TestAdvancedClipOperations(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.cache_service.clips_cache")
     def test_process_clip_with_existing_thumbnail(self, mock_cache: Mock) -> None:
-        """Test clip processing when thumbnail already exists."""
+        """Test clip processing optimization when thumbnail already exists.
+
+        Verifies that the clip processing system efficiently handles
+        cases where a thumbnail already exists, avoiding unnecessary
+        regeneration and improving performance.
+
+        Args:
+            mock_cache: Mock for clips cache service
+
+        Tests:
+            - Thumbnail existence detection and optimization
+            - Skip thumbnail generation when already available
+            - Cache efficiency for existing thumbnail files
+            - Performance optimization for processed clips
+        """
         mock_cache.get.return_value = {
             "file_path": "/tmp/test_clip.mp4",
             "thumbnail_path": "/tmp/test_thumb.jpg",
@@ -4173,7 +5815,21 @@ class TestAdvancedClipOperations(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.cache_service.clips_cache")
     def test_process_clip_thumbnail_generation_failure(self, mock_cache: Mock) -> None:
-        """Test clip processing when thumbnail generation fails."""
+        """Test clip processing error handling when thumbnail generation fails.
+
+        Verifies that the clip processing system properly handles
+        failures during thumbnail generation and provides appropriate
+        error recovery mechanisms.
+
+        Args:
+            mock_cache: Mock for clips cache service
+
+        Tests:
+            - Thumbnail generation failure detection and handling
+            - Error recovery when thumbnail creation fails
+            - Graceful degradation for thumbnail processing errors
+            - Proper error response for failed thumbnail operations
+        """
         mock_cache.get.return_value = {
             "file_path": "/tmp/test_clip.mp4",
             "thumbnail_path": "/tmp/test_thumb.jpg",
@@ -4209,7 +5865,22 @@ class TestSystemDeviceOperations(BaseTestCase):
     def test_get_devices_with_multiple_cameras(
         self, mock_blink: Mock, mock_executor: Mock
     ) -> None:
-        """Test get_devices with multiple cameras and complex data."""
+        """Test device retrieval with multiple cameras and complex data structures.
+
+        Verifies that the devices endpoint properly handles systems
+        with multiple cameras, correctly formatting and returning
+        comprehensive device information for each camera.
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+            mock_executor: Mock for thread pool executor service
+
+        Tests:
+            - Multiple camera device retrieval and formatting
+            - Complex device data structure handling
+            - Camera state information aggregation
+            - Device list generation with multiple cameras
+        """
         # Mock executor to prevent async submission warnings
         mock_executor_instance = create_mock_thread_pool_executor()
         mock_executor_instance.submit = Mock(return_value=create_mock_future())
@@ -4266,7 +5937,22 @@ class TestSystemDeviceOperations(BaseTestCase):
     def test_get_devices_with_offline_sync(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_devices when sync module is offline."""
+        """Test device retrieval when sync module is offline.
+
+        Verifies that the devices endpoint properly handles cases
+        where sync modules are offline and returns appropriate
+        device status information.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Offline sync module handling and status reporting
+            - Device availability when sync module is disconnected
+            - Proper error handling for offline sync modules
+            - Status information for unavailable devices
+        """
         # Mock blink to be available
         # Mock blink instance
 
@@ -4302,7 +5988,22 @@ class TestSystemDeviceOperations(BaseTestCase):
     def test_arm_system_with_network_delay(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test arm system with network delay simulation."""
+        """Test system arming with network delay and timeout handling.
+
+        Verifies that the system arming functionality properly handles
+        network delays and timeout scenarios while maintaining
+        reliable operation and appropriate error responses.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - System arming with network delay simulation
+            - Timeout handling for slow network responses
+            - Reliable operation under network stress conditions
+            - Proper error handling for delayed operations
+        """
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.available = True
         mock_blink.return_value = mock_blink_instance
@@ -4359,6 +6060,16 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         This test verifies that when the cache contains an older thumbnail
         than what's available from the camera, the system correctly fetches
         the newer thumbnail and triggers a background cache update.
+
+        Args:
+            mock_cache: Mock for camera thumbnail cache service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Stale cache detection based on timestamp comparison
+            - Background cache update triggering for newer thumbnails
+            - Proper handling of cache miss scenarios
+            - Camera thumbnail retrieval with timestamp validation
         """
         mock_blink_instance = create_mock_blink_instance()
 
@@ -4401,7 +6112,28 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
     def test_refresh_camera_thumbnail_with_error(
         self, mock_find_camera: Mock, mock_blink: Mock
     ) -> None:
-        """Test refresh camera thumbnail when camera is not found."""
+        """Test camera thumbnail refresh error handling when camera is not found.
+
+        Verifies that the thumbnail refresh functionality properly handles
+        cases where the specified camera cannot be found and returns
+        appropriate error responses.
+
+        Args:
+            mock_find_camera: Mock for camera lookup service
+            mock_blink: Mock for Blink service initialization
+
+
+
+        Args:
+            mock_find_camera: Mock for camera lookup service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Error handling when camera is not found during refresh
+            - Proper 404 response for non-existent camera thumbnails
+            - Camera validation during thumbnail refresh operations
+            - Error response format for missing camera resources
+        """
         # Mock blink available
         from tests.test_base import create_mock_blink_instance
 
@@ -4419,7 +6151,26 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
     def test_get_camera_thumbnail_timestamp_with_invalid_url(
         self, mock_blink: Mock
     ) -> None:
-        """Test thumbnail timestamp extraction with invalid URL."""
+        """Test thumbnail timestamp extraction with invalid URL format.
+
+        Verifies that the thumbnail timestamp extraction functionality
+        properly handles invalid URL formats and returns appropriate
+        error responses or default values.
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+
+
+
+        Args:
+            mock_find_camera: Mock for camera lookup service
+
+        Tests:
+            - Invalid URL format handling for timestamp extraction
+            - Error recovery when URL parsing fails
+            - Default timestamp behavior for malformed URLs
+            - Proper error response for invalid thumbnail URLs
+        """
         mock_blink_instance = create_mock_blink_instance()
 
         mock_sync = create_mock_sync(
@@ -4455,7 +6206,27 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
     def test_graceful_degradation_with_missing_dependencies(
         self, mock_find_camera: Mock
     ) -> None:
-        """Test graceful degradation when dependencies are missing."""
+        """Test graceful degradation when optional dependencies are missing.
+
+        Verifies that the application gracefully handles scenarios where
+        optional dependencies or services are unavailable, providing
+        fallback behavior and appropriate error responses.
+
+        Args:
+            mock_find_camera: Mock for camera lookup service
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Graceful degradation when optional services are unavailable
+            - Fallback behavior for missing dependency scenarios
+            - Error handling when required components are not available
+            - Service resilience with partial functionality loss
+        """
         # Test behavior when optional dependencies are not available
         mock_camera = create_mock_camera(camera_id=12345)
         mock_find_camera.return_value = mock_camera
@@ -4471,7 +6242,28 @@ class TestErrorRecoveryMechanisms(BaseTestCase):
     def test_memory_pressure_handling(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test handling of memory pressure scenarios."""
+        """Test application behavior under memory pressure scenarios.
+
+        Verifies that the application properly handles memory pressure
+        situations by implementing appropriate cache management and
+        resource cleanup strategies.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Memory pressure detection and handling
+            - Cache eviction under memory constraints
+            - Resource cleanup during high memory usage
+            - Performance degradation mitigation strategies
+        """
         # Simulate memory pressure by filling cache
         with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
             # Mock cache that's at capacity
@@ -4504,7 +6296,23 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
     def test_concurrent_thumbnail_updates(
         self, mock_connection: Mock, mock_executor: Mock, mock_cache: Mock
     ) -> None:
-        """Test concurrent thumbnail update handling."""
+        """Test concurrent thumbnail update handling and race condition prevention.
+
+        Verifies that the thumbnail update system properly handles
+        concurrent update requests and prevents race conditions
+        that could lead to data corruption or inconsistent state.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_executor: Mock for thread pool executor service
+            mock_cache: Mock for thumbnail cache service
+
+        Tests:
+            - Concurrent thumbnail update coordination
+            - Race condition prevention during simultaneous updates
+            - Thread-safe thumbnail cache operations
+            - Proper synchronization for concurrent requests
+        """
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -4565,7 +6373,22 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
     def test_thread_safe_cache_operations(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test thread-safe cache operations."""
+        """Test thread-safe cache operations and concurrent access handling.
+
+        Verifies that cache operations are thread-safe and can handle
+        concurrent access from multiple threads without data corruption
+        or race conditions.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Thread-safe cache read and write operations
+            - Concurrent cache access without data corruption
+            - Proper synchronization for multi-threaded cache usage
+            - Race condition prevention in cache operations
+        """
         import threading
 
         results = []
@@ -4608,7 +6431,18 @@ class TestResourceManagement(BaseTestCase):
         self.client = app.test_client()
 
     def test_cache_size_enforcement(self) -> None:
-        """Test that cache size limits are enforced."""
+        """Test cache size limit enforcement and eviction policies.
+
+        Verifies that cache size limits are properly enforced and
+        that appropriate eviction policies are applied when the
+        cache reaches its maximum capacity.
+
+        Tests:
+            - Cache size limit enforcement and validation
+            - Proper eviction when cache exceeds maximum size
+            - FIFO eviction policy implementation
+            - Cache capacity management and optimization
+        """
         # Test FIFO cache respects size limits
         cache = CameraThumbnailCache(maxsize=3)
 
@@ -4626,7 +6460,18 @@ class TestResourceManagement(BaseTestCase):
         self.assertIn("key4", cache)
 
     def test_disk_space_management(self) -> None:
-        """Test disk space management for cached files."""
+        """Test disk space management and cleanup for cached files.
+
+        Verifies that the cache system properly manages disk space
+        usage by implementing cleanup strategies and monitoring
+        storage consumption for cached files.
+
+        Tests:
+            - Disk space monitoring for cache directories
+            - Automatic cleanup when disk space is low
+            - Cache file size management and optimization
+            - Storage usage tracking and reporting
+        """
         from blinkapp.services.cache_service import clear_all_caches
 
         # Mock file operations
@@ -4660,7 +6505,18 @@ class TestResourceManagement(BaseTestCase):
                                 self.assertIsInstance(result, dict)
 
     def test_memory_usage_optimization(self) -> None:
-        """Test memory usage optimization strategies."""
+        """Test memory usage optimization strategies and efficiency.
+
+        Verifies that the application implements effective memory
+        usage optimization strategies to minimize memory consumption
+        and improve overall performance.
+
+        Tests:
+            - Memory usage optimization implementation
+            - Efficient memory allocation and deallocation
+            - Memory leak prevention and detection
+            - Performance improvement through memory optimization
+        """
         from blinkapp import Config
 
         # Verify cache sizes are reasonable
@@ -4699,7 +6555,21 @@ class TestCacheMaintenanceOperations(BaseTestCase):
     def test_load_camera_thumbnail_cache_with_valid_files(
         self, mock_blink: Mock
     ) -> None:
-        """Test loading thumbnail cache with valid files."""
+        """Test camera thumbnail cache loading with valid cached files.
+
+        Verifies that the thumbnail cache loading process properly
+        handles valid cached files and restores cache state from
+        persistent storage.
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Valid cached file loading and restoration
+            - Cache state reconstruction from persistent storage
+            - File validation during cache loading process
+            - Proper cache initialization with existing files
+        """
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
         mock_camera = create_mock_camera(camera_id="12345")
@@ -4735,7 +6605,21 @@ class TestCacheMaintenanceOperations(BaseTestCase):
     def test_load_camera_thumbnail_cache_cleanup_old_files(
         self, mock_blink: Mock
     ) -> None:
-        """Test thumbnail cache cleanup of old files."""
+        """Test camera thumbnail cache cleanup of old and invalid files.
+
+        Verifies that the thumbnail cache loading process properly
+        identifies and cleans up old or invalid cached files during
+        initialization to maintain cache integrity.
+
+        Args:
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Old file detection and cleanup during cache loading
+            - Invalid file removal from cache directory
+            - Cache integrity maintenance through cleanup
+            - Proper file validation and cleanup procedures
+        """
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
         # Mock blink system
@@ -4756,7 +6640,18 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                 self.assertTrue(True)
 
     def test_load_clips_cache_with_various_formats(self) -> None:
-        """Test loading clips cache with various file formats."""
+        """Test loading clips cache with various file formats.
+
+        Verifies that the clips cache loading functionality properly handles
+        different video file formats and correctly processes file metadata
+        including size and modification time information.
+
+        Tests:
+            - Loading clips cache with multiple file formats
+            - Proper file metadata extraction (size, modification time)
+            - Cache initialization and clip addition operations
+            - File system interaction for clip discovery
+        """
         from blinkapp.services.cache_service import load_clips_cache
 
         # Mock clip files with different formats
@@ -4791,7 +6686,18 @@ class TestCacheMaintenanceOperations(BaseTestCase):
                     self.assertEqual(mock_cache.add_clip.call_count, 2)
 
     def test_cache_maintenance_with_size_limits(self) -> None:
-        """Test cache maintenance respects size limits."""
+        """Test cache maintenance respects size limits.
+
+        Verifies that the camera thumbnail cache properly enforces
+        size limits and implements FIFO eviction policy when the
+        cache reaches maximum capacity.
+
+        Tests:
+            - Cache size limit enforcement
+            - FIFO eviction policy implementation
+            - Proper cache item management beyond capacity
+            - Oldest item removal when adding new items
+        """
         # Test cache eviction policy
         cache = CameraThumbnailCache(maxsize=3)
 
@@ -4834,7 +6740,22 @@ class TestAdvancedSystemOperations(BaseTestCase):
     def test_system_refresh_with_multiple_networks(
         self, mock_connection_init: Mock, mock_blink_init: Mock
     ) -> None:
-        """Test system refresh with multiple networks."""
+        """Test system refresh with multiple networks.
+
+        Verifies that the system refresh functionality properly handles
+        multiple Blink networks and correctly processes cache clearing
+        operations across all networks.
+
+        Args:
+            mock_connection_init: Mock for Blink connection initialization
+            mock_blink_init: Mock for Blink service initialization
+
+        Tests:
+            - Multiple network handling during system refresh
+            - Cache clearing operations across all networks
+            - Proper network enumeration and processing
+            - Background task execution for cache operations
+        """
         # Create mock blink instance
         mock_blink_instance = create_mock_blink_instance()
 
@@ -4867,7 +6788,22 @@ class TestAdvancedSystemOperations(BaseTestCase):
     def test_get_systems_with_complex_network_data(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_systems with complex network configurations."""
+        """Test get_systems with complex network configurations.
+
+        Verifies that the systems API endpoint properly handles
+        complex network configurations with multiple sync modules
+        in various states and correctly formats the response data.
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Complex network configuration handling
+            - Multiple sync module processing
+            - Various sync module states (armed/disarmed, online/offline)
+            - Proper response formatting for complex network data
+        """
         # Mock sync modules with various states
         sync_modules = {}
         for i in range(2):
@@ -4897,7 +6833,22 @@ class TestAdvancedSystemOperations(BaseTestCase):
     def test_arm_system_partial_failure(
         self, mock_connection_init: Mock, mock_blink_init: Mock
     ) -> None:
-        """Test arm system with partial failure scenarios."""
+        """Test arm system with partial failure scenarios.
+
+        Verifies that the system arming functionality properly handles
+        partial failure scenarios where the connection or arming operation
+        fails and returns appropriate error responses.
+
+        Args:
+            mock_connection_init: Mock for Blink connection initialization
+            mock_blink_init: Mock for Blink service initialization
+
+        Tests:
+            - System arming with connection failures
+            - Partial failure scenario handling
+            - Proper error response for failed arming operations
+            - Exception handling during system state changes
+        """
         # Create mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_sync = create_mock_sync(cameras={})
@@ -4934,7 +6885,18 @@ class TestAdvancedFileOperations(BaseTestCase):
 
     @with_blink_auth
     def test_settings_file_corruption_recovery(self) -> None:
-        """Test recovery from corrupted settings file."""
+        """Test recovery from corrupted settings file.
+
+        Verifies that the settings system properly handles corrupted
+        settings files and implements appropriate recovery mechanisms
+        to maintain application functionality.
+
+        Tests:
+            - Corrupted settings file detection and handling
+            - Recovery mechanism for invalid JSON data
+            - Fallback to default settings when file is corrupted
+            - Error handling for file system corruption scenarios
+        """
         # Mock corrupted JSON file
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.read_text", return_value="corrupted{json"):
@@ -4948,7 +6910,18 @@ class TestAdvancedFileOperations(BaseTestCase):
 
     @with_blink_auth
     def test_settings_file_permission_error(self) -> None:
-        """Test handling of settings file permission errors."""
+        """Test handling of settings file permission errors.
+
+        Verifies that the settings system properly handles permission
+        errors when attempting to write settings files and returns
+        appropriate error responses to the client.
+
+        Tests:
+            - Settings file write permission error handling
+            - Proper error response for permission denied scenarios
+            - File system permission validation
+            - Error propagation for file access failures
+        """
         valid_settings = {"temperature_unit": "celsius"}
 
         # Patch json.dump in the settings service module to simulate file write permission error
@@ -4964,7 +6937,18 @@ class TestAdvancedFileOperations(BaseTestCase):
             self.assertFalse(data["success"])
 
     def test_cache_directory_creation_failure(self) -> None:
-        """Test handling of cache directory creation failure."""
+        """Test handling of cache directory creation failure.
+
+        Verifies that the application startup process properly handles
+        failures in cache directory creation and implements appropriate
+        fallback mechanisms to maintain functionality.
+
+        Tests:
+            - Cache directory creation failure handling
+            - Application startup resilience to file system errors
+            - Proper initialization sequence with directory failures
+            - Service initialization with missing cache directories
+        """
         from blinkapp.services.lifecycle_service import startup
 
         # Test that startup function can be called without errors
@@ -5007,7 +6991,21 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
     def test_camera_thumbnail_cache_hit_optimization(
         self, mock_find_camera: Mock
     ) -> None:
-        """Test thumbnail cache hit optimization prevents unnecessary API calls."""
+        """Test thumbnail cache hit optimization prevents unnecessary API calls.
+
+        Verifies that the thumbnail cache system properly optimizes
+        cache hits to prevent unnecessary API calls and improves
+        performance by serving cached thumbnails when available.
+
+        Args:
+            mock_find_camera: Mock for camera lookup service
+
+        Tests:
+            - Cache hit optimization for thumbnail requests
+            - Prevention of unnecessary API calls for cached thumbnails
+            - Proper cache validation and serving
+            - Performance optimization through caching
+        """
         mock_camera = create_mock_camera(
             camera_id=12345,
             name="Test Camera",
@@ -5027,15 +7025,11 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
         requests without race conditions or data corruption. It's critical for
         production environments where multiple users access the system concurrently.
 
-        Test approach:
-        - Spawns multiple threads making simultaneous API requests
-        - Verifies all requests complete successfully
-        - Ensures no data corruption or race conditions occur
-
-        Why this matters:
-        - Prevents crashes under load
-        - Ensures data integrity with concurrent access
-        - Validates thread-safe cache operations
+        Tests:
+            - Concurrent API request handling without race conditions
+            - Thread safety validation for multiple simultaneous requests
+            - Data integrity preservation under concurrent access
+            - Application stability under concurrent load scenarios
         """
         import threading
 
@@ -5069,7 +7063,21 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.clips_cache")
     def test_memory_efficient_caching(self, mock_cache: Mock) -> None:
-        """Test memory-efficient caching strategies."""
+        """Test memory-efficient caching strategies.
+
+        Verifies that the caching system implements memory-efficient
+        strategies to manage cache size and prevent memory exhaustion
+        while maintaining optimal performance.
+
+        Args:
+            mock_cache: Mock for clips cache service
+
+        Tests:
+            - Memory-efficient cache management strategies
+            - Cache size monitoring and optimization
+            - Memory usage prevention for large cache operations
+            - Performance optimization through efficient caching
+        """
         # Mock cache operations
         mock_cache.__len__.return_value = 45  # Near capacity
         mock_cache.get.return_value = None
@@ -5100,7 +7108,18 @@ class TestSecurityAdvanced(BaseTestCase):
         self.client = app.test_client()
 
     def test_input_sanitization_comprehensive(self) -> None:
-        """Test comprehensive input sanitization."""
+        """Test comprehensive input sanitization.
+
+        Verifies that the application properly sanitizes all user inputs
+        to prevent security vulnerabilities such as XSS attacks and
+        injection attacks across all input vectors.
+
+        Tests:
+            - Comprehensive input sanitization across all endpoints
+            - XSS prevention for malicious script injection
+            - Input validation for security vulnerability prevention
+            - Proper handling of potentially dangerous input patterns
+        """
         from blinkapp.utils.validators import validate_string_input
 
         # Test various malicious inputs
@@ -5121,7 +7140,18 @@ class TestSecurityAdvanced(BaseTestCase):
 
     @with_blink_auth
     def test_path_traversal_comprehensive(self) -> None:
-        """Test comprehensive path traversal prevention."""
+        """Test comprehensive path traversal prevention.
+
+        Verifies that the application properly prevents path traversal
+        attacks across all file system operations and ensures that
+        malicious path inputs cannot access unauthorized directories.
+
+        Tests:
+            - Path traversal attack prevention across all file operations
+            - Directory access validation and restriction
+            - Malicious path input sanitization and rejection
+            - File system security boundary enforcement
+        """
         from unittest.mock import patch
 
         malicious_paths = [
@@ -5146,7 +7176,18 @@ class TestSecurityAdvanced(BaseTestCase):
 
     @with_blink_auth
     def test_rate_limiting_simulation(self) -> None:
-        """Test rate limiting behavior simulation."""
+        """Test rate limiting behavior simulation.
+
+        Verifies that the application properly handles rate limiting
+        scenarios and implements appropriate throttling mechanisms
+        to prevent abuse and ensure fair resource usage.
+
+        Tests:
+            - Rate limiting behavior simulation and validation
+            - Request throttling mechanism effectiveness
+            - Abuse prevention through rate limiting controls
+            - Fair resource usage enforcement under high load
+        """
         # Simulate rapid requests
         responses = []
 
@@ -5160,7 +7201,18 @@ class TestSecurityAdvanced(BaseTestCase):
 
     @with_blink_auth
     def test_large_payload_handling(self) -> None:
-        """Test handling of large payloads."""
+        """Test handling of large payloads.
+
+        Verifies that the application properly handles large request
+        payloads without memory exhaustion or performance degradation
+        and implements appropriate size limits and validation.
+
+        Tests:
+            - Large payload processing without memory exhaustion
+            - Request size validation and limit enforcement
+            - Performance stability under large payload scenarios
+            - Memory management for oversized request handling
+        """
         # Test with very large JSON payload
         large_payload = {
             "temperature_unit": "celsius",
@@ -5193,7 +7245,21 @@ class TestIntegrationScenarios(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.camera_service.find_camera_by_id")
     def test_complete_camera_workflow(self, mock_find_camera: Mock) -> None:
-        """Test complete camera workflow from system list to thumbnail."""
+        """Test complete camera workflow from system list to thumbnail.
+
+        Verifies the end-to-end camera workflow including system discovery,
+        camera identification, and thumbnail retrieval operations to ensure
+        complete functionality across the entire camera management pipeline.
+
+        Args:
+            mock_find_camera: Mock for camera lookup service
+
+        Tests:
+            - Complete camera workflow from discovery to thumbnail
+            - End-to-end system and camera integration
+            - Thumbnail retrieval workflow validation
+            - Full camera management pipeline functionality
+        """
         mock_camera = create_mock_camera(
             camera_id=12345,
             name="Test Camera",
@@ -5211,7 +7277,22 @@ class TestIntegrationScenarios(BaseTestCase):
     def test_complete_clip_workflow(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test complete clip workflow from list to download."""
+        """Test complete clip workflow from list to download.
+
+        Verifies the end-to-end clip management workflow including
+        clip discovery, metadata processing, and download operations
+        to ensure complete functionality across the clip pipeline.
+
+        Args:
+            mock_connection: Mock for Blink connection service
+            mock_blink: Mock for Blink service initialization
+
+        Tests:
+            - Complete clip workflow from listing to download
+            - End-to-end clip management pipeline validation
+            - Clip metadata processing and download functionality
+            - Service availability handling in clip workflows
+        """
         # Mock blink to be unavailable to trigger service unavailable
         mock_blink_instance = create_mock_blink_instance()
         mock_blink_instance.available = False
@@ -5225,7 +7306,18 @@ class TestIntegrationScenarios(BaseTestCase):
 
     @with_blink_auth
     def test_error_recovery_workflow(self) -> None:
-        """Test error recovery across multiple requests."""
+        """Test error recovery across multiple requests.
+
+        Verifies that the application properly implements error recovery
+        mechanisms across various failure scenarios and maintains system
+        stability through appropriate fallback strategies.
+
+        Tests:
+            - Error recovery mechanism validation across workflows
+            - System stability maintenance during error conditions
+            - Fallback strategy implementation for various failures
+            - Graceful degradation under error scenarios
+        """
         # Test that system recovers from errors gracefully
 
         # 1. Make request that might fail
@@ -5663,7 +7755,18 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                 self.assertIsNotNone(result)
 
     def test_generate_thumbnail_ffprobe_timeout(self) -> None:
-        """Test thumbnail generation with ffprobe timeout."""
+        """Test thumbnail generation with ffprobe timeout.
+
+        Verifies that the thumbnail generation system properly handles
+        ffprobe timeout scenarios and implements appropriate fallback
+        mechanisms when video analysis operations exceed time limits.
+
+        Tests:
+            - FFprobe timeout handling during thumbnail generation
+            - Proper fallback mechanisms for video analysis timeouts
+            - Error recovery when video metadata extraction fails
+            - Timeout management for video processing operations
+        """
         import subprocess
         from pathlib import Path
 
@@ -5690,7 +7793,18 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                     mock_logger.error.assert_called()
 
     def test_generate_thumbnail_ffmpeg_failure(self) -> None:
-        """Test thumbnail generation with ffmpeg failure."""
+        """Test thumbnail generation with ffmpeg failure.
+
+        Verifies that the thumbnail generation system properly handles
+        ffmpeg process failures and implements appropriate error handling
+        when video processing operations fail unexpectedly.
+
+        Tests:
+            - FFmpeg process failure handling during thumbnail generation
+            - Proper error handling for video processing failures
+            - Recovery mechanisms when video conversion fails
+            - Error propagation for failed video processing operations
+        """
         import subprocess
         from pathlib import Path
 
@@ -5718,7 +7832,18 @@ class TestVideoProcessingAdvanced(BaseTestCase):
                     mock_logger.error.assert_called()
 
     def test_generate_thumbnail_invalid_duration(self) -> None:
-        """Test thumbnail generation with invalid duration from ffprobe."""
+        """Test thumbnail generation with invalid duration from ffprobe.
+
+        Verifies that the thumbnail generation system properly handles
+        invalid duration values returned by ffprobe and implements
+        appropriate validation and fallback mechanisms.
+
+        Tests:
+            - Invalid duration handling from ffprobe output
+            - Duration validation and error handling
+            - Fallback mechanisms for invalid video metadata
+            - Error recovery when video duration is unavailable
+        """
         from pathlib import Path
 
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
@@ -5766,7 +7891,18 @@ class TestAdvancedCacheOperations(BaseTestCase):
     def test_camera_thumbnail_cache_cleanup_invalid_cameras(
         self, mock_blink: Mock
     ) -> None:
-        """Test thumbnail cache cleanup removes files for invalid cameras."""
+        """Test thumbnail cache cleanup removes files for invalid cameras.
+
+        Verifies that the thumbnail cache cleanup process properly
+        identifies and removes thumbnail files for cameras that are
+        no longer valid or accessible in the system.
+
+        Tests:
+            - Invalid camera detection during cache cleanup
+            - Thumbnail file removal for non-existent cameras
+            - Cache maintenance for obsolete camera references
+            - File system cleanup for invalid camera thumbnails
+        """
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
         # Mock blink with no cameras (all files will be invalid)
@@ -5791,7 +7927,18 @@ class TestAdvancedCacheOperations(BaseTestCase):
     def test_camera_thumbnail_cache_keep_recent_files(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test thumbnail cache keeps most recent files per camera."""
+        """Test thumbnail cache keeps most recent files per camera.
+
+        Verifies that the thumbnail cache management system properly
+        retains the most recent thumbnail files for each camera while
+        removing older files to maintain optimal cache size.
+
+        Tests:
+            - Recent thumbnail file retention per camera
+            - Older thumbnail file removal during cache maintenance
+            - Per-camera cache optimization and management
+            - File age-based cache cleanup strategies
+        """
         from blinkapp.services.cache_service import load_camera_thumbnail_cache
 
         # Mock blink with camera
@@ -5854,7 +8001,18 @@ class TestAdvancedCacheOperations(BaseTestCase):
                             old_file.unlink.assert_called()
 
     def test_clips_cache_loading_with_metadata(self) -> None:
-        """Test clips cache loading with metadata extraction."""
+        """Test clips cache loading with metadata extraction.
+
+        Verifies that the clips cache loading process properly extracts
+        and processes metadata from video files including duration,
+        size, and other relevant video properties.
+
+        Tests:
+            - Clips cache loading with comprehensive metadata extraction
+            - Video file metadata processing and validation
+            - Cache initialization with proper file information
+            - Metadata extraction for various video file formats
+        """
         from blinkapp.services.cache_service import load_clips_cache
 
         # Mock clip files with various metadata
@@ -5911,7 +8069,18 @@ class TestComplexErrorScenarios(BaseTestCase):
     def test_cascading_failure_recovery(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test recovery from cascading failures."""
+        """Test recovery from cascading failures.
+
+        Verifies that the application properly handles cascading failure
+        scenarios where multiple system components fail in sequence and
+        implements appropriate recovery mechanisms to restore functionality.
+
+        Tests:
+            - Cascading failure detection and handling
+            - Multi-component failure recovery mechanisms
+            - System resilience under sequential component failures
+            - Recovery strategy implementation for complex failure scenarios
+        """
         mock_camera = create_mock_camera(
             "12345", thumbnail="https://example.com/thumb_12345_1234567890.jpg"
         )
@@ -5964,7 +8133,18 @@ class TestComplexErrorScenarios(BaseTestCase):
     def test_resource_exhaustion_handling(
         self, mock_connection_init: Mock, mock_blink: Mock
     ) -> None:
-        """Test handling of resource exhaustion scenarios."""
+        """Test handling of resource exhaustion scenarios.
+
+        Verifies that the application properly handles resource exhaustion
+        scenarios including memory, disk space, and network resources
+        and implements appropriate mitigation strategies.
+
+        Tests:
+            - Resource exhaustion detection and handling
+            - Memory, disk, and network resource management
+            - Mitigation strategies for resource constraints
+            - System stability under resource pressure scenarios
+        """
         # Mock blink system
         create_mock_blink_instance()
 
@@ -5987,7 +8167,18 @@ class TestComplexErrorScenarios(BaseTestCase):
     def test_partial_system_failure(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test handling when part of system fails but other parts work."""
+        """Test handling when part of system fails but other parts work.
+
+        Verifies that the application properly handles partial system
+        failures where some components fail while others continue to
+        function, ensuring graceful degradation of service.
+
+        Tests:
+            - Partial system failure handling and isolation
+            - Service degradation with component-specific failures
+            - System resilience when individual components fail
+            - Continued operation of healthy system components
+        """
         # Mock partial system failure
         mock_sync1 = create_mock_sync(
             network_id=12345, name="Working Network", armed=True, online=True
@@ -6030,7 +8221,18 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_complete_multi_camera_workflow(self, mock_blink: Mock) -> None:
-        """Test complete workflow with multiple cameras and operations."""
+        """Test complete workflow with multiple cameras and operations.
+
+        Verifies the end-to-end functionality of the application when
+        managing multiple cameras simultaneously and performing various
+        operations across the entire camera management system.
+
+        Tests:
+            - Multi-camera workflow coordination and management
+            - Simultaneous operations across multiple cameras
+            - End-to-end system functionality with complex scenarios
+            - Integration testing for complete camera management pipeline
+        """
         # Mock simple system for basic workflow testing
         create_mock_blink_instance()
 
@@ -6045,7 +8247,18 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_system_state_consistency_workflow(self, mock_blink: Mock) -> None:
-        """Test system state consistency across operations."""
+        """Test system state consistency across operations.
+
+        Verifies that the application maintains consistent system state
+        across various operations and ensures data integrity throughout
+        the entire application lifecycle.
+
+        Tests:
+            - System state consistency validation across operations
+            - Data integrity maintenance during state transitions
+            - State synchronization across multiple system components
+            - Consistency verification for complex operation sequences
+        """
         # Mock system state
         mock_sync = create_mock_sync(cameras={})
         mock_sync.network_id = 12345
@@ -6074,7 +8287,18 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
     def test_concurrent_operations_stability(
         self, mock_blink: Mock, mock_connection: Mock
     ) -> None:
-        """Test system stability under concurrent operations."""
+        """Test system stability under concurrent operations.
+
+        Verifies that the application maintains stability and performance
+        when multiple operations are executed concurrently and ensures
+        proper resource management under high concurrency scenarios.
+
+        Tests:
+            - System stability validation under concurrent operations
+            - Performance maintenance with high concurrency loads
+            - Resource management during simultaneous operations
+            - Thread safety and synchronization under concurrent access
+        """
         import threading
 
         # Mock blink system to prevent coroutine creation
@@ -6145,7 +8369,18 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.client = app.test_client()
 
     def test_application_startup_sequence(self) -> None:
-        """Test application startup and initialization."""
+        """Test application startup and initialization.
+
+        Verifies that the application startup process properly initializes
+        all required components and services in the correct order and
+        handles any initialization failures gracefully.
+
+        Tests:
+            - Application startup sequence validation
+            - Component initialization order and dependencies
+            - Startup failure handling and recovery mechanisms
+            - Service initialization verification and validation
+        """
         from blinkapp import app as flask_app
 
         # Test that the Flask app is properly configured
@@ -6153,7 +8388,18 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertTrue(flask_app.config.get("TESTING"))
 
     def test_global_variable_access(self) -> None:
-        """Test access to global variables."""
+        """Test access to global variables.
+
+        Verifies that global variables are properly accessible throughout
+        the application and maintain their expected values and state
+        across different execution contexts.
+
+        Tests:
+            - Global variable accessibility and state management
+            - Variable value persistence across execution contexts
+            - Proper global variable initialization and maintenance
+            - Cross-module global variable access validation
+        """
         import blinkapp
 
         # Test that global variables exist and are accessible
@@ -6165,7 +8411,18 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertTrue(hasattr(cache_service, "clips_cache"))
 
     def test_config_class_instantiation(self) -> None:
-        """Test Config class and its attributes."""
+        """Test Config class and its attributes.
+
+        Verifies that the Config class is properly instantiated with
+        correct default values and that all configuration attributes
+        are accessible and properly initialized.
+
+        Tests:
+            - Config class instantiation and initialization
+            - Default configuration value validation
+            - Configuration attribute accessibility and correctness
+            - Proper configuration object state management
+        """
         from blinkapp import Config
 
         # Test Config class attributes
@@ -6174,7 +8431,18 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertGreater(Config.CLIPS_CACHE_SIZE, 0)
 
     def test_fifo_cache_basic_operations(self) -> None:
-        """Test cache basic operations."""
+        """Test cache basic operations.
+
+        Verifies that the FIFO cache implementation properly handles
+        basic operations including item addition, retrieval, and
+        eviction according to the FIFO policy.
+
+        Tests:
+            - FIFO cache basic operation functionality
+            - Item addition, retrieval, and eviction mechanisms
+            - Cache size management and capacity enforcement
+            - FIFO policy implementation and validation
+        """
         # Test basic cache operations
         cache = CameraThumbnailCache(maxsize=2)
 
@@ -6193,7 +8461,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(len(cache), 1)
 
     def test_camera_id_basic_functionality(self) -> None:
-        """Test CameraId basic functionality."""
+        """Test CameraId basic functionality and core operations.
+
+        Verifies that the CameraId class provides basic functionality
+        for camera identifier management and validation.
+
+        Tests:
+            - CameraId basic functionality and core operations
+            - Camera identifier creation and validation
+            - Basic CameraId methods and property access
+            - Camera ID object behavior and string conversion
+        """
         from blinkapp.models.ids import CameraId
 
         # Test CameraId creation
@@ -6206,7 +8484,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertIsInstance(camera_id, CameraId)
 
     def test_clip_id_basic_functionality(self) -> None:
-        """Test ClipId basic functionality."""
+        """Test ClipId basic functionality and core operations.
+
+        Verifies that the ClipId class provides basic functionality
+        for clip identifier management and validation.
+
+        Tests:
+            - ClipId basic functionality and core operations
+            - Clip identifier creation and validation
+            - Basic ClipId methods and property access
+            - Clip ID object behavior and string conversion
+        """
         from blinkapp.models.ids import ClipId
 
         # Test local clip ID creation
@@ -6214,7 +8502,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertIsInstance(local_id, ClipId)
 
     def test_error_context_manager_basic(self) -> None:
-        """Test error_context manager basic functionality."""
+        """Test error_context manager basic functionality and error handling.
+
+        Verifies that the error_context context manager properly
+        handles errors and provides appropriate error management.
+
+        Tests:
+            - Error context manager basic functionality and operation
+            - Error handling and context management during exceptions
+            - Context manager entry and exit behavior
+            - Error propagation and handling within context
+        """
         from blinkapp.utils.decorators import error_context
 
         # Test successful operation
@@ -6224,7 +8522,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(result, "success")
 
     def test_validate_string_input_basic_cases(self) -> None:
-        """Test validate_string_input with basic valid cases."""
+        """Test validate_string_input with basic valid input cases.
+
+        Verifies that the validate_string_input function properly
+        handles basic valid input cases and returns expected results.
+
+        Tests:
+            - Basic valid input validation and processing
+            - Standard string input handling and validation
+            - Valid input case processing and result accuracy
+            - Input validation success scenarios and responses
+        """
         from blinkapp.utils.validators import validate_string_input
 
         # Test valid inputs
@@ -6235,7 +8543,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(result2, "trimmed")
 
     def test_extract_timestamp_basic_cases(self) -> None:
-        """Test extract_thumbnail_timestamp with basic cases."""
+        """Test extract_thumbnail_timestamp with basic timestamp cases.
+
+        Verifies that the extract_thumbnail_timestamp function properly
+        extracts timestamp information from basic input cases.
+
+        Tests:
+            - Basic timestamp extraction from thumbnail data
+            - Timestamp parsing and format validation
+            - Thumbnail timestamp processing and accuracy
+            - Basic timestamp extraction success scenarios
+        """
         from blinkapp.utils.parsers import extract_thumbnail_timestamp
 
         # Test valid timestamp extraction
@@ -6249,7 +8567,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(timestamp, 0)
 
     def test_create_api_response_basic_cases(self) -> None:
-        """Test create_api_response with basic cases."""
+        """Test create_api_response with basic response creation cases.
+
+        Verifies that the create_api_response function properly
+        creates API responses with basic input parameters.
+
+        Tests:
+            - Basic API response creation and formatting
+            - Response structure validation and consistency
+            - API response data handling and accuracy
+            - Basic response creation success scenarios
+        """
         from blinkapp.models.responses import create_api_response
 
         # Test success response
@@ -6270,7 +8598,18 @@ class TestCriticalPathCoverage(BaseTestCase):
     def test_ensure_blink_available_decorator_functionality(
         self, mock_blink_init: Mock
     ) -> None:
-        """Test ensure_blink_available decorator basic functionality."""
+        """Test ensure_blink_available decorator basic functionality.
+
+        Verifies that the ensure_blink_available decorator properly
+        validates Blink service availability and handles cases where
+        the service is not available or not properly initialized.
+
+        Tests:
+            - Blink service availability validation through decorator
+            - Proper handling of unavailable Blink service scenarios
+            - Decorator functionality for service availability checks
+            - Error handling when Blink service is not accessible
+        """
         # Mock blink initialization to fail
         mock_blink_init.side_effect = RuntimeError("Blink not initialized")
 
@@ -6282,7 +8621,17 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     @with_blink_auth
     def test_basic_route_accessibility(self) -> None:
-        """Test basic route accessibility."""
+        """Test basic route accessibility and endpoint availability.
+
+        Verifies that basic application routes are accessible
+        and respond appropriately to HTTP requests.
+
+        Tests:
+            - Basic route accessibility and HTTP response validation
+            - Endpoint availability and request handling
+            - Route response status codes and content validation
+            - Basic navigation and route functionality
+        """
         # Test that basic routes are accessible
         routes_to_test = [
             ("/", [200, 302, 500]),  # Index route (may redirect to login)
@@ -6300,7 +8649,17 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     @with_blink_auth
     def test_http_methods_handling(self) -> None:
-        """Test HTTP methods handling."""
+        """Test HTTP methods handling and request processing.
+
+        Verifies that the application properly handles different
+        HTTP methods and processes requests appropriately.
+
+        Tests:
+            - HTTP method handling and request processing
+            - Method-specific route behavior and responses
+            - HTTP verb validation and method support
+            - Request method routing and endpoint handling
+        """
         # Test GET method on settings
         response = self.client.get("/api/settings")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
@@ -6310,7 +8669,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(response.status_code, 400)  # Empty settings should return 400
 
     def test_json_response_format(self) -> None:
-        """Test JSON response format consistency."""
+        """Test JSON response format consistency and structure.
+
+        Verifies that the application maintains consistent JSON
+        response formats across all API endpoints.
+
+        Tests:
+            - JSON response format consistency and structure validation
+            - Response data formatting and content organization
+            - API response schema compliance and accuracy
+            - JSON structure standardization across endpoints
+        """
         response = self.client.get("/api/settings")  # type: TestResponse
 
         if response.status_code == 200:
@@ -6321,7 +8690,17 @@ class TestCriticalPathCoverage(BaseTestCase):
             self.assertIn("timestamp", data)
 
     def test_cache_operations_basic(self) -> None:
-        """Test basic cache operations."""
+        """Test basic cache operations and functionality.
+
+        Verifies that the cache system provides basic operations
+        for storing, retrieving, and managing cached data.
+
+        Tests:
+            - Basic cache operations and functionality validation
+            - Cache storage and retrieval operation accuracy
+            - Cache management and data persistence
+            - Basic cache system behavior and performance
+        """
         from blinkapp.services.cache_service import clear_all_caches
 
         # Test that clear_all_caches function exists and returns dict
@@ -6337,21 +8716,51 @@ class TestCriticalPathCoverage(BaseTestCase):
                 self.assertIsInstance(result, dict)
 
     def test_logging_functionality_basic(self) -> None:
-        """Test basic logging functionality."""
+        """Test basic logging functionality and message handling.
+
+        Verifies that the logging system provides basic functionality
+        for recording and managing application log messages.
+
+        Tests:
+            - Basic logging functionality and message recording
+            - Log message formatting and level handling
+            - Logging system configuration and output validation
+            - Basic log management and message processing
+        """
         from blinkapp.utils.logging_config import setup_logging
 
         # Test that setup_logging function exists
         self.assertTrue(callable(setup_logging))
 
     def test_path_operations_basic(self) -> None:
-        """Test basic path operations."""
+        """Test basic path operations and file system handling.
+
+        Verifies that the application provides basic path operations
+        for file system navigation and path management.
+
+        Tests:
+            - Basic path operations and file system handling
+            - Path validation and manipulation functionality
+            - File system navigation and path resolution
+            - Basic path management and directory operations
+        """
         from blinkapp.services.cache_service import initialize_cache_paths
 
         # Test that initialize_cache_paths function exists
         self.assertTrue(callable(initialize_cache_paths))
 
     def test_async_function_existence(self) -> None:
-        """Test that async functions exist."""
+        """Test that async functions exist and are properly defined.
+
+        Verifies that all required asynchronous functions are
+        properly defined and accessible in the application.
+
+        Tests:
+            - Async function existence and definition validation
+            - Asynchronous function accessibility and import capability
+            - Async function signature and parameter validation
+            - Asynchronous operation support and functionality
+        """
         import inspect
 
         from blinkapp.services.auth_service import initialize_blink, verify_2fa_and_save
@@ -6361,7 +8770,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertTrue(inspect.iscoroutinefunction(verify_2fa_and_save))
 
     def test_constants_and_globals(self) -> None:
-        """Test constants and global variables."""
+        """Test constants and global variables definition and accessibility.
+
+        Verifies that application constants and global variables
+        are properly defined and accessible throughout the application.
+
+        Tests:
+            - Constants and global variables definition and accessibility
+            - Global variable value validation and consistency
+            - Constant definition accuracy and immutability
+            - Application-wide variable availability and access
+        """
         import blinkapp
 
         # Test that important constants exist
@@ -6370,7 +8789,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertTrue(hasattr(blinkapp, "app"))
 
     def test_import_statements_coverage(self) -> None:
-        """Test import statements and module loading."""
+        """Test import statements and module loading functionality.
+
+        Verifies that all import statements work correctly and
+        modules are properly loaded and accessible.
+
+        Tests:
+            - Import statements and module loading functionality
+            - Module accessibility and import resolution
+            - Dependency loading and module availability
+            - Import error handling and module validation
+        """
         # Test that key modules can be imported
         try:
             from blinkapp import Config
@@ -6391,7 +8820,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertTrue(success)
 
     def test_exception_classes(self) -> None:
-        """Test custom exception classes."""
+        """Test custom exception classes definition and functionality.
+
+        Verifies that custom exception classes are properly defined
+        and provide appropriate error handling functionality.
+
+        Tests:
+            - Custom exception classes definition and functionality
+            - Exception class inheritance and behavior validation
+            - Error handling and exception raising accuracy
+            - Exception message formatting and error information
+        """
         from blinkapp.utils.errors import BlinkError
 
         # Test that BlinkError can be instantiated
@@ -6400,7 +8839,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(str(error), "Test error")
 
     def test_type_annotations_coverage(self) -> None:
-        """Test functions with type annotations."""
+        """Test functions with type annotations and type safety.
+
+        Verifies that functions with type annotations are properly
+        defined and provide appropriate type safety validation.
+
+        Tests:
+            - Functions with type annotations and type safety validation
+            - Type annotation accuracy and consistency
+            - Type checking and validation functionality
+            - Type safety enforcement and error detection
+        """
         from blinkapp.models.responses import create_api_response
         from blinkapp.utils.validators import validate_string_input
 
@@ -6413,7 +8862,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertIsInstance(result, str)
 
     def test_conditional_imports(self) -> None:
-        """Test conditional import handling."""
+        """Test conditional import handling and module loading.
+
+        Verifies that conditional imports are properly handled
+        and modules are loaded based on runtime conditions.
+
+        Tests:
+            - Conditional import handling and module loading
+            - Runtime condition evaluation for imports
+            - Import fallback behavior and error handling
+            - Conditional module availability and access
+        """
         # Test that the app handles missing optional dependencies gracefully
         import blinkapp
 
@@ -6421,7 +8880,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertIsNotNone(blinkapp.app)
 
     def test_environment_variable_handling(self) -> None:
-        """Test environment variable handling."""
+        """Test environment variable handling and configuration.
+
+        Verifies that the application properly handles environment
+        variables and uses them for configuration management.
+
+        Tests:
+            - Environment variable handling and configuration
+            - Environment variable parsing and value extraction
+            - Configuration loading from environment variables
+            - Environment-based configuration validation and defaults
+        """
         import os
 
         from blinkapp import app as flask_app
@@ -6437,7 +8906,17 @@ class TestCriticalPathCoverage(BaseTestCase):
             os.environ["SECRET_KEY"] = original_secret
 
     def test_flask_app_configuration(self) -> None:
-        """Test Flask app configuration."""
+        """Test Flask app configuration and initialization.
+
+        Verifies that the Flask application is properly configured
+        and initialized with correct settings and parameters.
+
+        Tests:
+            - Flask app configuration and initialization
+            - Application settings validation and accuracy
+            - Flask configuration parameter handling
+            - App initialization sequence and component setup
+        """
         from blinkapp import app as flask_app
 
         # Test basic Flask configuration
@@ -6445,7 +8924,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertTrue(flask_app.config.get("TESTING"))
 
     def test_request_context_handling(self) -> None:
-        """Test request context handling."""
+        """Test Flask request context handling and management.
+
+        Verifies that the application properly handles Flask request
+        contexts and manages context lifecycle during request processing.
+
+        Tests:
+            - Request context creation and management
+            - Context variable access and manipulation
+            - Request context cleanup and resource management
+            - Context isolation between different requests
+        """
         # Test that requests are handled properly
         with self.client:
             response = self.client.get("/api/settings")  # type: TestResponse
@@ -6453,7 +8942,17 @@ class TestCriticalPathCoverage(BaseTestCase):
             self.assertIsNotNone(response)
 
     def test_response_headers(self) -> None:
-        """Test response headers."""
+        """Test HTTP response header configuration and management.
+
+        Verifies that the application properly sets and manages
+        HTTP response headers for security and functionality.
+
+        Tests:
+            - Security header configuration and presence
+            - Content-Type header setting for different responses
+            - Cache control headers for static and dynamic content
+            - Custom application headers and their values
+        """
         response = self.client.get("/api/settings")  # type: TestResponse
 
         # Should have proper content type for JSON responses
@@ -6461,13 +8960,33 @@ class TestCriticalPathCoverage(BaseTestCase):
             self.assertIn("application/json", response.content_type or "")
 
     def test_error_handling_basic(self) -> None:
-        """Test basic error handling."""
+        """Test basic HTTP error handling and response formatting.
+
+        Verifies that the application properly handles basic HTTP errors
+        and returns appropriate error responses with correct status codes.
+
+        Tests:
+            - 404 Not Found error handling for non-existent routes
+            - Error response format and content structure
+            - HTTP status code accuracy for different error types
+            - Error message clarity and user feedback
+        """
         # Test that invalid routes return proper error codes
         response = self.client.get("/nonexistent/route")  # type: TestResponse
         self.assertEqual(response.status_code, 404)
 
     def test_method_not_allowed_handling(self) -> None:
-        """Test method not allowed handling."""
+        """Test HTTP method not allowed error handling.
+
+        Verifies that the application properly handles requests with
+        unsupported HTTP methods and returns appropriate error responses.
+
+        Tests:
+            - 405 Method Not Allowed error handling
+            - Unsupported HTTP method rejection and response
+            - Allowed methods indication in error responses
+            - Method validation and security enforcement
+        """
         # Test POST on logout (should be allowed)
         response = self.client.post("/logout")  # type: TestResponse
         # Should not return 405 (Method Not Allowed)
@@ -6479,7 +8998,17 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     @with_blink_auth
     def test_content_type_handling(self) -> None:
-        """Test content type handling."""
+        """Test HTTP content type handling and processing.
+
+        Verifies that the application properly handles different
+        content types in requests and responses.
+
+        Tests:
+            - Content-Type header processing for different request types
+            - JSON content type handling and parsing
+            - Form data content type processing
+            - Response content type setting and accuracy
+        """
         # Test JSON content type
         response = self.client.put(
             "/api/settings", json={"test": "data"}, content_type="application/json"
@@ -6492,7 +9021,17 @@ class TestCriticalPathCoverage(BaseTestCase):
 
     @with_blink_auth
     def test_url_parameter_handling(self) -> None:
-        """Test URL parameter handling."""
+        """Test URL parameter parsing and processing.
+
+        Verifies that the application properly handles URL parameters
+        and query strings in HTTP requests.
+
+        Tests:
+            - Query parameter extraction and parsing
+            - URL parameter validation and processing
+            - Parameter type conversion and handling
+            - Invalid parameter handling and error responses
+        """
         # Test URL with parameters
         response = self.client.get("/api/clips?storage=cloud")  # type: TestResponse
 
@@ -6500,7 +9039,17 @@ class TestCriticalPathCoverage(BaseTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_static_file_handling(self) -> None:
-        """Test static file handling."""
+        """Test static file serving and handling.
+
+        Verifies that the application properly serves static files
+        such as CSS, JavaScript, and images.
+
+        Tests:
+            - Static file serving functionality and accessibility
+            - Correct MIME type setting for different file types
+            - Static file caching and performance optimization
+            - Static file security and access control
+        """
         # Test static file route
         response = self.client.get("/static/nonexistent.css")  # type: TestResponse
 
@@ -6521,7 +9070,21 @@ class TestApplicationInitializationFixed(BaseTestCase):
     def test_app_initialization_sequence(
         self, mock_logging: Mock, mock_cache: Mock
     ) -> None:
-        """Test application initialization sequence."""
+        """Test application initialization sequence and component setup.
+
+        Verifies that the application properly initializes all components
+        in the correct order during startup.
+
+        Args:
+            mock_logging: Mock for logging configuration
+            mock_cache: Mock for cache initialization
+
+        Tests:
+            - Application component initialization order and sequence
+            - Service startup and dependency resolution
+            - Configuration loading and validation during startup
+            - Error handling during application initialization
+        """
         # Mock the initialization functions
         mock_cache.return_value = None
         mock_logging.return_value = None
@@ -6544,7 +9107,21 @@ class TestTemplateRoutesFixed(BaseTestCase):
     def test_index_template_rendering_with_mocks(
         self, mock_render: Mock, mock_auth: Mock
     ) -> None:
-        """Test index template rendering."""
+        """Test index template rendering with mocked dependencies.
+
+        Verifies that the index template renders correctly with
+        mocked authentication and template rendering components.
+
+        Args:
+            mock_render: Mock for template rendering
+            mock_auth: Mock for authentication checking
+
+        Tests:
+            - Index template rendering with mocked dependencies
+            - Template context variable passing and processing
+            - Authentication state integration in template rendering
+            - Template rendering performance and error handling
+        """
         mock_auth.return_value = True
         mock_render.return_value = "<html>Test</html>"
 
@@ -6554,7 +9131,20 @@ class TestTemplateRoutesFixed(BaseTestCase):
 
     @patch("flask.render_template")
     def test_auth_template_rendering(self, mock_render: Mock) -> None:
-        """Test auth template rendering."""
+        """Test authentication template rendering functionality.
+
+        Verifies that the authentication template renders correctly
+        with proper context variables and form elements.
+
+        Args:
+            mock_render: Mock for template rendering
+
+        Tests:
+            - Authentication template rendering and form generation
+            - Template context variable passing for auth forms
+            - Login and 2FA form rendering and validation
+            - Template rendering error handling and fallbacks
+        """
         mock_render.return_value = "<html>Auth</html>"
 
         # Test auth route exists and responds
@@ -6582,7 +9172,20 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.is_blink_authenticated")
     def test_index_route_with_auth_mock(self, mock_auth: Mock) -> None:
-        """Test index route functionality."""
+        """Test index route functionality with mocked authentication.
+
+        Verifies that the index route properly handles requests
+        with mocked authentication components.
+
+        Args:
+            mock_auth: Mock for authentication checking
+
+        Tests:
+            - Index route request handling with mocked authentication
+            - Route response generation and status code accuracy
+            - Authentication integration in route processing
+            - Route error handling and fallback behavior
+        """
         mock_auth.return_value = False
         response = self.client.get("/")  # type: TestResponse
         # Should redirect to login when not authenticated
@@ -6590,7 +9193,20 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.is_blink_authenticated")
     def test_auth_route(self, mock_auth: Mock) -> None:
-        """Test auth route functionality."""
+        """Test authentication route functionality and processing.
+
+        Verifies that the authentication route properly handles
+        authentication requests and responses.
+
+        Args:
+            mock_auth: Mock for authentication checking
+
+        Tests:
+            - Authentication route request processing and handling
+            - Login and logout functionality through auth routes
+            - Authentication state management and session handling
+            - Route security and access control validation
+        """
         mock_auth.return_value = False
 
         # Test GET request to login endpoint (not /auth)
@@ -6603,7 +9219,28 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
     def test_get_clips_missing_storage_param(
         self, mock_connection: Mock, mock_blink: Mock, mock_cache: Mock
     ) -> None:
-        """Test get clips without storage parameter."""
+        """Test clips API endpoint when storage parameter is missing.
+
+        Verifies that the clips API properly handles requests
+        without the required storage parameter.
+
+        Args:
+            mock_connection: Mock for Blink connection
+            mock_blink: Mock for Blink service
+            mock_cache: Mock for cache operations
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Missing storage parameter handling and validation
+            - Proper error response for incomplete API requests
+            - Parameter validation and requirement enforcement
+            - API error messaging and user feedback
+        """
         # Mock blink to be available
         mock_blink_instance = create_mock_blink_instance()
 
@@ -6628,7 +9265,27 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
     def test_get_clip_thumbnail_check_success(
         self, mock_cache_init: Mock, mock_blink: Mock
     ) -> None:
-        """Test clip thumbnail check success."""
+        """Test successful clip thumbnail availability check.
+
+        Verifies that the clip thumbnail check endpoint successfully
+        validates thumbnail availability and returns appropriate status.
+
+        Args:
+            mock_cache_init: Mock for cache initialization
+            mock_blink: Mock for Blink service
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Successful thumbnail availability check and validation
+            - Proper response format for available thumbnails
+            - Cache integration for thumbnail status verification
+            - API endpoint behavior for thumbnail existence queries
+        """
         # Mock blink availability
         create_mock_blink_instance()
 
@@ -6645,7 +9302,27 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
     def test_get_clip_thumbnail_check_not_found(
         self, mock_cache_init: Mock, mock_blink: Mock
     ) -> None:
-        """Test clip thumbnail check not found."""
+        """Test clip thumbnail availability check when thumbnail is not found.
+
+        Verifies that the clip thumbnail check endpoint properly handles
+        cases where the requested thumbnail is not available.
+
+        Args:
+            mock_cache_init: Mock for cache initialization
+            mock_blink: Mock for Blink service
+
+
+
+        Args:
+            mock_ensure_blink: Mock for Blink service initialization
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Thumbnail not found handling and error response
+            - Proper 404 status code for missing thumbnails
+            - Cache integration for unavailable thumbnail detection
+            - API endpoint behavior for non-existent thumbnail queries
+        """
         # Mock blink availability
         create_mock_blink_instance()
 
@@ -6665,7 +9342,20 @@ class TestConfigurationEdgeCasesFixed(BaseTestCase):
 
     @patch("blinkapp.services.blink_connection.get_blink_connection")
     def test_create_device_data_function(self, mock_connection: Mock) -> None:
-        """Test create_device_data function if it exists."""
+        """Test create_device_data function functionality if it exists.
+
+        Verifies that the create_device_data function properly formats
+        and structures device information for API responses.
+
+        Args:
+            mock_connection: Mock for Blink connection
+
+        Tests:
+            - Device data creation and formatting functionality
+            - Proper data structure for device information responses
+            - Device attribute extraction and organization
+            - API response format compliance for device data
+        """
         from unittest.mock import Mock
 
         # Mock blink connection
@@ -6707,7 +9397,21 @@ class TestFileOperationsFixed(BaseTestCase):
     def test_cache_directory_creation(
         self, mock_exists: Mock, mock_makedirs: Mock
     ) -> None:
-        """Test cache directory creation."""
+        """Test cache directory creation and initialization functionality.
+
+        Verifies that the application properly creates cache directories
+        when they don't exist and handles directory creation operations.
+
+        Args:
+            mock_exists: Mock for directory existence checking
+            mock_makedirs: Mock for directory creation operations
+
+        Tests:
+            - Cache directory creation when directories don't exist
+            - Proper directory structure setup and initialization
+            - File system operations for cache directory management
+            - Directory creation error handling and validation
+        """
         mock_exists.return_value = False
 
         # Test directory creation logic
@@ -6782,7 +9486,17 @@ class TestModuleImports(FlaskTestCase):
 
     @patch("blinkapp.Config.LOG_FILE", "/tmp/test.log")
     def test_logging_configuration(self) -> None:
-        """Test logging configuration paths."""
+        """Test logging configuration setup and path validation.
+
+        Verifies that the application logging configuration is properly
+        set up with correct paths and configuration parameters.
+
+        Tests:
+            - Logging configuration setup and initialization
+            - Log file path validation and accessibility
+            - Logging level configuration and format settings
+            - Log rotation and file management configuration
+        """
         from blinkapp import Config
 
         # Test that logging configuration can be accessed

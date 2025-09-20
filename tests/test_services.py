@@ -751,7 +751,21 @@ class TestAuthService(BaseTestCase):
     def test_verify_2fa_and_save_success(
         self, mock_get_blink: Mock, mock_get_creds_path: Mock
     ) -> None:
-        """Test verify_2fa_and_save success."""
+        """Test successful 2FA verification and credential saving.
+
+        Verifies that the verify_2fa_and_save function successfully
+        completes 2FA verification and saves credentials to storage.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+            mock_get_creds_path: Mock for credentials file path
+
+        Tests:
+            - Successful 2FA code verification process
+            - Credential saving after successful verification
+            - Proper authentication state management
+            - Verification workflow completion and storage
+        """
         from pathlib import Path
 
         from blinkapp.services.auth_service import verify_2fa_and_save
@@ -838,7 +852,21 @@ class TestAuthService(BaseTestCase):
     def test_load_saved_blink_no_file(
         self, mock_exists: Mock, mock_creds_path: Mock
     ) -> None:
-        """Test load_saved_blink when no credentials file exists."""
+        """Test saved Blink credential loading when no credentials file exists.
+
+        Verifies that the load_saved_blink function properly handles
+        the case where no saved credentials file is available.
+
+        Args:
+            mock_exists: Mock for Path.exists method
+            mock_creds_path: Mock for credentials file path
+
+        Tests:
+            - Handles missing credentials file gracefully
+            - Returns appropriate response for no saved credentials
+            - Proper file existence checking and validation
+            - Graceful handling of first-time authentication scenarios
+        """
         from blinkapp.services.auth_service import load_saved_blink
 
         mock_exists.return_value = False
@@ -904,7 +932,22 @@ class TestAuthService(BaseTestCase):
     def test_load_saved_blink_exception(
         self, mock_json_load: Mock, mock_exists: Mock, mock_creds_path: Mock
     ) -> None:
-        """Test load_saved_blink when exception occurs."""
+        """Test saved Blink credential loading when exception occurs during file processing.
+
+        Verifies that the load_saved_blink function properly handles
+        exceptions that occur during credential file loading and parsing.
+
+        Args:
+            mock_json_load: Mock for json.load function
+            mock_exists: Mock for Path.exists method
+            mock_creds_path: Mock for credentials file path
+
+        Tests:
+            - Exception handling during credential file processing
+            - Proper error recovery for corrupted or invalid files
+            - Graceful fallback behavior when file loading fails
+            - Error logging and user feedback for file processing errors
+        """
         from pathlib import Path
 
         from blinkapp.services.auth_service import load_saved_blink
@@ -926,7 +969,21 @@ class TestAuthService(BaseTestCase):
     def test_handle_login_invalid_credentials(
         self, mock_ensure_conn: Mock, mock_validate: Mock
     ) -> None:
-        """Test handle_login with invalid credentials."""
+        """Test login handling with invalid credential format.
+
+        Verifies that the handle_login function properly rejects
+        invalid credential formats and provides appropriate error responses.
+
+        Args:
+            mock_ensure_conn: Mock for connection initialization
+            mock_validate: Mock for credential validation
+
+        Tests:
+            - Invalid credential format rejection
+            - Proper validation error handling and response
+            - Authentication failure for malformed credentials
+            - Error message clarity for invalid input formats
+        """
         from blinkapp.services.auth_service import handle_login
 
         mock_validate.return_value = False
@@ -942,7 +999,21 @@ class TestAuthService(BaseTestCase):
     def test_handle_login_connection_not_ready(
         self, mock_ensure_conn: Mock, mock_validate: Mock
     ) -> None:
-        """Test handle_login when connection not ready."""
+        """Test login handling when connection initialization fails.
+
+        Verifies that the handle_login function properly handles
+        cases where the Blink connection cannot be established.
+
+        Args:
+            mock_ensure_conn: Mock for connection initialization
+            mock_validate: Mock for credential validation
+
+        Tests:
+            - Connection initialization failure handling
+            - Proper error response for connection issues
+            - Authentication failure due to connectivity problems
+            - Error recovery and user feedback for connection failures
+        """
         from blinkapp.services.auth_service import handle_login
 
         mock_validate.return_value = True
@@ -959,7 +1030,21 @@ class TestAuthService(BaseTestCase):
     def test_handle_login_success(
         self, mock_ensure_conn: Mock, mock_validate: Mock
     ) -> None:
-        """Test handle_login success."""
+        """Test successful login handling and authentication workflow.
+
+        Verifies that the handle_login function successfully processes
+        valid credentials and completes the authentication workflow.
+
+        Args:
+            mock_ensure_conn: Mock for connection initialization
+            mock_validate: Mock for credential validation
+
+        Tests:
+            - Successful credential validation and processing
+            - Proper authentication workflow completion
+            - Session establishment after successful login
+            - Correct response format for successful authentication
+        """
         from blinkapp.services.auth_service import handle_login
         from tests.test_base import create_mock_blink_connection
 
@@ -979,6 +1064,21 @@ class TestAuthService(BaseTestCase):
     def test_handle_login_2fa_required(
         self, mock_ensure_conn: Mock, mock_validate: Mock
     ) -> None:
+        """Test login handling when 2FA verification is required.
+
+        Verifies that the handle_login function properly detects
+        when 2FA is required and sets up the appropriate session state.
+
+        Args:
+            mock_ensure_conn: Mock for connection initialization
+            mock_validate: Mock for credential validation
+
+        Tests:
+            - 2FA requirement detection during login process
+            - Proper session state setup for 2FA workflow
+            - Authentication flow transition to 2FA verification
+            - Correct response format indicating 2FA requirement
+        """
         """Test handle_login when 2FA required."""
         from blinkapp.services.auth_service import handle_login
         from tests.test_base import create_mock_blink_connection
@@ -1002,6 +1102,21 @@ class TestAuthService(BaseTestCase):
     def test_handle_login_auth_failed(
         self, mock_ensure_conn: Mock, mock_validate: Mock
     ) -> None:
+        """Test login handling when authentication fails.
+
+        Verifies that the handle_login function properly handles
+        authentication failures and provides appropriate error responses.
+
+        Args:
+            mock_ensure_conn: Mock for connection initialization
+            mock_validate: Mock for credential validation
+
+        Tests:
+            - Authentication failure detection and handling
+            - Proper error response for failed authentication
+            - Security measures for invalid login attempts
+            - Error message clarity for authentication failures
+        """
         """Test handle_login when authentication fails."""
         from blinkapp.services.auth_service import handle_login
         from tests.test_base import create_mock_blink_connection
@@ -1129,6 +1244,20 @@ class TestAuthService(BaseTestCase):
     def test_handle_2fa_verification_connection_not_ready(
         self, mock_ensure_conn: Mock
     ) -> None:
+        """Test 2FA verification when connection is not ready.
+
+        Verifies that the handle_2fa_verification function properly handles
+        cases where the Blink connection is not ready for 2FA operations.
+
+        Args:
+            mock_ensure_conn: Mock for connection initialization
+
+        Tests:
+            - Connection readiness validation during 2FA verification
+            - Proper error handling for connection issues in 2FA
+            - Authentication failure due to connectivity problems
+            - Error recovery and user feedback for connection failures
+        """
         """Test handle_2fa_verification when connection not ready."""
         from blinkapp.services.auth_service import handle_2fa_verification
 
@@ -1354,7 +1483,17 @@ class TestCacheService(BaseTestCase):
         self.assertIsNotNone(camera_thumbnail_cache)
 
     def test_ensure_clips_cache_initialized_after_init(self) -> None:
-        """Test clips cache initialization after global init."""
+        """Test clips cache initialization after global cache initialization.
+
+        Verifies that the clips cache can be properly initialized after
+        the global cache system has been set up with configuration.
+
+        Tests:
+            - Global cache initialization with configuration parameters
+            - Clips cache initialization after global setup
+            - Proper cache size configuration and validation
+            - Cache system integration and functionality
+        """
         from blinkapp.services.cache_service import (
             ensure_clips_cache_initialized,
             initialize_caches,
@@ -1370,7 +1509,17 @@ class TestCacheService(BaseTestCase):
         self.assertIsNotNone(cache)
 
     def test_ensure_camera_thumbnail_cache_initialized_after_init(self) -> None:
-        """Test camera thumbnail cache initialization after global init."""
+        """Test camera thumbnail cache initialization after global cache initialization.
+
+        Verifies that the camera thumbnail cache can be properly initialized
+        after the global cache system has been set up with configuration.
+
+        Tests:
+            - Global cache initialization with configuration parameters
+            - Camera thumbnail cache initialization after global setup
+            - Proper thumbnail cache size configuration and validation
+            - Cache system integration and thumbnail management
+        """
         from blinkapp.services.cache_service import (
             ensure_camera_thumbnail_cache_initialized,
             initialize_caches,
@@ -1386,7 +1535,17 @@ class TestCacheService(BaseTestCase):
         self.assertIsNotNone(cache)
 
     def test_cleanup_global_caches(self) -> None:
-        """Test cleaning up global caches."""
+        """Test cleaning up global caches and resource management.
+
+        Verifies that the global cache cleanup function properly
+        clears all cache data and releases associated resources.
+
+        Tests:
+            - Global cache initialization with configuration
+            - Cache cleanup function execution and validation
+            - Proper resource cleanup and memory management
+            - Cache system reset and state clearing
+        """
         from blinkapp.services.cache_service import (
             cleanup_global_caches,
             initialize_caches,
@@ -1409,7 +1568,17 @@ class TestCacheService(BaseTestCase):
         self.assertIsNone(camera_thumbnail_cache)
 
     def test_validate_cache_directory(self) -> None:
-        """Test cache directory validation."""
+        """Test cache directory validation functionality and path checking.
+
+        Verifies that the cache directory validation function properly
+        checks directory existence and accessibility.
+
+        Tests:
+            - Cache directory validation with existing directory path
+            - Proper boolean return value for validation results
+            - Directory accessibility and permission checking
+            - Cache directory validation system functionality
+        """
         from blinkapp.services.cache_service import validate_cache_directory
 
         # Test with /tmp which should exist on most systems
@@ -1417,7 +1586,17 @@ class TestCacheService(BaseTestCase):
         self.assertIsInstance(result, bool)
 
     def test_ensure_cache_directory(self) -> None:
-        """Test cache directory creation."""
+        """Test cache directory creation and initialization.
+
+        Verifies that the ensure_cache_directory function properly
+        creates cache directories when they don't exist.
+
+        Tests:
+            - Cache directory creation when missing
+            - Proper directory permissions and structure
+            - Directory existence validation after creation
+            - Error handling for directory creation failures
+        """
         import os
         import tempfile
 
@@ -1432,7 +1611,17 @@ class TestCacheService(BaseTestCase):
             self.assertTrue(os.path.isdir(test_path))
 
     def test_cache_service_stats(self) -> None:
-        """Test cache service stats."""
+        """Test cache service statistics collection and reporting.
+
+        Verifies that the cache service properly collects and reports
+        statistics about cache usage, performance, and resource utilization.
+
+        Tests:
+            - Cache statistics collection from all cache instances
+            - Proper aggregation of cache metrics and performance data
+            - Statistics reporting format and data accuracy
+            - Cache health monitoring and diagnostic information
+        """
         from blinkapp.services.cache_service import get_cache_stats, initialize_caches
 
         # Initialize caches first
@@ -1446,7 +1635,17 @@ class TestCacheService(BaseTestCase):
         self.assertIsInstance(stats, dict)
 
     def test_clear_all_caches(self) -> None:
-        """Test clearing all caches."""
+        """Test comprehensive cache clearing across all cache instances.
+
+        Verifies that the clear_all_caches function properly clears
+        all cache instances and resets cache state across the application.
+
+        Tests:
+            - Clearing of all cache types (thumbnails, clips, etc.)
+            - Proper cache state reset and memory cleanup
+            - Cache instance reinitialization after clearing
+            - Resource deallocation and garbage collection
+        """
         from blinkapp.services.cache_service import clear_all_caches
 
         with (
@@ -1461,7 +1660,17 @@ class TestCacheService(BaseTestCase):
             clear_all_caches()  # Should not raise exception
 
     def test_ensure_cache_paths_not_initialized_raises_error(self) -> None:
-        """Test cache paths initialization raises error when not initialized."""
+        """Test cache paths initialization error when paths are not properly initialized.
+
+        Verifies that the ensure_cache_paths_initialized function properly
+        raises an error when cache paths have not been initialized.
+
+        Tests:
+            - Error detection for uninitialized cache paths
+            - Proper RuntimeError exception with descriptive message
+            - Cache path validation and initialization state checking
+            - Error handling for missing cache configuration
+        """
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError) as context:
@@ -1470,7 +1679,17 @@ class TestCacheService(BaseTestCase):
         self.assertIn("Cache paths not initialized", str(context.exception))
 
     def test_ensure_cache_paths_cache_dir_none(self) -> None:
-        """Test ensure_cache_paths_initialized when cache dir is None."""
+        """Test cache paths initialization when cache directory is None.
+
+        Verifies that the ensure_cache_paths_initialized function properly
+        handles cases where the cache directory path is None or unset.
+
+        Tests:
+            - None cache directory handling and validation
+            - Proper error detection for missing cache directory
+            - Cache path validation with null directory values
+            - Error handling for incomplete cache configuration
+        """
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         # Mock blinkapp._CACHE_DIR_PATH to be None
@@ -1484,7 +1703,20 @@ class TestCacheService(BaseTestCase):
         "blinkapp.services.auth_service.get_credentials_file_path", return_value=None
     )
     def test_ensure_cache_paths_credentials_file_none(self, mock_creds) -> None:
-        """Test ensure_cache_paths_initialized when CREDENTIALS_FILE is None."""
+        """Test cache paths initialization when credentials file path is None.
+
+        Verifies that the ensure_cache_paths_initialized function properly
+        handles cases where the credentials file path is None or unset.
+
+        Args:
+            mock_creds: Mock for credentials file path
+
+        Tests:
+            - None credentials file path handling and validation
+            - Proper error detection for missing credentials file path
+            - Cache path validation with null credentials configuration
+            - Error handling for incomplete authentication setup
+        """
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
@@ -1492,7 +1724,20 @@ class TestCacheService(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.get_thumbnail_cache_dir", return_value=None)
     def test_ensure_cache_paths_thumbnail_dir_none(self, mock_thumb_dir) -> None:
-        """Test ensure_cache_paths_initialized when THUMBNAIL_CACHE_DIR is None."""
+        """Test cache paths initialization when thumbnail directory is None.
+
+        Verifies that the ensure_cache_paths_initialized function properly
+        handles cases where the thumbnail cache directory path is None or unset.
+
+        Args:
+            mock_thumb_dir: Mock for thumbnail directory path
+
+        Tests:
+            - None thumbnail directory handling and validation
+            - Proper error detection for missing thumbnail cache directory
+            - Cache path validation with null thumbnail configuration
+            - Error handling for incomplete thumbnail cache setup
+        """
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
         with self.assertRaises(RuntimeError):
@@ -1500,6 +1745,20 @@ class TestCacheService(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.get_clips_cache_dir", return_value=None)
     def test_ensure_cache_paths_clips_dir_none(self, mock_clips_dir) -> None:
+        """Test cache paths initialization when clips directory is None.
+
+        Verifies that the ensure_cache_paths_initialized function properly
+        handles cases where the clips cache directory path is None or unset.
+
+        Args:
+            mock_clips_dir: Mock for clips directory path
+
+        Tests:
+            - None clips directory handling and validation
+            - Proper error detection for missing clips cache directory
+            - Cache path validation with null clips configuration
+            - Error handling for incomplete clips cache setup
+        """
         """Test ensure_cache_paths_initialized when CLIPS_CACHE_DIR is None."""
         from blinkapp.services.cache_service import ensure_cache_paths_initialized
 
@@ -1586,6 +1845,21 @@ class TestCameraService(BaseTestCase):
     def test_find_camera_by_id_success(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
+        """Test successful camera lookup by ID with valid camera data.
+
+        Verifies that the find_camera_by_id function successfully locates
+        and returns camera information when a valid camera ID is provided.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Successful camera lookup with valid camera ID
+            - Proper camera data retrieval and formatting
+            - Camera information accuracy and completeness
+            - Service integration for camera identification
+        """
         """Test find_camera_by_id with existing camera."""
         from blinkapp.services.camera_service import find_camera_by_id
         from tests.test_base import create_mock_blink_instance, create_mock_camera
@@ -1610,6 +1884,21 @@ class TestCameraService(BaseTestCase):
     def test_find_camera_by_id_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
+        """Test camera lookup by ID when camera is not found.
+
+        Verifies that the find_camera_by_id function properly handles
+        cases where the specified camera ID does not exist in the system.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Camera not found error handling for invalid IDs
+            - Proper None return value for non-existent cameras
+            - Camera lookup validation and error response
+            - Service behavior for missing camera resources
+        """
         """Test find_camera_by_id with non-existent camera."""
         from blinkapp.services.camera_service import find_camera_by_id
         from tests.test_base import create_mock_blink_instance, create_mock_sync
@@ -1629,6 +1918,21 @@ class TestCameraService(BaseTestCase):
     def test_find_camera_by_id_blink_unavailable(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
+        """Test camera lookup by ID when Blink service is unavailable.
+
+        Verifies that the find_camera_by_id function properly handles
+        cases where the Blink service is not available for camera operations.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Blink service unavailability handling during camera lookup
+            - Proper error response when service is not accessible
+            - Service availability validation and error recovery
+            - Graceful degradation for unavailable Blink connections
+        """
         """Test find_camera_by_id when blink is unavailable."""
         from blinkapp.services.camera_service import find_camera_by_id
         from tests.test_base import create_mock_blink_instance
@@ -1645,6 +1949,17 @@ class TestDebugService(BaseTestCase):
     """Test debug service functions."""
 
     def test_check_credentials_file_exists_true(self) -> None:
+        """Test credentials file existence check when file exists.
+
+        Verifies that the check_credentials_file_exists function properly
+        detects when the credentials file is present in the file system.
+
+        Tests:
+            - Credentials file existence detection when file is present
+            - Proper True return value for existing credentials file
+            - File system validation and path checking accuracy
+            - Credentials file availability verification
+        """
         """Test check_credentials_file_exists when file exists."""
         from pathlib import Path
 
@@ -1658,6 +1973,17 @@ class TestDebugService(BaseTestCase):
             self.assertTrue(result)
 
     def test_check_credentials_file_exists_false(self) -> None:
+        """Test credentials file existence check when file does not exist.
+
+        Verifies that the check_credentials_file_exists function properly
+        detects when the credentials file is not present in the file system.
+
+        Tests:
+            - Credentials file absence detection when file is missing
+            - Proper False return value for non-existent credentials file
+            - File system validation and missing file handling
+            - Credentials file unavailability verification
+        """
         """Test check_credentials_file_exists when file doesn't exist."""
         from pathlib import Path
 
@@ -1670,6 +1996,17 @@ class TestDebugService(BaseTestCase):
             self.assertFalse(result)
 
     def test_dump_cloud_videos_empty(self) -> None:
+        """Test cloud video dump functionality with empty video collection.
+
+        Verifies that the dump_cloud_videos function properly handles
+        cases where no cloud videos are available for dumping.
+
+        Tests:
+            - Empty cloud video collection handling and processing
+            - Proper response format for empty video dumps
+            - Cloud video availability validation and reporting
+            - Service behavior when no videos are present
+        """
         """Test dump_cloud_videos with empty list."""
         from blinkapp.services.debug_service import dump_cloud_videos
 
@@ -1679,7 +2016,17 @@ class TestDebugService(BaseTestCase):
             mock_logger.info.assert_called_with("=== CLOUD VIDEOS ===")
 
     def test_dump_cloud_videos_with_data(self) -> None:
-        """Test dump_cloud_videos with video data."""
+        """Test cloud video dump functionality with available video data.
+
+        Verifies that the dump_cloud_videos function properly processes
+        and formats cloud video data when videos are available.
+
+        Tests:
+            - Cloud video data processing and formatting
+            - Video metadata extraction and organization
+            - Proper data structure for cloud video dumps
+            - Video information accuracy and completeness
+        """
         from blinkapp.services.debug_service import dump_cloud_videos
 
         videos = [{"id": "123", "name": "test.mp4"}, {"id": "456", "name": "test2.mp4"}]
@@ -1692,7 +2039,17 @@ class TestDebugService(BaseTestCase):
             mock_logger.info.assert_any_call(f"Video: {videos[1]}")
 
     def test_dump_blink_system_info_blink_unavailable(self) -> None:
-        """Test dump_blink_system_info when blink is unavailable."""
+        """Test Blink system info dump when Blink service is unavailable.
+
+        Verifies that the dump_blink_system_info function properly handles
+        cases where the Blink service is not available for system queries.
+
+        Tests:
+            - Blink service unavailability handling during system dump
+            - Proper error response when service is not accessible
+            - System info dump fallback behavior for unavailable service
+            - Error handling and user feedback for service unavailability
+        """
         from blinkapp.services.debug_service import dump_blink_system_info
 
         with (
@@ -1707,7 +2064,17 @@ class TestDebugService(BaseTestCase):
             mock_logger.error.assert_called_with("Blink system not available")
 
     def test_dump_blink_system_info_blink_not_available(self) -> None:
-        """Test dump_blink_system_info when blink exists but not available."""
+        """Test Blink system info dump when Blink exists but is not available.
+
+        Verifies that the dump_blink_system_info function properly handles
+        cases where Blink instance exists but is not in an available state.
+
+        Tests:
+            - Blink instance availability checking during system dump
+            - Proper handling when Blink exists but is not ready
+            - System info dump behavior for unavailable Blink instances
+            - Service state validation and error handling
+        """
         from blinkapp.services.debug_service import dump_blink_system_info
         from tests.test_base import create_mock_blink_instance
 
@@ -1726,7 +2093,17 @@ class TestDebugService(BaseTestCase):
             mock_logger.error.assert_called_with("Blink system not available")
 
     def test_dump_blink_system_info_success(self) -> None:
-        """Test dump_blink_system_info with successful system dump."""
+        """Test successful Blink system information dump and formatting.
+
+        Verifies that the dump_blink_system_info function successfully
+        retrieves and formats Blink system information when available.
+
+        Tests:
+            - Successful Blink system information retrieval and processing
+            - System data formatting and organization for display
+            - Complete system information extraction and accuracy
+            - Proper data structure for system info dumps
+        """
         from blinkapp.services.debug_service import dump_blink_system_info
         from tests.test_base import (
             create_mock_blink_instance,
@@ -1762,7 +2139,17 @@ class TestDeviceService(BaseTestCase):
     """Test device service functions."""
 
     def test_create_device_data(self) -> None:
-        """Test device data creation for UI display."""
+        """Test device data creation and formatting for UI display.
+
+        Verifies that the create_device_data function properly formats
+        device information for user interface presentation.
+
+        Tests:
+            - Device data creation and formatting for UI display
+            - Device attribute extraction and organization
+            - Proper data structure for device information responses
+            - Device information accuracy and completeness
+        """
         from blinkapp.services.device_service import create_device_data
         from tests.test_base import create_mock_camera
 
@@ -1787,7 +2174,17 @@ class TestDeviceService(BaseTestCase):
         self.assertEqual(result["id"], "test_camera_boost")
 
     def test_create_device_data_basic(self) -> None:
-        """Test creating device data."""
+        """Test basic device data creation functionality.
+
+        Verifies that the create_device_data function properly creates
+        basic device data structures with essential information.
+
+        Tests:
+            - Basic device data creation and structure
+            - Essential device information extraction and formatting
+            - Device data object creation with minimal requirements
+            - Basic device attribute processing and validation
+        """
         from blinkapp.services.device_service import create_device_data
         from tests.test_base import create_mock_camera
 
@@ -1812,7 +2209,17 @@ class TestHlsService(BaseTestCase):
     """Test HLS service pure functions for coverage."""
 
     def test_parse_tcp_url_variations(self) -> None:
-        """Test various TCP URL parsing scenarios."""
+        """Test TCP URL parsing with various format variations.
+
+        Verifies that the TCP URL parsing function properly handles
+        different TCP URL formats and variations.
+
+        Tests:
+            - Various TCP URL format parsing and validation
+            - URL component extraction for different TCP formats
+            - Protocol, host, and port parsing accuracy
+            - URL format flexibility and compatibility handling
+        """
         from blinkapp.services.hls_service import parse_tcp_url
 
         # Valid URL with port
@@ -1836,7 +2243,17 @@ class TestHlsService(BaseTestCase):
         self.assertEqual(result, {})
 
     def test_generate_hls_url_variations(self) -> None:
-        """Test HLS URL generation."""
+        """Test HLS URL generation with various configuration variations.
+
+        Verifies that the HLS URL generation function properly creates
+        URLs with different configuration parameters and variations.
+
+        Tests:
+            - HLS URL generation with various configuration parameters
+            - URL format consistency and accuracy for different inputs
+            - Parameter handling and URL construction validation
+            - HLS streaming URL compatibility and format compliance
+        """
         from blinkapp.services.hls_service import generate_hls_url
 
         # Default base URL
@@ -1848,14 +2265,34 @@ class TestHlsService(BaseTestCase):
         self.assertEqual(result, "http://example.com:9000/hls/camera456/playlist.m3u8")
 
     def test_parse_tcp_url_empty_string(self) -> None:
-        """Test parsing empty URL string."""
+        """Test TCP URL parsing with empty string input.
+
+        Verifies that the TCP URL parsing function properly handles
+        empty string inputs and provides appropriate error responses.
+
+        Tests:
+            - Empty string input handling in TCP URL parsing
+            - Proper error response for missing URL data
+            - Input validation for required URL parameters
+            - Error handling for invalid or missing TCP URLs
+        """
         from blinkapp.services.hls_service import parse_tcp_url
 
         result = parse_tcp_url("")
         self.assertEqual(result, {})
 
     def test_parse_tcp_url_no_port_detailed(self) -> None:
-        """Test parsing URL without port."""
+        """Test TCP URL parsing when port information is missing.
+
+        Verifies that the TCP URL parsing function properly handles
+        URLs without explicit port information and applies defaults.
+
+        Tests:
+            - TCP URL parsing without explicit port information
+            - Default port application and handling
+            - URL parsing flexibility for port-less URLs
+            - Port inference and default value assignment
+        """
         from blinkapp.services.hls_service import parse_tcp_url
 
         result = parse_tcp_url("tcp://127.0.0.1")
@@ -1867,7 +2304,17 @@ class TestHLSStreamConfig(BaseTestCase):
     """Test HLS stream configuration."""
 
     def test_hls_stream_config_defaults(self) -> None:
-        """Test HLS config uses defaults from Config."""
+        """Test HLS stream configuration with default values from Config.
+
+        Verifies that the HLS stream configuration properly uses
+        default values from the application configuration.
+
+        Tests:
+            - HLS configuration default value usage from Config class
+            - Proper configuration inheritance and default application
+            - Configuration parameter validation with default values
+            - HLS stream setup with standard configuration defaults
+        """
         from blinkapp.services.hls_service import HLSStreamConfig
 
         config = HLSStreamConfig()
@@ -1879,7 +2326,17 @@ class TestHLSStreamConfig(BaseTestCase):
         self.assertIsNotNone(config.idle_timeout)
 
     def test_hls_stream_config_custom_values(self) -> None:
-        """Test HLS config with custom values."""
+        """Test HLS stream configuration with custom parameter values.
+
+        Verifies that the HLS stream configuration properly handles
+        custom configuration values and overrides defaults.
+
+        Tests:
+            - HLS configuration with custom parameter values
+            - Configuration override functionality and validation
+            - Custom parameter handling and application
+            - HLS stream setup with user-defined configuration values
+        """
         from blinkapp.services.hls_service import HLSStreamConfig
 
         config = HLSStreamConfig(
@@ -1896,7 +2353,17 @@ class TestFFmpegHelpers(BaseTestCase):
     """Test FFmpeg helper functions."""
 
     def test_build_ffmpeg_command(self) -> None:
-        """Test FFmpeg command building."""
+        """Test FFmpeg command building and parameter construction.
+
+        Verifies that the FFmpeg command building function properly
+        constructs command-line arguments with correct parameters.
+
+        Tests:
+            - FFmpeg command construction with proper parameter formatting
+            - Command-line argument validation and structure
+            - Parameter passing and command building accuracy
+            - FFmpeg option handling and command generation
+        """
         from blinkapp.services.hls_service import HLSStreamConfig, _build_ffmpeg_command
 
         config = HLSStreamConfig(segment_time=4, list_size=5)
@@ -1925,7 +2392,17 @@ class TestFFmpegHelpers(BaseTestCase):
         self.assertEqual(cmd, expected)
 
     def test_create_ffmpeg_process_success(self) -> None:
-        """Test successful FFmpeg process creation."""
+        """Test successful FFmpeg process creation and initialization.
+
+        Verifies that the FFmpeg process creation function successfully
+        creates and initializes FFmpeg processes for video processing.
+
+        Tests:
+            - Successful FFmpeg process creation and initialization
+            - Process startup and configuration validation
+            - FFmpeg process parameter passing and setup
+            - Process creation success handling and validation
+        """
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         cmd = ["ffmpeg", "-version"]
@@ -1953,7 +2430,17 @@ class TestFFmpegHelpers(BaseTestCase):
             self.assertIsNone(result)
 
     def test_create_ffmpeg_process_error(self) -> None:
-        """Test FFmpeg process creation error."""
+        """Test FFmpeg process creation error handling and recovery.
+
+        Verifies that the FFmpeg process creation function properly
+        handles errors during process creation and provides appropriate responses.
+
+        Tests:
+            - FFmpeg process creation error detection and handling
+            - Error response generation and user feedback
+            - Process creation failure recovery and fallback behavior
+            - Error logging and diagnostic information provision
+        """
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         cmd = ["nonexistent_command"]
@@ -1962,7 +2449,17 @@ class TestFFmpegHelpers(BaseTestCase):
         self.assertIsNone(result)
 
     def test_create_ffmpeg_process_subprocess_error(self) -> None:
-        """Test FFmpeg process creation subprocess error."""
+        """Test FFmpeg process creation when subprocess operations fail.
+
+        Verifies that the _create_ffmpeg_process function properly handles
+        subprocess-specific errors during FFmpeg process creation.
+
+        Tests:
+            - Subprocess error handling during process creation
+            - Proper error recovery for subprocess failures
+            - None return value for failed subprocess operations
+            - Graceful handling of process creation edge cases
+        """
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         cmd = ["invalid_command_that_should_fail"]
@@ -1971,7 +2468,17 @@ class TestFFmpegHelpers(BaseTestCase):
         self.assertIsNone(result)
 
     def test_create_ffmpeg_process_default_factory(self) -> None:
-        """Test FFmpeg process creation with default factory."""
+        """Test FFmpeg process creation using default subprocess factory.
+
+        Verifies that the _create_ffmpeg_process function properly uses
+        the default subprocess.Popen factory for process creation.
+
+        Tests:
+            - Default subprocess factory usage for process creation
+            - Proper process creation with standard subprocess interface
+            - Correct process configuration and parameter passing
+            - Integration with default system process creation
+        """
         import subprocess
 
         from blinkapp.services.hls_service import _create_ffmpeg_process
@@ -1989,7 +2496,17 @@ class TestFFmpegHelpers(BaseTestCase):
             self.assertEqual(result, mock_process)
 
     def test_create_ffmpeg_process_with_mock_factory(self) -> None:
-        """Test FFmpeg process creation with mocked factory."""
+        """Test FFmpeg process creation using mocked subprocess factory.
+
+        Verifies that the _create_ffmpeg_process function properly integrates
+        with mocked subprocess factories for testing purposes.
+
+        Tests:
+            - Mocked subprocess factory integration and usage
+            - Proper process creation with test-controlled factory
+            - Mock factory parameter passing and configuration
+            - Test isolation and controlled process creation behavior
+        """
         import subprocess
 
         from blinkapp.services.hls_service import _create_ffmpeg_process
@@ -2002,7 +2519,17 @@ class TestFFmpegHelpers(BaseTestCase):
             mock_popen.assert_called_once()
 
     def test_create_ffmpeg_process_os_error(self) -> None:
-        """Test FFmpeg process creation with OS error."""
+        """Test FFmpeg process creation when operating system errors occur.
+
+        Verifies that the _create_ffmpeg_process function properly handles
+        operating system level errors during process creation.
+
+        Tests:
+            - OS-level error handling during process creation
+            - Proper error recovery for system-level failures
+            - None return value for OS errors and resource issues
+            - Graceful handling of system resource constraints
+        """
         from blinkapp.services.hls_service import _create_ffmpeg_process
 
         with patch("subprocess.Popen", side_effect=OSError("Process error")):
@@ -2026,7 +2553,17 @@ class TestHLSStream(BaseTestCase):
         self.tcp_url = "tcp://127.0.0.1:8080"
 
     def test_hls_stream_init(self) -> None:
-        """Test HLS stream initialization."""
+        """Test HLS stream object initialization and configuration.
+
+        Verifies that the HLS stream object is properly initialized
+        with correct configuration parameters and default state.
+
+        Tests:
+            - HLS stream object creation with configuration parameters
+            - Proper initialization of stream state and properties
+            - Default values for stream configuration and settings
+            - Stream object readiness for streaming operations
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2044,7 +2581,21 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_start_success(
         self, mock_sleep: Mock, mock_create_process: Mock
     ) -> None:
-        """Test successful HLS stream start."""
+        """Test successful HLS stream startup and initialization.
+
+        Verifies that the HLS stream start method successfully initiates
+        streaming with proper process creation and configuration.
+
+        Args:
+            mock_sleep: Mock for time.sleep function
+            mock_create_process: Mock for FFmpeg process creation
+
+        Tests:
+            - Successful HLS stream startup and process creation
+            - Proper stream URL generation and return value
+            - Stream state management during startup process
+            - FFmpeg process integration and configuration
+        """
         import tempfile
 
         from blinkapp.services.hls_service import HLSStream
@@ -2077,7 +2628,20 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_start_process_creation_failed(
         self, mock_create_process: Mock
     ) -> None:
-        """Test HLS stream start when process creation fails."""
+        """Test HLS stream startup when FFmpeg process creation fails.
+
+        Verifies that the HLS stream start method properly handles
+        failures during FFmpeg process creation and provides appropriate errors.
+
+        Args:
+            mock_create_process: Mock for FFmpeg process creation
+
+        Tests:
+            - Process creation failure handling during stream startup
+            - Proper error response when FFmpeg process cannot be created
+            - Stream state management during startup failures
+            - Error message clarity and user feedback for process failures
+        """
         from blinkapp.services.hls_service import HLSStream
 
         mock_create_process.return_value = None
@@ -2090,7 +2654,17 @@ class TestHLSStream(BaseTestCase):
         self.assertFalse(stream._active)
 
     def test_hls_stream_stop(self) -> None:
-        """Test HLS stream stop."""
+        """Test HLS stream stop functionality and state management.
+
+        Verifies that the HLS stream stop method properly deactivates
+        the stream and performs necessary cleanup operations.
+
+        Tests:
+            - Creates HLS stream instance in active state
+            - Calls stop method to deactivate stream
+            - Expects stream to be marked as inactive
+            - Verifies cleanup method is called for resource cleanup
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2103,7 +2677,17 @@ class TestHLSStream(BaseTestCase):
             mock_cleanup.assert_called_once()
 
     def test_hls_stream_cleanup_with_process(self) -> None:
-        """Test HLS stream cleanup with active process."""
+        """Test HLS stream cleanup with active FFmpeg process.
+
+        Verifies that the HLS stream cleanup method properly terminates
+        active FFmpeg processes and cleans up temporary resources.
+
+        Tests:
+            - Active FFmpeg process termination during cleanup
+            - Temporary directory cleanup and resource deallocation
+            - Process wait timeout handling and forced termination
+            - Stream state reset and resource cleanup completion
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2126,7 +2710,17 @@ class TestHLSStream(BaseTestCase):
         self.assertIsNone(stream.temp_dir)
 
     def test_hls_stream_is_active_not_active(self) -> None:
-        """Test is_active when stream is not active."""
+        """Test HLS stream activity status when stream is not active.
+
+        Verifies that the is_active method correctly reports inactive
+        status when the HLS stream is not currently running.
+
+        Tests:
+            - Creates HLS stream instance in inactive state
+            - Calls is_active method to check stream status
+            - Expects False return value indicating inactive stream
+            - Verifies proper stream status reporting for inactive streams
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2134,7 +2728,17 @@ class TestHLSStream(BaseTestCase):
         self.assertFalse(stream.is_active())
 
     def test_hls_stream_get_hls_url_no_temp_dir(self) -> None:
-        """Test get_hls_url when no temp directory."""
+        """Test HLS URL generation when no temporary directory exists.
+
+        Verifies that the get_hls_url method properly handles cases
+        where no temporary directory has been created for the stream.
+
+        Tests:
+            - Creates HLS stream instance without temporary directory
+            - Calls get_hls_url method to generate stream URL
+            - Expects None return value for missing temporary directory
+            - Verifies proper handling of uninitialized stream state
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2142,7 +2746,17 @@ class TestHLSStream(BaseTestCase):
         self.assertIsNone(stream.get_hls_url())
 
     def test_hls_stream_get_hls_url_success(self) -> None:
-        """Test get_hls_url with temp directory."""
+        """Test successful HLS URL generation with temporary directory.
+
+        Verifies that the get_hls_url method successfully generates
+        the correct HLS stream URL when temporary directory exists.
+
+        Tests:
+            - Creates HLS stream instance with mock temporary directory
+            - Calls get_hls_url method to generate stream URL
+            - Expects properly formatted HLS URL return value
+            - Verifies correct URL construction with camera ID and path
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2155,7 +2769,17 @@ class TestHLSStream(BaseTestCase):
         self.assertEqual(url, expected)
 
     def test_hls_stream_get_file_not_active(self) -> None:
-        """Test get_file when stream not active."""
+        """Test HLS file retrieval when stream is not active.
+
+        Verifies that the get_file method properly handles requests
+        for stream files when the HLS stream is not currently active.
+
+        Tests:
+            - Creates HLS stream instance in inactive state
+            - Calls get_file method to retrieve stream file
+            - Expects None return values for content and content type
+            - Verifies proper handling of inactive stream file requests
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2170,7 +2794,21 @@ class TestHLSStream(BaseTestCase):
     def test_hls_stream_get_file_success_m3u8(
         self, mock_exists: Mock, mock_open: Mock
     ) -> None:
-        """Test get_file success with m3u8 file."""
+        """Test successful HLS m3u8 playlist file retrieval.
+
+        Verifies that the get_file method successfully retrieves
+        m3u8 playlist files with correct content type headers.
+
+        Args:
+            mock_exists: Mock for Path.exists method
+            mock_open: Mock for file open operation
+
+        Tests:
+            - Creates active HLS stream with temporary directory
+            - Mocks file existence and content for m3u8 playlist
+            - Calls get_file method to retrieve playlist file
+            - Expects correct content and application/vnd.apple.mpegurl type
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2193,7 +2831,17 @@ class TestHLSStream(BaseTestCase):
         self.assertEqual(content_type, "application/vnd.apple.mpegurl")
 
     def test_hls_stream_get_file_ts_content_type(self) -> None:
-        """Test get_file with .ts file returns correct content type."""
+        """Test HLS transport stream file retrieval with correct content type.
+
+        Verifies that the get_file method returns the correct MIME type
+        for .ts (transport stream) files used in HLS streaming.
+
+        Tests:
+            - Creates active HLS stream with temporary directory
+            - Mocks file existence and content for .ts segment file
+            - Calls get_file method to retrieve transport stream file
+            - Expects correct content and video/mp2t content type
+        """
         from blinkapp.services.hls_service import HLSStream
 
         stream = HLSStream(self.camera_id, self.tcp_url, self.config)
@@ -2218,7 +2866,17 @@ class TestHLSStream(BaseTestCase):
             self.assertEqual(content_type, "video/mp2t")
 
     def test_hls_stream_is_active_with_timeout(self) -> None:
-        """Test is_active with idle timeout."""
+        """Test HLS stream activity status with idle timeout handling.
+
+        Verifies that the is_active method properly handles idle timeout
+        scenarios and automatically stops streams that exceed timeout limits.
+
+        Tests:
+            - Creates active HLS stream with mock process
+            - Sets last access time to trigger idle timeout
+            - Calls is_active method to check timeout handling
+            - Expects stream to be stopped and return False for timeout
+        """
         import subprocess
 
         from blinkapp.services.hls_service import HLSStream
@@ -2253,7 +2911,20 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_cloud_clip_no_blink_instance(self, mock_get_blink: Mock) -> None:
-        """Test download_cloud_clip when no blink instance."""
+        """Test cloud clip download when Blink instance is not available.
+
+        Verifies that the download_cloud_clip function properly handles
+        the case where no Blink instance is available for clip operations.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Configures get_blink_instance to return None
+            - Calls download_cloud_clip with valid clip ID
+            - Expects appropriate error response for missing Blink instance
+            - Verifies proper handling of unavailable service
+        """
         from blinkapp.services.clip_download import download_cloud_clip
 
         mock_get_blink.return_value = None
@@ -2266,7 +2937,20 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_cloud_clip_blink_unavailable(self, mock_get_blink: Mock) -> None:
-        """Test download_cloud_clip when blink unavailable."""
+        """Test cloud clip download when Blink service is unavailable.
+
+        Verifies that the download_cloud_clip function properly handles
+        the case where Blink service exists but is not available for operations.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Configures Blink instance with available=False
+            - Calls download_cloud_clip with valid clip ID
+            - Expects 503 Service Unavailable status code
+            - Verifies proper error response for unavailable service
+        """
         from blinkapp.services.clip_download import download_cloud_clip
         from tests.test_base import create_mock_blink_instance
 
@@ -2284,7 +2968,23 @@ class TestClipDownload(BaseTestCase):
     def test_download_cloud_clip_cached_file_exists(
         self, mock_get_blink: Mock, mock_send_file: Mock, mock_clips_dir: Mock
     ) -> None:
-        """Test download_cloud_clip when file already cached."""
+        """Test cloud clip download when file already exists in cache.
+
+        Verifies that the download_cloud_clip function properly handles
+        the case where the requested clip file is already cached locally.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+            mock_send_file: Mock for Flask send_file function
+            mock_clips_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory and Blink instance
+            - Mocks file existence check to return True
+            - Calls download_cloud_clip with valid clip ID
+            - Expects direct file response without re-downloading
+            - Verifies send_file is called for cached file delivery
+        """
         from pathlib import Path
 
         from blinkapp.services.clip_download import download_cloud_clip
@@ -2313,7 +3013,25 @@ class TestClipDownload(BaseTestCase):
         mock_exists: Mock,
         mock_cache_dir: Mock,
     ) -> None:
-        """Test download cloud clip when download fails."""
+        """Test cloud clip download when download operation fails.
+
+        Verifies that the download_cloud_clip function properly handles
+        download failures and returns appropriate error responses.
+
+        Args:
+            mock_blink: Mock for get_blink_instance function
+            mock_mkdir: Mock for Path.mkdir method
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures Blink instance and cache directory
+            - Mocks file existence check to return False (not cached)
+            - Mocks core download function to return error
+            - Calls download_cloud_clip with valid clip ID
+            - Expects 500 Internal Server Error status code
+            - Verifies proper error response with failure message
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2351,7 +3069,25 @@ class TestClipDownload(BaseTestCase):
         mock_exists: Mock,
         mock_cache_dir: Mock,
     ) -> None:
-        """Test download cloud clip when clip is not found."""
+        """Test cloud clip download when clip is not found in cloud storage.
+
+        Verifies that the download_cloud_clip function properly handles
+        the case where the requested clip does not exist in cloud storage.
+
+        Args:
+            mock_blink: Mock for get_blink_instance function
+            mock_mkdir: Mock for Path.mkdir method
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures Blink instance and cache directory
+            - Mocks file existence check to return False (not cached)
+            - Mocks core download function to return "Clip not found" error
+            - Calls download_cloud_clip with valid clip ID
+            - Expects 404 Not Found status code
+            - Verifies proper error response with not found message
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2389,7 +3125,25 @@ class TestClipDownload(BaseTestCase):
         mock_exists: Mock,
         mock_cache_dir: Mock,
     ) -> None:
-        """Test download cloud clip when URL is invalid."""
+        """Test cloud clip download when clip URL is invalid or malformed.
+
+        Verifies that the download_cloud_clip function properly handles
+        the case where the clip URL is invalid or has no scheme.
+
+        Args:
+            mock_blink: Mock for get_blink_instance function
+            mock_mkdir: Mock for Path.mkdir method
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures Blink instance and cache directory
+            - Mocks file existence check to return False (not cached)
+            - Mocks core download function to return URL error
+            - Calls download_cloud_clip with valid clip ID
+            - Expects 404 Not Found status code for invalid URL
+            - Verifies proper error response with URL validation message
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2417,7 +3171,18 @@ class TestClipDownload(BaseTestCase):
             self.assertIn("Invalid URL", response["error"])
 
     def test_download_cloud_clip_exception_handling(self) -> None:
-        """Test download_cloud_clip exception handling."""
+        """Test cloud clip download exception handling and error recovery.
+
+        Verifies that the download_cloud_clip function properly handles
+        unexpected exceptions during the download process.
+
+        Tests:
+            - Configures get_blink_instance to raise exception
+            - Calls download_cloud_clip with valid clip ID
+            - Expects 500 Internal Server Error status code
+            - Verifies proper error response with generic failure message
+            - Ensures exception is caught and handled gracefully
+        """
         from blinkapp.services.clip_download import download_cloud_clip
 
         with patch(
@@ -2431,7 +3196,19 @@ class TestClipDownload(BaseTestCase):
             self.assertIn("Failed to download cloud clip", response["error"])
 
     def test_download_cloud_clip_core_success(self) -> None:
-        """Test _download_cloud_clip_core success."""
+        """Test successful core cloud clip download functionality.
+
+        Verifies that the _download_cloud_clip_core function successfully
+        downloads a clip from cloud storage when all conditions are met.
+
+        Tests:
+            - Creates mock Blink instance with available=True
+            - Mocks get_videos_metadata to return clip metadata
+            - Mocks do_http_get to return video content
+            - Calls _download_cloud_clip_core with valid parameters
+            - Expects successful file path return and no error
+            - Verifies file write operation is called
+        """
         import asyncio
         from pathlib import Path
 
@@ -2467,7 +3244,18 @@ class TestClipDownload(BaseTestCase):
         asyncio.run(run_test())
 
     def test_download_cloud_clip_core_clip_not_found(self) -> None:
-        """Test _download_cloud_clip_core when clip not found in metadata."""
+        """Test core cloud clip download when clip not found in metadata.
+
+        Verifies that the _download_cloud_clip_core function properly handles
+        the case where the requested clip ID is not found in video metadata.
+
+        Tests:
+            - Creates mock Blink instance with available=True
+            - Mocks get_videos_metadata to return different clip ID
+            - Calls _download_cloud_clip_core with target clip ID
+            - Expects None file path return and "Clip not found" error
+            - Verifies proper handling of missing clip metadata
+        """
         import asyncio
         from pathlib import Path
 
@@ -2497,7 +3285,18 @@ class TestClipDownload(BaseTestCase):
         asyncio.run(run_test())
 
     def test_download_cloud_clip_core_no_media_url(self) -> None:
-        """Test _download_cloud_clip_core when no media URL."""
+        """Test core cloud clip download when media URL is missing.
+
+        Verifies that the _download_cloud_clip_core function properly handles
+        the case where clip metadata exists but has no media URL.
+
+        Tests:
+            - Creates mock Blink instance with available=True
+            - Mocks get_videos_metadata to return clip without media URL
+            - Calls _download_cloud_clip_core with valid clip ID
+            - Expects None file path return and availability error
+            - Verifies proper handling of incomplete clip metadata
+        """
         import asyncio
         from pathlib import Path
 
@@ -2524,7 +3323,18 @@ class TestClipDownload(BaseTestCase):
         asyncio.run(run_test())
 
     def test_download_cloud_clip_core_exception(self) -> None:
-        """Test _download_cloud_clip_core exception handling."""
+        """Test core cloud clip download exception handling.
+
+        Verifies that the _download_cloud_clip_core function properly handles
+        exceptions during the download process and returns appropriate errors.
+
+        Tests:
+            - Creates mock Blink instance with available=True
+            - Mocks get_videos_metadata to raise exception
+            - Calls _download_cloud_clip_core with valid parameters
+            - Expects None file path return and error message
+            - Verifies proper exception handling and error reporting
+        """
         import asyncio
         from pathlib import Path
 
@@ -2550,7 +3360,20 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_local_clip_no_blink_instance(self, mock_get_blink: Mock) -> None:
-        """Test download_local_clip when no blink instance."""
+        """Test local clip download when Blink instance is not available.
+
+        Verifies that the download_local_clip function properly handles
+        the case where no Blink instance is available for local clip operations.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Configures get_blink_instance to return None
+            - Calls download_local_clip with valid clip ID
+            - Expects appropriate error response for missing Blink instance
+            - Verifies proper handling of unavailable local storage service
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
 
@@ -2564,7 +3387,21 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_local_clip_blink_unavailable(self, mock_get_blink: Mock) -> None:
-        """Test download_local_clip when blink unavailable."""
+        """Test local clip download when Blink service is unavailable.
+
+        Verifies that the download_local_clip function properly handles
+        the case where Blink service exists but is not available for operations.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Creates local clip ID for sync module and clip
+            - Configures Blink instance with available=False
+            - Calls download_local_clip with local clip ID
+            - Expects 503 Service Unavailable status code
+            - Verifies proper error response for unavailable service
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
         from tests.test_base import create_mock_blink_instance
@@ -2580,7 +3417,21 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_local_clip_sync_not_found(self, mock_get_blink: Mock) -> None:
-        """Test download_local_clip when sync module not found."""
+        """Test local clip download when sync module is not found.
+
+        Verifies that the download_local_clip function properly handles
+        the case where the specified sync module does not exist.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Creates local clip ID for non-existent sync module
+            - Configures Blink instance with empty sync dictionary
+            - Calls download_local_clip with missing sync ID
+            - Expects 404 Not Found status code
+            - Verifies proper error response for missing sync module
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
         from tests.test_base import create_mock_blink_instance
@@ -2598,7 +3449,21 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_local_clip_no_local_storage(self, mock_get_blink: Mock) -> None:
-        """Test download_local_clip when no local storage."""
+        """Test local clip download when local storage is not available.
+
+        Verifies that the download_local_clip function properly handles
+        the case where the sync module exists but has no local storage.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Creates local clip ID for existing sync module
+            - Configures sync module with local_storage=False
+            - Calls download_local_clip with valid local clip ID
+            - Expects 503 Service Unavailable status code
+            - Verifies proper error response for unavailable local storage
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
         from tests.test_base import create_mock_blink_instance, create_mock_sync
@@ -2618,7 +3483,21 @@ class TestClipDownload(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_local_clip_item_not_found(self, mock_get_blink: Mock) -> None:
-        """Test download_local_clip when local item not found."""
+        """Test local clip download when specific clip item is not found.
+
+        Verifies that the download_local_clip function properly handles
+        the case where local storage exists but the specific clip is missing.
+
+        Args:
+            mock_get_blink: Mock for get_blink_instance function
+
+        Tests:
+            - Creates local clip ID for existing sync module
+            - Configures sync module with local storage but empty manifest
+            - Calls download_local_clip with non-existent clip ID
+            - Expects 404 Not Found status code
+            - Verifies proper error response for missing clip item
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
         from tests.test_base import create_mock_blink_instance, create_mock_sync
@@ -2643,7 +3522,23 @@ class TestClipDownload(BaseTestCase):
     def test_download_local_clip_cached_file_exists(
         self, mock_send_file: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test download local clip when blink is not available."""
+        """Test local clip download when Blink service is not available.
+
+        Verifies that the download_local_clip function properly handles
+        the case where Blink service is not available for local operations.
+
+        Args:
+            mock_send_file: Mock for Flask send_file function
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory path
+            - Mocks get_blink_instance to return None (unavailable)
+            - Creates local clip ID for sync module and clip
+            - Calls download_local_clip with local clip ID
+            - Expects 503 Service Unavailable status code
+            - Verifies proper error response for unavailable service
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2667,7 +3562,19 @@ class TestClipDownload(BaseTestCase):
             self.assertIn("not available", response["error"])
 
     def test_download_local_clip_exception_handling(self) -> None:
-        """Test download_local_clip exception handling."""
+        """Test local clip download exception handling and error recovery.
+
+        Verifies that the download_local_clip function properly handles
+        unexpected exceptions during the download process.
+
+        Tests:
+            - Creates local clip ID for sync module and clip
+            - Configures get_blink_instance to raise exception
+            - Calls download_local_clip with valid local clip ID
+            - Expects 500 Internal Server Error status code
+            - Verifies proper error response with generic failure message
+            - Ensures exception is caught and handled gracefully
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_download import download_local_clip
 
@@ -2688,7 +3595,23 @@ class TestClipDownload(BaseTestCase):
     def test_download_clip_common_success(
         self, mock_send_file: Mock, mock_exists: Mock
     ) -> None:
-        """Test download_clip_common success."""
+        """Test successful common clip download functionality.
+
+        Verifies that the download_clip_common function successfully
+        serves a clip file when the file exists on the filesystem.
+
+        Args:
+            mock_send_file: Mock for Flask send_file function
+            mock_exists: Mock for Path.exists method
+
+        Tests:
+            - Creates clip file path and clip ID
+            - Mocks file existence check to return True
+            - Mocks send_file to return file response
+            - Calls download_clip_common with valid parameters
+            - Expects successful file response return
+            - Verifies send_file called with proper parameters
+        """
         from pathlib import Path
 
         from blinkapp.services.clip_download import download_clip_common
@@ -2709,7 +3632,21 @@ class TestClipDownload(BaseTestCase):
 
     @patch("pathlib.Path.exists")
     def test_download_clip_common_file_not_found(self, mock_exists: Mock) -> None:
-        """Test download_clip_common when file not found."""
+        """Test common clip download when file is not found on filesystem.
+
+        Verifies that the download_clip_common function properly handles
+        the case where the requested clip file does not exist.
+
+        Args:
+            mock_exists: Mock for Path.exists method
+
+        Tests:
+            - Creates clip file path and clip ID
+            - Mocks file existence check to return False
+            - Calls download_clip_common with missing file path
+            - Expects 404 Not Found status code
+            - Verifies proper error response with not found message
+        """
         from pathlib import Path
 
         from blinkapp.services.clip_download import download_clip_common
@@ -2728,7 +3665,23 @@ class TestClipDownload(BaseTestCase):
     def test_download_clip_common_exception(
         self, mock_send_file: Mock, mock_exists: Mock
     ) -> None:
-        """Test download_clip_common exception handling."""
+        """Test common clip download exception handling during file serving.
+
+        Verifies that the download_clip_common function properly handles
+        exceptions that occur during the file serving process.
+
+        Args:
+            mock_send_file: Mock for Flask send_file function
+            mock_exists: Mock for Path.exists method
+
+        Tests:
+            - Creates clip file path and clip ID
+            - Mocks file existence check to return True
+            - Mocks send_file to raise exception
+            - Calls download_clip_common with valid parameters
+            - Expects 500 Internal Server Error status code
+            - Verifies proper error response with file serving failure message
+        """
         from pathlib import Path
 
         from blinkapp.services.clip_download import download_clip_common
@@ -2759,7 +3712,18 @@ class TestClipProcessing(BaseTestCase):
         self.clips_cache_dir = Path("/tmp/test_clips")
 
     def test_download_and_cache_cloud_thumbnail_local_clip_error(self) -> None:
-        """Test download thumbnail with local clip raises error."""
+        """Test cloud thumbnail download with local clip ID raises error.
+
+        Verifies that the download_and_cache_cloud_thumbnail function
+        properly rejects local clip IDs and raises appropriate errors.
+
+        Tests:
+            - Creates local clip ID using ClipId.from_local method
+            - Calls download_and_cache_cloud_thumbnail with local clip ID
+            - Expects ValueError exception to be raised
+            - Verifies error message contains "called on local clip"
+            - Ensures function validates clip type before processing
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
@@ -2774,7 +3738,17 @@ class TestClipProcessing(BaseTestCase):
         self.assertIn("called on local clip", str(context.exception))
 
     def test_download_and_cache_cloud_thumbnail_no_url(self) -> None:
-        """Test download thumbnail with no URL."""
+        """Test cloud thumbnail download when no URL is provided.
+
+        Verifies that the download_and_cache_cloud_thumbnail function
+        properly handles the case where no thumbnail URL is provided.
+
+        Tests:
+            - Calls download_and_cache_cloud_thumbnail with empty URL
+            - Expects None return value for missing URL
+            - Verifies logger.error is called with appropriate message
+            - Ensures function validates URL presence before processing
+        """
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         with patch("blinkapp.services.clip_processing.logger") as mock_logger:
@@ -2789,7 +3763,22 @@ class TestClipProcessing(BaseTestCase):
     def test_process_cloud_clip_background_thumbnail_exists(
         self, mock_cache_dir: Mock
     ) -> None:
-        """Test process cloud clip background when thumbnail already exists."""
+        """Test cloud clip background processing when thumbnail already exists.
+
+        Verifies that the process_cloud_clip_background function properly
+        handles the case where a thumbnail already exists for the clip.
+
+        Args:
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory path
+            - Creates clip ID for processing
+            - Mocks thumbnail existence check to return True
+            - Calls process_cloud_clip_background with clip ID
+            - Expects early return without further processing
+            - Verifies thumbnail path existence is checked
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2821,7 +3810,24 @@ class TestClipProcessing(BaseTestCase):
     def test_process_cloud_clip_background_no_blink(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process cloud clip background when blink is not available."""
+        """Test cloud clip background processing when Blink is not available.
+
+        Verifies that the process_cloud_clip_background function properly
+        handles the case where Blink service is not available for processing.
+
+        Args:
+            mock_blink: Mock for get_blink_instance function
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory and file existence
+            - Mocks thumbnail existence check to return False
+            - Configures Blink instance with available=False
+            - Calls process_cloud_clip_background with clip ID
+            - Expects early return due to unavailable Blink service
+            - Verifies Blink availability is checked
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2859,7 +3865,18 @@ class TestClipProcessing(BaseTestCase):
             mock_ensure_blink.assert_called_once()
 
     def test_process_cloud_clip_background_blink_unavailable(self) -> None:
-        """Test when blink instance is unavailable."""
+        """Test cloud clip background processing when Blink instance is unavailable.
+
+        Verifies that the process_cloud_clip_background function properly
+        handles the case where Blink instance exists but is not available.
+
+        Tests:
+            - Mocks file existence check to return False (no thumbnail)
+            - Creates mock Blink instance with available=False
+            - Calls process_cloud_clip_background with clip ID
+            - Expects early return due to unavailable Blink instance
+            - Verifies Blink initialization is attempted
+        """
         from blinkapp.services.clip_processing import process_cloud_clip_background
         from tests.test_base import create_mock_blink_instance
 
@@ -2876,7 +3893,18 @@ class TestClipProcessing(BaseTestCase):
             mock_ensure.assert_called_once()
 
     def test_process_local_clip_background_blink_error(self) -> None:
-        """Test local clip processing when blink initialization fails."""
+        """Test local clip background processing when Blink initialization fails.
+
+        Verifies that the process_local_clip_background function properly
+        handles the case where Blink initialization raises an exception.
+
+        Tests:
+            - Mocks file existence check to return False (no thumbnail)
+            - Configures Blink initialization to raise RuntimeError
+            - Calls process_local_clip_background with clip parameters
+            - Expects graceful handling of Blink initialization failure
+            - Verifies Blink initialization is attempted
+        """
         from blinkapp.services.clip_processing import process_local_clip_background
 
         with (
@@ -2890,7 +3918,17 @@ class TestClipProcessing(BaseTestCase):
             mock_ensure.assert_called_once()
 
     def test_process_local_clip_background_thumbnail_exists(self) -> None:
-        """Test local clip processing when thumbnail already exists."""
+        """Test local clip background processing when thumbnail already exists.
+
+        Verifies that the process_local_clip_background function properly
+        handles the case where a thumbnail already exists for the local clip.
+
+        Tests:
+            - Mocks file existence check to return True (thumbnail exists)
+            - Calls process_local_clip_background with clip parameters
+            - Expects early return without further processing
+            - Verifies file existence check is performed
+        """
         from blinkapp.services.clip_processing import process_local_clip_background
 
         with patch("pathlib.Path.exists", return_value=True) as mock_exists:
@@ -2903,7 +3941,24 @@ class TestClipProcessing(BaseTestCase):
     def test_download_and_cache_cloud_thumbnail_success(
         self, mock_mkdir: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test download and cache cloud thumbnail success."""
+        """Test successful cloud thumbnail download and caching.
+
+        Verifies that the download_and_cache_cloud_thumbnail function
+        successfully downloads and caches a thumbnail from a cloud URL.
+
+        Args:
+            mock_mkdir: Mock for Path.mkdir method
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory and file existence
+            - Mocks file existence check to return False (not cached)
+            - Mocks successful HTTP request for thumbnail data
+            - Calls download_and_cache_cloud_thumbnail with valid URL
+            - Expects successful thumbnail path return
+            - Verifies HTTP request and file write operations
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -2944,7 +3999,23 @@ class TestClipProcessing(BaseTestCase):
     def test_download_and_cache_cloud_thumbnail_request_error(
         self, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test download and cache cloud thumbnail when request fails."""
+        """Test cloud thumbnail download when HTTP request fails.
+
+        Verifies that the download_and_cache_cloud_thumbnail function
+        properly handles HTTP request failures during thumbnail download.
+
+        Args:
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory and file existence
+            - Mocks file existence check to return False (not cached)
+            - Mocks HTTP request to raise RequestException
+            - Calls download_and_cache_cloud_thumbnail with valid URL
+            - Expects None return value for failed request
+            - Verifies proper exception handling during download
+        """
         from pathlib import Path
 
         import requests
@@ -2978,7 +4049,22 @@ class TestClipProcessing(BaseTestCase):
     def test_download_and_cache_cloud_thumbnail_already_cached(
         self, mock_cache_dir: Mock
     ) -> None:
-        """Test download and cache cloud thumbnail when already cached."""
+        """Test cloud thumbnail download when thumbnail is already cached.
+
+        Verifies that the download_and_cache_cloud_thumbnail function
+        properly handles the case where the thumbnail is already cached.
+
+        Args:
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Configures clips cache directory path
+            - Creates clip ID for thumbnail processing
+            - Mocks file existence check to return True (already cached)
+            - Calls download_and_cache_cloud_thumbnail with valid URL
+            - Expects cached thumbnail path return without re-download
+            - Verifies no HTTP request is made for cached thumbnails
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -3015,7 +4101,25 @@ class TestClipProcessing(BaseTestCase):
         mock_exists: Mock,
         mock_cache_dir: Mock,
     ) -> None:
-        """Test process cloud clip background simple flow."""
+        """Test cloud clip background processing simple flow with early return.
+
+        Verifies that the process_cloud_clip_background function follows
+        the expected flow when thumbnail already exists.
+
+        Args:
+            mock_clips_cache: Mock for clips cache initialization
+            mock_blink_init: Mock for Blink initialization
+            mock_exists: Mock for Path.exists method
+            mock_cache_dir: Mock for clips cache directory path
+
+        Tests:
+            - Creates clip ID for processing
+            - Configures clips cache directory path
+            - Mocks thumbnail existence check for early return
+            - Calls process_cloud_clip_background with clip ID
+            - Expects early return when thumbnail already exists
+            - Verifies proper flow control and cache path checking
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_cloud_clip_background
         from tests.test_base import create_mock_path
@@ -3045,7 +4149,22 @@ class TestClipProcessing(BaseTestCase):
     def test_process_cloud_clip_background_no_media_url(
         self, mock_blink_init: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process cloud clip background when no media URL is available."""
+        """Test cloud clip background processing when no media URL is available.
+
+        Verifies that the process_cloud_clip_background function properly handles
+        cases where the cloud clip has no media URL for thumbnail generation.
+
+        Args:
+            mock_blink_init: Mock for Blink initialization
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures cloud clip without media URL
+            - Calls process_cloud_clip_background with URL-less clip
+            - Expects graceful handling of missing media URL
+            - Verifies proper validation and processing skip
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_cloud_clip_background
         from tests.test_base import create_mock_path
@@ -3083,7 +4202,23 @@ class TestClipProcessing(BaseTestCase):
         mock_exists: Mock,
         mock_cache_dir: Mock,
     ) -> None:
-        """Test process cloud clip background when download fails."""
+        """Test cloud clip background processing when download fails.
+
+        Verifies that the process_cloud_clip_background function properly handles
+        errors that occur during the clip download process in background processing.
+
+        Args:
+            mock_clips_cache: Mock for clips cache service
+            mock_blink_init: Mock for Blink initialization
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures download process to fail with error
+            - Calls process_cloud_clip_background with valid clip
+            - Expects graceful error handling and recovery
+            - Verifies proper error logging and processing continuation
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_cloud_clip_background
         from tests.test_base import create_mock_path
@@ -3112,7 +4247,21 @@ class TestClipProcessing(BaseTestCase):
     def test_process_cloud_clip_thumbnail_only_success_simple(
         self, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process cloud clip thumbnail only success."""
+        """Test successful cloud clip thumbnail-only processing.
+
+        Verifies that the process_cloud_clip_thumbnail_only function successfully
+        generates thumbnails for cloud clips when all conditions are met.
+
+        Args:
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures valid cloud clip with thumbnail URL
+            - Calls process_cloud_clip_thumbnail_only for processing
+            - Expects successful thumbnail generation and caching
+            - Verifies proper thumbnail creation workflow
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_cloud_clip_thumbnail_only
         from tests.test_base import create_mock_path
@@ -3134,7 +4283,21 @@ class TestClipProcessing(BaseTestCase):
     def test_process_cloud_clip_thumbnail_only_no_url_simple(
         self, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process cloud clip thumbnail only when no URL available."""
+        """Test cloud clip thumbnail-only processing when no URL is available.
+
+        Verifies that the process_cloud_clip_thumbnail_only function properly
+        handles cases where the cloud clip has no thumbnail URL available.
+
+        Args:
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures cloud clip without thumbnail URL
+            - Calls process_cloud_clip_thumbnail_only with URL-less clip
+            - Expects graceful handling of missing thumbnail URL
+            - Verifies proper validation and processing skip
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_cloud_clip_thumbnail_only
         from tests.test_base import create_mock_path
@@ -3157,7 +4320,22 @@ class TestClipProcessing(BaseTestCase):
     def test_process_local_clip_background_blink_unavailable(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process local clip background when blink is unavailable."""
+        """Test local clip background processing when Blink is unavailable.
+
+        Verifies that the process_local_clip_background function properly handles
+        cases where the Blink service is unavailable for local clip processing.
+
+        Args:
+            mock_blink: Mock for Blink service
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures Blink service as unavailable
+            - Calls process_local_clip_background with valid local clip
+            - Expects graceful handling of unavailable service
+            - Verifies proper error handling and processing skip
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_local_clip_background
         from tests.test_base import create_mock_path
@@ -3180,7 +4358,22 @@ class TestClipProcessing(BaseTestCase):
     def test_process_local_clip_background_sync_not_found(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process local clip background when sync module not found."""
+        """Test local clip background processing when sync module is not found.
+
+        Verifies that the process_local_clip_background function properly handles
+        cases where the required sync module for local storage is not found.
+
+        Args:
+            mock_blink: Mock for Blink service
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures Blink instance without required sync module
+            - Calls process_local_clip_background with clip requiring sync
+            - Expects appropriate error handling for missing sync module
+            - Verifies proper validation of local storage prerequisites
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_local_clip_background
         from tests.test_base import create_mock_blink_instance, create_mock_path
@@ -3206,7 +4399,22 @@ class TestClipProcessing(BaseTestCase):
     def test_process_local_clip_background_no_local_storage(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process local clip background when no local storage available."""
+        """Test local clip background processing when no local storage is available.
+
+        Verifies that the process_local_clip_background function properly handles
+        cases where the sync module exists but has no local storage configured.
+
+        Args:
+            mock_blink: Mock for Blink service
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures sync module without local storage capability
+            - Calls process_local_clip_background with local storage clip
+            - Expects appropriate error handling for missing local storage
+            - Verifies proper validation of local storage availability
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_local_clip_background
         from tests.test_base import create_mock_path
@@ -3229,7 +4437,22 @@ class TestClipProcessing(BaseTestCase):
     def test_process_local_clip_background_not_implemented(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
-        """Test process local clip background functionality."""
+        """Test local clip background processing for not implemented functionality.
+
+        Verifies that the process_local_clip_background function properly handles
+        cases where certain local clip processing features are not yet implemented.
+
+        Args:
+            mock_blink: Mock for Blink service
+            mock_exists: Mock for file existence checking
+            mock_cache_dir: Mock for cache directory path
+
+        Tests:
+            - Configures scenario with unimplemented functionality
+            - Calls process_local_clip_background with edge case clip
+            - Expects appropriate handling of unimplemented features
+            - Verifies proper error handling and graceful degradation
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_local_clip_background
         from tests.test_base import create_mock_path
@@ -3247,7 +4470,17 @@ class TestClipProcessing(BaseTestCase):
         # Test passes if no exception is raised
 
     def test_process_cloud_clip_background_exception_handling(self) -> None:
-        """Test cloud clip processing exception handling."""
+        """Test cloud clip background processing general exception handling.
+
+        Verifies that the process_cloud_clip_background function properly handles
+        unexpected exceptions during background processing with graceful recovery.
+
+        Tests:
+            - Simulates unexpected exception during background processing
+            - Calls process_cloud_clip_background to trigger exception path
+            - Expects graceful exception handling and error recovery
+            - Verifies proper error logging and processing continuation
+        """
         from blinkapp.services.clip_processing import process_cloud_clip_background
 
         with (
@@ -3261,7 +4494,17 @@ class TestClipProcessing(BaseTestCase):
             self.assertIn("Error in process_cloud_clip_background", error_call)
 
     def test_process_local_clip_background_exception_handling(self) -> None:
-        """Test process local clip background exception handling."""
+        """Test local clip background processing general exception handling.
+
+        Verifies that the process_local_clip_background function properly handles
+        unexpected exceptions during local background processing with graceful recovery.
+
+        Tests:
+            - Simulates unexpected exception during local processing
+            - Calls process_local_clip_background to trigger exception path
+            - Expects graceful exception handling and error recovery
+            - Verifies proper error logging and processing continuation
+        """
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import process_local_clip_background
 
@@ -3277,7 +4520,17 @@ class TestClipProcessing(BaseTestCase):
             pass
 
     def test_process_cloud_clip_thumbnail_only_exception_handling(self) -> None:
-        """Test cloud clip thumbnail-only processing exception handling."""
+        """Test cloud clip thumbnail-only processing exception handling.
+
+        Verifies that the process_cloud_clip_thumbnail_only function properly
+        handles unexpected exceptions during thumbnail processing with graceful recovery.
+
+        Tests:
+            - Simulates unexpected exception during thumbnail processing
+            - Calls process_cloud_clip_thumbnail_only to trigger exception path
+            - Expects graceful exception handling and error recovery
+            - Verifies proper error logging and processing continuation
+        """
         from blinkapp.services.clip_processing import process_cloud_clip_thumbnail_only
 
         with (
@@ -3294,7 +4547,20 @@ class TestClipProcessing(BaseTestCase):
     def test_download_and_cache_cloud_thumbnail_exception_handling(
         self, mock_0: Mock
     ) -> None:
-        """Test cloud thumbnail download exception handling."""
+        """Test cloud thumbnail download and caching exception handling.
+
+        Verifies that the download_and_cache_cloud_thumbnail function properly
+        handles unexpected exceptions during download and caching operations.
+
+        Args:
+            mock_0: Mock for external dependencies
+
+        Tests:
+            - Simulates exception during thumbnail download/caching
+            - Calls download_and_cache_cloud_thumbnail to trigger exception
+            - Expects graceful exception handling and error recovery
+            - Verifies proper error logging and fallback behavior
+        """
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
 
         with (
@@ -3328,7 +4594,17 @@ class TestStreamService(BaseTestCase):
     """Test stream service functions."""
 
     def test_ensure_stream_manager_not_initialized_raises_error(self) -> None:
-        """Test ensure_stream_manager_initialized raises error when not initialized."""
+        """Test stream manager initialization error when not properly initialized.
+
+        Verifies that the ensure_stream_manager_initialized function properly
+        raises an error when the stream manager has not been initialized.
+
+        Tests:
+            - Calls ensure_stream_manager_initialized without initialization
+            - Expects appropriate error for uninitialized stream manager
+            - Verifies proper validation of stream manager state
+            - Ensures proper error messaging for initialization failures
+        """
         from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         with self.assertRaises(RuntimeError) as context:
@@ -3337,7 +4613,17 @@ class TestStreamService(BaseTestCase):
         self.assertIn("Stream manager not initialized", str(context.exception))
 
     def test_stream_manager_access(self) -> None:
-        """Test stream_manager access through service."""
+        """Test stream manager access through service interface.
+
+        Verifies that the stream manager can be properly accessed through
+        the service interface after proper initialization.
+
+        Tests:
+            - Initializes stream manager through service interface
+            - Accesses stream manager to verify proper setup
+            - Expects successful access to initialized stream manager
+            - Verifies proper service interface functionality
+        """
         from blinkapp.services.stream_service import (
             ensure_stream_manager_initialized,
             initialize_stream_manager,
@@ -3351,7 +4637,17 @@ class TestStreamService(BaseTestCase):
         self.assertIsNotNone(stream_manager)
 
     def test_is_stream_active_false(self) -> None:
-        """Test is_stream_active when stream is not active."""
+        """Test stream activity status when stream is not active.
+
+        Verifies that the is_stream_active function correctly reports inactive
+        status when no stream is currently running for the specified camera.
+
+        Tests:
+            - Creates camera ID for stream status checking
+            - Calls is_stream_active with inactive camera stream
+            - Expects False return value indicating no active stream
+            - Verifies proper stream status reporting for inactive cameras
+        """
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import is_stream_active
 
@@ -3360,14 +4656,34 @@ class TestStreamService(BaseTestCase):
         self.assertFalse(result)
 
     def test_initialize_stream_manager(self) -> None:
-        """Test stream_service initialize_stream_manager function."""
+        """Test stream manager initialization functionality.
+
+        Verifies that the initialize_stream_manager function properly
+        sets up the stream management system for camera streaming operations.
+
+        Tests:
+            - Calls initialize_stream_manager to set up streaming
+            - Expects successful stream manager initialization
+            - Verifies proper setup of streaming infrastructure
+            - Ensures stream manager is ready for camera operations
+        """
         from blinkapp.services.stream_service import initialize_stream_manager
 
         # Should not raise exception
         initialize_stream_manager()
 
     def test_ensure_stream_manager_not_initialized_coverage(self) -> None:
-        """Test stream_service ensure_stream_manager_initialized error path."""
+        """Test stream manager initialization error path coverage.
+
+        Verifies that the ensure_stream_manager_initialized function properly
+        handles and reports errors when the stream manager is not initialized.
+
+        Tests:
+            - Calls ensure_stream_manager_initialized without proper setup
+            - Expects appropriate error handling for uninitialized state
+            - Verifies proper error path execution and coverage
+            - Ensures comprehensive error handling validation
+        """
         from blinkapp.services.stream_service import ensure_stream_manager_initialized
 
         # Should raise exception when not initialized
@@ -3377,7 +4693,17 @@ class TestStreamService(BaseTestCase):
         self.assertIn("Stream manager not initialized", str(context.exception))
 
     def test_is_stream_active_coverage(self) -> None:
-        """Test stream_service is_stream_active function."""
+        """Test stream activity status checking function coverage.
+
+        Verifies that the is_stream_active function provides comprehensive
+        coverage for stream status checking across different scenarios.
+
+        Tests:
+            - Creates camera ID for comprehensive status checking
+            - Calls is_stream_active to verify status reporting
+            - Expects proper stream status determination
+            - Verifies comprehensive coverage of status checking logic
+        """
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import is_stream_active
 
@@ -3387,7 +4713,20 @@ class TestStreamService(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
     def test_start_camera_stream_success(self, mock_ensure_manager: Mock) -> None:
-        """Test start_camera_stream with successful stream start."""
+        """Test successful camera stream start functionality.
+
+        Verifies that the start_camera_stream function successfully initiates
+        streaming for a specified camera when all conditions are met.
+
+        Args:
+            mock_ensure_manager: Mock for stream manager initialization
+
+        Tests:
+            - Configures successful stream manager initialization
+            - Calls start_camera_stream with valid camera ID
+            - Expects successful stream initiation and setup
+            - Verifies proper stream start workflow and status
+        """
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import start_camera_stream
         from tests.test_base import create_mock_stream_manager
@@ -3407,7 +4746,20 @@ class TestStreamService(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
     def test_start_camera_stream_failure(self, mock_ensure_manager: Mock) -> None:
-        """Test start_camera_stream with stream start failure."""
+        """Test camera stream start failure handling.
+
+        Verifies that the start_camera_stream function properly handles
+        failures during stream initiation and provides appropriate error responses.
+
+        Args:
+            mock_ensure_manager: Mock for stream manager initialization
+
+        Tests:
+            - Configures stream start to fail with error
+            - Calls start_camera_stream with camera ID
+            - Expects appropriate error handling and response
+            - Verifies proper failure recovery and error reporting
+        """
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import start_camera_stream
 
@@ -3422,7 +4774,17 @@ class TestStreamService(BaseTestCase):
         self.assertIn("Stream failed", error)
 
     def test_stop_camera_stream_success(self) -> None:
-        """Test successful camera stream stop."""
+        """Test successful camera stream stop functionality.
+
+        Verifies that the stop_camera_stream function successfully terminates
+        an active camera stream and properly cleans up resources.
+
+        Tests:
+            - Sets up active camera stream for termination
+            - Calls stop_camera_stream with active camera ID
+            - Expects successful stream termination and cleanup
+            - Verifies proper stream stop workflow and resource cleanup
+        """
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import stop_camera_stream
         from tests.test_base import create_mock_stream_manager
@@ -3440,7 +4802,17 @@ class TestStreamService(BaseTestCase):
             mock_manager.stop_stream.assert_called_once_with(str(camera_id))
 
     def test_stop_camera_stream_failure(self) -> None:
-        """Test camera stream stop failure."""
+        """Test camera stream stop failure handling.
+
+        Verifies that the stop_camera_stream function properly handles
+        failures during stream termination and provides appropriate error responses.
+
+        Tests:
+            - Configures stream stop to fail with error
+            - Calls stop_camera_stream with camera ID
+            - Expects appropriate error handling and response
+            - Verifies proper failure recovery and error reporting
+        """
         from blinkapp.models.ids import CameraId
         from blinkapp.services.stream_service import stop_camera_stream
         from tests.test_base import create_mock_stream_manager
@@ -3474,7 +4846,21 @@ class TestSystemService(BaseTestCase):
     def test_get_systems_empty(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_systems when no systems available."""
+        """Test system retrieval when no systems are available.
+
+        Verifies that the get_systems function properly handles cases
+        where no Blink systems are available or configured.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Configures Blink instance with no available systems
+            - Calls get_systems to retrieve system list
+            - Expects empty system list or appropriate response
+            - Verifies proper handling of no-systems scenario
+        """
         from blinkapp.services.system_service import get_systems
         from tests.test_base import create_mock_blink_instance
 
@@ -3489,7 +4875,21 @@ class TestSystemService(BaseTestCase):
     def test_get_systems_with_data(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
-        """Test get_systems with mock data."""
+        """Test system retrieval with available system data.
+
+        Verifies that the get_systems function successfully retrieves
+        and formats system information when systems are available.
+
+        Args:
+            mock_ensure_blink: Mock for Blink connection ensuring
+            mock_get_instance: Mock for Blink instance retrieval
+
+        Tests:
+            - Configures Blink instance with mock system data
+            - Calls get_systems to retrieve system information
+            - Expects properly formatted system data response
+            - Verifies correct system data processing and formatting
+        """
         from blinkapp.services.system_service import get_systems
         from tests.test_base import create_mock_blink_instance, create_mock_sync
 
@@ -3507,7 +4907,17 @@ class TestSystemService(BaseTestCase):
         self.assertIn("systems", result)
 
     def test_initialize_cache_paths_with_config(self) -> None:
-        """Test cache path initialization functionality."""
+        """Test cache path initialization with custom configuration.
+
+        Verifies that the cache path initialization function properly
+        sets up cache directories using custom configuration settings.
+
+        Tests:
+            - Provides custom cache configuration settings
+            - Calls initialize_cache_paths with configuration
+            - Expects proper cache directory setup with custom paths
+            - Verifies correct configuration-based path initialization
+        """
         from blinkapp.services.system_service import get_systems
         from tests.test_base import create_mock_blink_instance
 
@@ -3525,7 +4935,17 @@ class TestSystemService(BaseTestCase):
             self.assertIn("systems", result)
 
     def test_initialize_cache_paths_default(self) -> None:
-        """Test cache path initialization with defaults."""
+        """Test cache path initialization with default settings.
+
+        Verifies that the initialize_cache_paths function properly
+        sets up cache directories using default configuration values.
+
+        Tests:
+            - Calls initialize_cache_paths without custom configuration
+            - Expects proper cache directory setup with default paths
+            - Verifies correct default path initialization and structure
+            - Ensures proper fallback to default cache configuration
+        """
         from blinkapp.services.cache_service import initialize_cache_paths
 
         # Should not raise exception when outside app context
@@ -3539,7 +4959,17 @@ class TestSystemService(BaseTestCase):
         self.assertTrue(success)
 
     def test_thumbnail_file_cleanup(self) -> None:
-        """Test thumbnail file cleanup during update."""
+        """Test thumbnail file cleanup during cache update operations.
+
+        Verifies that the thumbnail file cleanup function properly
+        removes outdated or invalid thumbnail files during update processes.
+
+        Tests:
+            - Sets up thumbnail files for cleanup testing
+            - Calls thumbnail cleanup function during update
+            - Expects proper removal of outdated thumbnail files
+            - Verifies correct cleanup logic and file management
+        """
         from unittest.mock import patch
 
         with (
@@ -3570,7 +5000,17 @@ class TestClipDownloadService(BaseTestCase):
     """Test clip download service functions."""
 
     def test_download_cloud_clip_core_sync_no_blink(self) -> None:
-        """Test _download_cloud_clip_core_sync with no blink instance."""
+        """Test cloud clip core sync download when no Blink instance is available.
+
+        Verifies that the _download_cloud_clip_core_sync function properly
+        handles cases where no Blink instance is available for synchronous operations.
+
+        Tests:
+            - Configures scenario with no available Blink instance
+            - Calls _download_cloud_clip_core_sync with clip data
+            - Expects appropriate error handling for missing instance
+            - Verifies proper synchronous operation error handling
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
@@ -3587,7 +5027,17 @@ class TestClipDownloadService(BaseTestCase):
         self.assertIn("Blink instance not available", error or "")
 
     def test_download_cloud_clip_success(self) -> None:
-        """Test successful cloud clip download - no blink instance."""
+        """Test successful cloud clip download functionality.
+
+        Verifies that the cloud clip download function successfully
+        downloads clips from cloud storage when all conditions are met.
+
+        Tests:
+            - Configures successful cloud clip download scenario
+            - Calls download function with valid clip parameters
+            - Expects successful clip download and local storage
+            - Verifies proper download workflow and file handling
+        """
         from unittest.mock import patch
 
         from blinkapp.models.ids import ClipId
@@ -3606,7 +5056,17 @@ class TestClipDownloadService(BaseTestCase):
             self.assertFalse(response["success"])
 
     def test_download_cloud_clip_failure(self) -> None:
-        """Test failed cloud clip download."""
+        """Test cloud clip download failure handling.
+
+        Verifies that the cloud clip download function properly handles
+        failures during the download process and provides appropriate error responses.
+
+        Tests:
+            - Configures cloud clip download to fail with error
+            - Calls download function to trigger failure scenario
+            - Expects appropriate error handling and response
+            - Verifies proper failure recovery and error reporting
+        """
         from unittest.mock import patch
 
         from blinkapp.models.ids import ClipId
@@ -3625,7 +5085,17 @@ class TestClipDownloadService(BaseTestCase):
             self.assertFalse(response["success"])
 
     def test_download_local_clip_success(self) -> None:
-        """Test local clip download - no local storage."""
+        """Test successful local clip download functionality.
+
+        Verifies that the local clip download function successfully
+        downloads clips from local storage when available and accessible.
+
+        Tests:
+            - Configures successful local clip download scenario
+            - Calls download function with valid local clip parameters
+            - Expects successful clip download from local storage
+            - Verifies proper local storage access and file handling
+        """
         from unittest.mock import patch
 
         from blinkapp.models.ids import ClipId
@@ -3656,7 +5126,17 @@ class TestClipDownloadService(BaseTestCase):
             self.assertIn("Local storage not available", response["error"])
 
     def test_download_local_clip_not_found(self) -> None:
-        """Test local clip download when sync module not found."""
+        """Test local clip download when sync module is not found.
+
+        Verifies that the local clip download function properly handles
+        cases where the required sync module for local storage is not found.
+
+        Tests:
+            - Configures scenario with missing sync module
+            - Calls download function for local clip requiring sync
+            - Expects appropriate error handling for missing sync module
+            - Verifies proper validation of local storage prerequisites
+        """
         from unittest.mock import patch
 
         from blinkapp.models.ids import ClipId
@@ -3700,7 +5180,22 @@ class TestThumbnailService(BaseTestCase):
     def test_update_camera_camera_thumbnail_cache(
         self, mock_executor: Mock, mock_blink_init: Mock, mock_cache: Mock
     ) -> None:
-        """Test refresh camera thumbnail functionality."""
+        """Test camera thumbnail cache update functionality.
+
+        Verifies that the update_camera_thumbnail_cache function properly
+        refreshes camera thumbnails and updates the cache with new images.
+
+        Args:
+            mock_executor: Mock for thread pool executor
+            mock_blink_init: Mock for Blink initialization
+            mock_cache: Mock for cache operations
+
+        Tests:
+            - Configures camera with outdated thumbnail cache
+            - Calls update_camera_thumbnail_cache for refresh
+            - Expects successful thumbnail update and cache refresh
+            - Verifies proper cache management and thumbnail processing
+        """
         from blinkapp.services.thumbnail_service import refresh_camera_thumbnail
         from tests.test_base import create_mock_camera_cache
 
@@ -3736,7 +5231,22 @@ class TestThumbnailService(BaseTestCase):
     def test_thumbnail_file_cleanup(
         self, mock_unlink: Mock, mock_exists: Mock, mock_cache: Mock
     ) -> None:
-        """Test thumbnail file cleanup during update."""
+        """Test thumbnail file cleanup during cache update operations.
+
+        Verifies that the thumbnail file cleanup function properly
+        removes outdated or invalid thumbnail files during update processes.
+
+        Args:
+            mock_unlink: Mock for Path.unlink method
+            mock_exists: Mock for Path.exists method
+            mock_cache: Mock for camera thumbnail cache
+
+        Tests:
+            - Sets up thumbnail files for cleanup testing
+            - Calls thumbnail cleanup function during update
+            - Expects proper removal of outdated thumbnail files
+            - Verifies correct cleanup logic and file management
+        """
         mock_cache.get.return_value = {"timestamp": 1000, "filename": "old.jpg"}
         mock_exists.return_value = True
 
@@ -3780,7 +5290,29 @@ class TestLifecycleService(BaseTestCase):
         mock_connections: Mock,
         mock_paths: Mock,
     ) -> None:
-        """Test successful startup."""
+        """Test successful application startup sequence.
+
+        Verifies that the lifecycle service startup function successfully
+        initializes all required components and services for the application.
+
+        Args:
+            mock_mkdir: Mock for directory creation
+            mock_clips_dir: Mock for clips directory path
+            mock_thumb_dir: Mock for thumbnails directory path
+            mock_cache_dir: Mock for cache directory path
+            mock_logging: Mock for logging configuration
+            mock_blink: Mock for Blink service initialization
+            mock_stream: Mock for stream service initialization
+            mock_caches: Mock for cache service initialization
+            mock_connections: Mock for connection service initialization
+            mock_paths: Mock for path initialization
+
+        Tests:
+            - Calls startup function to initialize application
+            - Expects successful initialization of all services
+            - Verifies proper startup sequence and component setup
+            - Ensures all required services are properly configured
+        """
         from pathlib import Path
 
         from blinkapp.services import lifecycle_service
@@ -3800,7 +5332,20 @@ class TestLifecycleService(BaseTestCase):
 
     @patch("blinkapp.services.connection_service.initialize_connections")
     def test_startup_exception(self, mock_connections: Mock) -> None:
-        """Test startup with exception - should log but not raise."""
+        """Test application startup exception handling.
+
+        Verifies that the lifecycle service startup function properly handles
+        exceptions during initialization and logs errors without raising.
+
+        Args:
+            mock_connections: Mock for connection service that will raise exception
+
+        Tests:
+            - Configures connection initialization to raise exception
+            - Calls startup function to trigger exception handling
+            - Expects proper exception logging without re-raising
+            - Verifies graceful error handling during startup failures
+        """
         from blinkapp.services import lifecycle_service
 
         mock_connections.side_effect = Exception("Startup error")
@@ -3821,7 +5366,21 @@ class TestLifecycleService(BaseTestCase):
     def test_cleanup_resources_success(
         self, mock_blink_conn: Mock, mock_stream: Mock
     ) -> None:
-        """Test successful resource cleanup."""
+        """Test successful resource cleanup during application shutdown.
+
+        Verifies that the lifecycle service cleanup function successfully
+        releases all resources and properly shuts down services.
+
+        Args:
+            mock_blink_conn: Mock for Blink connection cleanup
+            mock_stream: Mock for stream service cleanup
+
+        Tests:
+            - Calls cleanup_resources function for shutdown
+            - Expects successful cleanup of all resources
+            - Verifies proper resource release and service shutdown
+            - Ensures clean application termination workflow
+        """
         from blinkapp.services import lifecycle_service
         from tests.test_base import (
             create_mock_blink_connection,
@@ -3840,7 +5399,20 @@ class TestLifecycleService(BaseTestCase):
 
     @patch("blinkapp.services.stream_service.ensure_stream_manager_initialized")
     def test_cleanup_resources_exception(self, mock_stream: Mock) -> None:
-        """Test cleanup with exception - should raise."""
+        """Test resource cleanup exception handling during shutdown.
+
+        Verifies that the lifecycle service cleanup function properly handles
+        exceptions during resource cleanup and raises them appropriately.
+
+        Args:
+            mock_stream: Mock for stream service that will raise exception
+
+        Tests:
+            - Configures stream cleanup to raise exception
+            - Calls cleanup_resources function to trigger exception
+            - Expects exception to be properly raised for cleanup failures
+            - Verifies proper error handling during resource cleanup
+        """
         from blinkapp.services import lifecycle_service
 
         mock_stream.side_effect = Exception("Cleanup error")
@@ -3859,27 +5431,67 @@ class TestConnectionService(BaseTestCase):
     init_blink_objects = False
 
     def test_initialize_connections(self) -> None:
-        """Test initialize_connections function."""
+        """Test connection service initialization functionality.
+
+        Verifies that the initialize_connections function properly
+        sets up all required connections for the application services.
+
+        Tests:
+            - Calls initialize_connections to set up connections
+            - Expects successful connection initialization
+            - Verifies proper connection setup and configuration
+            - Ensures all required connections are established
+        """
         from blinkapp.services.connection_service import initialize_connections
 
         initialize_connections()  # Should not raise exception
 
     def test_ensure_executor_initialized(self) -> None:
-        """Test ensure_executor_initialized function."""
+        """Test thread pool executor initialization functionality.
+
+        Verifies that the ensure_executor_initialized function properly
+        sets up the thread pool executor for concurrent operations.
+
+        Tests:
+            - Calls ensure_executor_initialized to set up executor
+            - Expects successful thread pool executor initialization
+            - Verifies proper executor setup and configuration
+            - Ensures executor is ready for concurrent task processing
+        """
         from blinkapp.services.connection_service import ensure_executor_initialized
 
         result = ensure_executor_initialized()
         self.assertIsNotNone(result)
 
     def test_ensure_http_session_initialized(self) -> None:
-        """Test ensure_http_session_initialized function."""
+        """Test HTTP session initialization functionality.
+
+        Verifies that the ensure_http_session_initialized function properly
+        sets up the HTTP session for network operations and API calls.
+
+        Tests:
+            - Calls ensure_http_session_initialized to set up session
+            - Expects successful HTTP session initialization
+            - Verifies proper session setup and configuration
+            - Ensures session is ready for network requests
+        """
         from blinkapp.services.connection_service import ensure_http_session_initialized
 
         result = ensure_http_session_initialized()
         self.assertIsNotNone(result)
 
     def test_third_party_imports(self) -> None:
-        """Test third-party imports."""
+        """Test third-party library imports and availability.
+
+        Verifies that all required third-party libraries are properly
+        imported and available for use in the connection service.
+
+        Tests:
+            - Imports connection service module with third-party dependencies
+            - Expects successful import of all required libraries
+            - Verifies proper third-party library availability
+            - Ensures all external dependencies are accessible
+        """
         from blinkapp.services import connection_service
 
         self.assertTrue(hasattr(connection_service, "http_session"))
@@ -3890,7 +5502,20 @@ class TestConnectionService(BaseTestCase):
 
     @patch("concurrent.futures.ThreadPoolExecutor")
     def test_thread_pool_executor_context_manager(self, mock_executor: Mock) -> None:
-        """Test ThreadPoolExecutor context manager setup."""
+        """Test ThreadPoolExecutor context manager setup and usage.
+
+        Verifies that the ThreadPoolExecutor is properly configured as a
+        context manager for safe resource management and cleanup.
+
+        Args:
+            mock_executor: Mock for ThreadPoolExecutor
+
+        Tests:
+            - Configures ThreadPoolExecutor as context manager
+            - Tests context manager enter and exit behavior
+            - Expects proper resource management and cleanup
+            - Verifies safe executor lifecycle management
+        """
         # Use patched ThreadPoolExecutor directly and set up context manager
         mock_executor.__enter__ = Mock(spec=callable, return_value=mock_executor)
         mock_executor.__exit__ = Mock(spec=callable, return_value=None)
@@ -3901,7 +5526,17 @@ class TestConnectionService(BaseTestCase):
             self.assertEqual(executor, mock_executor)
 
     def test_connection_service_basic(self) -> None:
-        """Test basic connection service."""
+        """Test basic connection service functionality.
+
+        Verifies that the connection service provides basic functionality
+        for establishing and managing Blink connections.
+
+        Tests:
+            - Calls get_blink_connection to establish connection
+            - Expects successful connection service operation
+            - Verifies proper connection establishment and management
+            - Ensures basic connection service functionality works
+        """
         from blinkapp.services.blink_connection import get_blink_connection
 
         # Should return None when blink objects are not initialized

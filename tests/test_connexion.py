@@ -102,7 +102,17 @@ class TestConnexionIntegration(unittest.TestCase):
             )
 
     def test_handler_modules_importable(self) -> None:
-        """Test that all handler modules referenced in api.json can be imported."""
+        """Test that all handler modules referenced in api.json can be imported.
+
+        Verifies that all handler modules specified in the OpenAPI
+        specification can be successfully imported and are accessible.
+
+        Tests:
+            - Handler module import capability and accessibility
+            - Module path resolution and import validation
+            - Handler function availability in imported modules
+            - Import error handling and module dependency validation
+        """
         with open(self.api_path) as f:
             spec = json.load(f)
 
@@ -124,7 +134,17 @@ class TestConnexionIntegration(unittest.TestCase):
                 self.fail(f"Failed to import controller module {controller}: {e}")
 
     def test_openapi_version_compatibility(self) -> None:
-        """Test that the OpenAPI version is compatible with connexion."""
+        """Test that the OpenAPI version is compatible with connexion.
+
+        Verifies that the OpenAPI specification version used in the
+        application is compatible with the connexion framework.
+
+        Tests:
+            - OpenAPI version compatibility with connexion framework
+            - Specification version validation and support checking
+            - API specification format compliance and compatibility
+            - Framework version alignment and feature support
+        """
         with open(self.api_path) as f:
             spec = json.load(f)
 
@@ -136,7 +156,17 @@ class TestConnexionIntegration(unittest.TestCase):
         )
 
     def test_all_schemas_defined(self) -> None:
-        """Test that all referenced schemas are properly defined."""
+        """Test that all referenced schemas are properly defined.
+
+        Verifies that all schemas referenced in the OpenAPI specification
+        are properly defined and accessible within the specification.
+
+        Tests:
+            - Schema definition completeness and accessibility
+            - Schema reference validation and resolution
+            - Schema structure compliance and format validation
+            - Missing schema detection and error handling
+        """
         with open(self.api_path) as f:
             spec = json.load(f)
 

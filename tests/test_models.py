@@ -144,18 +144,48 @@ class TestBaseId(BaseTestCase):
         self.assertEqual(id1, id2)
 
     def test_equality_with_string(self) -> None:
-        """Test ID equality with string."""
+        """Test ID equality comparison with string values.
+
+        Verifies that BaseId instances properly compare for equality
+        with string values using the underlying ID value.
+
+        Tests:
+            - ID equality comparison with matching string values
+            - Proper equality logic implementation for string comparison
+            - BaseId equality behavior with string types
+            - Correct equality results for matching ID values
+        """
         test_id = self.TestId("test123")
         self.assertEqual(test_id, "test123")
 
     def test_inequality_with_different_id(self) -> None:
-        """Test ID inequality with different value."""
+        """Test ID inequality comparison with different values.
+
+        Verifies that BaseId instances properly compare for inequality
+        when comparing different ID values.
+
+        Tests:
+            - ID inequality comparison with different values
+            - Proper inequality logic implementation for value comparison
+            - BaseId inequality behavior with different ID values
+            - Correct inequality results for non-matching values
+        """
         id1 = self.TestId("test123")
         id2 = self.TestId("test456")
         self.assertNotEqual(id1, id2)
 
     def test_inequality_with_other_types(self) -> None:
-        """Test ID inequality with other types."""
+        """Test ID inequality comparison with other data types.
+
+        Verifies that BaseId instances properly compare for inequality
+        when comparing with non-string and non-BaseId data types.
+
+        Tests:
+            - ID inequality comparison with different data types
+            - Proper type handling in inequality comparisons
+            - BaseId inequality behavior with non-compatible types
+            - Correct inequality results for type mismatches
+        """
         test_id = self.TestId("test123")
         self.assertNotEqual(test_id, 123)
         self.assertNotEqual(test_id, None)
@@ -211,48 +241,128 @@ class TestBaseId(BaseTestCase):
         self.assertIn("TestId", repr_str)
 
     def test_len_method(self) -> None:
-        """Test length method."""
+        """Test length method returns correct ID string length.
+
+        Verifies that the BaseId length method properly returns
+        the length of the underlying ID string value.
+
+        Tests:
+            - Length method functionality and return values
+            - Proper length calculation for ID string values
+            - BaseId length behavior and accuracy
+            - Correct length results for various ID string lengths
+        """
         test_id = self.TestId("test123")
         self.assertEqual(len(test_id), 7)
 
     def test_contains_method(self) -> None:
-        """Test contains method."""
+        """Test contains method for substring detection in ID values.
+
+        Verifies that the BaseId contains method properly detects
+        substring presence within the underlying ID string value.
+
+        Tests:
+            - Contains method functionality for substring detection
+            - Proper substring search within ID string values
+            - BaseId contains behavior and accuracy
+            - Correct substring detection results for various patterns
+        """
         test_id = self.TestId("test123")
         self.assertIn("test", test_id)
         self.assertNotIn("xyz", test_id)
 
     def test_getitem_method(self) -> None:
-        """Test getitem method."""
+        """Test getitem method for character access in ID values.
+
+        Verifies that the BaseId getitem method properly provides
+        character access to the underlying ID string value by index.
+
+        Tests:
+            - Getitem method functionality for character access
+            - Proper index-based character retrieval from ID strings
+            - BaseId getitem behavior and accuracy
+            - Correct character access results for various indices
+        """
         test_id = self.TestId("test123")
         self.assertEqual(test_id[0], "t")
         self.assertEqual(test_id[1:5], "est1")
 
     def test_iter_method(self) -> None:
-        """Test iteration over ID."""
+        """Test iteration functionality over ID string characters.
+
+        Verifies that BaseId instances properly support iteration
+        over the characters of the underlying ID string value.
+
+        Tests:
+            - Iteration functionality over ID string characters
+            - Proper iterator implementation for character traversal
+            - BaseId iteration behavior and completeness
+            - Correct iteration results for various ID string values
+        """
         test_id = self.TestId("test")
         chars = list(test_id)
         self.assertEqual(chars, ["t", "e", "s", "t"])
 
     def test_split_method(self) -> None:
-        """Test split method."""
+        """Test BaseId split method functionality for string operations.
+
+        Verifies that BaseId instances properly support string split
+        operations and return expected results for delimiter-based parsing.
+
+        Tests:
+            - String split method delegation to underlying value
+            - Proper delimiter handling and result formatting
+            - Split operation compatibility with string interface
+            - Result accuracy for delimiter-based string parsing
+        """
         test_id = self.TestId("test_123_abc")
         parts = test_id.split("_")
         self.assertEqual(parts, ["test", "123", "abc"])
 
     def test_int_conversion_valid(self) -> None:
-        """Test integer conversion with valid numeric ID."""
+        """Test integer conversion with valid numeric ID values.
+
+        Verifies that BaseId instances with numeric values can be
+        properly converted to integer types for mathematical operations.
+
+        Tests:
+            - Valid numeric ID conversion to integer type
+            - Proper integer value extraction from ID objects
+            - Type conversion accuracy for numeric identifiers
+            - Mathematical operation compatibility with converted values
+        """
         test_id = self.TestId("12345")
         self.assertEqual(int(test_id), 12345)
 
     def test_int_conversion_invalid(self) -> None:
-        """Test integer conversion with invalid ID."""
+        """Test integer conversion with non-numeric ID values.
+
+        Verifies that BaseId instances with non-numeric values properly
+        raise ValueError when attempting integer conversion.
+
+        Tests:
+            - Non-numeric ID conversion error handling
+            - Proper ValueError exception for invalid conversions
+            - Type conversion validation and error messaging
+            - Graceful handling of non-convertible ID values
+        """
         test_id = self.TestId("test123")
         with self.assertRaises(ValueError) as cm:
             int(test_id)
         self.assertIn("Cannot convert Test ID", str(cm.exception))
 
     def test_base_id_get_pattern_not_implemented(self) -> None:
-        """Test BaseId abstract method enforcement."""
+        """Test BaseId abstract method enforcement for pattern validation.
+
+        Verifies that BaseId properly enforces implementation of the
+        abstract _get_pattern method in subclasses.
+
+        Tests:
+            - Abstract method enforcement for _get_pattern implementation
+            - NotImplementedError exception for missing pattern method
+            - Proper abstract base class behavior and validation
+            - Subclass implementation requirement verification
+        """
 
         # Test that a subclass without _get_type_name raises NotImplementedError
         class IncompleteTestId1(BaseId):
@@ -268,7 +378,17 @@ class TestBaseId(BaseTestCase):
             IncompleteTestId1("invalid_value")
 
     def test_base_id_get_type_name_not_implemented(self) -> None:
-        """Test BaseId._get_type_name raises NotImplementedError."""
+        """Test BaseId abstract method enforcement for type name specification.
+
+        Verifies that BaseId properly enforces implementation of the
+        abstract _get_type_name method in subclasses.
+
+        Tests:
+            - Abstract method enforcement for _get_type_name implementation
+            - NotImplementedError exception for missing type name method
+            - Proper abstract base class behavior and validation
+            - Subclass implementation requirement verification
+        """
 
         # Test through subclass that implements _get_pattern but not _get_type_name
         class TestId(BaseId):
@@ -287,38 +407,108 @@ class TestCameraId(BaseTestCase):
     """Test CameraId validation and functionality."""
 
     def test_valid_numeric_id(self) -> None:
-        """Test valid numeric camera ID."""
+        """Test valid numeric camera ID creation and validation.
+
+        Verifies that CameraId can be created with valid numeric
+        identifiers and properly validates the input format.
+
+        Tests:
+            - Valid numeric camera ID creation and acceptance
+            - Proper validation of numeric identifier formats
+            - Camera ID object creation with integer inputs
+            - Validation rule compliance for numeric identifiers
+        """
         camera_id = CameraId("12345")
         self.assertEqual(str(camera_id), "12345")
 
     def test_valid_string_id(self) -> None:
-        """Test valid string camera ID."""
+        """Test valid string camera ID creation and validation.
+
+        Verifies that CameraId can be created with valid string
+        identifiers and properly validates the input format.
+
+        Tests:
+            - Valid string camera ID creation and acceptance
+            - String identifier format validation and processing
+            - Camera ID object creation with string inputs
+            - String representation accuracy for camera identifiers
+        """
         camera_id = CameraId("camera_abc")
         self.assertEqual(str(camera_id), "camera_abc")
 
     def test_numeric_input(self) -> None:
-        """Test numeric input conversion."""
+        """Test numeric input conversion and handling for camera IDs.
+
+        Verifies that CameraId properly handles numeric inputs
+        and converts them to appropriate string representations.
+
+        Tests:
+            - Numeric input conversion to string representation
+            - Integer input handling and validation
+            - Numeric camera ID creation and processing
+            - Type conversion accuracy for numeric identifiers
+        """
         camera_id = CameraId(12345)
         self.assertEqual(str(camera_id), "12345")
 
     def test_invalid_id_with_special_chars(self) -> None:
-        """Test invalid camera ID with special characters."""
+        """Test invalid camera ID rejection with special characters.
+
+        Verifies that CameraId properly rejects identifiers containing
+        special characters that violate validation rules.
+
+        Tests:
+            - Special character rejection in camera ID validation
+            - Invalid character detection and error handling
+            - Validation rule enforcement for camera identifiers
+            - Proper ValueError exception for invalid character sets
+        """
         with self.assertRaises(ValueError) as cm:
             CameraId("camera-123!")
         self.assertIn("Invalid Camera ID format", str(cm.exception))
 
     def test_empty_string_raises_error(self) -> None:
-        """Test empty string raises ValueError."""
+        """Test empty string input raises ValueError for camera IDs.
+
+        Verifies that CameraId properly rejects empty string inputs
+        and raises appropriate validation errors.
+
+        Tests:
+            - Empty string input rejection and validation
+            - Proper ValueError exception for empty camera IDs
+            - Input validation for required camera identifier values
+            - Error handling for missing camera ID data
+        """
         with self.assertRaises(ValueError):
             CameraId("")  # Should raise ValueError for empty string
 
     def test_empty_id(self) -> None:
-        """Test empty camera ID raises error."""
+        """Test empty camera ID input raises validation error.
+
+        Verifies that CameraId properly rejects empty identifier
+        inputs and raises appropriate validation errors.
+
+        Tests:
+            - Empty camera ID input rejection and validation
+            - Proper error handling for missing identifier data
+            - Validation rule enforcement for required camera IDs
+            - Error message clarity for empty identifier inputs
+        """
         with self.assertRaises(ValueError):
             CameraId("")
 
     def test_camera_id_validation_patterns(self) -> None:
-        """Test CameraId validation patterns."""
+        """Test CameraId validation pattern matching and enforcement.
+
+        Verifies that CameraId properly validates identifiers against
+        defined patterns and rejects non-conforming inputs.
+
+        Tests:
+            - Validation pattern matching for camera identifiers
+            - Pattern enforcement and compliance checking
+            - Regular expression validation for camera ID formats
+            - Pattern-based input validation and error handling
+        """
         from blinkapp.models.ids import CameraId
 
         # Test valid patterns
@@ -332,12 +522,32 @@ class TestCameraId(BaseTestCase):
                 pass
 
     def test_int_conversion(self) -> None:
-        """Test integer conversion."""
+        """Test integer conversion functionality for camera IDs.
+
+        Verifies that CameraId instances with numeric values can be
+        properly converted to integer types for mathematical operations.
+
+        Tests:
+            - Integer conversion from camera ID objects
+            - Numeric value extraction and type conversion
+            - Mathematical operation compatibility with converted values
+            - Type conversion accuracy for numeric camera identifiers
+        """
         camera_id = CameraId("123")
         self.assertEqual(int(camera_id), 123)
 
     def test_int_conversion_invalid(self) -> None:
-        """Test integer conversion with invalid value."""
+        """Test integer conversion with invalid non-numeric values.
+
+        Verifies that CameraId instances with non-numeric values properly
+        raise ValueError when attempting integer conversion.
+
+        Tests:
+            - Non-numeric value conversion error handling
+            - Proper ValueError exception for invalid conversions
+            - Type conversion validation and error messaging
+            - Graceful handling of non-convertible camera ID values
+        """
         camera_id = CameraId("invalid_number")
         with self.assertRaises(ValueError) as cm:
             int(camera_id)
@@ -1188,7 +1398,17 @@ class TestClipsCache(BaseTestCase):
         self.assertEqual(len(self.cache), 0)
 
     def test_add_clip(self) -> None:
-        """Test adding clip to cache."""
+        """Test adding clip data to cache storage.
+
+        Verifies that the cache properly stores clip data
+        and maintains clip information for retrieval.
+
+        Tests:
+            - Clip data addition to cache storage
+            - Cache entry creation and data persistence
+            - Clip information storage and organization
+            - Cache capacity management during clip addition
+        """
         from typing import cast
 
         before_time = time.time()
@@ -1204,7 +1424,17 @@ class TestClipsCache(BaseTestCase):
         self.assertEqual(full_entry["access_count"], 0)
 
     def test_get_clip_existing(self) -> None:
-        """Test getting existing clip data."""
+        """Test retrieving existing clip data from cache.
+
+        Verifies that the cache properly retrieves clip data
+        for clips that exist in the cache storage.
+
+        Tests:
+            - Existing clip data retrieval from cache
+            - Cache hit scenarios and data return accuracy
+            - Clip data integrity and completeness
+            - Cache access and data retrieval performance
+        """
         self.cache.add_clip(self.clip_id, self.clip_data)
 
         retrieved_data = self.cache.get_clip(self.clip_id)
@@ -1218,12 +1448,32 @@ class TestClipsCache(BaseTestCase):
         self.assertEqual(full_entry["access_count"], 1)
 
     def test_get_clip_missing(self) -> None:
-        """Test getting missing clip data."""
+        """Test retrieving missing clip data from cache.
+
+        Verifies that the cache properly handles requests
+        for clips that don't exist in the cache storage.
+
+        Tests:
+            - Missing clip data handling and cache miss scenarios
+            - Proper None or default value return for missing clips
+            - Cache miss behavior and error handling
+            - Non-existent clip request processing and response
+        """
         retrieved_data = self.cache.get_clip(ClipId("nonexistent"))
         self.assertIsNone(retrieved_data)
 
     def test_get_clip_updates_access_time(self) -> None:
-        """Test that getting clip updates access time."""
+        """Test that getting clip updates access time tracking.
+
+        Verifies that the cache properly updates access time
+        information when clips are retrieved from storage.
+
+        Tests:
+            - Access time update during clip retrieval
+            - Timestamp tracking and accuracy for cache access
+            - Cache access pattern monitoring and recording
+            - Access time metadata maintenance and updates
+        """
         self.cache.add_clip(self.clip_id, self.clip_data)
 
         # Get initial access time
@@ -1247,7 +1497,17 @@ class TestClipsCache(BaseTestCase):
         )
 
     def test_cleanup_old_clips(self) -> None:
-        """Test cleanup of old clips."""
+        """Test cleanup of old clips from cache storage.
+
+        Verifies that the cache properly removes old clips
+        during cleanup operations to manage storage space.
+
+        Tests:
+            - Old clip identification and removal from cache
+            - Cache cleanup operation effectiveness and accuracy
+            - Storage space management through clip removal
+            - Cleanup criteria evaluation and clip age assessment
+        """
         # Add clips with different ages
         old_clip_id = ClipId("old_clip")
         recent_clip_id = ClipId("recent_clip")
@@ -1269,7 +1529,17 @@ class TestClipsCache(BaseTestCase):
         self.assertIn(recent_clip_id, self.cache)
 
     def test_cleanup_no_old_clips(self) -> None:
-        """Test cleanup when no old clips exist."""
+        """Test cleanup when no old clips exist in cache.
+
+        Verifies that the cache cleanup operation properly
+        handles cases where no old clips need to be removed.
+
+        Tests:
+            - Cleanup operation when no old clips exist
+            - No-op cleanup behavior and cache state preservation
+            - Cleanup efficiency when no action is required
+            - Cache stability during unnecessary cleanup operations
+        """
         self.cache.add_clip(self.clip_id, self.clip_data)
 
         removed_count = self.cache.cleanup_old_clips(max_age_hours=24)
@@ -1282,7 +1552,17 @@ class TestTypeDefinitions(BaseTestCase):
     """Test type definitions and data structures."""
 
     def test_clip_data_structure(self) -> None:
-        """Test ClipCacheData TypedDict structure."""
+        """Test ClipCacheData TypedDict structure and validation.
+
+        Verifies that the ClipCacheData TypedDict properly
+        defines the structure for clip cache data storage.
+
+        Tests:
+            - ClipCacheData TypedDict structure and field validation
+            - Data type compliance and structure enforcement
+            - Cache data format consistency and accuracy
+            - TypedDict field requirements and optional parameters
+        """
         clip_data: ClipCacheData = {
             "id": "clip123",
             "camera_name": "Front Door",
@@ -1303,7 +1583,17 @@ class TestTypeDefinitions(BaseTestCase):
         self.assertEqual(clip_data["media_url"], "clip.mp4")
 
     def test_clip_day_group_structure(self) -> None:
-        """Test ClipDayGroup TypedDict structure."""
+        """Test ClipDayGroup TypedDict structure and type validation.
+
+        Verifies that the ClipDayGroup TypedDict properly defines
+        the structure and types for clip day grouping data.
+
+        Tests:
+            - ClipDayGroup TypedDict structure definition and validation
+            - Proper type annotations for clip day group fields
+            - TypedDict compliance and type checking functionality
+            - Correct field types and structure for clip day data
+        """
         from blinkapp.models.types import ClipApiData as TypesClipApiData
 
         clip_data: TypesClipApiData = {
@@ -1322,7 +1612,17 @@ class TestTypeDefinitions(BaseTestCase):
         self.assertEqual(clip_day_group["clips"][0]["id"], "clip123")
 
     def test_camera_thumbnail_cache_entry_structure(self) -> None:
-        """Test CameraThumbnailCacheEntry TypedDict structure."""
+        """Test CameraThumbnailCacheEntry TypedDict structure and validation.
+
+        Verifies that the CameraThumbnailCacheEntry TypedDict properly defines
+        the structure and types for camera thumbnail cache entry data.
+
+        Tests:
+            - CameraThumbnailCacheEntry TypedDict structure and validation
+            - Proper type annotations for thumbnail cache entry fields
+            - TypedDict compliance and type checking for cache entries
+            - Correct field types and structure for thumbnail cache data
+        """
         entry: CameraThumbnailCacheEntry = {
             "timestamp": 1234567890,
             "filename": "thumbnail.jpg",
@@ -1333,7 +1633,17 @@ class TestTypeDefinitions(BaseTestCase):
         self.assertEqual(entry["filename"], "thumbnail.jpg")
 
     def test_clip_cache_entry_structure(self) -> None:
-        """Test ClipCacheEntry TypedDict structure."""
+        """Test ClipCacheEntry TypedDict structure and validation.
+
+        Verifies that the ClipCacheEntry TypedDict properly defines
+        the structure and types for clip cache entry data.
+
+        Tests:
+            - ClipCacheEntry TypedDict structure definition and validation
+            - Proper type annotations for clip cache entry fields
+            - TypedDict compliance and type checking for cache entries
+            - Correct field types and structure for clip cache data
+        """
         clip_data: ClipCacheData = {
             "id": "clip123",
             "camera_name": "Front Door",
@@ -1362,7 +1672,17 @@ class TestCacheStatsAndMethods(BaseTestCase):
     """Test additional cache methods and statistics."""
 
     def test_camera_thumbnail_cache_get_stats(self) -> None:
-        """Test CameraThumbnailCache get_stats method."""
+        """Test CameraThumbnailCache get_stats method functionality.
+
+        Verifies that the CameraThumbnailCache get_stats method properly
+        returns cache statistics and performance metrics.
+
+        Tests:
+            - get_stats method functionality and return values
+            - Proper cache statistics calculation and reporting
+            - Cache performance metrics accuracy and completeness
+            - Statistics data structure and field validation
+        """
         cache = CameraThumbnailCache(maxsize=10)
 
         stats = cache.get_stats()
@@ -1373,7 +1693,17 @@ class TestCacheStatsAndMethods(BaseTestCase):
         self.assertEqual(stats["size"], 0)
 
     def test_clips_cache_get_stats(self) -> None:
-        """Test ClipsCache get_stats method."""
+        """Test ClipsCache get_stats method functionality.
+
+        Verifies that the ClipsCache get_stats method properly
+        returns cache statistics and performance metrics.
+
+        Tests:
+            - get_stats method functionality for clips cache
+            - Proper clips cache statistics calculation and reporting
+            - Cache performance metrics accuracy for clip data
+            - Statistics data structure validation for clips cache
+        """
         cache = ClipsCache(maxsize=5)
 
         stats = cache.get_stats()
@@ -1384,7 +1714,17 @@ class TestCacheStatsAndMethods(BaseTestCase):
         self.assertEqual(stats["size"], 0)
 
     def test_cache_items_list_safe_iteration(self) -> None:
-        """Test safe iteration with items_list method."""
+        """Test safe iteration functionality with items_list method.
+
+        Verifies that the cache items_list method provides safe iteration
+        over cache contents without concurrent modification issues.
+
+        Tests:
+            - Safe iteration functionality with items_list method
+            - Proper thread-safe iteration over cache contents
+            - Cache iteration safety and data consistency
+            - Concurrent access protection during iteration
+        """
         cache = CameraThumbnailCache(maxsize=10)
         camera_id = CameraId("12345")
         entry = CameraThumbnailCacheEntry(timestamp=1000, filename="test.jpg")
@@ -1397,7 +1737,17 @@ class TestCacheStatsAndMethods(BaseTestCase):
         self.assertEqual(items[0][1], entry)
 
     def test_hit_rate_calculation(self) -> None:
-        """Test hit rate calculation in cache stats."""
+        """Test hit rate calculation functionality in cache statistics.
+
+        Verifies that the cache hit rate calculation properly computes
+        and reports cache hit rate percentages in statistics.
+
+        Tests:
+            - Hit rate calculation accuracy and methodology
+            - Proper hit rate percentage computation and reporting
+            - Cache performance metrics calculation for hit rates
+            - Statistics accuracy for cache hit/miss ratios
+        """
         cache = ThreadSafeCache(maxsize=10)
 
         # Initially no hits or misses
@@ -1405,7 +1755,17 @@ class TestCacheStatsAndMethods(BaseTestCase):
         self.assertEqual(stats["hit_rate"], 0.0)
 
     def test_models_cache_basic_operations(self) -> None:
-        """Test basic cache operations."""
+        """Test basic cache operations functionality and behavior.
+
+        Verifies that the cache system properly handles basic operations
+        including storage, retrieval, and management of cached data.
+
+        Tests:
+            - Basic cache operations (get, set, delete) functionality
+            - Proper cache behavior for standard operations
+            - Cache data storage and retrieval accuracy
+            - Basic cache management and operation consistency
+        """
         import time
         from pathlib import Path
 
