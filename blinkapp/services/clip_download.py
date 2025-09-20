@@ -233,7 +233,7 @@ def download_local_clip(
         clips_cache_dir.mkdir(
             parents=True, exist_ok=True
         )  # Ensure cache directory exists
-        cache_filename = f"local_{sync_name}_{item_id_str}_{local_item.name}_{local_item.created_at.strftime('%Y%m%d_%H%M%S')}.mp4"
+        cache_filename = f"{sync_name}~{item_id_str}.mp4"
         cached_filepath = clips_cache_dir / cache_filename
 
         if cached_filepath.exists():

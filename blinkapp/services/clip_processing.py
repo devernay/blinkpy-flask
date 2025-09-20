@@ -184,7 +184,7 @@ def process_local_clip_background(
 
                 # First check if video is already cached
                 clips_cache_dir = get_clips_cache_dir().resolve()
-                video_pattern = f"local_{sync_name}_{item_id}_*.mp4"
+                video_pattern = f"{sync_name}~{item_id}.mp4"
                 video_files = list(clips_cache_dir.glob(video_pattern))
 
                 if video_files and video_files[0].exists():

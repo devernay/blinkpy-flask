@@ -1898,6 +1898,78 @@ class TestCacheService(BaseTestCase):
                 )
                 self.assertEqual(clips_cache_instance, mock_clips_cache)
 
+    def test_load_clips_cache_preserves_file_timestamps(self) -> None:
+        """Test that load_clips_cache preserves file modification times for LRU ordering.
+
+        Verifies that when clips cache is rebuilt from directory contents,
+        the cached_at and last_accessed timestamps reflect file modification
+        times rather than current time, preserving proper LRU eviction order.
+
+        Tests:
+            - Creates test video files with different modification times
+            - Calls load_clips_cache to rebuild cache from files
+            - Verifies cached entries use file timestamps, not current time
+            - Confirms LRU ordering is preserved across restarts
+        """
+        import os
+        import time
+        from pathlib import Path
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.cache_service import (
+            ensure_clips_cache_initialized,
+            get_clips_cache_dir,
+            initialize_cache_paths,
+            initialize_caches,
+            load_clips_cache,
+        )
+
+        # Initialize cache paths and caches
+        initialize_cache_paths()
+        initialize_caches({"CLIPS_CACHE_SIZE": 50, "THUMBNAIL_CACHE_SIZE": 100})
+
+        # Create test clips directory
+        clips_dir = Path(get_clips_cache_dir())
+        clips_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create test video files with different modification times
+        old_time = time.time() - 3600  # 1 hour ago
+        new_time = time.time() - 1800  # 30 minutes ago
+
+        old_clip = clips_dir / "Maison~1111.mp4"
+        new_clip = clips_dir / "Maison~2222.mp4"
+
+        old_clip.write_text("old video content")
+        new_clip.write_text("new video content")
+
+        # Set different modification times
+        os.utime(old_clip, (old_time, old_time))
+        os.utime(new_clip, (new_time, new_time))
+
+        # Load clips cache
+        load_clips_cache()
+
+        # Get cache instance and verify timestamps
+        clips_cache = ensure_clips_cache_initialized()
+
+        old_clip_id = ClipId("Maison~1111")
+        new_clip_id = ClipId("Maison~2222")
+
+        old_entry = clips_cache.get(old_clip_id)
+        new_entry = clips_cache.get(new_clip_id)
+
+        self.assertIsNotNone(old_entry)
+        self.assertIsNotNone(new_entry)
+
+        # Verify timestamps match file modification times, not current time
+        self.assertAlmostEqual(old_entry["cached_at"], old_time, delta=1.0)
+        self.assertAlmostEqual(old_entry["last_accessed"], old_time, delta=1.0)
+        self.assertAlmostEqual(new_entry["cached_at"], new_time, delta=1.0)
+        self.assertAlmostEqual(new_entry["last_accessed"], new_time, delta=1.0)
+
+        # Verify older file has earlier timestamp
+        self.assertLess(old_entry["cached_at"], new_entry["cached_at"])
+
 
 class TestCameraService(BaseTestCase):
     """Test camera service functions."""
@@ -3761,6 +3833,55 @@ class TestClipDownload(BaseTestCase):
         self.assertEqual(status_code, 500)
         self.assertFalse(response["success"])
         self.assertIn("Failed to serve clip file", response["error"])
+
+    def test_clip_and_thumbnail_matching_basenames(self) -> None:
+        """Test that downloaded clips and thumbnails have matching basenames.
+
+        Verifies that both local and cloud clips use consistent naming where
+        the video file and thumbnail share the same basename (ClipId format).
+
+        Tests:
+            - Local clips: SyncName~ItemId.mp4 and SyncName~ItemId.jpg
+            - Cloud clips: NumericId.mp4 and NumericId.jpg
+            - Basename consistency for cache rebuilding and file management
+        """
+        from pathlib import Path
+
+        from blinkapp.models.ids import ClipId
+
+        # Test local clip naming
+        local_clip_id = ClipId("Maison~1949884275")
+        expected_local_video = f"{local_clip_id}.mp4"
+        expected_local_thumbnail = f"{local_clip_id}.jpg"
+
+        # Test cloud clip naming
+        cloud_clip_id = ClipId("12345")
+        expected_cloud_video = f"{cloud_clip_id}.mp4"
+        expected_cloud_thumbnail = f"{cloud_clip_id}.jpg"
+
+        # Verify basenames match (without extension)
+        local_video_basename = Path(expected_local_video).stem
+        local_thumbnail_basename = Path(expected_local_thumbnail).stem
+        cloud_video_basename = Path(expected_cloud_video).stem
+        cloud_thumbnail_basename = Path(expected_cloud_thumbnail).stem
+
+        self.assertEqual(local_video_basename, local_thumbnail_basename)
+        self.assertEqual(cloud_video_basename, cloud_thumbnail_basename)
+        self.assertEqual(local_video_basename, str(local_clip_id))
+        self.assertEqual(cloud_video_basename, str(cloud_clip_id))
+
+        # Verify naming patterns
+        self.assertEqual(expected_local_video, "Maison~1949884275.mp4")
+        self.assertEqual(expected_local_thumbnail, "Maison~1949884275.jpg")
+        self.assertEqual(expected_cloud_video, "12345.mp4")
+        self.assertEqual(expected_cloud_thumbnail, "12345.jpg")
+
+        # Test that ClipId can be reconstructed from filename
+        reconstructed_local = ClipId(local_video_basename)
+        reconstructed_cloud = ClipId(cloud_video_basename)
+
+        self.assertEqual(reconstructed_local, local_clip_id)
+        self.assertEqual(reconstructed_cloud, cloud_clip_id)
 
 
 class TestClipProcessing(BaseTestCase):

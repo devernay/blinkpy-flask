@@ -399,21 +399,66 @@ def load_clips_cache() -> None:
     for video_file in cache_dir.glob("*.mp4"):
         filename = video_file.name
         try:
-            parts = filename.replace(".mp4", "").split("_", 1)
-            if len(parts) >= 2:
-                clip_id = ClipId(parts[0])
-                from blinkapp.models.cache import ClipCacheData
+            # Handle ClipId format: SyncName~ItemId.mp4
+            clip_id_str = filename.replace(".mp4", "")
+            clip_id = ClipId(clip_id_str)
+            from blinkapp.models.cache import ClipCacheData
 
-                clip_data: ClipCacheData = {
-                    "id": str(clip_id),
-                    "camera_name": parts[1] if len(parts) > 1 else "unknown",
-                    "system_name": "cached",
-                    "time": "",
-                    "event_type": "cached",
-                    "thumbnail": "",
-                    "media_url": str(video_file),
-                }
-                clips_cache_instance.add_clip(clip_id, clip_data)
+            # Check for existing thumbnail
+            thumbnail_path = cache_dir / f"{clip_id_str}.jpg"
+
+            # Use file modification time to preserve age information
+            file_mtime = video_file.stat().st_mtime
+
+            clip_data: ClipCacheData = {
+                "id": str(clip_id),
+                "camera_name": "cached",
+                "system_name": "cached",
+                "time": "",
+                "event_type": "cached",
+                "thumbnail": str(thumbnail_path) if thumbnail_path.exists() else "",
+                "media_url": str(video_file),
+            }
+
+            # Create enhanced data with file timestamps
+            from blinkapp.models.cache import ClipCacheEntry
+
+            enhanced_data: ClipCacheEntry = {
+                "clip_data": clip_data,
+                "cached_at": file_mtime,  # Use file modification time
+                "access_count": 0,
+                "last_accessed": file_mtime,  # Use file modification time
+            }
+            clips_cache_instance[clip_id] = enhanced_data
+
+            # Generate thumbnail if missing
+            if not thumbnail_path.exists():
+                try:
+                    from blinkapp.services.clip_processing import (
+                        process_local_clip_background,
+                    )
+                    from blinkapp.services.connection_service import (
+                        ensure_executor_initialized,
+                    )
+
+                    # Extract sync_name and item_id for local clips
+                    if clip_id.is_local():
+                        sync_name, item_id = clip_id.get_local_parts()
+                        executor = ensure_executor_initialized()
+                        executor.submit(
+                            process_local_clip_background,
+                            clip_id,
+                            sync_name,
+                            str(item_id),
+                        )
+                        logger.debug(
+                            f"Queued thumbnail generation for cached clip {clip_id}"
+                        )
+                except Exception as thumb_error:
+                    logger.debug(
+                        f"Failed to queue thumbnail generation for {clip_id}: {thumb_error}"
+                    )
+
         except Exception as e:
             logger.debug(f"Error processing cached clip {filename}: {e}")
 
