@@ -714,13 +714,22 @@ class TestAuthService(BaseTestCase):
     def test_initialize_blink_2fa_required(
         self,
         mock_ensure_blink: Mock,
-        mock_get_instance: Mock,
+        mock_get_blink: Mock,
         mock_init_blink: Mock,
         mock_create_auth: Mock,
         mock_create_session: Mock,
-        mock_get_blink: Mock,
+        mock_get_blink_auth: Mock,
     ) -> None:
-        """Test initialize_blink when 2FA is required."""
+        """Test Blink initialization when 2FA authentication is required.
+
+        Verifies that Blink service initialization properly handles cases where
+        two-factor authentication is required and prompts for 2FA completion.
+
+        Tests:
+            - 2FA requirement detection during Blink initialization
+            - Proper 2FA prompt and handling workflow
+            - Authentication state management for 2FA scenarios
+        """
         from blinkapp.services.auth_service import initialize_blink
         from tests.test_base import create_mock_auth, create_mock_blink_instance
 
@@ -808,7 +817,16 @@ class TestAuthService(BaseTestCase):
         mock_exists: Mock,
         mock_get_creds_path: Mock,
     ) -> None:
-        """Test load_saved_blink success."""
+        """Test successful loading of saved Blink credentials and startup.
+
+        Verifies that saved Blink credentials can be successfully loaded from
+        cache and used to start the Blink service without re-authentication.
+
+        Tests:
+            - Successful saved credential loading from cache
+            - Blink service startup with cached credentials
+            - Proper service state after successful credential loading
+        """
         from pathlib import Path
 
         from blinkapp.services.auth_service import load_saved_blink
@@ -893,7 +911,16 @@ class TestAuthService(BaseTestCase):
         mock_exists: Mock,
         mock_creds_path: Mock,
     ) -> None:
-        """Test load_saved_blink when blink.start() fails."""
+        """Test saved Blink loading when start operation fails.
+
+        Verifies that loading saved Blink credentials properly handles cases
+        where the start operation fails due to network or authentication issues.
+
+        Tests:
+            - Saved credential loading from cache
+            - Start operation failure detection and handling
+            - Proper error response for failed Blink start operations
+        """
         from pathlib import Path
 
         from blinkapp.services.auth_service import load_saved_blink
@@ -1372,7 +1399,16 @@ class TestBlinkService(BaseTestCase):
         mock_session: Mock,
         mock_connection: Mock,
     ) -> None:
-        """Test successful Blink initialization."""
+        """Test successful Blink service initialization without errors.
+
+        Verifies that Blink service initialization completes successfully
+        when provided with valid credentials and network connectivity.
+
+        Tests:
+            - Successful Blink service initialization
+            - Proper authentication and connection establishment
+            - Service state setup after successful initialization
+        """
         from tests.test_base import (
             create_mock_auth,
             create_mock_blink_instance,
@@ -1403,14 +1439,23 @@ class TestBlinkService(BaseTestCase):
     @patch("aiohttp.ClientSession")
     @patch("blinkpy.blinkpy.Blink")
     @patch("blinkpy.auth.Auth")
-    def test_initialize_blink_2fa_required(
+    def test_initialize_blink_2fa_required_alt(
         self,
         mock_auth: Mock,
         mock_blink: Mock,
         mock_session: Mock,
         mock_connection: Mock,
     ) -> None:
-        """Test Blink initialization when 2FA authentication is required."""
+        """Test Blink initialization when 2FA authentication is required.
+
+        Verifies that Blink service initialization properly handles cases where
+        two-factor authentication is required and prompts for 2FA completion.
+
+        Tests:
+            - 2FA requirement detection during Blink initialization
+            - Proper 2FA prompt and handling workflow
+            - Authentication state management for 2FA scenarios
+        """
         from tests.test_base import (
             create_mock_blink_instance,
             mock_execute_with_coroutine_cleanup,
@@ -1778,7 +1823,24 @@ class TestCacheService(BaseTestCase):
         mock_thumb_dir: Mock,
         mock_clips_dir: Mock,
     ) -> None:
-        """Test file cache clearing operations."""
+        """Test file cache clearing operations with directory management.
+
+        Verifies that file cache clearing properly handles directory removal,
+        recreation, and error conditions during cache cleanup operations.
+
+        Args:
+            mock_exists: Mock for os.path.exists to control directory existence
+            mock_rmtree: Mock for shutil.rmtree to control directory removal
+            mock_makedirs: Mock for os.makedirs to control directory creation
+            mock_thumb_dir: Mock for thumbnail directory path resolution
+            mock_clips_dir: Mock for clips directory path resolution
+
+        Tests:
+            - Directory existence checking before cache clearing
+            - Proper directory removal using shutil.rmtree
+            - Directory recreation after cache clearing
+            - Error handling during file cache operations
+        """
         from pathlib import Path
 
         mock_thumb_dir.return_value = Path("/tmp/thumbnails")
@@ -1799,9 +1861,13 @@ class TestCacheService(BaseTestCase):
     def test_cache_instance_access(self) -> None:
         """Test global cache instance access and initialization patterns.
 
-        Why: Cache instances are global singletons that must be accessible across modules.
-        What: Verifies cache instances can be accessed and mocked for testing.
-        How: Patches global cache instances and validates access patterns work correctly.
+        Verifies that global cache instances can be properly accessed and mocked
+        for testing purposes across different modules and service layers.
+
+        Tests:
+            - Global cache instance access and mocking
+            - Cache instance initialization patterns
+            - Proper cache instance behavior in testing contexts
         """
         from tests.test_base import create_mock_camera_cache, create_mock_clips_cache
 

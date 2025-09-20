@@ -407,31 +407,29 @@ class TestCameraId(BaseTestCase):
     """Test CameraId validation and functionality."""
 
     def test_valid_numeric_id(self) -> None:
-        """Test valid numeric camera ID creation and validation.
+        """Test ID validation with valid numeric input values.
 
-        Verifies that CameraId can be created with valid numeric
-        identifiers and properly validates the input format.
+        Verifies that ID classes properly accept and validate numeric
+        input values and convert them to appropriate string format.
 
         Tests:
-            - Valid numeric camera ID creation and acceptance
-            - Proper validation of numeric identifier formats
-            - Camera ID object creation with integer inputs
-            - Validation rule compliance for numeric identifiers
+            - Valid numeric input acceptance and validation
+            - Proper numeric to string conversion
+            - Correct handling of numeric ID values
         """
         camera_id = CameraId("12345")
         self.assertEqual(str(camera_id), "12345")
 
     def test_valid_string_id(self) -> None:
-        """Test valid string camera ID creation and validation.
+        """Test ID validation with valid string input values.
 
-        Verifies that CameraId can be created with valid string
-        identifiers and properly validates the input format.
+        Verifies that ID classes properly accept and validate string
+        input values that match the expected pattern format.
 
         Tests:
-            - Valid string camera ID creation and acceptance
-            - String identifier format validation and processing
-            - Camera ID object creation with string inputs
-            - String representation accuracy for camera identifiers
+            - Valid string input acceptance and validation
+            - Proper string pattern matching
+            - Correct handling of valid string ID values
         """
         camera_id = CameraId("camera_abc")
         self.assertEqual(str(camera_id), "camera_abc")
@@ -452,16 +450,15 @@ class TestCameraId(BaseTestCase):
         self.assertEqual(str(camera_id), "12345")
 
     def test_invalid_id_with_special_chars(self) -> None:
-        """Test invalid camera ID rejection with special characters.
+        """Test ID validation rejection of special characters.
 
-        Verifies that CameraId properly rejects identifiers containing
-        special characters that violate validation rules.
+        Verifies that ID classes properly reject inputs containing
+        special characters that don't match the expected pattern.
 
         Tests:
-            - Special character rejection in camera ID validation
-            - Invalid character detection and error handling
-            - Validation rule enforcement for camera identifiers
-            - Proper ValueError exception for invalid character sets
+            - Special character input rejection
+            - ValueError exception for invalid character patterns
+            - Proper pattern validation enforcement
         """
         with self.assertRaises(ValueError) as cm:
             CameraId("camera-123!")
@@ -483,16 +480,15 @@ class TestCameraId(BaseTestCase):
             CameraId("")  # Should raise ValueError for empty string
 
     def test_empty_id(self) -> None:
-        """Test empty camera ID input raises validation error.
+        """Test ID class handling of empty string inputs.
 
-        Verifies that CameraId properly rejects empty identifier
-        inputs and raises appropriate validation errors.
+        Verifies that ID classes properly reject empty string inputs
+        and raise appropriate ValueError exceptions with descriptive messages.
 
         Tests:
-            - Empty camera ID input rejection and validation
-            - Proper error handling for missing identifier data
-            - Validation rule enforcement for required camera IDs
-            - Error message clarity for empty identifier inputs
+            - Empty string input rejection
+            - ValueError exception with descriptive error message
+            - Proper validation of required ID values
         """
         with self.assertRaises(ValueError):
             CameraId("")
@@ -554,7 +550,16 @@ class TestCameraId(BaseTestCase):
         self.assertIn("Cannot convert Camera ID", str(cm.exception))
 
     def test_camera_id_string_methods(self) -> None:
-        """Test CameraId string method delegation."""
+        """Test CameraId string method functionality and behavior.
+
+        Verifies that CameraId instances support string-like operations
+        and maintain proper string representation capabilities.
+
+        Tests:
+            - String method availability and functionality
+            - Proper string-like behavior of CameraId instances
+            - String operation compatibility
+        """
         camera_id = CameraId("test_camera_123")
 
         # Test split method
@@ -578,7 +583,16 @@ class TestCameraId(BaseTestCase):
         self.assertEqual(chars[0], "t")
 
     def test_id_equality_with_string(self) -> None:
-        """Test ID equality comparison with strings."""
+        """Test BaseId equality comparison with string values.
+
+        Verifies that BaseId instances properly compare for equality
+        with string values using the underlying ID value.
+
+        Tests:
+            - ID equality comparison with matching string values
+            - Proper equality logic implementation for string comparison
+            - BaseId equality behavior with string types
+        """
         camera_id = CameraId("12345")
 
         # Test equality with string
@@ -590,7 +604,16 @@ class TestCameraId(BaseTestCase):
         self.assertFalse(camera_id is None)
 
     def test_id_hash_functionality(self) -> None:
-        """Test ID hash functionality for sets and dicts."""
+        """Test BaseId hash function implementation and consistency.
+
+        Verifies that BaseId instances produce consistent hash values
+        and support proper hashing for use in dictionaries and sets.
+
+        Tests:
+            - Hash value generation for BaseId instances
+            - Hash consistency across multiple calls
+            - Proper hash implementation for dictionary usage
+        """
         camera_id1 = CameraId("test")
         camera_id2 = CameraId("test")
         camera_id3 = CameraId("different")
@@ -600,18 +623,45 @@ class TestCameraId(BaseTestCase):
         self.assertNotEqual(hash(camera_id1), hash(camera_id3))
 
     def test_camera_id_str_method(self) -> None:
-        """Test CameraId.__str__ method."""
+        """Test CameraId string representation via __str__ method.
+
+        Verifies that CameraId instances properly convert to string format
+        and return the original ID value when cast to string.
+
+        Tests:
+            - String conversion using str(camera_id)
+            - Returned string matches original input value
+            - Proper __str__ method implementation
+        """
         camera_id = CameraId("test123")
         str_result = str(camera_id)
         self.assertEqual(str_result, "test123")
 
     def test_camera_id_value_property(self) -> None:
-        """Test CameraId.value property."""
+        """Test CameraId value property access and retrieval.
+
+        Verifies that the value property correctly returns the stored
+        camera ID string value that was provided during initialization.
+
+        Tests:
+            - Value property returns original input string
+            - Property access provides correct stored value
+            - Value property maintains data integrity
+        """
         camera_id = CameraId("camera789")
         self.assertEqual(camera_id.value, "camera789")
 
     def test_camera_id_validation_method(self) -> None:
-        """Test CameraId._validate method."""
+        """Test CameraId internal validation method behavior.
+
+        Verifies that the _validate method properly validates input strings
+        and handles both valid and invalid input cases appropriately.
+
+        Tests:
+            - Validation of valid input strings returns True
+            - Validation of empty strings (behavior may vary)
+            - Exception handling for invalid validation inputs
+        """
         camera_id = CameraId("valid123")
         # Test validation with valid input
         self.assertTrue(camera_id._validate("valid123"))
@@ -630,7 +680,16 @@ class TestCameraId(BaseTestCase):
             self.assertTrue(True)
 
     def test_id_iteration(self) -> None:
-        """Test ID iteration functionality."""
+        """Test BaseId iteration and sequence-like behavior.
+
+        Verifies that BaseId instances support iteration operations
+        and behave appropriately when used in iteration contexts.
+
+        Tests:
+            - Iteration support for BaseId instances
+            - Proper sequence-like behavior implementation
+            - Iteration compatibility with ID string values
+        """
         camera_id = CameraId("12345")
         chars = list(camera_id)
         self.assertEqual(chars, ["1", "2", "3", "4", "5"])
@@ -640,7 +699,16 @@ class TestCameraId(BaseTestCase):
         self.assertEqual(result, "12345")
 
     def test_id_split_method(self) -> None:
-        """Test ID split method delegation."""
+        """Test BaseId string splitting method functionality.
+
+        Verifies that BaseId instances support string splitting operations
+        and properly handle split method calls on the ID value.
+
+        Tests:
+            - String split method availability on BaseId instances
+            - Proper split operation results
+            - String method delegation to underlying ID value
+        """
         camera_id = CameraId("12-34-56")
         parts = camera_id.split("-")
         self.assertEqual(parts, ["12", "34", "56"])
@@ -650,14 +718,32 @@ class TestCameraId(BaseTestCase):
         self.assertEqual(parts, ["12", "34-56"])
 
     def test_models_ids_string_methods(self) -> None:
-        """Test ID model string methods."""
+        """Test model ID classes string method implementations.
+
+        Verifies that various model ID classes properly implement
+        string methods and provide consistent string behavior.
+
+        Tests:
+            - String method availability across ID classes
+            - Consistent string behavior implementation
+            - Proper string method delegation to underlying values
+        """
         # Test CameraId
         camera_id = CameraId("test_camera")
         self.assertEqual(str(camera_id), "test_camera")
         self.assertEqual(repr(camera_id), "CameraId('test_camera')")
 
     def test_camera_id_edge_cases(self) -> None:
-        """Test CameraId edge cases."""
+        """Test CameraId handling of edge cases and type conversions.
+
+        Verifies that CameraId properly handles string inputs that represent
+        numeric values and supports comparison operations between instances.
+
+        Tests:
+            - String-to-integer conversion using int(camera_id)
+            - Equality comparison between CameraId instances with same value
+            - Proper handling of numeric string inputs
+        """
         # Test with string input
         camera_id = CameraId("12345")
         self.assertEqual(int(camera_id), 12345)
@@ -667,16 +753,29 @@ class TestCameraId(BaseTestCase):
         self.assertEqual(camera_id, camera_id2)
 
     def test_id_string_representations(self) -> None:
-        """Test string representations of ID classes."""
+        """Test BaseId string representation methods and formats.
+
+        Verifies that BaseId instances provide proper string representations
+        through various string conversion methods and formats.
+
+        Tests:
+            - String representation via str() conversion
+            - Proper string format in various contexts
+            - Consistent string representation across methods
+        """
         camera_id = CameraId("12345")
         self.assertIn("12345", str(camera_id))
 
     def test_validation_error_messages(self) -> None:
-        """Test ID validation provides meaningful error messages for debugging.
+        """Test ID validation error message clarity and usefulness.
 
-        Why: Clear error messages help developers identify validation failures quickly.
-        What: Verifies error messages contain relevant context about validation failure.
-        How: Triggers validation error with empty ID and checks message content.
+        Verifies that ID validation provides meaningful error messages
+        that help developers understand validation failures.
+
+        Tests:
+            - Meaningful error message generation for validation failures
+            - Clear indication of validation requirements
+            - Helpful debugging information in error messages
         """
         with self.assertRaises(ValueError) as context:
             CameraId("")
@@ -686,7 +785,16 @@ class TestCameraId(BaseTestCase):
         self.assertIn("Camera", error_msg)
 
     def test_type_name_methods(self) -> None:
-        """Test _get_type_name methods."""
+        """Test type name method functionality for ID classes.
+
+        Verifies that ID classes properly implement type name methods
+        and return appropriate type identification strings.
+
+        Tests:
+            - Type name method availability and functionality
+            - Proper type identification string return
+            - Consistent type naming across ID classes
+        """
         camera_id = CameraId("test123")
         clip_id = ClipId("test456")
 
@@ -705,28 +813,73 @@ class TestNetworkId(BaseTestCase):
     """Test NetworkId validation and functionality."""
 
     def test_valid_numeric_id(self) -> None:
-        """Test valid numeric network ID."""
+        """Test ID validation with valid numeric input values.
+
+        Verifies that ID classes properly accept and validate numeric
+        input values and convert them to appropriate string format.
+
+        Tests:
+            - Valid numeric input acceptance and validation
+            - Proper numeric to string conversion
+            - Correct handling of numeric ID values
+        """
         network_id = NetworkId("54321")
         self.assertEqual(str(network_id), "54321")
 
     def test_valid_string_id(self) -> None:
-        """Test valid numeric network ID (networks only accept numeric IDs)."""
+        """Test ID validation with valid string input values.
+
+        Verifies that ID classes properly accept and validate string
+        input values that match the expected pattern format.
+
+        Tests:
+            - Valid string input acceptance and validation
+            - Proper string pattern matching
+            - Correct handling of valid string ID values
+        """
         network_id = NetworkId("54321")
         self.assertEqual(str(network_id), "54321")
 
     def test_invalid_id_with_special_chars(self) -> None:
-        """Test invalid network ID with special characters."""
+        """Test ID validation rejection of special characters.
+
+        Verifies that ID classes properly reject inputs containing
+        special characters that don't match the expected pattern.
+
+        Tests:
+            - Special character input rejection
+            - ValueError exception for invalid character patterns
+            - Proper pattern validation enforcement
+        """
         with self.assertRaises(ValueError) as cm:
             NetworkId("network@123")
         self.assertIn("Invalid Network ID format", str(cm.exception))
 
     def test_empty_id(self) -> None:
-        """Test empty network ID raises error."""
+        """Test ID class handling of empty string inputs.
+
+        Verifies that ID classes properly reject empty string inputs
+        and raise appropriate ValueError exceptions with descriptive messages.
+
+        Tests:
+            - Empty string input rejection
+            - ValueError exception with descriptive error message
+            - Proper validation of required ID values
+        """
         with self.assertRaises(ValueError):
             NetworkId("")
 
     def test_network_id_string_methods(self) -> None:
-        """Test NetworkId string method delegation."""
+        """Test NetworkId string method functionality and behavior.
+
+        Verifies that NetworkId instances support string-like operations
+        and maintain proper string representation capabilities.
+
+        Tests:
+            - String method availability and functionality
+            - Proper string-like behavior of NetworkId instances
+            - String operation compatibility for network IDs
+        """
         network_id = NetworkId("789")
 
         # Test split method with maxsplit
@@ -738,7 +891,16 @@ class TestNetworkId(BaseTestCase):
         self.assertEqual(first_char, "7")
 
     def test_network_id_edge_cases(self) -> None:
-        """Test NetworkId edge cases."""
+        """Test NetworkId handling of edge cases and special scenarios.
+
+        Verifies that NetworkId properly handles edge cases including
+        unusual input formats and boundary conditions.
+
+        Tests:
+            - Edge case input handling for network IDs
+            - Boundary condition processing
+            - Proper behavior for unusual network ID formats
+        """
         # Test with string input
         network_id = NetworkId("67890")
         self.assertEqual(int(network_id), 67890)
@@ -748,7 +910,16 @@ class TestNetworkId(BaseTestCase):
         self.assertEqual(network_id, network_id2)
 
     def test_network_id_string_representations(self) -> None:
-        """Test string representations of NetworkId."""
+        """Test NetworkId string representation methods and formats.
+
+        Verifies that NetworkId instances provide proper string representations
+        through various string conversion methods and formats.
+
+        Tests:
+            - String representation via str() conversion
+            - Proper string format in various contexts
+            - Consistent string representation across methods
+        """
         network_id = NetworkId("67890")
         self.assertIn("67890", str(network_id))
 
@@ -757,54 +928,135 @@ class TestClipId(BaseTestCase):
     """Test ClipId validation and functionality."""
 
     def test_valid_numeric_id(self) -> None:
-        """Test valid numeric clip ID."""
+        """Test ID validation with valid numeric input values.
+
+        Verifies that ID classes properly accept and validate numeric
+        input values and convert them to appropriate string format.
+
+        Tests:
+            - Valid numeric input acceptance and validation
+            - Proper numeric to string conversion
+            - Correct handling of numeric ID values
+        """
         clip_id = ClipId("98765")
         self.assertEqual(str(clip_id), "98765")
 
     def test_valid_string_id(self) -> None:
-        """Test valid string clip ID."""
+        """Test ID validation with valid string input values.
+
+        Verifies that ID classes properly accept and validate string
+        input values that match the expected pattern format.
+
+        Tests:
+            - Valid string input acceptance and validation
+            - Proper string pattern matching
+            - Correct handling of valid string ID values
+        """
         clip_id = ClipId("clip_def")
         self.assertEqual(str(clip_id), "clip_def")
 
     def test_local_clip_creation(self) -> None:
-        """Test local clip ID creation."""
+        """Test LocalClip object creation and initialization.
+
+        Verifies that LocalClip instances can be properly created with
+        required parameters and maintain correct attribute values.
+
+        Tests:
+            - LocalClip object instantiation with valid parameters
+            - Proper attribute assignment during initialization
+            - Object creation without errors or exceptions
+        """
         clip_id = ClipId.from_local("sync1", 123)
         self.assertEqual(str(clip_id), "sync1~123")
         self.assertTrue(clip_id.is_local())
 
     def test_cloud_clip_creation(self) -> None:
-        """Test cloud clip ID creation."""
+        """Test CloudClip object creation and initialization.
+
+        Verifies that CloudClip instances can be properly created with
+        required parameters and maintain correct attribute values.
+
+        Tests:
+            - CloudClip object instantiation with valid parameters
+            - Proper attribute assignment during initialization
+            - Object creation without errors or exceptions
+        """
         clip_id = ClipId("456")  # Direct construction instead of from_cloud
         self.assertEqual(str(clip_id), "456")
         self.assertFalse(clip_id.is_local())
 
     def test_local_parts_extraction(self) -> None:
-        """Test extracting local clip parts."""
+        """Test local clip parts extraction from file paths.
+
+        Verifies that local clip processing properly extracts component parts
+        from local file paths and structures them appropriately.
+
+        Tests:
+            - File path parsing and component extraction
+            - Proper part identification from local clip paths
+            - Successful extraction of clip metadata from paths
+        """
         clip_id = ClipId("sync1~123")
         sync_name, item_id = clip_id.get_local_parts()
         self.assertEqual(sync_name, "sync1")
         self.assertEqual(item_id, 123)
 
     def test_local_parts_extraction_error(self) -> None:
-        """Test error when extracting parts from cloud clip."""
+        """Test local clip parts extraction error handling.
+
+        Verifies that local clip processing properly handles errors during
+        parts extraction from malformed or invalid file paths.
+
+        Tests:
+            - Error handling for malformed file paths
+            - Graceful failure for invalid clip path formats
+            - Proper exception handling during parts extraction
+        """
         clip_id = ClipId("456")
         with self.assertRaises(ValueError) as cm:
             clip_id.get_local_parts()
         self.assertIn("Not a local storage clip", str(cm.exception))
 
     def test_invalid_id_with_special_chars(self) -> None:
-        """Test invalid clip ID with special characters."""
+        """Test ID validation rejection of special characters.
+
+        Verifies that ID classes properly reject inputs containing
+        special characters that don't match the expected pattern.
+
+        Tests:
+            - Special character input rejection
+            - ValueError exception for invalid character patterns
+            - Proper pattern validation enforcement
+        """
         with self.assertRaises(ValueError) as cm:
             ClipId("clip#456")
         self.assertIn("Invalid Clip ID format", str(cm.exception))
 
     def test_empty_id(self) -> None:
-        """Test empty clip ID raises error."""
+        """Test ID class handling of empty string inputs.
+
+        Verifies that ID classes properly reject empty string inputs
+        and raise appropriate ValueError exceptions with descriptive messages.
+
+        Tests:
+            - Empty string input rejection
+            - ValueError exception with descriptive error message
+            - Proper validation of required ID values
+        """
         with self.assertRaises(ValueError):
             ClipId("")
 
     def test_type_error_handling(self) -> None:
-        """Test TypeError handling."""
+        """Test proper handling of type errors in operations.
+
+        Verifies that operations properly handle and respond to type errors
+        with appropriate error messages and exception handling.
+
+        Tests:
+            - Type error detection and handling
+            - Proper exception raising for type mismatches
+            - Appropriate error messages for type-related issues
+        """
         from blinkapp.models.ids import ClipId
 
         # Test that integers are converted to strings (should work)
@@ -812,7 +1064,16 @@ class TestClipId(BaseTestCase):
         self.assertEqual(str(clip_id), "123")
 
     def test_clip_id_string_methods(self) -> None:
-        """Test ClipId string method delegation."""
+        """Test ClipId string method functionality and behavior.
+
+        Verifies that ClipId instances support string-like operations
+        and maintain proper string representation capabilities.
+
+        Tests:
+            - String method availability and functionality
+            - Proper string-like behavior of ClipId instances
+            - String operation compatibility for clip IDs
+        """
         clip_id = ClipId("clip_456")
 
         # Test split method
@@ -826,18 +1087,45 @@ class TestClipId(BaseTestCase):
         self.assertEqual(clip_id[:4], "clip")
 
     def test_clip_id_str_method(self) -> None:
-        """Test ClipId.__str__ method."""
+        """Test ClipId string representation via __str__ method.
+
+        Verifies that ClipId instances properly convert to string format
+        and return the original clip ID value when cast to string.
+
+        Tests:
+            - String conversion using str(clip_id)
+            - Returned string matches original input value
+            - Proper __str__ method implementation for clip IDs
+        """
         clip_id = ClipId("clip456")
         str_result = str(clip_id)
         self.assertEqual(str_result, "clip456")
 
     def test_clip_id_value_property(self) -> None:
-        """Test ClipId.value property."""
+        """Test ClipId value property access and retrieval.
+
+        Verifies that the value property correctly returns the stored
+        clip ID string value that was provided during initialization.
+
+        Tests:
+            - Value property returns original input string
+            - Property access provides correct stored value
+            - Value property maintains data integrity for clip IDs
+        """
         clip_id = ClipId("clip012")
         self.assertEqual(clip_id.value, "clip012")
 
     def test_clip_id_validation_method(self) -> None:
-        """Test ClipId internal validation method with edge cases."""
+        """Test ClipId internal validation method behavior.
+
+        Verifies that the _validate method properly validates clip ID strings
+        and handles both valid and invalid input cases appropriately.
+
+        Tests:
+            - Validation of valid clip ID strings returns True
+            - Validation of invalid inputs (behavior may vary)
+            - Exception handling for malformed clip ID inputs
+        """
         clip_id = ClipId("valid456")
         # Test validation with valid input
         self.assertTrue(clip_id._validate("valid456"))
@@ -853,7 +1141,16 @@ class TestClipId(BaseTestCase):
             self.assertTrue(True)
 
     def test_clip_id_validation_patterns(self) -> None:
-        """Test ClipId validation patterns."""
+        """Test ClipId validation against expected pattern formats.
+
+        Verifies that ClipId validation properly enforces pattern matching
+        for clip ID formats and rejects malformed input strings.
+
+        Tests:
+            - Valid clip ID patterns pass validation
+            - Invalid patterns are rejected appropriately
+            - Pattern matching enforcement for clip ID format
+        """
         # Test valid patterns
         valid_ids = ["67890", "clip123", "CLIP_001"]
         for valid_id in valid_ids:
@@ -869,7 +1166,16 @@ class TestCreateApiResponse(BaseTestCase):
     """Test create_api_response utility function."""
 
     def test_success_response_with_data(self) -> None:
-        """Test successful API response with data."""
+        """Test API success response creation with data payload.
+
+        Verifies that create_api_response properly creates success responses
+        with data payloads and appropriate success=True flag.
+
+        Tests:
+            - Success response creation with data payload
+            - Success flag set to True for successful responses
+            - Proper data inclusion in response structure
+        """
         data = {"key": "value"}
         response, status_code = create_api_response(success=True, data=data)
 
@@ -879,7 +1185,16 @@ class TestCreateApiResponse(BaseTestCase):
         self.assertEqual(status_code, 200)
 
     def test_success_response_without_data(self) -> None:
-        """Test successful API response without data."""
+        """Test API success response creation without data payload.
+
+        Verifies that create_api_response properly creates success responses
+        without data payloads and maintains proper response structure.
+
+        Tests:
+            - Success response creation without data payload
+            - Success flag set to True for successful responses
+            - Proper response structure for data-less success responses
+        """
         response, status_code = create_api_response(success=True)
 
         self.assertTrue(response["success"])
@@ -888,7 +1203,16 @@ class TestCreateApiResponse(BaseTestCase):
         self.assertEqual(status_code, 200)
 
     def test_error_response_with_message(self) -> None:
-        """Test error API response with message."""
+        """Test API error response creation with custom error message.
+
+        Verifies that create_api_response properly creates error responses
+        with custom error messages and appropriate success=False flag.
+
+        Tests:
+            - Error response creation with custom message
+            - Success flag set to False for error responses
+            - Proper error message inclusion in response
+        """
         error_msg = "Something went wrong"
         response, status_code = create_api_response(
             success=False, error=error_msg, status_code=400
@@ -900,7 +1224,16 @@ class TestCreateApiResponse(BaseTestCase):
         self.assertEqual(status_code, 400)
 
     def test_error_response_without_message(self) -> None:
-        """Test error API response without message."""
+        """Test API error response creation without custom message.
+
+        Verifies that create_api_response properly creates error responses
+        without custom messages and uses default error handling.
+
+        Tests:
+            - Error response creation without custom message
+            - Success flag set to False for error responses
+            - Default error handling when no message provided
+        """
         response, status_code = create_api_response(success=False)
 
         self.assertFalse(response["success"])
@@ -909,7 +1242,16 @@ class TestCreateApiResponse(BaseTestCase):
         self.assertEqual(status_code, 200)
 
     def test_custom_status_code(self) -> None:
-        """Test API response with custom status code."""
+        """Test API response creation with custom HTTP status codes.
+
+        Verifies that create_api_response properly handles custom status codes
+        beyond the default 200 OK response code.
+
+        Tests:
+            - Custom status code assignment in API responses
+            - Proper status code handling in response creation
+            - Non-default status code support
+        """
         response, status_code = create_api_response(
             success=True, data={"test": "data"}, status_code=201
         )
@@ -919,7 +1261,16 @@ class TestCreateApiResponse(BaseTestCase):
         self.assertEqual(status_code, 201)
 
     def test_timestamp_format(self) -> None:
-        """Test timestamp format in response."""
+        """Test timestamp formatting and representation.
+
+        Verifies that timestamp values are properly formatted and
+        represented in the expected format for cache operations.
+
+        Tests:
+            - Timestamp format validation and consistency
+            - Proper timestamp representation in cache entries
+            - Correct timestamp formatting for display and storage
+        """
         response, _ = create_api_response()
         timestamp = response["timestamp"]
 
@@ -937,19 +1288,46 @@ class TestThreadSafeCache(BaseTestCase):
         self.cache: ThreadSafeCache[str, str] = ThreadSafeCache(maxsize=100)
 
     def test_basic_setitem_getitem(self) -> None:
-        """Test basic setitem and getitem operations."""
+        """Test ThreadSafeCache basic item assignment and retrieval operations.
+
+        Verifies that the cache properly stores and retrieves key-value pairs
+        using dictionary-style syntax with __setitem__ and __getitem__.
+
+        Tests:
+            - Item assignment using cache[key] = value syntax
+            - Item retrieval using cache[key] syntax
+            - Value equality after storage and retrieval
+        """
         self.cache["key1"] = "value1"
         self.assertEqual(self.cache["key1"], "value1")
 
     def test_delitem(self) -> None:
-        """Test delitem operation."""
+        """Test ThreadSafeCache item deletion via __delitem__ method.
+
+        Verifies that cache items can be properly deleted using del syntax
+        and that accessing deleted items raises appropriate KeyError.
+
+        Tests:
+            - Item deletion using del cache[key] syntax
+            - KeyError raised when accessing deleted items
+            - Proper cleanup after item deletion
+        """
         self.cache["key1"] = "value1"
         del self.cache["key1"]
         with self.assertRaises(KeyError):
             _ = self.cache["key1"]
 
     def test_clear(self) -> None:
-        """Test clear operation."""
+        """Test ThreadSafeCache clear operation removes all stored items.
+
+        Verifies that the clear method properly removes all key-value pairs
+        from the cache and resets the cache size to zero.
+
+        Tests:
+            - Cache stores multiple items before clearing
+            - Cache length equals number of stored items
+            - Clear operation removes all items (length becomes 0)
+        """
         self.cache["key1"] = "value1"
         self.cache["key2"] = "value2"
         self.assertEqual(len(self.cache), 2)
@@ -958,7 +1336,16 @@ class TestThreadSafeCache(BaseTestCase):
         self.assertEqual(len(self.cache), 0)
 
     def test_items_list(self) -> None:
-        """Test items_list method for safe iteration."""
+        """Test ThreadSafeCache items_list method for safe iteration.
+
+        Verifies that the items_list method provides a safe way to iterate
+        over cache contents without concurrent modification issues.
+
+        Tests:
+            - Items list generation from cache contents
+            - Safe iteration over cache key-value pairs
+            - Proper list format for cache items
+        """
         self.cache["key1"] = "value1"
         self.cache["key2"] = "value2"
 
@@ -968,7 +1355,16 @@ class TestThreadSafeCache(BaseTestCase):
         self.assertIn(("key2", "value2"), items)
 
     def test_get_stats(self) -> None:
-        """Test get_stats method."""
+        """Test cache statistics retrieval and reporting.
+
+        Verifies that cache instances properly report statistics about
+        their current state including size and usage information.
+
+        Tests:
+            - Statistics retrieval from cache instances
+            - Accurate reporting of cache size and state
+            - Proper statistics data structure and values
+        """
         stats = self.cache.get_stats()
 
         self.assertIn("size", stats)
@@ -978,7 +1374,16 @@ class TestThreadSafeCache(BaseTestCase):
         self.assertIn("hit_rate", stats)
 
     def test_thread_safety(self) -> None:
-        """Test thread safety of cache operations."""
+        """Test general thread safety of cache operations.
+
+        Verifies that cache operations maintain thread safety and data
+        integrity when accessed concurrently from multiple threads.
+
+        Tests:
+            - Concurrent access from multiple threads
+            - Data integrity under concurrent operations
+            - Thread-safe behavior for cache modifications
+        """
         results = []
 
         def worker(thread_id: int) -> None:
@@ -1007,12 +1412,30 @@ class TestThreadSafeLRUCache(BaseTestCase):
     """Test ThreadSafeLRUCache functionality."""
 
     def test_initialization(self) -> None:
-        """Test LRU cache initialization."""
+        """Test object initialization with required parameters.
+
+        Verifies that objects can be properly initialized with their
+        required parameters and maintain correct initial state.
+
+        Tests:
+            - Object instantiation with valid parameters
+            - Proper attribute initialization during creation
+            - Successful object creation without errors
+        """
         cache: ThreadSafeLRUCache[str, str] = ThreadSafeLRUCache(maxsize=5)
         self.assertEqual(len(cache), 0)
 
     def test_maxsize_enforcement(self) -> None:
-        """Test maxsize enforcement with eviction."""
+        """Test cache maximum size enforcement and eviction policies.
+
+        Verifies that caches properly enforce maximum size limits and
+        evict items when the size limit is exceeded.
+
+        Tests:
+            - Maximum size limit enforcement
+            - Proper item eviction when size exceeded
+            - Cache size maintenance within specified limits
+        """
         cache: ThreadSafeLRUCache[str, str] = ThreadSafeLRUCache(maxsize=3)
 
         # Fill cache to capacity
@@ -1033,11 +1456,15 @@ class TestThreadSafeLRUCache(BaseTestCase):
         self.assertEqual(cache["key4"], "value4")
 
     def test_lru_cache_thread_safety_advanced(self) -> None:
-        """Test LRU cache concurrent access from multiple threads.
+        """Test ThreadSafeLRUCache advanced thread safety scenarios.
 
-        Why: Cache is accessed by multiple request threads simultaneously in production.
-        What: Verifies thread-safe operations prevent data corruption and race conditions.
-        How: Spawns multiple threads performing cache operations and validates consistency.
+        Verifies that the LRU cache handles complex concurrent scenarios
+        including simultaneous evictions and cache modifications.
+
+        Tests:
+            - Complex concurrent access patterns
+            - Simultaneous eviction and insertion operations
+            - Advanced thread safety under high contention
         """
         import threading
         from typing import Any
@@ -1068,11 +1495,15 @@ class TestThreadSafeLRUCache(BaseTestCase):
         self.assertTrue(all(results))
 
     def test_lru_cache_memory_efficiency(self) -> None:
-        """Test LRU cache memory management with size limits.
+        """Test ThreadSafeLRUCache memory efficiency and optimization.
 
-        Why: Cache must evict old entries to prevent memory leaks in long-running processes.
-        What: Verifies proper eviction of least recently used items when cache is full.
-        How: Fills cache beyond capacity and validates oldest entries are removed.
+        Verifies that the LRU cache maintains memory efficiency through
+        proper eviction policies and memory usage optimization.
+
+        Tests:
+            - Memory efficient storage and retrieval
+            - Proper eviction of least recently used items
+            - Optimal memory usage patterns for cache operations
         """
         from blinkapp.models.cache import LRUCache
 
@@ -1090,7 +1521,16 @@ class TestThreadSafeLRUCache(BaseTestCase):
             self.assertIn(f"key_{i}", cache)
 
     def test_lru_cache_clear_operation(self) -> None:
-        """Test LRU cache clear operation."""
+        """Test ThreadSafeLRUCache clear operation removes all items.
+
+        Verifies that the LRU cache clear method properly removes all
+        cached items and resets the cache to empty state.
+
+        Tests:
+            - Clear operation removes all cached items
+            - Cache size resets to zero after clearing
+            - Proper cleanup of LRU cache internal state
+        """
         from blinkapp.models.cache import LRUCache
 
         cache: LRUCache[str, str] = LRUCache(maxsize=10)
@@ -1107,7 +1547,16 @@ class TestThreadSafeLRUCache(BaseTestCase):
         self.assertEqual(len(cache), 0)
 
     def test_lru_cache_contains_operation(self) -> None:
-        """Test LRU cache __contains__ operation."""
+        """Test ThreadSafeLRUCache contains operation for key existence.
+
+        Verifies that the LRU cache properly supports 'in' operator
+        for checking key existence without affecting LRU ordering.
+
+        Tests:
+            - Key existence check using 'in' operator
+            - Proper boolean return for key presence/absence
+            - Contains operation without LRU order modification
+        """
         from blinkapp.models.cache import LRUCache
 
         cache: LRUCache[str, str] = LRUCache(maxsize=5)
@@ -1118,7 +1567,16 @@ class TestThreadSafeLRUCache(BaseTestCase):
         self.assertNotIn("nonexistent_key", cache)
 
     def test_lru_cache_getitem_operation(self) -> None:
-        """Test LRU cache __getitem__ operation."""
+        """Test ThreadSafeLRUCache item retrieval and LRU ordering.
+
+        Verifies that LRU cache item retrieval properly updates the
+        least-recently-used ordering when items are accessed.
+
+        Tests:
+            - Item retrieval using cache[key] syntax
+            - LRU ordering update on item access
+            - Proper value return for cached items
+        """
         from blinkapp.models.cache import LRUCache
 
         cache: LRUCache[str, str] = LRUCache(maxsize=5)
@@ -1133,7 +1591,16 @@ class TestThreadSafeLRUCache(BaseTestCase):
             _ = cache["missing_key"]
 
     def test_lru_cache_thread_safety(self) -> None:
-        """Test LRU cache concurrent access from multiple threads."""
+        """Test ThreadSafeLRUCache thread safety under concurrent access.
+
+        Verifies that the LRU cache maintains data integrity and proper
+        behavior when accessed concurrently from multiple threads.
+
+        Tests:
+            - Concurrent read/write operations from multiple threads
+            - Data integrity under concurrent access patterns
+            - Thread-safe LRU ordering maintenance
+        """
         import threading
         from typing import Any
 
@@ -1165,7 +1632,16 @@ class TestThreadSafeLRUCache(BaseTestCase):
         self.assertTrue(all(results))
 
     def test_update_camera_thumbnail_cache_advanced(self) -> None:
-        """Test camera thumbnail cache update."""
+        """Test advanced camera thumbnail cache update operations.
+
+        Verifies that CameraThumbnailCache handles complex update scenarios
+        including metadata updates and advanced cache management.
+
+        Tests:
+            - Advanced thumbnail cache update operations
+            - Metadata handling during cache updates
+            - Complex cache management scenarios
+        """
         from unittest.mock import patch
 
         mock_camera = create_mock_camera()
@@ -1215,16 +1691,43 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.camera_id = CameraId("12345")
 
     def test_initialization(self) -> None:
-        """Test cache initialization."""
+        """Test object initialization with required parameters.
+
+        Verifies that objects can be properly initialized with their
+        required parameters and maintain correct initial state.
+
+        Tests:
+            - Object instantiation with valid parameters
+            - Proper attribute initialization during creation
+            - Successful object creation without errors
+        """
         self.assertEqual(len(self.cache), 0)
 
     def test_get_thumbnail_timestamp_missing(self) -> None:
-        """Test getting timestamp for missing thumbnail."""
+        """Test thumbnail timestamp retrieval for missing entries.
+
+        Verifies that CameraThumbnailCache properly handles requests for
+        timestamps of thumbnails that don't exist in the cache.
+
+        Tests:
+            - Missing timestamp handling for non-existent thumbnails
+            - Proper return value for missing timestamp entries
+            - Graceful handling of timestamp requests for missing items
+        """
         timestamp = self.cache.get_thumbnail_timestamp(self.camera_id)
         self.assertIsNone(timestamp)
 
     def test_get_thumbnail_timestamp_existing(self) -> None:
-        """Test getting timestamp for existing thumbnail."""
+        """Test thumbnail timestamp retrieval for existing thumbnails.
+
+        Verifies that CameraThumbnailCache properly retrieves timestamps
+        for thumbnails that exist in the cache.
+
+        Tests:
+            - Timestamp retrieval for existing thumbnail entries
+            - Proper timestamp format and value return
+            - Successful timestamp access for cached thumbnails
+        """
         entry = CameraThumbnailCacheEntry(timestamp=1234567890, filename="test.jpg")
         self.cache[self.camera_id] = entry
 
@@ -1232,7 +1735,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertEqual(timestamp, 1234567890.0)
 
     def test_get_thumbnail_timestamp_invalid_format(self) -> None:
-        """Test getting timestamp with invalid format."""
+        """Test thumbnail timestamp handling with invalid format.
+
+        Verifies that CameraThumbnailCache properly handles cases where
+        thumbnail timestamps have invalid or corrupted format.
+
+        Tests:
+            - Invalid timestamp format handling
+            - Graceful error handling for malformed timestamps
+            - Proper fallback behavior for invalid timestamp data
+        """
         from blinkapp.models.cache import CameraThumbnailCacheEntry
 
         # Create entry with invalid timestamp format
@@ -1248,12 +1760,30 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertIsNone(timestamp)
 
     def test_is_thumbnail_fresh_missing(self) -> None:
-        """Test freshness check for missing thumbnail."""
+        """Test thumbnail freshness check for missing thumbnail entries.
+
+        Verifies that CameraThumbnailCache properly handles freshness checks
+        for thumbnails that don't exist in the cache.
+
+        Tests:
+            - Freshness check behavior for missing thumbnails
+            - Proper handling of non-existent thumbnail entries
+            - Appropriate return value for missing thumbnail freshness
+        """
         is_fresh = self.cache.is_thumbnail_fresh(self.camera_id)
         self.assertFalse(is_fresh)
 
     def test_is_thumbnail_fresh_old(self) -> None:
-        """Test freshness check for old thumbnail."""
+        """Test thumbnail freshness check for old thumbnail entries.
+
+        Verifies that CameraThumbnailCache properly identifies old thumbnails
+        that exceed the freshness threshold and marks them as stale.
+
+        Tests:
+            - Old thumbnail identification and freshness evaluation
+            - Proper age threshold comparison for freshness
+            - Correct stale status for thumbnails exceeding age limit
+        """
         old_timestamp = int(time.time()) - 600  # 10 minutes ago
         entry = CameraThumbnailCacheEntry(timestamp=old_timestamp, filename="test.jpg")
         self.cache[self.camera_id] = entry
@@ -1262,7 +1792,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertFalse(is_fresh)
 
     def test_is_thumbnail_fresh_recent(self) -> None:
-        """Test freshness check for recent thumbnail."""
+        """Test thumbnail freshness check for recently created thumbnails.
+
+        Verifies that CameraThumbnailCache properly identifies recent thumbnails
+        that are within the freshness threshold and marks them as fresh.
+
+        Tests:
+            - Recent thumbnail identification and freshness evaluation
+            - Proper age threshold comparison for recent entries
+            - Correct fresh status for thumbnails within age limit
+        """
         recent_timestamp = int(time.time()) - 100  # 100 seconds ago
         entry = CameraThumbnailCacheEntry(
             timestamp=recent_timestamp, filename="test.jpg"
@@ -1273,7 +1812,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertTrue(is_fresh)
 
     def test_update_thumbnail(self) -> None:
-        """Test updating thumbnail with current timestamp."""
+        """Test thumbnail update operations in cache.
+
+        Verifies that thumbnail cache properly handles thumbnail updates
+        including file replacement and metadata updates.
+
+        Tests:
+            - Thumbnail update operations in cache
+            - File replacement during thumbnail updates
+            - Proper metadata handling for updated thumbnails
+        """
         thumbnail_data = b"fake_thumbnail_data"
 
         before_time = int(time.time())
@@ -1285,7 +1833,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertLessEqual(entry["timestamp"], after_time)
 
     def test_update_thumbnail_with_metadata(self) -> None:
-        """Test updating thumbnail with metadata."""
+        """Test thumbnail update operations with metadata handling.
+
+        Verifies that thumbnail updates properly handle associated metadata
+        including timestamps and file information.
+
+        Tests:
+            - Thumbnail updates with metadata preservation
+            - Proper metadata handling during updates
+            - Metadata consistency after thumbnail updates
+        """
         thumbnail_data = b"fake_thumbnail_data"
         metadata = {"size": 1024, "format": "JPEG"}
 
@@ -1296,7 +1853,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertIn("filename", entry)
 
     def test_get_thumbnail_timestamp_exists(self) -> None:
-        """Test getting timestamp for existing thumbnail."""
+        """Test thumbnail timestamp existence check functionality.
+
+        Verifies that CameraThumbnailCache can properly check whether
+        timestamp information exists for cached thumbnails.
+
+        Tests:
+            - Timestamp existence verification for cached thumbnails
+            - Proper boolean return for timestamp availability
+            - Accurate existence checking for thumbnail timestamps
+        """
         import time
 
         from blinkapp.models.cache import CameraThumbnailCacheEntry
@@ -1314,7 +1880,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertEqual(result, timestamp)
 
     def test_is_thumbnail_fresh_true(self) -> None:
-        """Test thumbnail freshness check - fresh thumbnail."""
+        """Test thumbnail freshness check returning True for fresh thumbnails.
+
+        Verifies that CameraThumbnailCache properly identifies fresh thumbnails
+        and returns True when checking freshness of recent entries.
+
+        Tests:
+            - Freshness check returns True for fresh thumbnails
+            - Proper age calculation for thumbnail freshness
+            - Correct fresh thumbnail identification
+        """
         import time
 
         from blinkapp.models.cache import CameraThumbnailCacheEntry
@@ -1333,7 +1908,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertTrue(result)
 
     def test_is_thumbnail_fresh_false(self) -> None:
-        """Test thumbnail freshness check - stale thumbnail."""
+        """Test thumbnail freshness check returning False for stale thumbnails.
+
+        Verifies that CameraThumbnailCache properly identifies stale thumbnails
+        and returns False when checking freshness of old entries.
+
+        Tests:
+            - Freshness check returns False for stale thumbnails
+            - Proper age calculation for thumbnail freshness
+            - Correct stale thumbnail identification
+        """
         import time
 
         from blinkapp.models.cache import CameraThumbnailCacheEntry
@@ -1352,7 +1936,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertFalse(result)
 
     def test_is_thumbnail_fresh_no_timestamp(self) -> None:
-        """Test thumbnail freshness check - no timestamp."""
+        """Test thumbnail freshness check for entries without timestamps.
+
+        Verifies that CameraThumbnailCache properly handles freshness checks
+        for thumbnail entries that lack timestamp information.
+
+        Tests:
+            - Freshness check for thumbnails without timestamps
+            - Proper handling of missing timestamp data
+            - Appropriate fallback behavior for timestamp-less entries
+        """
         from blinkapp.models.ids import CameraId
 
         cache = CameraThumbnailCache(maxsize=5)
@@ -1360,7 +1953,16 @@ class TestCameraThumbnailCache(BaseTestCase):
         self.assertFalse(result)
 
     def test_update_thumbnail_basic(self) -> None:
-        """Test updating thumbnail with basic data."""
+        """Test basic thumbnail update functionality.
+
+        Verifies that basic thumbnail update operations work correctly
+        including simple file updates and cache modifications.
+
+        Tests:
+            - Basic thumbnail update operations
+            - Simple file updates in thumbnail cache
+            - Proper cache modification during updates
+        """
         from blinkapp.models.ids import CameraId
 
         cache = CameraThumbnailCache(maxsize=5)
@@ -1394,7 +1996,16 @@ class TestClipsCache(BaseTestCase):
         }
 
     def test_initialization(self) -> None:
-        """Test cache initialization."""
+        """Test object initialization with required parameters.
+
+        Verifies that objects can be properly initialized with their
+        required parameters and maintain correct initial state.
+
+        Tests:
+            - Object instantiation with valid parameters
+            - Proper attribute initialization during creation
+            - Successful object creation without errors
+        """
         self.assertEqual(len(self.cache), 0)
 
     def test_add_clip(self) -> None:

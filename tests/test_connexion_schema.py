@@ -174,7 +174,17 @@ class TestConnexionSchemaValidation(unittest.TestCase):
                 self.fail(f"Settings response validation failed: {e.message}")
 
     def test_error_response_schema(self) -> None:
-        """Test error responses match OpenAPI error schema."""
+        """Test error responses conform to OpenAPI error schema specification.
+
+        Verifies that API error responses follow the defined OpenAPI schema
+        structure with proper success flags and error message formatting.
+
+        Tests:
+            - Error response structure matches OpenAPI schema
+            - Success flag set to False for error responses
+            - Proper error message inclusion in response
+            - Correct HTTP status code for error conditions
+        """
         from blinkapp.connexion_handlers.camera import get_camera_details
 
         with patch(
@@ -194,7 +204,16 @@ class TestConnexionSchemaValidation(unittest.TestCase):
                 self.assertEqual(error_data["success"], False)
 
     def test_system_endpoints_response_schema(self) -> None:
-        """Test system endpoints return responses matching OpenAPI schema."""
+        """Test system endpoints return responses matching OpenAPI schema.
+
+        Verifies that system-related API endpoints return responses that
+        conform to the defined OpenAPI schema specifications.
+
+        Tests:
+            - System endpoint response structure validation
+            - OpenAPI schema compliance for system data
+            - Proper response format for system operations
+        """
         from blinkapp.connexion_handlers.system import get_systems
 
         with patch("blinkapp.services.system_service.get_systems") as mock_get:
@@ -221,7 +240,16 @@ class TestConnexionSchemaValidation(unittest.TestCase):
                 self.fail(f"Systems response validation failed: {e.message}")
 
     def test_clips_endpoints_response_schema(self) -> None:
-        """Test clips endpoints return responses matching OpenAPI schema."""
+        """Test clips endpoints return responses matching OpenAPI schema.
+
+        Verifies that clip-related API endpoints return responses that
+        conform to the defined OpenAPI schema specifications.
+
+        Tests:
+            - Clips endpoint response structure validation
+            - OpenAPI schema compliance for clip data
+            - Proper response format for clip operations
+        """
         from blinkapp.connexion_handlers.clips import get_clips
 
         with (
@@ -250,7 +278,16 @@ class TestConnexionSchemaValidation(unittest.TestCase):
                 self.fail(f"Clips response validation failed: {e.message}")
 
     def test_streaming_endpoints_response_schema(self) -> None:
-        """Test streaming endpoints return responses matching OpenAPI schema."""
+        """Test streaming endpoints return responses matching OpenAPI schema.
+
+        Verifies that streaming-related API endpoints return responses that
+        conform to the defined OpenAPI schema specifications.
+
+        Tests:
+            - Streaming endpoint response structure validation
+            - OpenAPI schema compliance for streaming data
+            - Proper response format for streaming operations
+        """
         from blinkapp.connexion_handlers.streaming import start_live_stream
 
         with (
@@ -282,7 +319,16 @@ class TestConnexionSchemaValidation(unittest.TestCase):
                 self.fail(f"Streaming response validation failed: {e.message}")
 
     def test_thumbnails_endpoints_response_schema(self) -> None:
-        """Test thumbnail endpoints return responses matching OpenAPI schema."""
+        """Test thumbnails endpoints return responses matching OpenAPI schema.
+
+        Verifies that thumbnail-related API endpoints return responses that
+        conform to the defined OpenAPI schema specifications.
+
+        Tests:
+            - Thumbnails endpoint response structure validation
+            - OpenAPI schema compliance for thumbnail data
+            - Proper response format for thumbnail operations
+        """
         from blinkapp.connexion_handlers.thumbnails import get_camera_thumbnail
 
         with patch(

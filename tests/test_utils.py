@@ -956,11 +956,15 @@ class TestErrors(BaseTestCase):
         self.assertIn("Test error", str(error))
 
     def test_exception_handling_patterns(self) -> None:
-        """Test consistent exception handling patterns across ID validation.
+        """Test exception handling patterns and error management utilities.
 
-        Why: Consistent error handling prevents application crashes from invalid input.
-        What: Verifies ID classes raise ValueError for invalid input consistently.
-        How: Tests empty string input to both CameraId and ClipId validation.
+        Verifies that utility functions properly handle various exception types
+        and provide appropriate error handling patterns for robust operation.
+
+        Tests:
+            - Exception handling pattern validation
+            - Error management utility functionality
+            - Proper exception propagation and handling
         """
         from blinkapp.models.ids import CameraId, ClipId
 

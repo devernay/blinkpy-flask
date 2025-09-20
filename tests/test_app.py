@@ -7352,7 +7352,17 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
 
     @patch("requests.get")
     def test_thumbnail_update_complete_workflow(self, mock_requests_get: Mock) -> None:
-        """Test complete thumbnail update workflow with file operations."""
+        """Test complete thumbnail update workflow from request to completion.
+
+        Verifies that the full thumbnail update process works correctly
+        including cache invalidation, thumbnail regeneration, and response.
+
+        Tests:
+            - Complete thumbnail update workflow execution
+            - Cache invalidation before thumbnail regeneration
+            - New thumbnail generation and cache storage
+            - Successful completion response with updated thumbnail data
+        """
         # Mock requests.get response
         import requests
 
@@ -7437,7 +7447,16 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
                     mock_unlink.assert_called()
 
     def test_thumbnail_update_race_condition_skip(self) -> None:
-        """Test thumbnail update skips when race condition detected."""
+        """Test thumbnail update race condition detection and skip logic.
+
+        Verifies that thumbnail update operations detect race conditions
+        and skip redundant updates when multiple requests are concurrent.
+
+        Tests:
+            - Race condition detection for concurrent thumbnail updates
+            - Skip logic activation when update already in progress
+            - Proper response handling for skipped update operations
+        """
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
@@ -7478,7 +7497,16 @@ class TestThumbnailUpdateMechanisms(BaseTestCase):
             mock_camera = create_mock_camera(camera_id=12345)
 
     def test_thumbnail_update_file_cleanup_error(self) -> None:
-        """Test thumbnail update handles file cleanup errors."""
+        """Test thumbnail update error handling during file cleanup operations.
+
+        Verifies that thumbnail update operations properly handle errors
+        during file cleanup and provide appropriate error responses.
+
+        Tests:
+            - File cleanup error detection during thumbnail updates
+            - Proper error handling for cleanup operation failures
+            - Graceful error recovery for file system issues
+        """
         from blinkapp.routes.thumbnails import update_camera_thumbnail
 
         mock_camera = create_mock_camera(
@@ -7573,7 +7601,16 @@ class TestAdvancedStreamingOperations(BaseTestCase):
         self.client = app.test_client()
 
     def test_streaming_logger_verification(self) -> None:
-        """Verify we can mock the streaming logger correctly."""
+        """Test streaming service logger configuration and functionality.
+
+        Verifies that the streaming service properly configures logging
+        and provides appropriate log output for debugging and monitoring.
+
+        Tests:
+            - Streaming service logger initialization and configuration
+            - Proper log level setting for streaming operations
+            - Log output generation for streaming events and errors
+        """
         import blinkapp.routes.streaming
 
         with patch.object(blinkapp.routes.streaming, "logger") as mock_logger:
@@ -7584,7 +7621,20 @@ class TestAdvancedStreamingOperations(BaseTestCase):
     @with_blink_auth
     @patch("blinkapp.services.camera_service.find_camera_by_id")
     def test_livestream_complete_initialization(self, mock_find_camera: Mock) -> None:
-        """Test complete livestream initialization workflow."""
+        """Test complete livestream initialization workflow from start to finish.
+
+        Verifies that the full livestream initialization process works correctly
+        including camera lookup, stream initialization, and HLS URL generation.
+
+        Args:
+            mock_find_camera: Mock camera lookup service
+
+        Tests:
+            - Camera lookup by ID succeeds with valid camera object
+            - Stream initialization returns stream object and HLS URL
+            - POST /api/cameras/{id}/streams returns 200 success response
+            - Response data contains success=True and proper stream information
+        """
         mock_camera = create_mock_camera("12345", name="Test Camera")
         mock_find_camera.return_value = mock_camera
 
@@ -7609,7 +7659,21 @@ class TestAdvancedStreamingOperations(BaseTestCase):
     def test_livestream_hls_transcoding_error(
         self, mock_stream_manager: Mock, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test livestream with HLS transcoding error."""
+        """Test livestream HLS transcoding error handling during stream setup.
+
+        Verifies that livestream initialization properly handles HLS transcoding
+        errors and provides appropriate error responses to clients.
+
+        Args:
+            mock_stream_manager: Mock stream manager for transcoding operations
+            mock_connection: Mock Blink connection service
+            mock_blink: Mock Blink service initialization
+
+        Tests:
+            - HLS transcoding error detection during stream setup
+            - Proper error response generation for transcoding failures
+            - Graceful error handling for HLS conversion issues
+        """
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
         mock_sync = create_mock_sync(cameras={"Test Camera": mock_camera})
         mock_blink_instance = create_mock_blink_instance()
@@ -7645,7 +7709,21 @@ class TestAdvancedStreamingOperations(BaseTestCase):
     def test_livestream_async_initialization_failure(
         self, mock_find_camera: Mock
     ) -> None:
-        """Test livestream when async initialization fails."""
+        """Test livestream initialization failure in async operations.
+
+        Verifies that livestream initialization properly handles failures
+        during async camera stream setup and returns appropriate error responses.
+
+        Args:
+            mock_connection: Mock Blink connection service
+            mock_blink: Mock Blink service initialization
+            mock_stream_manager: Mock stream manager for async operations
+
+        Tests:
+            - Async initialization failure detection and handling
+            - Proper error response generation for failed stream setup
+            - Graceful failure handling during async stream initialization
+        """
         mock_camera = create_mock_camera(camera_id=12345, name="Test Camera")
         mock_find_camera.return_value = mock_camera
 
@@ -7664,7 +7742,16 @@ class TestAdvancedStreamingOperations(BaseTestCase):
     def test_livestream_no_stream_manager(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
-        """Test livestream when stream manager is not available."""
+        """Test livestream handling when stream manager is unavailable.
+
+        Verifies that livestream operations properly handle cases where
+        the stream manager is not available or not properly initialized.
+
+        Tests:
+            - Stream manager availability check and validation
+            - Proper error handling when stream manager is missing
+            - Appropriate error response for unavailable stream manager
+        """
         mock_camera = create_mock_camera(camera_id=12345)
         mock_blink.cameras = {12345: mock_camera}
 
@@ -7687,7 +7774,17 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         self.client = app.test_client()
 
     def test_generate_thumbnail_middle_frame_success(self) -> None:
-        """Test thumbnail generation for middle frame with ffmpeg."""
+        """Test successful thumbnail generation from video middle frame using FFmpeg.
+
+        Verifies that generate_local_clip_thumbnail can extract thumbnails from
+        the middle frame of video files for better representative images.
+
+        Tests:
+            - Video file existence validation for thumbnail source
+            - FFprobe duration extraction for middle frame calculation
+            - FFmpeg middle frame extraction at calculated timestamp
+            - Successful thumbnail creation from middle frame position
+        """
         from pathlib import Path
 
         from blinkapp.services.thumbnail_service import generate_local_clip_thumbnail
@@ -7720,7 +7817,17 @@ class TestVideoProcessingAdvanced(BaseTestCase):
         self.assertIsNotNone(result)
 
     def test_generate_thumbnail_first_frame_success(self) -> None:
-        """Test thumbnail generation for first frame."""
+        """Test successful thumbnail generation from video first frame using FFmpeg.
+
+        Verifies that generate_local_clip_thumbnail successfully creates thumbnails
+        by extracting the first frame from video files using FFmpeg subprocess calls.
+
+        Tests:
+            - Video file existence check passes for .mp4 files
+            - FFprobe subprocess call returns valid duration (5.0 seconds)
+            - FFmpeg subprocess call succeeds for thumbnail extraction
+            - Thumbnail generation completes without errors
+        """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
