@@ -129,12 +129,12 @@ class TestRouteDecorators(BaseTestCase):
         """
         from blinkapp.utils.route_decorators import _get_operation_name
 
-        def test_function() -> None:
+        def simple_test_function() -> None:
             pass
 
-        result = _get_operation_name(test_function)
+        result = _get_operation_name(simple_test_function)
         # The function converts underscores to spaces
-        self.assertEqual(result, "test function")
+        self.assertEqual(result, "simple test function")
 
     def test_get_operation_name_with_module(self) -> None:
         """Test _get_operation_name includes module information in operation names.
