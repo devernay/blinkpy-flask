@@ -5209,10 +5209,10 @@ class TestSecurityFeatures(BaseTestCase):
         injected through any user input fields. It's essential for preventing
         cross-site scripting attacks that could compromise user data.
 
-        Test coverage:
-        - Login form fields (username, password)
-        - Settings update endpoints
-        - Any other user input vectors
+        Tests:
+            - Login form fields (username, password)
+            - Settings update endpoints
+            - Any other user input vectors
 
         Attack vectors tested:
         - <script> tags with JavaScript

@@ -225,3 +225,68 @@ class TestDocstrings:
                 docstring, "good_example", True, True
             )
             assert is_complete, f"Example docstring should be complete: {issues}"
+
+    def test_all_test_functions_have_tests_section(self) -> None:
+        """Test that all test functions have multi-line docstrings with 'Tests:' section.
+
+        Verifies that test functions follow proper documentation standards
+        with comprehensive docstrings that include a Tests section.
+
+        Tests:
+            - Test function docstring presence and multi-line format
+            - Tests section availability in test function docstrings
+            - Proper Google-style docstring structure for test functions
+        """
+        test_files = []
+        for root, _, files in os.walk("tests"):
+            for file in files:
+                if file.startswith("test_") and file.endswith(".py"):
+                    test_files.append(os.path.join(root, file))
+
+        all_issues = []
+
+        for file_path in test_files:
+            with open(file_path, encoding="utf-8") as f:
+                content = f.read()
+
+            try:
+                tree = ast.parse(content)
+            except SyntaxError:
+                continue
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
+                    # Get docstring
+                    docstring = ""
+                    if (
+                        node.body
+                        and isinstance(node.body[0], ast.Expr)
+                        and isinstance(node.body[0].value, ast.Constant)
+                        and isinstance(node.body[0].value.value, str)
+                    ):
+                        docstring = node.body[0].value.value
+
+                    # Check docstring requirements for test functions
+                    issues = []
+                    if not docstring:
+                        issues.append("Missing docstring")
+                    else:
+                        lines = docstring.strip().split("\n")
+                        if len(lines) < 3:
+                            issues.append("Docstring should be multi-line")
+
+                        docstring_lower = docstring.lower()
+                        if "tests:" not in docstring_lower:
+                            issues.append("Missing 'Tests:' section")
+
+                    if issues:
+                        issue = f"{file_path}:{node.lineno} - test function '{node.name}': {', '.join(issues)}"
+                        all_issues.append(issue)
+
+        if all_issues:
+            issue_summary = "\n".join(all_issues)
+            pytest.fail(
+                f"Found {len(all_issues)} test docstring issues:\n{issue_summary}\n\n"
+                + "All test functions must have multi-line docstrings with a 'Tests:' section "
+                + "describing what the test validates."
+            )
