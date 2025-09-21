@@ -4286,10 +4286,11 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
             )
 
             # Mock the cache returned by ensure function
-            from tests.test_base import create_mock_camera_cache
+            from tests.test_base import create_mock_clip_cache_entry
 
-            mock_cache = create_mock_camera_cache()
-            mock_cache.get.return_value = {"thumbnail": mock_thumbnail_path}
+            mock_cache = {
+                "12345": create_mock_clip_cache_entry(thumbnail=mock_thumbnail_path)
+            }
             mock_ensure_cache.return_value = mock_cache
 
             with patch("flask.send_file") as mock_send:
@@ -4299,10 +4300,10 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
                 mock_response = Response("fake image data", mimetype="image/jpeg")
                 mock_send.return_value = mock_response
 
-                response = self.client.get("/api/clips/test_clip/thumbnail")  # type: TestResponse
+                response = self.client.get("/api/clips/12345/thumbnail")  # type: TestResponse
 
-                # Clip not found returns 500 error
-                self.assertEqual(response.status_code, 500)
+                # Clip not found returns 404 error
+                self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
