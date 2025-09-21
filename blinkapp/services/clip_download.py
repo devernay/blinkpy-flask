@@ -262,44 +262,19 @@ def download_local_clip(
                 if not prepare_result:
                     return None, "Failed to prepare local clip for download"
 
-                # Create temporary file for safe download
-                import tempfile
+                # Download using safe async download
+                from blinkapp.utils.safe_download import safe_download_async
 
-                cached_filepath.parent.mkdir(parents=True, exist_ok=True)
-
-                with tempfile.NamedTemporaryFile(
-                    dir=cached_filepath.parent,
-                    prefix=f".{cached_filepath.name}.",
-                    suffix=".tmp",
-                    delete=False,
-                ) as temp_file:
-                    temp_path = Path(temp_file.name)
-
-                try:
-                    # Download to temporary file
-                    download_success = await local_item.download_video(
+                async def download_local_clip_to_temp(temp_path: Path) -> bool:
+                    """Download local clip to temporary path."""
+                    return await local_item.download_video(
                         blink_instance, str(temp_path)
                     )
 
-                    if (
-                        download_success
-                        and temp_path.exists()
-                        and temp_path.stat().st_size > 0
-                    ):
-                        # Atomic move to final location
-                        temp_path.replace(cached_filepath)
-                        return cached_filepath, ""
-                    else:
-                        # Cleanup temp file on failure
-                        if temp_path.exists():
-                            temp_path.unlink()
-                        return None, "Failed to download local clip"
-
-                except Exception as e:
-                    # Cleanup temp file on exception
-                    if temp_path.exists():
-                        temp_path.unlink()
-                    raise e
+                filepath, error = await safe_download_async(
+                    cached_filepath, download_local_clip_to_temp
+                )
+                return filepath, error
 
             except Exception as e:
                 return None, f"Error downloading local clip: {e}"
