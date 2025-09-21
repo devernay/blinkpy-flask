@@ -5797,13 +5797,10 @@ class TestClipDownloadService(BaseTestCase):
                     self.assertEqual(len(temp_files), 0)
 
     def test_download_local_clip_updates_cache_with_filepath(self) -> None:
-        """Test that local clip download updates cache with filepath.
-
-        Verifies that when a local clip is successfully downloaded, the clips
-        cache is updated with the filepath to prevent 'Clip file not cached' errors.
+        """Test local clip download updates cache with filepath after successful download.
 
         Tests:
-            - Cache entry creation/update with filepath after successful download
+            - Cache entry updated with filepath after successful download
             - Proper Path object storage in cache
             - Prevention of 'Clip file not cached' error
         """
@@ -5829,11 +5826,16 @@ class TestClipDownloadService(BaseTestCase):
             patch("flask.send_file"),
             patch.object(Path, "exists", return_value=True),
         ):
-            # Mock successful download scenario
+            # Mock blink instance with proper sync structure
             mock_blink = Mock()
             mock_blink.available = True
             mock_sync = Mock()
-            mock_sync.local_storage.get_media_item.return_value = Mock()
+            mock_local_storage = Mock()
+            mock_item = Mock()
+
+            # Setup proper nested structure
+            mock_sync.local_storage = mock_local_storage
+            mock_local_storage.get_media_item.return_value = mock_item
             mock_blink.sync = {"test_sync": mock_sync}
             mock_get_blink.return_value = mock_blink
 
@@ -5843,10 +5845,7 @@ class TestClipDownloadService(BaseTestCase):
 
             # Mock successful async execution
             mock_executor = Mock()
-            mock_executor.execute.return_value = (
-                test_filepath,
-                None,
-            )  # Success: filepath, no error
+            mock_executor.execute.return_value = (test_filepath, None)
             mock_ensure_conn.return_value = mock_executor
 
             # Call the function
