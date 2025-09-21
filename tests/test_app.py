@@ -2610,7 +2610,7 @@ class TestThumbnailManagement(FlaskTestCase):
         self.assertTrue(data["success"])
         self.assertEqual(data["data"]["timestamp"], 1234567890)
 
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_refresh_camera_thumbnail_success(
         self, mock_blink: Mock, mock_connection: Mock
@@ -2737,7 +2737,7 @@ class TestClipProcessing(BaseTestCase):
 
     @patch("blinkapp.utils.decorators.check_blink_availability")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_download_clip_not_found(
         self,
@@ -3039,7 +3039,7 @@ class TestErrorScenarios(BaseTestCase):
                 self.assertEqual(response.status_code, 500)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_camera_operations_with_missing_camera(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -3829,7 +3829,7 @@ class TestClipDownloadOperations(BaseTestCase):
             self.assertFalse(data["success"])
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_download_clip_cached_file_exists(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -4126,7 +4126,7 @@ class TestAdvancedAPIEndpoints(BaseTestCase):
             self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_arm_system_success(self, mock_connection: Mock, mock_blink: Mock) -> None:
         """Test successful system arm/disarm.
 
@@ -5373,7 +5373,7 @@ class TestLiveStreamOperations(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_get_liveview_stream_initialization(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -5434,7 +5434,7 @@ class TestLiveStreamOperations(BaseTestCase):
             self.assertEqual(response.status_code, 500)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_get_liveview_stream_init_failure(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -5475,7 +5475,7 @@ class TestLiveStreamOperations(BaseTestCase):
             self.assertEqual(response.status_code, 500)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_get_liveview_stream_manager_integration(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -5843,7 +5843,7 @@ class TestSystemDeviceOperations(BaseTestCase):
             self.assertEqual(len(data["data"]["devices"]), 1)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_arm_system_with_network_delay(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -6145,7 +6145,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
     @patch("blinkapp.services.connection_service.executor")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_concurrent_thumbnail_updates(
         self, mock_connection: Mock, mock_executor: Mock, mock_cache: Mock
     ) -> None:
@@ -7119,7 +7119,7 @@ class TestIntegrationScenarios(BaseTestCase):
         self.assertEqual(response.status_code, 404)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_complete_clip_workflow(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -7500,7 +7500,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
             self.assertTrue(data["success"])
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.stream_service.stream_manager")
     def test_livestream_hls_transcoding_error(
         self, mock_stream_manager: Mock, mock_connection: Mock, mock_blink: Mock
@@ -7583,7 +7583,7 @@ class TestAdvancedStreamingOperations(BaseTestCase):
             self.assertEqual(response.status_code, 500)
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.stream_service.stream_manager", None)
     def test_livestream_no_stream_manager(
         self, mock_connection: Mock, mock_blink: Mock
@@ -8016,7 +8016,7 @@ class TestComplexErrorScenarios(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_cascading_failure_recovery(
         self, mock_connection: Mock, mock_blink: Mock
     ) -> None:
@@ -8229,7 +8229,7 @@ class TestAdvancedIntegrationWorkflows(BaseTestCase):
         # Test passes if we can retrieve systems without errors
         self.assertTrue(True)
 
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_concurrent_operations_stability(
         self, mock_blink: Mock, mock_connection: Mock
@@ -9162,7 +9162,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
 
     @patch("blinkapp.services.cache_service.clips_cache")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_get_clips_missing_storage_param(
         self, mock_connection: Mock, mock_blink: Mock, mock_cache: Mock
     ) -> None:
@@ -9284,7 +9284,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
 class TestConfigurationEdgeCasesFixed(BaseTestCase):
     """Test configuration edge cases and error handling."""
 
-    @patch("blinkapp.services.blink_connection.get_blink_connection")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_create_device_data_function(self, mock_connection: Mock) -> None:
         """Test create_device_data function functionality if it exists.
 
