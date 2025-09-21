@@ -103,40 +103,29 @@ def get_clip_thumbnail(
     from flask import send_file
 
     from ..models.ids import ClipId
-    from ..services.cache_service import ensure_clips_cache_initialized
+    from ..services.cache_service import sync_thumbnail_to_cache
 
     try:
         clip_id_obj = ClipId(clip_id)
-        clips_cache = ensure_clips_cache_initialized()
 
-        # If check=true, always return 200 with availability info
+        # Sync thumbnail from disk to cache if it exists
+        thumbnail_synced = sync_thumbnail_to_cache(clip_id_obj)
+
+        # If check=true, return availability info
         if check:
-            if clip_id_obj in clips_cache:
-                clip_entry = clips_cache[clip_id_obj]
-                thumbnail_path = clip_entry.get("thumbnail")
-                if (
-                    clip_entry is not None
-                    and thumbnail_path is not None
-                    and thumbnail_path.exists()
-                ):
-                    return {"success": True, "exists": True, "available": True}
-                return {"success": True, "exists": False, "available": False}
-            return {"success": True, "exists": False, "available": False}
+            return {
+                "success": True,
+                "exists": thumbnail_synced,
+                "available": thumbnail_synced,
+            }
 
         # For non-check requests, return the actual file or 404
-        if clip_id_obj not in clips_cache:
-            return {"success": False, "error": "Clip not found"}, 404
+        if thumbnail_synced:
+            from ..services.cache_service import get_thumbnail_path
 
-        clip_entry = clips_cache[clip_id_obj]
-
-        # Return the thumbnail file if it exists
-        thumbnail_path = clip_entry.get("thumbnail")
-        if (
-            clip_entry is not None
-            and thumbnail_path is not None
-            and thumbnail_path.exists()
-        ):
+            thumbnail_path = get_thumbnail_path(clip_id_obj)
             return send_file(thumbnail_path, mimetype="image/jpeg")
+
         return {"success": False, "error": "Thumbnail not found"}, 404
 
     except ValueError:

@@ -619,6 +619,35 @@ def get_thumbnail_path(clip_id: ClipId) -> Path:
     return get_clips_cache_dir() / f"{clip_id}.jpg"
 
 
+def sync_thumbnail_to_cache(clip_id: ClipId) -> bool:
+    """Sync thumbnail from disk to cache if it exists.
+
+    Args:
+        clip_id: Clip ID to sync thumbnail for
+
+    Returns:
+        bool: True if thumbnail was found and synced, False otherwise
+    """
+    thumbnail_path = get_thumbnail_path(clip_id)
+    if not thumbnail_path.exists():
+        return False
+
+    clips_cache = ensure_clips_cache_initialized()
+
+    # Update or create cache entry with thumbnail
+    if clip_id in clips_cache:
+        clip_entry = clips_cache[clip_id]
+        clip_entry["thumbnail"] = thumbnail_path
+        clips_cache[clip_id] = clip_entry
+    else:
+        # Create minimal cache entry for thumbnail-only access
+        from blinkapp.models.cache import ClipCacheEntry
+
+        clips_cache[clip_id] = ClipCacheEntry(thumbnail=thumbnail_path)
+
+    return True
+
+
 def get_clips_cache_dir() -> Path:
     """Get the clips cache directory path.
 
