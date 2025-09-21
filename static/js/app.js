@@ -192,15 +192,6 @@ function updateNavButtons(viewName) {
         }
     });
 }
-            const text = btn.querySelector('.nav-text').textContent.toLowerCase();
-            if ((viewName === 'home' && text === 'home') ||
-                (viewName === 'clips' && text === 'clips') ||
-                (viewName === 'settings' && text === 'settings')) {
-                btn.classList.add('active');
-            }
-        });
-    }
-}
 
 /**
  * Update header element visibility based on current view
