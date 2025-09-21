@@ -601,18 +601,21 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
+            background: transparent;
             border: none;
-            color: white;
+            color: #333;
             font-size: 24px;
             padding: 15px;
             border-radius: 50%;
             cursor: pointer;
-            transition: background-color 0.2s;
+            text-shadow: 0 0 2px white, 0 0 4px white;
+            transition: all 0.2s;
         }
 
         .play-btn:hover {
-            background: rgba(0,0,0,0.9);
+            color: #000;
+            text-shadow: 0 0 3px white, 0 0 6px white;
+            transform: translate(-50%, -50%) scale(1.1);
         }
 
         .live-view-header {
