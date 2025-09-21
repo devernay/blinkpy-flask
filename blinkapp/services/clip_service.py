@@ -176,7 +176,7 @@ def process_cloud_clips(
 
             # Always use our thumbnail endpoint for cloud clips
             # This will handle redirect to Blink CDN or serve cached thumbnails
-            thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+            thumbnail_url = f"/api/clips/{clip_id}/thumbnail"
 
             # Store cloud thumbnail URL in cache for the endpoint to use
             clips_cache_instance = ensure_clips_cache_initialized()
@@ -315,15 +315,26 @@ def process_local_clips(
                             f"Created local clip ID: {clip_id} from sync: {sync_name}, item: {item.id}"
                         )
 
-                        # Check for existing thumbnail only
-                        # (no auto-generation for local)
+                        # Check for existing thumbnail
                         thumbnail_url = None
                         clips_cache_instance = ensure_clips_cache_initialized()
                         cached_clip = clips_cache_instance.get(clip_id)
-                        if cached_clip is not None:
+
+                        # Also check if thumbnail file exists directly
+                        from blinkapp.services.cache_service import get_thumbnail_path
+
+                        thumbnail_path = get_thumbnail_path(clip_id)
+
+                        if thumbnail_path.exists():
+                            thumbnail_url = f"/api/clips/{clip_id}/thumbnail"
+                        elif cached_clip is not None:
                             cached_thumbnail = cached_clip.get("thumbnail")
-                            if cached_thumbnail and cached_thumbnail.exists():
-                                thumbnail_url = f"/api/clip/{clip_id}/thumbnail"
+                            if (
+                                cached_thumbnail
+                                and hasattr(cached_thumbnail, "exists")
+                                and cached_thumbnail.exists()
+                            ):
+                                thumbnail_url = f"/api/clips/{clip_id}/thumbnail"
 
                         # Build standardized clip object for UI
                         clip_data: JsonDict = {
