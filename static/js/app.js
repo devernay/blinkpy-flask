@@ -38,6 +38,21 @@ let appConfig = {
 };
 
 /**
+ * Load configuration from server
+ */
+async function loadConfig() {
+    try {
+        const response = await fetch('/api/config');
+        const data = await response.json();
+        if (response.ok && data.success) {
+            appConfig = { ...appConfig, ...data.data };
+        }
+    } catch (error) {
+        console.warn('Could not load configuration, using defaults:', error);
+    }
+}
+
+/**
  * Initialize the application
  */
 document.addEventListener('DOMContentLoaded', function() {
@@ -67,20 +82,6 @@ function setupEventListeners() {
             const currentStream = window.LiveStream.getCurrentStream();
             navigator.sendBeacon(`/api/cameras/${currentStream.cameraId}/liveview`);
 
-/**
- * Load configuration from server
- */
-async function loadConfig() {
-    try {
-        const response = await fetch('/api/config');
-        const data = await response.json();
-        if (response.ok && data.success) {
-            appConfig = { ...appConfig, ...data.data };
-        }
-    } catch (error) {
-        console.warn('Could not load configuration, using defaults:', error);
-    }
-}
         }
     });
 
