@@ -54,4 +54,4 @@ Start systematically updating these tests to use the correct ensure_* function p
 
 TODO:
 
-When I am on the "Clips" or "Settings" tab, I would like the URL to change so that I stay on the same tab when reloading the page. This could be done either by adding "#clips" or "#settings" to the page URL, or by using a different base URL (and thus a separate flask route and connexion handler). Which solution do you recommend?
+When I am on the "Clips" or "Settings" tab, I would like the URL to change so that I stay on the same tab when reloading the page. This could be done either by adding "#clips" or "#settings" to the page URL, or by using a different base URL (and thus a separate flask route and connexion handler). Also, when I am switching between "Home", "Clips" and "Settings", I don't want the client to reload the clips list from the server. These should stay in the browser cache until I hit reload on the Clips tab. Which solution do you recommend?

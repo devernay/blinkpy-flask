@@ -45,7 +45,27 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSystems();
     loadSettings();
     setupEventListeners();
+
+    // Initialize view from URL hash
+    showViewFromHash();
 });
+
+/**
+ * Setup event listeners including hash change
+ */
+/**
+ * Setup global event listeners
+ */
+function setupEventListeners() {
+    // Listen for hash changes (browser back/forward)
+    window.addEventListener('hashchange', showViewFromHash);
+
+    // Cleanup livestream when page is unloaded
+    window.addEventListener('beforeunload', function() {
+        if (window.LiveStream && window.LiveStream.getCurrentStream()) {
+            // Use sendBeacon for reliable cleanup during page unload
+            const currentStream = window.LiveStream.getCurrentStream();
+            navigator.sendBeacon(`/api/cameras/${currentStream.cameraId}/liveview`);
 
 /**
  * Load configuration from server
@@ -61,17 +81,6 @@ async function loadConfig() {
         console.warn('Could not load configuration, using defaults:', error);
     }
 }
-
-/**
- * Setup global event listeners
- */
-function setupEventListeners() {
-    // Cleanup livestream when page is unloaded
-    window.addEventListener('beforeunload', function() {
-        if (window.LiveStream && window.LiveStream.getCurrentStream()) {
-            // Use sendBeacon for reliable cleanup during page unload
-            const currentStream = window.LiveStream.getCurrentStream();
-            navigator.sendBeacon(`/api/cameras/${currentStream.cameraId}/liveview`);
         }
     });
 
@@ -86,6 +95,19 @@ function setupEventListeners() {
 /**
  * Show a specific view and handle navigation
  */
+// Hash to view mapping for URL persistence
+const HASH_TO_VIEW = {
+    '': 'home',
+    '#clips': 'clips',
+    '#settings': 'settings'
+};
+
+const VIEW_TO_HASH = {
+    'home': '',
+    'clips': '#clips',
+    'settings': '#settings'
+};
+
 function showView(viewName) {
     // Stop livestream if leaving live view
     if (window.LiveStream && window.LiveStream.getCurrentStream() && viewName !== 'live') {
@@ -108,6 +130,11 @@ function showView(viewName) {
 
     currentView = viewName;
 
+    // Update URL hash (but prevent infinite loop)
+    if (!window.hashChangeInProgress) {
+        setViewHash(viewName);
+    }
+
     // Load view-specific data
     if (viewName === 'clips') {
         window.Clips.load();
@@ -122,6 +149,29 @@ function showView(viewName) {
     } else {
         window.Camera.stopAgeUpdates();
     }
+}
+
+/**
+ * Set URL hash for current view
+ */
+function setViewHash(viewName) {
+    const hash = VIEW_TO_HASH[viewName];
+    if (hash !== undefined) {
+        window.location.hash = hash;
+    }
+}
+
+/**
+ * Show view based on current URL hash
+ */
+function showViewFromHash() {
+    const hash = window.location.hash;
+    const viewName = HASH_TO_VIEW[hash] || 'home';
+
+    // Prevent hash change loop
+    window.hashChangeInProgress = true;
+    showView(viewName);
+    window.hashChangeInProgress = false;
 }
 
 /**
