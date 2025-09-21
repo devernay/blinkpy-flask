@@ -65,7 +65,18 @@ def format_clips_by_day(clips: list[ClipData]) -> list[ClipDayGroup]:
         except (ValueError, KeyError):
             continue
 
-    return sorted(days.values(), key=lambda x: str(x["date"]), reverse=True)
+    # Sort days by date (most recent first) and clips within each day by time (most recent first)
+    sorted_days = []
+    for date_key in sorted(days.keys(), reverse=True):
+        day_group = days[date_key]
+        # Sort clips within the day by created_at (most recent first)
+        if isinstance(day_group["clips"], list):
+            day_group["clips"].sort(
+                key=lambda clip: clip.get("created_at", ""), reverse=True
+            )
+        sorted_days.append(day_group)
+
+    return sorted_days
 
 
 def format_clip_time(dt: datetime) -> str:
