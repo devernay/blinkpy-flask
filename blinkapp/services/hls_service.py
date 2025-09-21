@@ -122,7 +122,7 @@ def _build_ffmpeg_command(
     return [
         "ffmpeg",
         "-loglevel",
-        "error",  # Reduce log noise - only show errors
+        "warning",  # Show warnings but reduce verbose info
         "-i",
         tcp_url,  # Input: TCP stream source
         "-c",
