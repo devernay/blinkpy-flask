@@ -244,16 +244,18 @@ class StreamManager:
         """
         self.config = config or HLSStreamConfig()
         self.streams: dict[str, HLSStream] = {}
+        self.camera_streams: dict[str, object] = {}  # Store Blink camera streams
         self.lock = threading.Lock()
 
     def start_stream(
-        self, camera_id: str, tcp_url: str
+        self, camera_id: str, tcp_url: str, camera_stream: object | None = None
     ) -> tuple[str | None, str | None]:
         """Start HLS stream for camera.
 
         Args:
             camera_id: Camera identifier
             tcp_url: TCP stream URL
+            camera_stream: Optional Blink camera stream for cleanup
 
         Returns:
             Tuple of (hls_url, error_message)
@@ -269,6 +271,9 @@ class StreamManager:
 
             if hls_url:
                 self.streams[camera_id] = stream
+                # Store camera stream for cleanup if provided
+                if camera_stream:
+                    self.camera_streams[camera_id] = camera_stream
                 return hls_url, None
             return None, error
 
@@ -279,9 +284,17 @@ class StreamManager:
             camera_id: Camera identifier for the stream to stop.
         """
         with self.lock:
+            # Stop HLS stream (FFmpeg)
             if camera_id in self.streams:
                 self.streams[camera_id].stop()
                 del self.streams[camera_id]
+
+            # Stop Blink camera stream (feed task)
+            if camera_id in self.camera_streams:
+                camera_stream = self.camera_streams[camera_id]
+                if hasattr(camera_stream, "stop") and callable(camera_stream.stop):
+                    camera_stream.stop()  # type: ignore[misc]
+                del self.camera_streams[camera_id]
 
     def is_stream_active(self, camera_id: str) -> bool:
         """Check if stream is active for camera.
@@ -461,14 +474,19 @@ def init_camera_stream(
         connection.execute(camera_stream.start())
         tcp_url = camera_stream.url
 
-        # Start feeding data from camera (this is crucial!)
-        connection.execute(camera_stream.feed())
+        # Schedule feed() to run asynchronously (don't block)
+        import asyncio
+
+        if connection.loop:
+            asyncio.run_coroutine_threadsafe(camera_stream.feed(), connection.loop)
 
         # Initialize stream manager
         stream_manager = ensure_stream_manager_initialized()
 
-        # Start HLS transcoding
-        hls_url, error = stream_manager.start_stream(str(camera_id), tcp_url)
+        # Start HLS transcoding and store camera stream for cleanup
+        hls_url, error = stream_manager.start_stream(
+            str(camera_id), tcp_url, camera_stream
+        )
         if hls_url is not None:
             logger.info(f"Started live stream for camera {camera_id}: {hls_url}")
             return camera_stream, hls_url
