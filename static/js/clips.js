@@ -83,7 +83,7 @@ function renderClips(clipsData) {
 
         dayDiv.innerHTML = `
             <div class="day-header">
-                <strong>${dayGroup.date}</strong> - ${dayGroup.count} event${dayGroup.count !== 1 ? 's' : ''}
+                <strong>${dayGroup.date}</strong> - ${dayGroup.clips.length} event${dayGroup.clips.length !== 1 ? 's' : ''}
             </div>
         `;
 
