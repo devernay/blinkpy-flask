@@ -781,6 +781,77 @@ class TestClipsHandlers(BaseTestCase):
         except ImportError:
             self.skipTest("get_clips handler not found")
 
+    def test_get_clip_thumbnail_with_cache_sync(self) -> None:
+        """Test get_clip_thumbnail syncs thumbnails from disk to cache.
+
+        Tests:
+            - Calls sync_thumbnail_to_cache before serving thumbnail
+            - Returns thumbnail file when sync succeeds
+            - Returns 404 when no thumbnail exists on disk
+        """
+        try:
+            from unittest.mock import MagicMock, patch
+
+            from blinkapp.connexion_handlers.clips import get_clip_thumbnail
+
+            with (
+                patch(
+                    "blinkapp.connexion_handlers.clips.sync_thumbnail_to_cache"
+                ) as mock_sync,
+                patch(
+                    "blinkapp.connexion_handlers.clips.get_thumbnail_path"
+                ) as mock_get_path,
+                patch("blinkapp.connexion_handlers.clips.send_file") as mock_send_file,
+            ):
+                # Test successful sync and file serving
+                mock_sync.return_value = True
+                mock_thumbnail_path = MagicMock()
+                mock_get_path.return_value = mock_thumbnail_path
+                mock_send_file.return_value = "file_response"
+
+                result = get_clip_thumbnail("test~123456")
+
+                # Should sync thumbnail and serve file
+                mock_sync.assert_called_once()
+                mock_send_file.assert_called_once_with(
+                    mock_thumbnail_path, mimetype="image/jpeg"
+                )
+                self.assertEqual(result, "file_response")
+
+        except ImportError:
+            self.skipTest("get_clip_thumbnail handler not found")
+
+    def test_get_clip_thumbnail_not_found(self) -> None:
+        """Test get_clip_thumbnail returns 404 when thumbnail doesn't exist.
+
+        Tests:
+            - Returns proper error response when sync fails
+            - Includes 404 status code for missing thumbnails
+            - Handles missing thumbnails gracefully
+        """
+        try:
+            from unittest.mock import patch
+
+            from blinkapp.connexion_handlers.clips import get_clip_thumbnail
+
+            with patch(
+                "blinkapp.connexion_handlers.clips.sync_thumbnail_to_cache"
+            ) as mock_sync:
+                # Test failed sync (no thumbnail found)
+                mock_sync.return_value = False
+
+                result = get_clip_thumbnail("test~123456")
+
+                # Should return 404 error
+                self.assertIsInstance(result, tuple)
+                error_response, status_code = result
+                self.assertEqual(status_code, 404)
+                self.assertEqual(error_response["success"], False)
+                self.assertEqual(error_response["error"], "Thumbnail not found")
+
+        except ImportError:
+            self.skipTest("get_clip_thumbnail handler not found")
+
 
 class TestSettingsHandlers(BaseTestCase):
     """Test settings connexion handlers."""

@@ -23,10 +23,12 @@ __all__ = [
     "get_cache_stats",
     "get_clips_cache_dir",
     "get_thumbnail_cache_dir",
+    "get_thumbnail_path",
     "initialize_cache_paths",
     "initialize_caches",
     "load_camera_thumbnail_cache",
     "load_clips_cache",
+    "sync_thumbnail_to_cache",
     "validate_cache_directory",
 ]
 

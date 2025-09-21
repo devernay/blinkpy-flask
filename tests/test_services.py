@@ -5121,6 +5121,73 @@ class TestClipService(BaseTestCase):
                     clip = day_group["clips"][0]
                     self.assertEqual(clip["thumbnail"], "/api/clips/123456/thumbnail")
 
+    def test_sync_thumbnail_to_cache_with_existing_file(self) -> None:
+        """Test sync_thumbnail_to_cache updates cache when file exists.
+
+        Tests:
+            - Syncs existing thumbnail file to cache
+            - Updates cache entry with correct thumbnail path
+            - Returns True when thumbnail is found and synced
+        """
+        from unittest.mock import MagicMock, patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.cache_service import sync_thumbnail_to_cache
+
+        clip_id = ClipId("test~123456")
+
+        with (
+            patch(
+                "blinkapp.services.cache_service.get_thumbnail_path"
+            ) as mock_get_path,
+            patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+            ) as mock_cache,
+        ):
+            # Mock thumbnail path that exists
+            mock_thumbnail_path = MagicMock()
+            mock_thumbnail_path.exists.return_value = True
+            mock_get_path.return_value = mock_thumbnail_path
+
+            # Mock cache
+            mock_cache_dict = {}
+            mock_cache.return_value = mock_cache_dict
+
+            result = sync_thumbnail_to_cache(clip_id)
+
+            # Should return True and update cache
+            self.assertTrue(result)
+            self.assertIn(clip_id, mock_cache_dict)
+            self.assertEqual(mock_cache_dict[clip_id]["thumbnail"], mock_thumbnail_path)
+
+    def test_sync_thumbnail_to_cache_without_file(self) -> None:
+        """Test sync_thumbnail_to_cache returns False when file doesn't exist.
+
+        Tests:
+            - Returns False when thumbnail file doesn't exist
+            - Doesn't modify cache when no file found
+            - Handles missing thumbnails gracefully
+        """
+        from unittest.mock import MagicMock, patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.cache_service import sync_thumbnail_to_cache
+
+        clip_id = ClipId("test~123456")
+
+        with patch(
+            "blinkapp.services.cache_service.get_thumbnail_path"
+        ) as mock_get_path:
+            # Mock thumbnail path that doesn't exist
+            mock_thumbnail_path = MagicMock()
+            mock_thumbnail_path.exists.return_value = False
+            mock_get_path.return_value = mock_thumbnail_path
+
+            result = sync_thumbnail_to_cache(clip_id)
+
+            # Should return False when file doesn't exist
+            self.assertFalse(result)
+
 
 class TestStreamService(BaseTestCase):
     """Test stream service functions."""
