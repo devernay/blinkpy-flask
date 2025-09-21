@@ -50,8 +50,24 @@ async function showLiveView(cameraId, cameraName) {
                     const streamResponse = await fetch(hlsUrl);
                     if (streamResponse.ok) {
                         console.log('HLS playlist ready, loading video');
-                        video.src = hlsUrl;
-                        video.load();
+
+                        // Use HLS.js for cross-browser compatibility
+                        if (Hls.isSupported()) {
+                            const hls = new Hls();
+                            hls.loadSource(hlsUrl);
+                            hls.attachMedia(video);
+                            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                                console.log('HLS manifest parsed, starting playback');
+                                video.play();
+                            });
+                        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                            // Safari native HLS support
+                            video.src = hlsUrl;
+                            video.load();
+                        } else {
+                            console.error('HLS not supported in this browser');
+                            alert('Live streaming not supported in this browser');
+                        }
                     } else if (attempts < maxAttempts) {
                         console.log(`HLS playlist not ready (attempt ${attempts}/${maxAttempts}), retrying...`);
                         setTimeout(checkStream, config.hls_stream_check_interval);
