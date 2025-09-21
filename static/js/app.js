@@ -183,16 +183,15 @@ function updateNavButtons(viewName) {
         btn.classList.remove('active');
     });
 
-    // Only update nav button if called from nav button click
-    if (event && event.target) {
-        const navButton = event.target.closest('.nav-button');
-        if (navButton) {
-            navButton.classList.add('active');
+    // Find and activate the correct nav button based on viewName
+    const navButtons = document.querySelectorAll('.nav-button');
+    navButtons.forEach(btn => {
+        const onclick = btn.getAttribute('onclick');
+        if (onclick && onclick.includes(`'${viewName}'`)) {
+            btn.classList.add('active');
         }
-    } else {
-        // Find and activate the correct nav button based on viewName
-        const navButtons = document.querySelectorAll('.nav-button');
-        navButtons.forEach(btn => {
+    });
+}
             const text = btn.querySelector('.nav-text').textContent.toLowerCase();
             if ((viewName === 'home' && text === 'home') ||
                 (viewName === 'clips' && text === 'clips') ||
