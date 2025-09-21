@@ -344,7 +344,7 @@ function startClipThumbnailPolling(clipId) {
                 const placeholder = document.querySelector(`[data-clip-id="${clipId}"]`);
                 if (placeholder && placeholder.classList.contains('clip-placeholder')) {
                     const img = document.createElement('img');
-                    img.src = data.data.url;
+                    img.src = `/api/clips/${clipId}/thumbnail`;
                     img.className = 'clip-thumbnail';
                     img.alt = 'Clip thumbnail';
                     img.setAttribute('data-clip-id', clipId);
