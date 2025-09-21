@@ -747,9 +747,21 @@ class TestClipsHandlers(BaseTestCase):
 
             from blinkapp.connexion_handlers.clips import get_clips
 
-            with patch(
-                "blinkapp.services.clip_service.process_cloud_clips"
-            ) as mock_process:
+            with (
+                patch(
+                    "blinkapp.services.clip_service.process_cloud_clips"
+                ) as mock_process,
+                patch("blinkapp.services.blink_service.ensure_blink_initialized"),
+                patch(
+                    "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+                ) as mock_conn,
+            ):
+                # Create a proper mock connection
+                from tests.test_base import create_mock_blink_connection
+
+                mock_connection = create_mock_blink_connection()
+                mock_connection.execute.return_value = []  # Return empty list for cloud clips
+                mock_conn.return_value = mock_connection
                 # Mock return value with proper structure
                 mock_process.return_value = [
                     {
