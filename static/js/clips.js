@@ -12,7 +12,12 @@ let isDownloading = false;
  * Load clips from server
  */
 async function loadClips() {
-    const storageType = document.querySelector('.storage-btn.active').textContent.toLowerCase().includes('cloud') ? 'cloud' : 'local';
+    const activeBtn = document.querySelector('.storage-btn.active');
+    console.log('Active button:', activeBtn ? activeBtn.textContent : 'none');
+
+    const storageType = activeBtn && activeBtn.textContent.toLowerCase().includes('cloud') ? 'cloud' : 'local';
+    console.log('Detected storage type:', storageType);
+
     const container = document.getElementById('clips-list');
 
     // Show loading spinner
@@ -302,14 +307,19 @@ async function deleteClip(clipId) {
  * Select storage type (cloud/local)
  */
 function selectStorage(type) {
+    console.log('selectStorage called with type:', type);
+
     document.querySelectorAll('.storage-btn').forEach(btn => {
         btn.classList.remove('active');
+        console.log('Button text:', btn.textContent, 'includes type:', btn.textContent.toLowerCase().includes(type));
         if (btn.textContent.toLowerCase().includes(type)) {
             btn.classList.add('active');
+            console.log('Set active on button:', btn.textContent);
         }
     });
 
     // Reload clips for selected storage type
+    console.log('Calling loadClips()');
     loadClips();
 }
 
