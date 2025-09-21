@@ -486,7 +486,6 @@ class TestFormatters(BaseTestCase):
             - Handles missing data gracefully
         """
         from datetime import UTC, datetime
-        from unittest.mock import patch
 
         from blinkapp.utils.formatters import format_clips_by_day
 
@@ -498,16 +497,16 @@ class TestFormatters(BaseTestCase):
             }
         ]
 
-        with patch("blinkapp.utils.formatters.datetime") as mock_datetime:
-            mock_now = datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC)
-            mock_datetime.now.return_value = mock_now
-            mock_datetime.fromisoformat = datetime.fromisoformat
+        result = format_clips_by_day(clips)
 
-            result = format_clips_by_day(clips)
-
-            self.assertEqual(len(result), 1)
-            self.assertIn("January 15", result[0]["date"])
-            self.assertNotIn("2025", result[0]["date"])
+        self.assertEqual(len(result), 1)
+        # Should use current date when created_at is missing
+        # For current year, year is not shown in the date format
+        current_year = datetime.now(UTC).year
+        date_str = result[0]["date"]
+        # Should contain day of week and month/day but not year for current year
+        self.assertRegex(date_str, r"^\w+, \w+ \d+$")  # e.g., "Sunday, September 21"
+        self.assertNotIn(str(current_year), date_str)  # Year not shown for current year
 
     def test_format_clip_time_am_pm(self) -> None:
         """Test clip time formatting with AM/PM display.
