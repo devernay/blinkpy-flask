@@ -345,7 +345,10 @@ function startClipThumbnailPolling(clipId) {
                 if (placeholder && placeholder.classList.contains('clip-placeholder')) {
                     const img = document.createElement('img');
                     img.src = `/api/clips/${clipId}/thumbnail`;
-                    img.className = 'clip-thumbnail';
+
+                    // Apply current thumbnail size setting
+                    const thumbnailSize = getCurrentThumbnailSize();
+                    img.className = `clip-thumbnail size-${thumbnailSize}`;
                     img.alt = 'Clip thumbnail';
                     img.setAttribute('data-clip-id', clipId);
 
