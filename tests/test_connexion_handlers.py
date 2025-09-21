@@ -796,12 +796,12 @@ class TestClipsHandlers(BaseTestCase):
 
             with (
                 patch(
-                    "blinkapp.connexion_handlers.clips.sync_thumbnail_to_cache"
+                    "blinkapp.services.cache_service.sync_thumbnail_to_cache"
                 ) as mock_sync,
                 patch(
-                    "blinkapp.connexion_handlers.clips.get_thumbnail_path"
+                    "blinkapp.services.cache_service.get_thumbnail_path"
                 ) as mock_get_path,
-                patch("blinkapp.connexion_handlers.clips.send_file") as mock_send_file,
+                patch("flask.send_file") as mock_send_file,
             ):
                 # Test successful sync and file serving
                 mock_sync.return_value = True
