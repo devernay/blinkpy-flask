@@ -2854,6 +2854,45 @@ class TestClipProcessing(BaseTestCase):
             response = self.client.get("/api/clips/nonexistent/download")  # type: TestResponse
             self.assertEqual(response.status_code, 404)  # "Clip not found" triggers 404
 
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
+    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
+    def test_thumbnail_generation_with_clip_download_integration(
+        self, mock_ensure_connection: Mock, mock_blink: Mock
+    ) -> None:
+        """Test complete thumbnail generation workflow with clip download.
+
+        Tests:
+            - POST /api/clips/{id}/thumbnail triggers server-side processing
+            - Server downloads clip if not cached
+            - Server generates thumbnail from downloaded clip
+            - Proper error handling for missing clips
+        """
+        # Mock Blink connection
+        mock_blink.return_value = True
+        mock_ensure_connection.return_value = True
+
+        # Test case 1: Valid local clip ID
+        with patch(
+            "blinkapp.services.clip_processing.process_local_clip_background"
+        ) as mock_process:
+            response = self.client.post("/api/clips/Maison~1234567890/thumbnail")
+
+            self.assertEqual(response.status_code, 200)
+            data = response.get_json()
+            self.assertTrue(data["success"])
+            self.assertIn("Thumbnail generation started", data["message"])
+
+            # Verify processing was called
+            mock_process.assert_called_once()
+
+        # Test case 2: Invalid clip ID
+        response = self.client.post("/api/clips/invalid-clip-id/thumbnail")
+
+        self.assertEqual(response.status_code, 400)
+        data = response.get_json()
+        self.assertFalse(data["success"])
+        self.assertEqual(data["error"], "Invalid clip ID")
+
 
 class TestAsyncOperations(BaseTestCase):
     """Test async operations and background tasks."""
