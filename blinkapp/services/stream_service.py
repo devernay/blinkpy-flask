@@ -6,13 +6,13 @@ live stream management, HLS transcoding, and stream cleanup.
 
 from __future__ import annotations
 
+import concurrent.futures
 import logging
 from typing import TYPE_CHECKING
-import asyncio
-import concurrent.futures
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableType
+
     from blinkpy.livestream import BlinkLiveStream
 
 
@@ -247,8 +247,12 @@ class StreamManager:
         """
         self.config = config or HLSStreamConfig()
         self.streams: dict[str, HLSStream] = {}
-        self.camera_streams: dict[str, BlinkLiveStream] = {}  # Store Blink camera streams
-        self.feed_tasks: dict[str, concurrent.futures.Future[None]] = {}  # Store feed() tasks for cleanup
+        self.camera_streams: dict[
+            str, BlinkLiveStream
+        ] = {}  # Store Blink camera streams
+        self.feed_tasks: dict[
+            str, concurrent.futures.Future[None]
+        ] = {}  # Store feed() tasks for cleanup
         self.lock = threading.Lock()
 
     def start_stream(
@@ -296,8 +300,7 @@ class StreamManager:
             # Stop Blink camera stream (feed task)
             if camera_id in self.camera_streams:
                 camera_stream = self.camera_streams[camera_id]
-                if hasattr(camera_stream, "stop") and callable(camera_stream.stop):
-                    camera_stream.stop()  # type: ignore[misc]
+                camera_stream.stop()  # Type-safe: BlinkLiveStream always has stop()
                 del self.camera_streams[camera_id]
 
     def is_stream_active(self, camera_id: str) -> bool:
@@ -482,7 +485,9 @@ def init_camera_stream(
         import asyncio
 
         if connection.loop:
-            feed_task = asyncio.run_coroutine_threadsafe(camera_stream.feed(), connection.loop)
+            feed_task = asyncio.run_coroutine_threadsafe(
+                camera_stream.feed(), connection.loop
+            )
             # Store feed task in stream manager for proper cleanup
             stream_manager.feed_tasks[str(camera_id)] = feed_task
 
