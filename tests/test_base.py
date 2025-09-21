@@ -164,7 +164,20 @@ def enable_strict_patching() -> None:
 
 
 def disable_strict_patching() -> None:
-    """Disable strict patching and restore original behavior."""
+    """Disable strict patching and restore original behavior.
+
+    ⚠️  CRITICAL WARNING: NEVER DISABLE STRICT PATCHING PERMANENTLY! ⚠️
+
+    This function should ONLY be used temporarily in specific test scenarios
+    or controlled via STRICT_PATCHING=0 environment variable. Strict patching
+    maintains high test quality by preventing accidental mocking of non-exported
+    symbols, which can hide import/export issues and reduce test reliability.
+
+    ALWAYS re-enable strict patching after temporary disabling:
+    - Use enable_strict_patching() to restore
+    - Prefer STRICT_PATCHING=0 env var for debugging
+    - Keep the test quality bar HIGH!
+    """
     import unittest.mock
 
     unittest.mock.patch = original_patch

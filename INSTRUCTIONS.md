@@ -41,3 +41,12 @@ The API entry point should be /api/log. The flask route should be a thin wrapper
 The thumbnail endpoint is returning "Thumbnail not found" even though the file exists. The problem is that the thumbnail endpoint only checks the cache, but doesn't fall back to checking the file system directly like the clip listing does. Shouldn't the cache also be updated if the thumbnail exists on disk? This functionality should probably be implemented in the cache service. When I got {"error":"Thumbnail not found","success":false} was there a 404 error? I don't think an error was shown by the browser.
 
 I clicked "Update 4 clips" in the UI, and saw that in the console: "WARNING: Video file not found for local clip Maison~3647673306: /Users/deverf/Documents/third_party/blinkpy-flask/cache/clips/Maison~3647673306.mp4". The UI is never updated and no error message is shown. 1. Could the UI display a message when an action fails, rather than giving no feedback? Check that all other UI actions display a proper error message in case of failure. 2. fix the "Update xx clips" functionality, which should download all local-storage clips that are not in the cache and generate thumbnail, and update the thumbnails in the list as soon as they are available.
+
+TODO:
+Is strict patching still enabled? Make a note in the code to NEVER disable it permanently. Let us keep the test quality bar high!
+
+Why is ensure_blink_connection_initialized in blink_service and not blink_connection? Maybe it's the right place, but do you have an explanation?
+
+Shouldn't we use create_mock_blink_connection each time we patch ensure_blink_connection_initialized or get_blink_connection, and create_mock_blink_instance each time we patch ensure_blink_initialized or get_blink_instance? Can you check on existing passing tests if it breaks them or makes them better to systematically use mock factories?
+
+When I am on the "Clips" or "Settings" tab, I would like the URL to change so that I stay on the same tab when reloading the page. This could be done either by adding "#clips" or "#settings" to the page URL, or by using a different base URL (and thus a separate flask route and connexion handler). Which solution do you recommend?

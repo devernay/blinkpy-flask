@@ -75,7 +75,17 @@ def reset_global_state() -> Generator[None, None, None]:
 
 @pytest.fixture(autouse=True, scope="session")
 def enable_strict_patching_by_default() -> None:
-    """Enable strict patching for all tests by default or via STRICT_PATCHING env var."""
+    """Enable strict patching for all tests by default or via STRICT_PATCHING env var.
+
+    ⚠️  CRITICAL: STRICT PATCHING MAINTAINS HIGH TEST QUALITY! ⚠️
+
+    This fixture ensures strict patching is enabled by default to prevent
+    accidental mocking of non-exported symbols. This catches import/export
+    issues early and maintains test reliability.
+
+    Only disable via STRICT_PATCHING=0 environment variable for debugging.
+    NEVER modify this code to permanently disable strict patching!
+    """
     import os
 
     from tests.test_base import disable_strict_patching, enable_strict_patching
