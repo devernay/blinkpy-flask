@@ -2855,9 +2855,9 @@ class TestClipProcessing(BaseTestCase):
             self.assertEqual(response.status_code, 404)  # "Clip not found" triggers 404
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
+    @patch("blinkapp.services.blink_service.get_blink_instance")
     def test_thumbnail_generation_with_clip_download_integration(
-        self, mock_ensure_connection: Mock, mock_blink: Mock
+        self, mock_get_instance: Mock, mock_ensure_blink: Mock
     ) -> None:
         """Test complete thumbnail generation workflow with clip download.
 
@@ -2868,8 +2868,9 @@ class TestClipProcessing(BaseTestCase):
             - Proper error handling for missing clips
         """
         # Mock Blink connection
-        mock_blink.return_value = True
-        mock_ensure_connection.return_value = True
+        mock_blink_instance = create_mock_blink_instance(available=True)
+        mock_ensure_blink.return_value = mock_blink_instance
+        mock_get_instance.return_value = mock_blink_instance
 
         # Test case 1: Valid local clip ID
         with patch(
@@ -2885,8 +2886,10 @@ class TestClipProcessing(BaseTestCase):
             # Verify processing was called
             mock_process.assert_called_once()
 
-        # Test case 2: Invalid clip ID
-        response = self.client.post("/api/clips/invalid-clip-id/thumbnail")
+        # Test case 2: Invalid clip ID format
+        response = self.client.post(
+            "/api/clips/invalid~format~too~many~parts/thumbnail"
+        )
 
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
