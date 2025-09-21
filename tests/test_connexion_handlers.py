@@ -835,7 +835,7 @@ class TestClipsHandlers(BaseTestCase):
             from blinkapp.connexion_handlers.clips import get_clip_thumbnail
 
             with patch(
-                "blinkapp.connexion_handlers.clips.sync_thumbnail_to_cache"
+                "blinkapp.services.cache_service.sync_thumbnail_to_cache"
             ) as mock_sync:
                 # Test failed sync (no thumbnail found)
                 mock_sync.return_value = False
