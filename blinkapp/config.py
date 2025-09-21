@@ -68,8 +68,8 @@ class Config:
     # ========================================================================
     FFMPEG_TIMEOUT = 30  # FFmpeg operation timeout (seconds)
     FFPROBE_TIMEOUT = 10  # FFprobe metadata extraction timeout (seconds)
-    HLS_SEGMENT_TIME = 2  # HLS segment duration in seconds (balance latency/efficiency)
-    HLS_LIST_SIZE = 3  # Number of segments in HLS playlist (memory vs. seeking)
+    HLS_SEGMENT_TIME = 1  # HLS segment duration in seconds (lower latency)
+    HLS_LIST_SIZE = 2  # Number of segments in HLS playlist (minimal buffering)
     STREAM_IDLE_TIMEOUT = 300  # 5 minutes before idle stream cleanup
 
     # ========================================================================
