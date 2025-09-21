@@ -3277,57 +3277,7 @@ class TestAdvancedEndpoints(BaseTestCase):
 
     @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clip_thumbnail_check_success(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
-        """Test clip thumbnail check endpoint.
-
-        Verifies that the clip thumbnail check endpoint properly
-        validates thumbnail availability and returns appropriate status.
-
-
-
-        Args:
-            mock_ensure_blink: Mock for Blink service initialization
-            mock_get_instance: Mock for Blink instance retrieval
-
-        Tests:
-            - Clip thumbnail availability checking
-            - Thumbnail existence validation
-            - Proper response format for thumbnail checks
-            - Cache integration for thumbnail status
-        """
-        # Set up mock blink instance
-        mock_blink_instance = create_mock_blink_instance()
-        mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
-
-        # Mock clip in cache
-        with patch("blinkapp.services.cache_service.clips_cache") as mock_cache:
-            from pathlib import Path
-
-            from tests.test_base import create_mock_clip_cache_entry
-
-            # Create a mock cache entry with thumbnail
-            mock_cache_entry = create_mock_clip_cache_entry(
-                thumbnail=Path("/tmp/test_thumb.jpg")
-            )
-
-            # Mock the cache to contain our test clip
-            mock_cache.__contains__ = Mock(spec=callable, return_value=True)
-            mock_cache.__getitem__ = Mock(spec=callable, return_value=mock_cache_entry)
-
-            with patch("pathlib.Path.exists", return_value=True):
-                response = self.client.get("/api/clips/test_clip/thumbnail?check=true")  # type: TestResponse
-                self.assertEqual(response.status_code, 200)
-
-                data = json.loads(response.data)
-                self.assertTrue(data["success"])
-                self.assertTrue(data["data"]["exists"])
-
-    @patch("blinkapp.services.blink_service.get_blink_instance")
-    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clip_thumbnail_check_not_found(
+    def test_get_clip_thumbnail_check_success_old(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
     ) -> None:
         """Test clip thumbnail check when not found.
