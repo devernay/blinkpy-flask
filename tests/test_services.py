@@ -1814,7 +1814,7 @@ class TestCacheService(BaseTestCase):
         with self.assertRaises(RuntimeError):
             ensure_cache_paths_initialized()
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.cache_service.get_thumbnail_cache_dir")
     @patch("os.makedirs")
     @patch("shutil.rmtree")
@@ -2083,7 +2083,7 @@ class TestCameraService(BaseTestCase):
 
         self.assertEqual(result, mock_camera)
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_find_camera_by_id_not_found(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
@@ -2117,7 +2117,7 @@ class TestCameraService(BaseTestCase):
 
         self.assertIsNone(result)
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_find_camera_by_id_blink_unavailable(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
@@ -4014,7 +4014,7 @@ class TestClipProcessing(BaseTestCase):
                 f"No thumbnail URL provided for clip {self.clip_id}"
             )
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_cloud_clip_background_thumbnail_exists(
         self, mock_cache_dir: Mock
     ) -> None:
@@ -4059,9 +4059,9 @@ class TestClipProcessing(BaseTestCase):
             # Verify thumbnail path was checked
             mock_get_path.assert_called_once_with(clip_id)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_process_cloud_clip_background_no_blink(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
@@ -4238,7 +4238,7 @@ class TestClipProcessing(BaseTestCase):
                 self.assertEqual(result, thumbnail_path)
                 mock_conn.assert_called_once()
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
     def test_download_and_cache_cloud_thumbnail_request_error(
         self, mock_exists: Mock, mock_cache_dir: Mock
@@ -4289,7 +4289,7 @@ class TestClipProcessing(BaseTestCase):
 
             self.assertIsNone(result)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_already_cached(
         self, mock_cache_dir: Mock
     ) -> None:
@@ -4334,7 +4334,7 @@ class TestClipProcessing(BaseTestCase):
 
             self.assertEqual(result, thumbnail_path)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
@@ -4387,7 +4387,7 @@ class TestClipProcessing(BaseTestCase):
             # Verify thumbnail path was checked
             mock_get_thumb_path.assert_called_with(clip_id)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_process_cloud_clip_background_no_media_url(
@@ -4435,7 +4435,7 @@ class TestClipProcessing(BaseTestCase):
             # Verify thumbnail path was checked
             mock_get_thumb_path.assert_called_with(clip_id)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
@@ -4486,7 +4486,7 @@ class TestClipProcessing(BaseTestCase):
             # Verify thumbnail path was checked
             mock_get_thumb_path.assert_called_with(clip_id)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
     def test_process_cloud_clip_thumbnail_only_success_simple(
         self, mock_exists: Mock, mock_cache_dir: Mock
@@ -4522,7 +4522,7 @@ class TestClipProcessing(BaseTestCase):
             # Expected since we're not fully mocking the dependencies
             pass
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
     def test_process_cloud_clip_thumbnail_only_no_url_simple(
         self, mock_exists: Mock, mock_cache_dir: Mock
@@ -4558,9 +4558,9 @@ class TestClipProcessing(BaseTestCase):
             # Expected since we're not fully mocking the dependencies
             pass
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_process_local_clip_background_blink_unavailable(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
@@ -4596,9 +4596,9 @@ class TestClipProcessing(BaseTestCase):
 
         # Test passes if no exception is raised
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_process_local_clip_background_sync_not_found(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
@@ -4637,9 +4637,9 @@ class TestClipProcessing(BaseTestCase):
         # Verify sync dict was accessed
         self.assertEqual(len(mock_blink_instance.sync), 0)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_process_local_clip_background_no_local_storage(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
@@ -4675,9 +4675,9 @@ class TestClipProcessing(BaseTestCase):
 
         # Test passes if no exception is raised
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("pathlib.Path.exists")
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_process_local_clip_background_not_implemented(
         self, mock_blink: Mock, mock_exists: Mock, mock_cache_dir: Mock
     ) -> None:
@@ -4787,7 +4787,7 @@ class TestClipProcessing(BaseTestCase):
             error_call = mock_logger.error.call_args[0][0]
             self.assertIn("Error processing cloud clip", error_call)
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_download_and_cache_cloud_thumbnail_exception_handling(
         self, mock_0: Mock
     ) -> None:
@@ -5450,7 +5450,7 @@ class TestSettingsService(BaseTestCase):
 class TestSystemService(BaseTestCase):
     """Test system service functions."""
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_get_systems_empty(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
@@ -5479,7 +5479,7 @@ class TestSystemService(BaseTestCase):
         result = get_systems()
         self.assertEqual(result, {"systems": []})
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
+    @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_get_systems_with_data(
         self, mock_ensure_blink: Mock, mock_get_instance: Mock
