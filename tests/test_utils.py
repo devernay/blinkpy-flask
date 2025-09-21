@@ -435,6 +435,48 @@ class TestFormatters(BaseTestCase):
         self.assertIn("January 16", result[0]["date"])
         self.assertIn("January 15", result[1]["date"])
 
+    def test_format_clips_by_day_clips_sorted_within_day(self) -> None:
+        """Test clips within same day are sorted by time (newest first).
+
+        Tests:
+            - Multiple clips on same day are grouped together
+            - Clips within day are sorted by created_at timestamp
+            - Most recent clip appears first within each day
+        """
+        from datetime import UTC, datetime
+
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        current_year = datetime.now(UTC).year
+        clips = [
+            {
+                "id": "1",
+                "created_at": f"{current_year}-01-15T08:00:00+00:00",  # Earlier
+                "camera_name": "Camera1",
+            },
+            {
+                "id": "2",
+                "created_at": f"{current_year}-01-15T12:00:00+00:00",  # Later
+                "camera_name": "Camera2",
+            },
+            {
+                "id": "3",
+                "created_at": f"{current_year}-01-15T10:00:00+00:00",  # Middle
+                "camera_name": "Camera3",
+            },
+        ]
+
+        result = format_clips_by_day(clips)
+
+        self.assertEqual(len(result), 1)  # All clips on same day
+        day_clips = result[0]["clips"]
+        self.assertEqual(len(day_clips), 3)
+
+        # Should be sorted newest first: 12:00, 10:00, 08:00
+        self.assertEqual(day_clips[0]["id"], "2")  # 12:00 - newest
+        self.assertEqual(day_clips[1]["id"], "3")  # 10:00 - middle
+        self.assertEqual(day_clips[2]["id"], "1")  # 08:00 - oldest
+
     def test_format_clips_by_day_no_created_at_fallback(self) -> None:
         """Test date formatting when created_at is missing uses current date.
 
