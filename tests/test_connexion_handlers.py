@@ -695,29 +695,30 @@ class TestClipsHandlers(BaseTestCase):
 
             from blinkapp.connexion_handlers.clips import get_clips
 
-            mock_local_clips = {
-                "clips": [
-                    {
-                        "clips": [
-                            {
-                                "id": "local~123456",
-                                "thumbnail": "/api/clips/local~123456/thumbnail",
-                                "camera_name": "TestCamera",
-                                "created_at": "2025-01-20T10:30:00+00:00",
-                                "system_name": "TestSystem",
-                                "time": "10:30 AM",
-                                "event_type": "Motion",
-                                "media_url": "/test/url",
-                            }
-                        ],
-                        "date": "January 20, 2025",
-                    }
-                ]
-            }
+            mock_local_clips = [
+                {
+                    "clips": [
+                        {
+                            "id": "local~123456",
+                            "thumbnail": "/api/clips/local~123456/thumbnail",
+                            "camera_name": "TestCamera",
+                            "created_at": "2025-01-20T10:30:00+00:00",
+                            "system_name": "TestSystem",
+                            "time": "10:30 AM",
+                            "event_type": "Motion",
+                            "media_url": "/test/url",
+                        }
+                    ],
+                    "date": "January 20, 2025",
+                }
+            ]
 
-            with patch(
-                "blinkapp.connexion_handlers.clips.process_local_clips"
-            ) as mock_process:
+            with (
+                patch(
+                    "blinkapp.services.clip_service.process_local_clips"
+                ) as mock_process,
+                patch("blinkapp.services.blink_service.ensure_blink_initialized"),
+            ):
                 mock_process.return_value = mock_local_clips
 
                 result = get_clips(storage="local")
