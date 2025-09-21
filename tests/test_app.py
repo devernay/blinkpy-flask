@@ -9253,31 +9253,31 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
     ) -> None:
         """Test clip thumbnail availability check when thumbnail is not found.
 
-        Verifies that the clip thumbnail check endpoint properly handles
-        cases where the requested thumbnail is not available.
+        Verifies that the thumbnail check endpoint returns proper response
+        when the requested clip thumbnail does not exist in cache.
 
         Args:
             mock_cache_init: Mock for cache initialization
             mock_blink: Mock for Blink service
 
-
-
-        Args:
-            mock_ensure_blink: Mock for Blink service initialization
-            mock_get_instance: Mock for Blink instance retrieval
         Tests:
-            - Thumbnail not found handling and error response
-            - Proper 404 status code for missing thumbnails
-            - Cache integration for unavailable thumbnail detection
-            - API endpoint behavior for non-existent thumbnail queries
+            - Returns 200 status for valid check request
+            - Handles missing clip ID gracefully
+            - Cache integration for unavailable thumbnails
         """
-        # Mock blink availability
-        create_mock_blink_instance()
+        from tests.test_base import create_mock_blink_instance
 
-        mock_cache_init.return_value = {}
+        # Setup mocks
+        mock_blink.return_value = create_mock_blink_instance(available=True)
+        mock_cache_init.return_value = {}  # Empty cache - no thumbnails
 
+        # Test thumbnail check for non-existent clip
         response = self.client.get("/api/clips/99999/thumbnail?check=true")  # type: TestResponse
+
         self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertIsNotNone(data)
+        self.assertIn("success", data)
 
 
 # ============================================================================
