@@ -68,7 +68,7 @@ def generate_hls_url(camera_id: str, base_url: str = "http://localhost:8080") ->
 class HLSStreamConfig:
     """Configuration for HLS stream transcoding from Blink TCP streams."""
 
-    segment_time: float | None = None  # HLS segment duration in seconds
+    segment_time: int | None = None  # HLS segment duration in seconds
     list_size: int | None = None  # Number of segments in playlist
     timeout: int | None = None  # Process timeout
     idle_timeout: int | None = None  # Stream idle timeout
@@ -124,9 +124,7 @@ def _build_ffmpeg_command(
         "-loglevel",
         "warning",  # Show warnings but reduce verbose info
         "-fflags",
-        "+genpts+igndts",  # Generate PTS, ignore DTS for live streams
-        "-avoid_negative_ts",
-        "make_zero",  # Handle timestamp issues
+        "+genpts",  # Generate PTS for live streams
         "-i",
         tcp_url,  # Input: TCP stream source
         "-c",
@@ -138,9 +136,7 @@ def _build_ffmpeg_command(
         "-hls_list_size",
         str(config.list_size),  # Max segments in playlist
         "-hls_flags",
-        "delete_segments+independent_segments",  # Auto-delete + independent segments
-        "-hls_segment_type",
-        "mpegts",  # Use MPEG-TS for better live streaming
+        "delete_segments",  # Auto-delete old segments
         str(output_path),  # Output playlist file
     ]
 
