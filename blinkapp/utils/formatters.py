@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "format_clips_by_day",
     "format_time_duration",
+    "format_clip_time",
 ]
 
 
@@ -65,6 +66,18 @@ def format_clips_by_day(clips: list[ClipData]) -> list[ClipDayGroup]:
             continue
 
     return sorted(days.values(), key=lambda x: str(x["date"]), reverse=True)
+
+
+def format_clip_time(dt: datetime) -> str:
+    """Format clip time for UI display.
+
+    Args:
+        dt: Datetime object to format
+
+    Returns:
+        Formatted time string (e.g., "11:29 AM")
+    """
+    return dt.astimezone().strftime("%I:%M %p")
 
 
 def format_time_duration(seconds: int) -> str:

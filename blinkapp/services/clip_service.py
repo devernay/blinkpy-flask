@@ -28,7 +28,7 @@ from blinkapp.models.cache import ClipCacheEntry
 from blinkapp.models.ids import ClipId
 from blinkapp.models.types import ClipApiData, ClipDayGroup, JsonDict
 from blinkapp.services.cache_service import ensure_clips_cache_initialized
-from blinkapp.utils.formatters import format_clips_by_day
+from blinkapp.utils.formatters import format_clip_time, format_clips_by_day
 
 if TYPE_CHECKING:
     from blinkpy.blinkpy import Blink
@@ -205,7 +205,7 @@ def process_cloud_clips(
                 "id": str(clip_id),
                 "camera_name": video.get("device_name", "Unknown"),
                 "system_name": Config.DEFAULT_SYSTEM_NAME,
-                "time": created_at.astimezone().strftime("%I:%M %p"),
+                "time": format_clip_time(created_at),
                 "event_type": "Motion",  # Cloud clips are always motion events
                 "thumbnail": thumbnail_url,
                 "media_url": video.get("media"),
@@ -342,7 +342,7 @@ def process_local_clips(
                             "camera_name": item.name,
                             "created_at": item.created_at.isoformat(),  # Add this for proper date grouping
                             "system_name": sync_name,
-                            "time": created_at.astimezone().strftime("%I:%M %p"),
+                            "time": format_clip_time(created_at),
                             "event_type": "Motion",
                             "thumbnail": thumbnail_url,
                             "media_url": item.url(

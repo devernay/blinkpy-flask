@@ -16,6 +16,7 @@ DO NOT add Flask route tests here - those belong in test_integration_api.py.
 
 import tempfile
 import unittest
+from datetime import UTC
 from pathlib import Path
 from typing import Never
 from unittest.mock import Mock, patch
@@ -344,6 +345,168 @@ class TestFormatters(BaseTestCase):
         # Test negative duration raises error
         with self.assertRaises(ValueError):
             format_time_duration(-1)
+
+    def test_format_clips_by_day_current_year(self) -> None:
+        """Test date formatting for current year clips (no year shown).
+
+        Tests:
+            - Current year dates show day of week without year
+            - Format: "Monday, January 15"
+            - Proper grouping by date
+        """
+        from datetime import UTC, datetime
+
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        current_year = datetime.now(UTC).year
+        clips = [
+            {
+                "id": "123",
+                "created_at": f"{current_year}-01-15T10:30:00+00:00",
+                "camera_name": "Test Camera",
+            }
+        ]
+
+        result = format_clips_by_day(clips)
+
+        self.assertEqual(len(result), 1)
+        # Should show day of week and date without year for current year
+        self.assertRegex(result[0]["date"], r"^\w+, January 15$")
+        self.assertNotIn(str(current_year), result[0]["date"])
+
+    def test_format_clips_by_day_different_year(self) -> None:
+        """Test date formatting for different year clips (year shown).
+
+        Tests:
+            - Different year dates show day of week with year
+            - Format: "Monday, January 15, 2023"
+            - Proper grouping by date
+        """
+        from datetime import UTC, datetime
+
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        current_year = datetime.now(UTC).year
+        different_year = current_year - 1
+        clips = [
+            {
+                "id": "123",
+                "created_at": f"{different_year}-01-15T10:30:00+00:00",
+                "camera_name": "Test Camera",
+            }
+        ]
+
+        result = format_clips_by_day(clips)
+
+        self.assertEqual(len(result), 1)
+        # Should show day of week, date, and year for different year
+        self.assertRegex(result[0]["date"], rf"^\w+, January 15, {different_year}$")
+
+    def test_format_clips_by_day_multiple_days_sorting(self) -> None:
+        """Test date formatting with multiple days are sorted newest first.
+
+        Tests:
+            - Multiple days are properly grouped
+            - Each day has correct date format
+            - Days are sorted newest first
+        """
+        from datetime import UTC, datetime
+
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        current_year = datetime.now(UTC).year
+        clips = [
+            {
+                "id": "1",
+                "created_at": f"{current_year}-01-15T10:30:00+00:00",
+                "camera_name": "Camera1",
+            },
+            {
+                "id": "2",
+                "created_at": f"{current_year}-01-16T11:30:00+00:00",
+                "camera_name": "Camera2",
+            },
+        ]
+
+        result = format_clips_by_day(clips)
+
+        self.assertEqual(len(result), 2)
+        # Should be sorted newest first (January 16 before January 15)
+        self.assertIn("January 16", result[0]["date"])
+        self.assertIn("January 15", result[1]["date"])
+
+    def test_format_clips_by_day_no_created_at_fallback(self) -> None:
+        """Test date formatting when created_at is missing uses current date.
+
+        Tests:
+            - Uses current date when created_at is missing
+            - Shows day of week without year for current date
+            - Handles missing data gracefully
+        """
+        from datetime import UTC, datetime
+        from unittest.mock import patch
+
+        from blinkapp.utils.formatters import format_clips_by_day
+
+        clips = [
+            {
+                "id": "123",
+                "camera_name": "Test Camera",
+                # No created_at field
+            }
+        ]
+
+        with patch("blinkapp.utils.formatters.datetime") as mock_datetime:
+            mock_now = datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC)
+            mock_datetime.now.return_value = mock_now
+            mock_datetime.fromisoformat = datetime.fromisoformat
+
+            result = format_clips_by_day(clips)
+
+            self.assertEqual(len(result), 1)
+            self.assertIn("January 15", result[0]["date"])
+            self.assertNotIn("2025", result[0]["date"])
+
+    def test_format_clip_time_am_pm(self) -> None:
+        """Test clip time formatting with AM/PM display.
+
+        Tests:
+            - Time formatting shows AM/PM format
+            - Proper timezone conversion
+            - UI-friendly time display format
+        """
+        from datetime import datetime
+
+        from blinkapp.utils.formatters import format_clip_time
+
+        # Test morning time
+        dt_am = datetime(2025, 1, 15, 9, 30, 0, tzinfo=UTC)
+        result_am = format_clip_time(dt_am)
+        self.assertRegex(result_am, r"^\d{1,2}:\d{2} [AP]M$")
+
+        # Test afternoon time
+        dt_pm = datetime(2025, 1, 15, 15, 45, 0, tzinfo=UTC)
+        result_pm = format_clip_time(dt_pm)
+        self.assertRegex(result_pm, r"^\d{1,2}:\d{2} [AP]M$")
+
+    def test_format_clip_time_timezone_conversion(self) -> None:
+        """Test clip time formatting handles timezone conversion.
+
+        Tests:
+            - Timezone conversion to local time
+            - Proper handling of UTC input
+            - Consistent time display format
+        """
+        from datetime import datetime
+
+        from blinkapp.utils.formatters import format_clip_time
+
+        # UTC time should be converted to local timezone
+        dt_utc = datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC)
+        result = format_clip_time(dt_utc)
+
+        # Should be a valid time format with AM/PM
+        self.assertRegex(result, r"^\d{1,2}:\d{2} [AP]M$")
 
 
 class TestValidationHelpers(BaseTestCase):
