@@ -28,6 +28,7 @@ from blinkapp.services.cache_service import (
     get_clips_cache_dir,
     get_thumbnail_path,
 )
+from blinkapp.services.clip_download import download_local_clip
 
 logger = logging.getLogger(__name__)
 
@@ -198,9 +199,6 @@ def process_local_clip_background(
                 f"Video file not found for local clip {clip_id}, downloading first..."
             )
 
-            # Download the clip first
-            from ..services.clip_download import download_local_clip
-
             try:
                 # Extract sync_name and item_id from clip_id
                 sync_name_extracted, item_id = clip_id.get_local_parts()
@@ -299,8 +297,6 @@ def process_local_clip_background(
                     )
                 else:
                     # Video not cached, download it first
-                    from blinkapp.services.clip_download import download_local_clip
-
                     download_result = download_local_clip(
                         clip_id, sync_name, str(item_id)
                     )
