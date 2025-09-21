@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+import asyncio
+import concurrent.futures
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableType
+    from blinkpy.livestream import BlinkLiveStream
 
 
 from blinkapp.services.hls_service import (
@@ -244,11 +247,12 @@ class StreamManager:
         """
         self.config = config or HLSStreamConfig()
         self.streams: dict[str, HLSStream] = {}
-        self.camera_streams: dict[str, object] = {}  # Store Blink camera streams
+        self.camera_streams: dict[str, BlinkLiveStream] = {}  # Store Blink camera streams
+        self.feed_tasks: dict[str, concurrent.futures.Future[None]] = {}  # Store feed() tasks for cleanup
         self.lock = threading.Lock()
 
     def start_stream(
-        self, camera_id: str, tcp_url: str, camera_stream: object | None = None
+        self, camera_id: str, tcp_url: str, camera_stream: BlinkLiveStream | None = None
     ) -> tuple[str | None, str | None]:
         """Start HLS stream for camera.
 
@@ -271,7 +275,7 @@ class StreamManager:
 
             if hls_url:
                 self.streams[camera_id] = stream
-                # Store camera stream for cleanup if provided
+                # Store camera stream and feed task for cleanup if provided
                 if camera_stream:
                     self.camera_streams[camera_id] = camera_stream
                 return hls_url, None
@@ -474,11 +478,13 @@ def init_camera_stream(
         connection.execute(camera_stream.start())
         tcp_url = camera_stream.url
 
-        # Schedule feed() to run asynchronously (don't block)
+        # Schedule feed() to run asynchronously and store task
         import asyncio
 
         if connection.loop:
-            asyncio.run_coroutine_threadsafe(camera_stream.feed(), connection.loop)
+            feed_task = asyncio.run_coroutine_threadsafe(camera_stream.feed(), connection.loop)
+            # Store feed task in stream manager for proper cleanup
+            stream_manager.feed_tasks[str(camera_id)] = feed_task
 
         # Initialize stream manager
         stream_manager = ensure_stream_manager_initialized()
