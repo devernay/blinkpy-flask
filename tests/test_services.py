@@ -5796,6 +5796,66 @@ class TestClipDownloadService(BaseTestCase):
                     temp_files = list(Path(temp_dir).glob("*.tmp"))
                     self.assertEqual(len(temp_files), 0)
 
+    def test_download_local_clip_updates_cache_with_filepath(self) -> None:
+        """Test that local clip download updates cache with filepath.
+
+        Verifies that when a local clip is successfully downloaded, the clips
+        cache is updated with the filepath to prevent 'Clip file not cached' errors.
+
+        Tests:
+            - Cache entry creation/update with filepath after successful download
+            - Proper Path object storage in cache
+            - Prevention of 'Clip file not cached' error
+        """
+        from pathlib import Path
+        from unittest.mock import Mock, patch
+
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import download_local_clip
+
+        clip_id = ClipId.from_local("test_sync", 12345)
+        test_filepath = Path("/tmp/test_clip.mp4")
+
+        with (
+            patch(
+                "blinkapp.services.blink_service.get_blink_instance"
+            ) as mock_get_blink,
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ) as mock_ensure_conn,
+            patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+            ) as mock_cache,
+            patch("flask.send_file"),
+            patch.object(Path, "exists", return_value=True),
+        ):
+            # Mock successful download scenario
+            mock_blink = Mock()
+            mock_blink.available = True
+            mock_sync = Mock()
+            mock_sync.local_storage.get_media_item.return_value = Mock()
+            mock_blink.sync = {"test_sync": mock_sync}
+            mock_get_blink.return_value = mock_blink
+
+            # Mock cache
+            mock_clips_cache = {}
+            mock_cache.return_value = mock_clips_cache
+
+            # Mock successful async execution
+            mock_executor = Mock()
+            mock_executor.execute.return_value = (
+                test_filepath,
+                None,
+            )  # Success: filepath, no error
+            mock_ensure_conn.return_value = mock_executor
+
+            # Call the function
+            download_local_clip(clip_id, "test_sync", "12345")
+
+            # Verify cache was updated with filepath
+            self.assertIn(clip_id, mock_clips_cache)
+            self.assertEqual(mock_clips_cache[clip_id]["filepath"], test_filepath)
+
 
 class TestThumbnailService(BaseTestCase):
     """Test thumbnail service functions."""
