@@ -962,11 +962,8 @@ class TestAdditionalEndpoints(FlaskTestCase):
         data = json.loads(response.data)
         self.assertFalse(data["success"])
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_camera_thumbnail_not_found(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_api_camera_thumbnail_not_found(self, mock_ensure_blink: Mock) -> None:
         """Test camera thumbnail API endpoint when camera is not found.
 
         Verifies that the camera thumbnail API properly handles cases
@@ -991,7 +988,6 @@ class TestAdditionalEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {}  # Empty sync to ensure no cameras found
 
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         with (
             patch(
