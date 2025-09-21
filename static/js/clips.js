@@ -8,12 +8,42 @@ let clipsBeingProcessed = new Set();
 let downloadQueue = [];
 let isDownloading = false;
 
+// Clips cache for Phase 2: Client-side caching
+const clipsCache = {
+    cloud: {
+        data: null,
+        timestamp: null,
+        loading: false
+    },
+    local: {
+        data: null,
+        timestamp: null,
+        loading: false
+    }
+};
+
 /**
- * Load clips from server
+ * Load clips from server with caching
  */
-async function loadClips() {
+async function loadClips(forceRefresh = false) {
     const storageType = document.querySelector('.storage-btn.active').textContent.toLowerCase().includes('cloud') ? 'cloud' : 'local';
     const container = document.getElementById('clips-list');
+    const cache = clipsCache[storageType];
+
+    // Use cached data if available and not forcing refresh
+    if (!forceRefresh && cache.data && !cache.loading) {
+        console.log(`Using cached ${storageType} clips data`);
+        renderClips(cache.data, storageType);
+        return;
+    }
+
+    // Prevent multiple simultaneous requests
+    if (cache.loading) {
+        console.log(`${storageType} clips already loading...`);
+        return;
+    }
+
+    cache.loading = true;
 
     // Show loading spinner
     container.innerHTML = `
@@ -28,6 +58,10 @@ async function loadClips() {
         const data = await response.json();
 
         if (response.ok && data.success) {
+            // Cache the successful response
+            cache.data = data.data.clips;
+            cache.timestamp = Date.now();
+
             if (data.data.clips.length === 0) {
                 // If cloud storage is empty, try local storage
                 if (storageType === 'cloud') {
@@ -42,7 +76,7 @@ async function loadClips() {
                     </div>
                 `;
             } else {
-                renderClips(data.data.clips);
+                renderClips(data.data.clips, storageType);
             }
         } else {
             console.error('Failed to load clips:', data.error);
@@ -57,10 +91,12 @@ async function loadClips() {
         console.error('Error loading clips:', error);
         container.innerHTML = `
             <div class="empty-state">
-                <h3>Error Loading Clips</h3>
-                <p>Unable to connect to server.</p>
+                <h3>Connection Error</h3>
+                <p>Unable to connect to server. Please check your connection.</p>
             </div>
         `;
+    } finally {
+        cache.loading = false;
     }
 }
 
@@ -309,8 +345,33 @@ function selectStorage(type) {
         }
     });
 
-    // Reload clips for selected storage type
+    // Load clips for selected storage type (use cache if available)
     loadClips();
+}
+
+/**
+ * Refresh clips data (force reload from server)
+ */
+function refreshClips() {
+    const storageType = document.querySelector('.storage-btn.active').textContent.toLowerCase().includes('cloud') ? 'cloud' : 'local';
+
+    // Clear cache for current storage type
+    clipsCache[storageType].data = null;
+    clipsCache[storageType].timestamp = null;
+
+    // Force refresh
+    loadClips(true);
+}
+
+/**
+ * Clear all clips cache
+ */
+function clearClipsCache() {
+    clipsCache.cloud.data = null;
+    clipsCache.cloud.timestamp = null;
+    clipsCache.local.data = null;
+    clipsCache.local.timestamp = null;
+    console.log('Clips cache cleared');
 }
 
 /**
@@ -603,6 +664,8 @@ window.selectStorage = selectStorage;
 // Export module
 window.Clips = {
     load: loadClips,
+    refresh: refreshClips,
+    clearCache: clearClipsCache,
     renderClips,
     playClip,
     closeVideoModal,

@@ -441,7 +441,9 @@ async function clearCache() {
             if (currentView === 'home') {
                 loadDevices();
             } else if (currentView === 'clips') {
-                window.Clips.load();
+                // Clear clips cache and force refresh
+                window.Clips.clearCache();
+                window.Clips.refresh();
             }
 
             alert(appConfig.error_messages.cache_clear_success);
