@@ -266,7 +266,7 @@ class HLSStream:
         """
         if not self.temp_dir:
             return None
-        return f"/api/cameras/{self.camera_id}/hls/stream.m3u8"
+        return f"/api/cameras/{self.camera_id}/streams/stream.m3u8"
 
     def get_file(self, filename: str) -> tuple[bytes | None, str | None]:
         """Get HLS file content.
