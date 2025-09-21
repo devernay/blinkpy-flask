@@ -123,8 +123,6 @@ def _build_ffmpeg_command(
         "ffmpeg",
         "-loglevel",
         "warning",  # Show warnings but reduce verbose info
-        "-fflags",
-        "+genpts",  # Generate PTS for live streams
         "-i",
         tcp_url,  # Input: TCP stream source
         "-c",
