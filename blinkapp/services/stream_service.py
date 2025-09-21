@@ -481,6 +481,9 @@ def init_camera_stream(
         connection.execute(camera_stream.start())
         tcp_url = camera_stream.url
 
+        # Initialize stream manager first
+        stream_manager = ensure_stream_manager_initialized()
+
         # Schedule feed() to run asynchronously and store task
         import asyncio
 
@@ -490,9 +493,6 @@ def init_camera_stream(
             )
             # Store feed task in stream manager for proper cleanup
             stream_manager.feed_tasks[str(camera_id)] = feed_task
-
-        # Initialize stream manager
-        stream_manager = ensure_stream_manager_initialized()
 
         # Start HLS transcoding and store camera stream for cleanup
         hls_url, error = stream_manager.start_stream(
