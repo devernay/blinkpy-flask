@@ -3514,7 +3514,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         # Initialize globals for testing
         setup_test_globals()
 
-    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.routes.thumbnails.logger")
     def test_update_camera_thumbnail_race_condition(
@@ -3558,7 +3558,7 @@ class TestCameraThumbnailCacheOperations(BaseTestCase):
         mock_executor.submit.assert_called_once()
 
     @patch("requests.get")
-    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("pathlib.Path.unlink")
     @patch("pathlib.Path.exists")
     def test_camera_thumbnail_cache_file_cleanup(
@@ -3873,7 +3873,6 @@ class TestClipDownloadOperations(BaseTestCase):
                     self.assertEqual(response.status_code, 200)
 
     @with_blink_auth
-    @patch("blinkapp.services.cache_service.clips_cache")
     def test_process_clip_thumbnail_generation(self, mock_cache: Mock) -> None:
         """Test clip processing for thumbnail generation.
 
@@ -5635,7 +5634,7 @@ class TestAdvancedClipOperations(BaseTestCase):
         self.assertEqual(response.status_code, 500)
 
     @with_blink_auth
-    @patch("blinkapp.services.cache_service.clips_cache")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_clip_with_existing_thumbnail(self, mock_cache: Mock) -> None:
         """Test clip processing optimization when thumbnail already exists.
 
@@ -5677,7 +5676,7 @@ class TestAdvancedClipOperations(BaseTestCase):
                         self.assertEqual(response.status_code, 200)
 
     @with_blink_auth
-    @patch("blinkapp.services.cache_service.clips_cache")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_process_clip_thumbnail_generation_failure(self, mock_cache: Mock) -> None:
         """Test clip processing error handling when thumbnail generation fails.
 
@@ -5910,7 +5909,7 @@ class TestThumbnailAdvancedOperations(BaseTestCase):
         self.client = app.test_client()
 
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     def test_get_camera_thumbnail_with_stale_cache(
         self, mock_cache: Mock, mock_blink: Mock
     ) -> None:
@@ -6143,7 +6142,7 @@ class TestConcurrencyAndThreadSafety(BaseTestCase):
         setup_test_globals()
         self.client = app.test_client()
 
-    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("blinkapp.services.connection_service.executor")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_concurrent_thumbnail_updates(
@@ -6907,7 +6906,7 @@ class TestPerformanceOptimizationAdvanced(BaseTestCase):
         self.assertEqual(len(errors), 0)
         self.assertEqual(len(results), 10)
 
-    @patch("blinkapp.services.cache_service.clips_cache")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     def test_memory_efficient_caching(self, mock_cache: Mock) -> None:
         """Test memory-efficient caching strategies.
 
@@ -9012,7 +9011,7 @@ class TestCriticalPathCoverage(BaseTestCase):
 class TestApplicationInitializationFixed(BaseTestCase):
     """Test application initialization sequences."""
 
-    @patch("blinkapp.services.cache_service.initialize_cache_paths")
+    @patch("blinkapp.services.cache_service.ensure_cache_paths_initialized")
     @patch("blinkapp.utils.logging_config.setup_logging")
     def test_app_initialization_sequence(
         self, mock_logging: Mock, mock_cache: Mock
@@ -9160,7 +9159,7 @@ class TestAdvancedEndpointsFixed(BaseTestCase):
         response = self.client.get("/login")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
 
-    @patch("blinkapp.services.cache_service.clips_cache")
+    @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_get_clips_missing_storage_param(

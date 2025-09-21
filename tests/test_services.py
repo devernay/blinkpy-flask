@@ -1815,7 +1815,7 @@ class TestCacheService(BaseTestCase):
             ensure_cache_paths_initialized()
 
     @patch("blinkapp.services.cache_service.ensure_clips_cache_initialized")
-    @patch("blinkapp.services.cache_service.get_thumbnail_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("os.makedirs")
     @patch("shutil.rmtree")
     @patch("os.path.exists")
@@ -5880,7 +5880,7 @@ class TestThumbnailService(BaseTestCase):
             name="Test Camera", thumbnail="http://example.com/thumb.jpg"
         )
 
-    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     @patch("blinkapp.services.connection_service.executor")
     def test_update_camera_camera_thumbnail_cache(
@@ -5931,7 +5931,7 @@ class TestThumbnailService(BaseTestCase):
             else:
                 self.assertIsInstance(result, dict)
 
-    @patch("blinkapp.services.cache_service.camera_thumbnail_cache")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.unlink")
     def test_thumbnail_file_cleanup(
@@ -6041,14 +6041,14 @@ class TestThumbnailService(BaseTestCase):
 class TestLifecycleService(BaseTestCase):
     """Test lifecycle service functions."""
 
-    @patch("blinkapp.services.cache_service.initialize_cache_paths")
+    @patch("blinkapp.services.cache_service.ensure_cache_paths_initialized")
     @patch("blinkapp.services.connection_service.initialize_connections")
     @patch("blinkapp.services.cache_service.initialize_caches")
     @patch("blinkapp.services.stream_service.initialize_stream_manager")
     @patch("blinkapp.services.blink_service.initialize_blink_objects")
     @patch("blinkapp.utils.logging_config.setup_logging")
     @patch("blinkapp.services.cache_service.get_cache_dir")
-    @patch("blinkapp.services.cache_service.get_thumbnail_cache_dir")
+    @patch("blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized")
     @patch("blinkapp.services.cache_service.get_clips_cache_dir")
     @patch("pathlib.Path.mkdir")
     def test_startup_success(
