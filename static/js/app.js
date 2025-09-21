@@ -109,7 +109,19 @@ const VIEW_TO_HASH = {
     'settings': '#settings'
 };
 
+// Phase 3: Scroll position preservation
+const scrollPositions = {
+    'home': 0,
+    'clips': 0,
+    'settings': 0
+};
+
 function showView(viewName) {
+    // Phase 3: Save current scroll position
+    if (currentView) {
+        scrollPositions[currentView] = window.pageYOffset || document.documentElement.scrollTop;
+    }
+
     // Stop livestream if leaving live view
     if (window.LiveStream && window.LiveStream.getCurrentStream() && viewName !== 'live') {
         window.LiveStream.stop();
@@ -150,6 +162,12 @@ function showView(viewName) {
     } else {
         window.Camera.stopAgeUpdates();
     }
+
+    // Phase 3: Restore scroll position after a brief delay
+    setTimeout(() => {
+        const savedPosition = scrollPositions[viewName] || 0;
+        window.scrollTo(0, savedPosition);
+    }, 50);
 }
 
 /**

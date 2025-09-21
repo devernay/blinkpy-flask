@@ -33,6 +33,14 @@ async function loadClips(forceRefresh = false) {
     // Use cached data if available and not forcing refresh
     if (!forceRefresh && cache.data && !cache.loading) {
         console.log(`Using cached ${storageType} clips data`);
+
+        // Phase 3: Show cached data indicator
+        container.innerHTML = `
+            <div class="cache-indicator" style="background: #e8f5e8; padding: 8px; margin-bottom: 10px; border-radius: 4px; font-size: 12px; color: #2d5a2d;">
+                📋 Showing cached data • <button onclick="window.Clips.refresh()" style="background: none; border: none; color: #2d5a2d; text-decoration: underline; cursor: pointer;">Refresh</button>
+            </div>
+        `;
+
         renderClips(cache.data, storageType);
         return;
     }
