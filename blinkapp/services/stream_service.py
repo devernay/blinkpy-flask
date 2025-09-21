@@ -457,9 +457,40 @@ def init_camera_stream(
 
         camera_stream = camera_stream_result
 
-        # Start the camera stream
-        connection.execute(camera_stream.start())
-        tcp_url = camera_stream.url
+        # Start the camera stream and wait for server to be ready
+        server = connection.execute(camera_stream.start())
+        if server is None:
+            logger.error(f"Failed to start camera stream for {camera_id}")
+            return None, None
+
+        # Wait for server to be ready with proper checking
+        max_attempts = 50  # 5 seconds max
+        for attempt in range(max_attempts):
+            try:
+                if (
+                    hasattr(camera_stream, "server")
+                    and camera_stream.server
+                    and camera_stream.server.is_serving()
+                ):
+                    tcp_url = camera_stream.url
+                    if tcp_url:
+                        break
+            except Exception:
+                pass
+            import time
+
+            time.sleep(0.1)
+        else:
+            logger.error(
+                f"Camera stream server failed to bind after {max_attempts * 0.1}s for {camera_id}"
+            )
+            return None, None
+
+        if tcp_url is None:
+            logger.error(
+                f"Camera stream started but no TCP URL available for {camera_id}"
+            )
+            return None, None
 
         # Initialize stream manager
         stream_manager = ensure_stream_manager_initialized()
