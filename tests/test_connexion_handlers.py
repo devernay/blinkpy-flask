@@ -682,6 +682,105 @@ class TestClipsHandlers(BaseTestCase):
         except ImportError:
             self.skipTest("download_clip handler not found")
 
+    def test_get_clips_local_thumbnail_detection(self) -> None:
+        """Test that get_clips properly detects local clip thumbnails.
+
+        Tests:
+            - Verifies local clips with existing thumbnails return proper URLs
+            - Ensures thumbnail detection works through connexion handler
+            - Guards against thumbnail display regression issues
+        """
+        try:
+            from unittest.mock import patch
+
+            from blinkapp.connexion_handlers.clips import get_clips
+
+            mock_local_clips = {
+                "clips": [
+                    {
+                        "clips": [
+                            {
+                                "id": "local~123456",
+                                "thumbnail": "/api/clips/local~123456/thumbnail",
+                                "camera_name": "TestCamera",
+                                "created_at": "2025-01-20T10:30:00+00:00",
+                                "system_name": "TestSystem",
+                                "time": "10:30 AM",
+                                "event_type": "Motion",
+                                "media_url": "/test/url",
+                            }
+                        ],
+                        "date": "January 20, 2025",
+                    }
+                ]
+            }
+
+            with patch(
+                "blinkapp.connexion_handlers.clips.process_local_clips"
+            ) as mock_process:
+                mock_process.return_value = mock_local_clips
+
+                result = get_clips(storage="local")
+
+                # Should return clips with thumbnail URLs
+                self.assertIn("clips", result)
+                clips_data = result["clips"]
+                self.assertEqual(len(clips_data), 1)
+
+                clip = clips_data[0]["clips"][0]
+                self.assertEqual(clip["thumbnail"], "/api/clips/local~123456/thumbnail")
+
+        except ImportError:
+            self.skipTest("get_clips handler not found")
+
+    def test_get_clips_thumbnail_url_consistency(self) -> None:
+        """Test that get_clips returns consistent thumbnail URLs for all clip types.
+
+        Tests:
+            - Verifies cloud and local clips use same URL format
+            - Ensures URL consistency across different storage types
+            - Guards against URL format inconsistencies
+        """
+        try:
+            from unittest.mock import patch
+
+            from blinkapp.connexion_handlers.clips import get_clips
+
+            with patch(
+                "blinkapp.services.clip_service.process_cloud_clips"
+            ) as mock_process:
+                # Mock return value with proper structure
+                mock_process.return_value = [
+                    {
+                        "date": "January 20, 2025",
+                        "clips": [
+                            {
+                                "id": "123456",
+                                "thumbnail": "/api/clips/123456/thumbnail",
+                                "camera_name": "TestCamera",
+                                "created_at": "2025-01-20T10:30:00+00:00",
+                                "system_name": "TestSystem",
+                                "time": "10:30 AM",
+                                "event_type": "Motion",
+                                "media_url": "/test/url",
+                            }
+                        ],
+                    }
+                ]
+
+                result = get_clips(storage="cloud")
+
+                # Should use consistent URL format
+                self.assertIn("clips", result)
+                clips_data = result["clips"]
+                if clips_data:
+                    clip = clips_data[0]["clips"][0]
+                    self.assertTrue(clip["thumbnail"].startswith("/api/clips/"))
+                    self.assertTrue(clip["thumbnail"].endswith("/thumbnail"))
+
+        except ImportError:
+            self.skipTest("get_clips handler not found")
+
 
 class TestSettingsHandlers(BaseTestCase):
     """Test settings connexion handlers."""

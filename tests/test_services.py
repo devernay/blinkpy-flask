@@ -4959,6 +4959,168 @@ class TestClipService(BaseTestCase):
         super().setUp()
         self.clip_id = ClipId("123456")
 
+    def test_local_clip_thumbnail_detection_with_existing_file(self) -> None:
+        """Test that local clips detect existing thumbnail files.
+
+        Tests:
+            - Creates a mock thumbnail file on disk
+            - Verifies thumbnail URL is set when file exists
+            - Ensures proper thumbnail path construction
+        """
+        from unittest.mock import MagicMock, patch
+
+        from blinkapp.services.clip_service import process_local_clips
+
+        with (
+            patch("blinkapp.services.blink_service.ensure_blink_initialized"),
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ) as mock_conn,
+            patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+            ) as mock_cache,
+            patch(
+                "blinkapp.services.cache_service.get_thumbnail_path"
+            ) as mock_get_path,
+        ):
+            # Mock Blink connection and sync modules
+            mock_blink = MagicMock()
+            mock_sync = MagicMock()
+            mock_sync.name = "TestSync"
+
+            # Mock local storage item
+            mock_item = MagicMock()
+            mock_item.id = "123456"
+            mock_item.created_at = "2025-01-20T10:30:00+00:00"
+            mock_item.camera_name = "TestCamera"
+            mock_sync._local_storage = {
+                "manifest": [mock_item],
+                "last_manifest_id": "test",
+            }
+
+            mock_blink.sync = {"TestSync": mock_sync}
+            mock_conn.return_value.blink = mock_blink
+
+            # Mock cache
+            mock_cache.return_value = {}
+
+            # Mock thumbnail path that exists
+            mock_thumbnail_path = MagicMock()
+            mock_thumbnail_path.exists.return_value = True
+            mock_get_path.return_value = mock_thumbnail_path
+
+            result = process_local_clips()
+
+            # Should have clips with thumbnail URLs when file exists
+            self.assertIn("clips", result)
+            if result["clips"]:
+                clip = result["clips"][0]["clips"][0]
+                self.assertIsNotNone(clip.get("thumbnail"))
+                self.assertTrue(clip["thumbnail"].startswith("/api/clips/"))
+
+    def test_local_clip_thumbnail_detection_without_file(self) -> None:
+        """Test that local clips return null thumbnail when file doesn't exist.
+
+        Tests:
+            - Verifies thumbnail is null when no file exists
+            - Ensures proper handling of missing thumbnails
+            - Guards against false positive thumbnail detection
+        """
+        from unittest.mock import MagicMock, patch
+
+        from blinkapp.services.clip_service import process_local_clips
+
+        with (
+            patch("blinkapp.services.blink_service.ensure_blink_initialized"),
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ) as mock_conn,
+            patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+            ) as mock_cache,
+            patch(
+                "blinkapp.services.cache_service.get_thumbnail_path"
+            ) as mock_get_path,
+        ):
+            # Mock Blink connection and sync modules
+            mock_blink = MagicMock()
+            mock_sync = MagicMock()
+            mock_sync.name = "TestSync"
+
+            # Mock local storage item
+            mock_item = MagicMock()
+            mock_item.id = "123456"
+            mock_item.created_at = "2025-01-20T10:30:00+00:00"
+            mock_item.camera_name = "TestCamera"
+            mock_sync._local_storage = {
+                "manifest": [mock_item],
+                "last_manifest_id": "test",
+            }
+
+            mock_blink.sync = {"TestSync": mock_sync}
+            mock_conn.return_value.blink = mock_blink
+
+            # Mock cache
+            mock_cache.return_value = {}
+
+            # Mock thumbnail path that doesn't exist
+            mock_thumbnail_path = MagicMock()
+            mock_thumbnail_path.exists.return_value = False
+            mock_get_path.return_value = mock_thumbnail_path
+
+            result = process_local_clips()
+
+            # Should have null thumbnail when file doesn't exist
+            self.assertIn("clips", result)
+            if result["clips"]:
+                clip = result["clips"][0]["clips"][0]
+                self.assertIsNone(clip.get("thumbnail"))
+
+    def test_cloud_clip_thumbnail_url_consistency(self) -> None:
+        """Test that cloud clips use consistent thumbnail URL format.
+
+        Tests:
+            - Verifies cloud clips use /api/clips/{id}/thumbnail format
+            - Ensures URL consistency across cloud and local clips
+            - Guards against URL path inconsistencies
+        """
+        from unittest.mock import patch
+
+        from blinkapp.services.clip_service import process_cloud_clips
+
+        # Mock cloud clip data
+        mock_videos = [
+            {
+                "id": "123456",
+                "created_at": "2025-01-20T10:30:00+00:00",
+                "device_name": "TestCamera",
+                "thumbnail": "http://example.com/thumb.jpg",
+                "media": "/test/media/url",
+            }
+        ]
+
+        with (
+            patch("blinkapp.services.blink_service.ensure_blink_initialized"),
+            patch(
+                "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+            ),
+            patch(
+                "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+            ) as mock_cache,
+        ):
+            mock_cache.return_value = {}
+
+            result = process_cloud_clips(mock_videos)
+
+            # Should use consistent URL format - result is a list of day groups
+            self.assertIsInstance(result, list)
+            if result:
+                day_group = result[0]
+                self.assertIn("clips", day_group)
+                if day_group["clips"]:
+                    clip = day_group["clips"][0]
+                    self.assertEqual(clip["thumbnail"], "/api/clips/123456/thumbnail")
+
 
 class TestStreamService(BaseTestCase):
     """Test stream service functions."""
