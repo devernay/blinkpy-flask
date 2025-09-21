@@ -28,7 +28,6 @@ async function showLiveView(cameraId, cameraName) {
             currentLiveStream = {
                 cameraId: cameraId,
                 streamId: data.data.stream_id,
-                tcpUrl: data.data.tcp_url,
                 hlsUrl: hlsUrl
             };
 
@@ -37,7 +36,7 @@ async function showLiveView(cameraId, cameraName) {
             const video = document.getElementById('live-video');
 
             console.log('HLS URL:', hlsUrl);
-            console.log('TCP URL:', data.data.tcp_url);
+            // TCP URL is internal to backend, not exposed to frontend
 
             window.showView('live');
 
