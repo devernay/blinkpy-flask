@@ -115,12 +115,27 @@ def startup() -> None:
         # Load cached data after Blink connection is available
         # Note: These functions require Blink to be initialized, so they come after BlinkConnection setup
         try:
+            logger.info("Starting cache loading during startup")
+            logger.info("About to call load_camera_thumbnail_cache()")
             load_camera_thumbnail_cache()
-            # Restore cached clips metadata from previous sessions
-            load_clips_cache()
+            logger.info("load_camera_thumbnail_cache() completed")
         except RuntimeError as e:
-            # Blink not initialized yet, skip cache loading for now
-            logger.debug(f"Skipping cache loading during startup: {e}")
+            logger.warning(f"Skipping camera thumbnail cache loading: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error during camera thumbnail cache loading: {e}")
+
+        # Load clips cache (doesn't require Blink to be initialized)
+        try:
+            logger.info("About to call load_clips_cache()")
+            load_clips_cache()
+            logger.info("load_clips_cache() completed")
+        except Exception as e:
+            logger.error(f"Unexpected error during clips cache loading: {e}")
+            import traceback
+
+            logger.error(f"Traceback: {traceback.format_exc()}")
+
+        logger.info("Cache loading completed successfully")
         blink_connection.start()
 
         try:

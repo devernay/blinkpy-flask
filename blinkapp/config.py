@@ -38,6 +38,11 @@ class Config:
     """
 
     # ========================================================================
+    # Testing Configuration
+    # ========================================================================
+    TESTING_MODE: bool = False  # Enable testing mode (no external API calls)
+
+    # ========================================================================
     # Server Configuration
     # ========================================================================
     DEFAULT_HOST = "0.0.0.0"  # Default host to bind to (all interfaces)

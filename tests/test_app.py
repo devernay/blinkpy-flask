@@ -6591,11 +6591,11 @@ class TestCacheMaintenanceOperations(BaseTestCase):
 
         with patch("pathlib.Path.exists", return_value=True):
             with patch("pathlib.Path.glob", return_value=mock_files):
+                # Mock the global camera_thumbnail_cache variable
+                mock_cache = {}  # Use dict to support __setitem__
                 with patch(
-                    "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized"
-                ) as mock_ensure_cache:
-                    mock_cache = {}  # Use dict to support __setitem__
-                    mock_ensure_cache.return_value = mock_cache
+                    "blinkapp.services.cache_service.camera_thumbnail_cache", mock_cache
+                ):
                     load_camera_thumbnail_cache()
 
                     # Should populate cache with thumbnail data

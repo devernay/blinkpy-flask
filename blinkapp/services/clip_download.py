@@ -256,21 +256,51 @@ def download_local_clip(
             Returns:
                 tuple[Path | None, str]: Tuple of (file_path, error_message).
             """
-            """Download local clip asynchronously."""
             try:
                 # Prepare the clip for download (uploads to Blink cloud temporarily)
                 prepare_result = await local_item.prepare_download(blink_instance)
                 if not prepare_result:
                     return None, "Failed to prepare local clip for download"
 
-                # Download the clip to cache
-                download_success = await local_item.download_video(
-                    blink_instance, str(cached_filepath)
-                )
-                if not download_success:
-                    return None, "Failed to download local clip"
+                # Create temporary file for safe download
+                import tempfile
 
-                return cached_filepath, ""
+                cached_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+                with tempfile.NamedTemporaryFile(
+                    dir=cached_filepath.parent,
+                    prefix=f".{cached_filepath.name}.",
+                    suffix=".tmp",
+                    delete=False,
+                ) as temp_file:
+                    temp_path = Path(temp_file.name)
+
+                try:
+                    # Download to temporary file
+                    download_success = await local_item.download_video(
+                        blink_instance, str(temp_path)
+                    )
+
+                    if (
+                        download_success
+                        and temp_path.exists()
+                        and temp_path.stat().st_size > 0
+                    ):
+                        # Atomic move to final location
+                        temp_path.replace(cached_filepath)
+                        return cached_filepath, ""
+                    else:
+                        # Cleanup temp file on failure
+                        if temp_path.exists():
+                            temp_path.unlink()
+                        return None, "Failed to download local clip"
+
+                except Exception as e:
+                    # Cleanup temp file on exception
+                    if temp_path.exists():
+                        temp_path.unlink()
+                    raise e
+
             except Exception as e:
                 return None, f"Error downloading local clip: {e}"
 

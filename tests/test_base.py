@@ -366,6 +366,8 @@ def create_mock_blink_instance(
     save: Callable[[], None] | None = None,
     videos: CaseInsensitiveDict[list[dict[str, str | int]]] | None = None,
     key_required: bool = False,
+    start_return_value: bool | None = None,
+    setup_auth_methods: bool = False,
 ) -> Mock:
     """Create a mock blink instance with common methods.
 
@@ -452,6 +454,21 @@ def create_mock_blink_instance(
         mock_blink.start = start
     if save:
         mock_blink.save = save
+
+    # Add start method with return value
+    if start_return_value is not None:
+        from unittest.mock import AsyncMock
+
+        mock_blink.start = AsyncMock(return_value=start_return_value)
+
+    # Add auth methods
+    if setup_auth_methods:
+        from unittest.mock import AsyncMock
+
+        mock_blink.auth.send_auth_key = AsyncMock(return_value=True)
+        mock_blink.setup_post_verify = AsyncMock(return_value=True)
+        mock_blink.save = AsyncMock(return_value=True)
+
     return mock_blink
 
 
@@ -875,6 +892,62 @@ def create_mock_completed_process(returncode: int = 0, stdout: str = "") -> Mock
     return mock_process
 
 
+def create_mock_client_session(with_close: bool = False) -> Mock:
+    """Create a mock aiohttp ClientSession.
+
+    Args:
+        with_close: Whether to add close method
+
+    Returns:
+        Mock: Configured ClientSession mock
+    """
+    try:
+        from aiohttp import ClientSession
+    except ImportError:
+        # Fallback if aiohttp not available
+        ClientSession = object
+    from unittest.mock import AsyncMock
+
+    mock_session = Mock(spec=ClientSession)
+    if with_close:
+        mock_session.close = AsyncMock()
+    return mock_session
+
+
+def create_mock_context_manager(return_value=None) -> Mock:
+    """Create a mock context manager.
+
+    Args:
+        return_value: Value returned by __enter__
+
+    Returns:
+        Mock: Configured context manager mock
+    """
+    mock_context = Mock()
+    mock_context.return_value.__enter__ = Mock(spec=callable, return_value=return_value)
+    mock_context.return_value.__exit__ = Mock(spec=callable, return_value=None)
+    return mock_context
+
+
+def create_mock_logger(with_handler: bool = False) -> Mock | tuple[Mock, Mock]:
+    """Create a mock logger with optional handler.
+
+    Args:
+        with_handler: Whether to include a handler
+
+    Returns:
+        Mock or tuple: Logger mock, or (logger, handler) tuple
+    """
+    import logging
+
+    mock_logger = Mock(spec=logging.Logger)
+    if with_handler:
+        mock_handler = Mock(spec=logging.Handler)
+        mock_logger.addHandler = Mock()
+        return mock_logger, mock_handler
+    return mock_logger
+
+
 # Test constants
 class TestData:
     """Centralized test data constants."""
@@ -995,9 +1068,8 @@ def with_blink_auth(test_func: Callable[..., None]) -> Callable[..., None]:
                     mock_ensure_blink.return_value = mock_blink_instance
                     mock_get_instance.return_value = mock_blink_instance
 
-                    # Set up connection mock
-                    mock_connection = Mock(spec=["execute"])
-                    mock_connection.execute = Mock(spec=[])
+                    # Set up connection mock using factory
+                    mock_connection = create_mock_blink_connection()
                     mock_get_connection.return_value = mock_connection
 
                     return test_func(*args, **kwargs)

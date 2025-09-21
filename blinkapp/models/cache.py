@@ -236,7 +236,13 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, ClipCacheEntry]):
         """
         super().__init__(maxsize=maxsize)
 
-    def add_clip(self, clip_id: ClipId, clip_data: ClipCacheData) -> None:
+    def add_clip(
+        self,
+        clip_id: ClipId,
+        clip_data: ClipCacheData,
+        cached_at: float | None = None,
+        last_accessed: float | None = None,
+    ) -> None:
         """Add clip with automatic metadata enhancement.
 
         Stores clip data with additional tracking metadata for cache management
@@ -245,12 +251,17 @@ class ClipsCache(ThreadSafeLRUCache[ClipId, ClipCacheEntry]):
         Args:
             clip_id: Unique clip identifier
             clip_data: Clip information and metadata from Blink API
+            cached_at: Optional timestamp when clip was cached (defaults to current time)
+            last_accessed: Optional timestamp when clip was last accessed (defaults to current time)
         """
+        current_time = time.time()
         enhanced_data: ClipCacheEntry = {
             "clip_data": clip_data,
-            "cached_at": time.time(),  # When clip was added to cache
+            "cached_at": cached_at if cached_at is not None else current_time,
             "access_count": 0,  # Track access frequency
-            "last_accessed": time.time(),  # Most recent access time
+            "last_accessed": last_accessed
+            if last_accessed is not None
+            else current_time,
         }
         self[clip_id] = enhanced_data
 

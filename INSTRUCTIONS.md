@@ -22,3 +22,18 @@ Did you finish testing that all tests are properly named, and that they have a f
 Do all test docstrings have a "Tests:" section? If not, report the list of test missing the "Tests:" section in tests/test_verification_log.md, and we will work on fixing those docstrings. Also check that no test has "double docstrings" (two docstrings in a row, which are probably the result of buggy modifications). Merge "double docstrings" into a single one by reading the two texts and creating a single one (don't just concatenate them).
 
 Many "Tests:" section just say "Test functionality and behavior", which is not specific enough. fix this.
+
+# Instructions to fix bugs
+
+If the app exists before a clip was completely downloaded, or if clip download fails in the middle, is the partial clip download deleted properly? Same for camera thumbnail download and cloud storage clip thumbnail download. Add Unit tests for these (use the appropriate existing test classes).
+
+Maybe there's a safe way to do that at the system level: create file, download, and if I didn't confirm that the file was completely downloaded without error and the process exits, delete it
+
+Now answer the question: If the app exists before a clip was completely downloaded, or if clip download fails in the middle, is the partial clip download deleted properly?
+
+TODO=
+All tests you created recently must have a full Google-style docstring like the other tests. Also make sure you don't use unspec'ed mocks and use the mock factories from test_app.py.
+
+Factorize the safe-download behaviors.
+
+In the web app, in the settings panel, there should be a button to view the log file, which should open it in a new tab or window. The log file viewer should have its own URL, so that we can reload it. The log file should have a scrollable text area showing the latest application log.

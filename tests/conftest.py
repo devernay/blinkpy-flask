@@ -1,10 +1,76 @@
 """Pytest configuration for completely isolated testing."""
 
 import os
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any, TextIO
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def enable_testing_mode() -> Generator[None, None, None]:
+    """Enable testing mode to prevent external API calls."""
+    from blinkapp.config import Config
+
+    # Store original values
+    original_testing = getattr(Config, "TESTING_MODE", False)
+
+    # Enable testing mode
+    Config.TESTING_MODE = True
+
+    yield
+
+    # Restore original values
+    Config.TESTING_MODE = original_testing
+
+
+@pytest.fixture(autouse=True)
+def reset_global_state() -> Generator[None, None, None]:
+    """Reset all global state between tests."""
+    # Reset blink service globals
+    import blinkapp.services.blink_service as blink_service
+
+    blink_service._blink = None
+    blink_service._blink_connection = None
+
+    # Reset cache service globals
+    import blinkapp.services.cache_service as cache_service
+
+    cache_service.clips_cache = None
+    cache_service.camera_thumbnail_cache = None
+    cache_service._cache_paths = None
+
+    # Reset stream service globals
+    import blinkapp.services.stream_service as stream_service
+
+    stream_service.stream_manager = None
+
+    # Reset blinkapp path globals
+    import blinkapp
+
+    blinkapp._CACHE_DIR_PATH = None
+    blinkapp._CLIPS_CACHE_DIR_PATH = None
+    blinkapp._THUMBNAIL_CACHE_DIR_PATH = None
+    blinkapp._HLS_OUTPUT_DIR_PATH = None
+    blinkapp._CREDENTIALS_FILE_PATH = None
+    blinkapp._SETTINGS_FILE_PATH = None
+
+    yield
+
+    # Clean up after test
+    blink_service._blink = None
+    blink_service._blink_connection = None
+    cache_service.clips_cache = None
+    cache_service.camera_thumbnail_cache = None
+    cache_service._cache_paths = None
+    stream_service.stream_manager = None
+    blinkapp._CACHE_DIR_PATH = None
+    blinkapp._CLIPS_CACHE_DIR_PATH = None
+    blinkapp._THUMBNAIL_CACHE_DIR_PATH = None
+    blinkapp._HLS_OUTPUT_DIR_PATH = None
+    blinkapp._CREDENTIALS_FILE_PATH = None
+    blinkapp._SETTINGS_FILE_PATH = None
 
 
 @pytest.fixture(autouse=True, scope="session")

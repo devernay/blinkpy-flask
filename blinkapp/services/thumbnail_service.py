@@ -357,9 +357,23 @@ def _download_camera_thumbnail(
         if not response_data:
             raise Exception("Failed to download thumbnail")
 
-        # Save to cache
-        with open(file_path, "wb") as f:
-            f.write(response_data)
+        # Save to cache using safe download
+        from blinkapp.utils.safe_download import safe_download
+
+        def write_thumbnail(temp_path: Path) -> bool:
+            """Write thumbnail data to temporary path.
+
+            Args:
+                temp_path: Path to write thumbnail data
+
+            Returns:
+                bool: True if write succeeded, False otherwise
+            """
+            temp_path.write_bytes(response_data)
+            return True
+
+        if not safe_download(file_path, write_thumbnail):
+            raise Exception("Failed to save thumbnail")
 
         # Update cache entry
         cache[camera_id] = CameraThumbnailCacheEntry(

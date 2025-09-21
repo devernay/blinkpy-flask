@@ -14,7 +14,9 @@ DO NOT add integration tests here - those belong in test_integration_*.py files.
 DO NOT add Flask route tests here - those belong in test_integration_api.py.
 """
 
+import tempfile
 import unittest
+from pathlib import Path
 from typing import Never
 from unittest.mock import Mock, patch
 
@@ -1017,6 +1019,104 @@ class TestErrors(BaseTestCase):
         # This should not raise AttributeError due to Mock
         result = getattr(mock_obj, "nonexistent_attr", "default")
         self.assertIsNotNone(result)
+
+
+class TestSafeDownload(BaseTestCase):
+    """Test safe download utilities."""
+
+    def test_safe_download_success(self) -> None:
+        """Test safe download with successful completion.
+
+        Verifies that the safe download utility correctly handles successful
+        downloads by writing to a temporary file first and then atomically
+        moving to the final location.
+
+        Tests:
+            - Temporary file creation and usage
+            - Atomic move to final location on success
+            - Proper cleanup of temporary files
+            - Final file contains expected content
+        """
+        from blinkapp.utils.safe_download import safe_download
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target_path = Path(temp_dir) / "test_file.mp4"
+
+            def mock_download(temp_path: Path) -> bool:
+                temp_path.write_bytes(b"complete_download_data")
+                return True
+
+            result = safe_download(target_path, mock_download)
+
+            self.assertTrue(result)
+            self.assertTrue(target_path.exists())
+            self.assertEqual(target_path.read_bytes(), b"complete_download_data")
+
+            # No temp files should remain
+            temp_files = list(Path(temp_dir).glob(".*tmp"))
+            self.assertEqual(len(temp_files), 0)
+
+    def test_safe_download_failure_cleanup(self) -> None:
+        """Test safe download cleans up partial files on failure.
+
+        Verifies that when a download function returns False (indicating failure),
+        the safe download utility properly cleans up any temporary files that
+        were created during the download attempt.
+
+        Tests:
+            - Download function failure handling
+            - Temporary file cleanup on failure
+            - No partial files left behind
+            - Proper return value on failure
+        """
+        from blinkapp.utils.safe_download import safe_download
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target_path = Path(temp_dir) / "test_file.mp4"
+
+            def mock_download_fail(temp_path: Path) -> bool:
+                temp_path.write_bytes(b"partial_data")
+                return False  # Simulate failure
+
+            result = safe_download(target_path, mock_download_fail)
+
+            self.assertFalse(result)
+            self.assertFalse(target_path.exists())
+
+            # No temp files should remain
+            temp_files = list(Path(temp_dir).glob(".*tmp"))
+            self.assertEqual(len(temp_files), 0)
+
+    def test_safe_download_exception_cleanup(self) -> None:
+        """Test safe download cleans up on exception.
+
+        Verifies that when a download function raises an exception,
+        the safe download utility properly handles the exception and
+        cleans up any temporary files that were created.
+
+        Tests:
+            - Exception handling during download
+            - Temporary file cleanup on exception
+            - No partial files left behind
+            - Proper return value on exception
+        """
+        from blinkapp.utils.safe_download import safe_download
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target_path = Path(temp_dir) / "test_file.mp4"
+
+            def mock_download_exception(temp_path: Path) -> bool:
+                temp_path.write_bytes(b"partial_data")
+                raise Exception("Download interrupted")
+
+            result = safe_download(target_path, mock_download_exception)
+
+            self.assertFalse(result)
+            self.assertFalse(target_path.exists())
+
+            # No temp files should remain
+            temp_files = list(Path(temp_dir).glob(".*tmp"))
+            self.assertEqual(len(temp_files), 0)
 
 
 class TestErrorHandlers(BaseTestCase):

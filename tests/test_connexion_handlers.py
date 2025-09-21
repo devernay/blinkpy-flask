@@ -209,7 +209,7 @@ class TestSystemHandlers(BaseTestCase):
         from tests.test_base import create_mock_sync
 
         mock_sync = create_mock_sync()
-        mock_sync.async_arm.return_value = AsyncMock(spec=callable)
+        mock_sync.async_arm = AsyncMock(spec=callable, return_value=None)
         mock_validator.return_value = (mock_sync, None)
 
         # Mock the connection object returned by ensure_blink_connection_initialized

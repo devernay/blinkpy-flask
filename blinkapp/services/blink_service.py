@@ -49,7 +49,20 @@ def get_blink_instance() -> Blink | None:
 
     Returns:
         Blink | None: The global Blink instance if available, None otherwise.
+
+    Raises:
+        RuntimeError: If in testing mode and no proper mock is set up
     """
+    from blinkapp.config import Config
+
+    # In testing mode, prevent real Blink usage
+    if Config.TESTING_MODE:
+        if _blink is None:
+            raise RuntimeError(
+                "Testing mode enabled but no Blink instance mocked. "
+                + "Tests must properly mock blink instances."
+            )
+
     return _blink
 
 
@@ -96,8 +109,18 @@ def ensure_blink_initialized() -> Blink:
         Initialized blink instance
 
     Raises:
-        RuntimeError: If blink hasn't been initialized
+        RuntimeError: If blink hasn't been initialized or in testing mode without mocks
     """
+    from blinkapp.config import Config
+
+    # In testing mode, prevent real Blink usage
+    if Config.TESTING_MODE:
+        if _blink is None:
+            raise RuntimeError(
+                "Testing mode enabled but no Blink instance mocked. "
+                + "Tests must properly mock ensure_blink_initialized()."
+            )
+
     if _blink is None:
         raise RuntimeError("Blink not initialized. Call initialize_blink() first.")
     return _blink

@@ -176,15 +176,23 @@ def load_camera_thumbnail_cache() -> None:
         - Missing cameras: Files removed if system available
         - File system errors: Logged, operation continues
     """
+    logger.info("load_camera_thumbnail_cache() function called")
     from pathlib import Path
 
     from blinkapp.models.ids import CameraId
-    from blinkapp.services.blink_service import ensure_blink_initialized
 
-    blink = ensure_blink_initialized()
+    # Initialize cache without requiring Blink
+    try:
+        ensure_camera_thumbnail_cache_initialized()
+    except RuntimeError:
+        # Blink not initialized yet, initialize cache directly
+        from blinkapp.models.cache import CameraThumbnailCache
 
-    # Ensure thumbnail cache is initialized
-    camera_thumbnail_cache = ensure_camera_thumbnail_cache_initialized()
+        global camera_thumbnail_cache
+        if camera_thumbnail_cache is None:
+            camera_thumbnail_cache = CameraThumbnailCache(
+                maxsize=100
+            )  # Use default size
 
     assert get_thumbnail_cache_dir() is not None
     cache_dir = Path(get_thumbnail_cache_dir())
@@ -193,16 +201,23 @@ def load_camera_thumbnail_cache() -> None:
         return
 
     try:
-        # Get valid camera IDs from current system
+        # Get valid camera IDs from current system (if available)
         valid_camera_ids: set[str] = set()
-        if blink and blink.available:
-            # Type guard: blink is definitely Blink here, not None
-            assert blink is not None
-            for _, sync in blink.sync.items():
-                for _, cam in sync.cameras.items():
-                    # Use isinstance to properly narrow the type
-                    if isinstance(cam, BlinkCamera) and cam.camera_id is not None:
-                        valid_camera_ids.add(str(cam.camera_id))
+        try:
+            from blinkapp.services.blink_service import ensure_blink_initialized
+
+            blink = ensure_blink_initialized()
+            if blink and blink.available:
+                # Type guard: blink is definitely Blink here, not None
+                assert blink is not None
+                for _, sync in blink.sync.items():
+                    for _, cam in sync.cameras.items():
+                        # Use isinstance to properly narrow the type
+                        if isinstance(cam, BlinkCamera) and cam.camera_id is not None:
+                            valid_camera_ids.add(str(cam.camera_id))
+        except RuntimeError:
+            # Blink not initialized yet, skip validation (keep all thumbnails)
+            pass
 
         # Group thumbnails by camera ID
         camera_thumbnails: dict[str, list[tuple[int, str, Path]]] = {}
@@ -242,15 +257,19 @@ def load_camera_thumbnail_cache() -> None:
 
         # Keep only the newest thumbnail per camera
         for camera_id, thumbnails in camera_thumbnails.items():
+            if thumbnails is None:
+                continue
+
             # Sort by timestamp (newest first)
             thumbnails.sort(key=lambda x: x[0], reverse=True)
 
             # Keep the newest, mark others for removal
-            if thumbnails:
+            if len(thumbnails) > 0:
                 newest_ts, newest_filename, _ = thumbnails[0]
                 from blinkapp.models.cache import CameraThumbnailCacheEntry
 
-                camera_thumbnail_cache[CameraId(camera_id)] = CameraThumbnailCacheEntry(
+                cache = ensure_camera_thumbnail_cache_initialized()
+                cache[CameraId(camera_id)] = CameraThumbnailCacheEntry(
                     timestamp=newest_ts,
                     filename=newest_filename,
                 )
@@ -383,20 +402,50 @@ def clear_all_caches() -> dict[str, str]:
 
 def load_clips_cache() -> None:
     """Load clips cache directory and populate memory cache."""
+    logger.info("load_clips_cache() function called")
     from pathlib import Path
 
     from blinkapp.models.ids import ClipId
 
     if not get_clips_cache_dir():
+        logger.info("Clips cache directory not configured, skipping cache loading")
         return
 
     cache_dir = Path(get_clips_cache_dir())
     if not cache_dir.exists():
+        logger.info(f"Clips cache directory does not exist: {cache_dir}")
         return
 
-    clips_cache_instance = ensure_clips_cache_initialized()
+    logger.info(f"Loading clips cache from directory: {cache_dir}")
 
-    for video_file in cache_dir.glob("*.mp4"):
+    # Initialize cache without requiring Blink
+    try:
+        clips_cache_instance = ensure_clips_cache_initialized()
+    except RuntimeError:
+        # Blink not initialized yet, initialize cache directly
+        from blinkapp.models.cache import ClipsCache
+
+        global clips_cache
+        if clips_cache is None:
+            clips_cache = ClipsCache(maxsize=50)  # Use default size
+        clips_cache_instance = clips_cache
+
+    # Track statistics
+    local_clips_restored = 0
+    cloud_clips_restored = 0
+    thumbnails_generated = 0
+    orphan_files: list[str] = []
+
+    # Get all files in cache directory
+    all_files = list(cache_dir.glob("*"))
+    video_files = list(cache_dir.glob("*.mp4"))
+    thumbnail_files = list(cache_dir.glob("*.jpg"))
+
+    logger.info(
+        f"Found {len(all_files)} total files, {len(video_files)} videos, {len(thumbnail_files)} thumbnails"
+    )
+
+    for video_file in video_files:
         filename = video_file.name
         try:
             # Handle ClipId format: SyncName~ItemId.mp4
@@ -420,16 +469,15 @@ def load_clips_cache() -> None:
                 "media_url": str(video_file),
             }
 
-            # Create enhanced data with file timestamps
-            from blinkapp.models.cache import ClipCacheEntry
+            clips_cache_instance.add_clip(
+                clip_id, clip_data, cached_at=file_mtime, last_accessed=file_mtime
+            )
 
-            enhanced_data: ClipCacheEntry = {
-                "clip_data": clip_data,
-                "cached_at": file_mtime,  # Use file modification time
-                "access_count": 0,
-                "last_accessed": file_mtime,  # Use file modification time
-            }
-            clips_cache_instance[clip_id] = enhanced_data
+            # Track statistics
+            if clip_id.is_local():
+                local_clips_restored += 1
+            else:
+                cloud_clips_restored += 1
 
             # Generate thumbnail if missing
             if not thumbnail_path.exists():
@@ -451,6 +499,7 @@ def load_clips_cache() -> None:
                             sync_name,
                             str(item_id),
                         )
+                        thumbnails_generated += 1
                         logger.debug(
                             f"Queued thumbnail generation for cached clip {clip_id}"
                         )
@@ -461,6 +510,36 @@ def load_clips_cache() -> None:
 
         except Exception as e:
             logger.debug(f"Error processing cached clip {filename}: {e}")
+            orphan_files.append(filename)
+
+    # Check for orphan files (files that don't match expected patterns)
+    expected_files: set[str] = set()
+    for video_file in video_files:
+        clip_id_str = video_file.stem
+        expected_files.add(f"{clip_id_str}.mp4")
+        expected_files.add(f"{clip_id_str}.jpg")
+
+    for file_path in all_files:
+        if file_path.is_file() and file_path.name not in expected_files:
+            orphan_files.append(file_path.name)
+
+    # Log summary
+    total_restored = local_clips_restored + cloud_clips_restored
+    logger.info(
+        f"Cache loading complete: {total_restored} clips restored ({local_clips_restored} local, {cloud_clips_restored} cloud)"
+    )
+
+    if thumbnails_generated > 0:
+        logger.info(
+            f"Queued thumbnail generation for {thumbnails_generated} clips missing thumbnails"
+        )
+
+    if orphan_files:
+        logger.warning(
+            f"Found {len(orphan_files)} orphan files in cache directory: {orphan_files}"
+        )
+    else:
+        logger.info("No orphan files found in cache directory")
 
 
 def clear_camera_thumbnail_cache_files() -> None:

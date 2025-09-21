@@ -18,8 +18,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import requests
-
 if TYPE_CHECKING:
     from blinkapp.models.ids import ClipId
 
@@ -85,13 +83,59 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                 clip_url = cached_clip.get("media_url")
                 assert clip_url is not None  # We already checked above
 
-                # Download clip content
-                response = requests.get(clip_url, timeout=Config.HTTP_TIMEOUT)
-                response.raise_for_status()
+                # Download clip content using authenticated connection
+                from blinkapp.services.blink_service import (
+                    ensure_blink_connection_initialized,
+                )
+                from blinkapp.utils.safe_download import safe_download
 
-                # Save to cache
-                with open(clip_path, "wb") as f:
-                    f.write(response.content)
+                def download_clip(temp_path: Path) -> bool:
+                    """Download clip to temporary path using authenticated connection.
+
+                    Args:
+                        temp_path: Path to write downloaded clip data
+
+                    Returns:
+                        bool: True if download succeeded, False otherwise
+                    """
+                    try:
+                        blink_connection = ensure_blink_connection_initialized()
+
+                        async def download_with_auth() -> bytes | None:
+                            """Download clip data using authenticated Blink connection.
+
+                            Returns:
+                                bytes | None: Downloaded clip data or None if failed
+                            """
+                            import aiohttp
+
+                            blink = blink_connection.blink
+                            if not blink or not blink.auth.check_key_required:
+                                return None
+
+                            async with aiohttp.ClientSession() as session:
+                                headers = blink.auth.header
+                                timeout = aiohttp.ClientTimeout(
+                                    total=Config.HTTP_TIMEOUT
+                                )
+                                async with session.get(
+                                    clip_url, headers=headers, timeout=timeout
+                                ) as response:
+                                    response.raise_for_status()
+                                    return await response.read()
+
+                        response_data = blink_connection.execute(download_with_auth())
+                        if response_data:
+                            temp_path.write_bytes(response_data)
+                            return True
+                        return False
+                    except Exception as e:
+                        logger.error(f"Error downloading clip {clip_id}: {e}")
+                        return False
+
+                if not safe_download(clip_path, download_clip):
+                    logger.error(f"Failed to download cloud clip {clip_id}")
+                    return
 
                 logger.info(f"Downloaded cloud clip {clip_id} to {clip_path}")
 
@@ -139,7 +183,6 @@ def process_local_clip_background(
 
     try:
         # Check if thumbnail is already cached
-
         clips_cache_dir = get_clips_cache_dir()
         thumbnail_path = get_thumbnail_path(clip_id)
 
@@ -147,29 +190,70 @@ def process_local_clip_background(
             logger.debug(f"Thumbnail already cached for local clip {clip_id}")
             return
 
-        from blinkapp.services.blink_service import ensure_blink_initialized
+        # Generate thumbnail directly from local video file (no Blink needed)
+        video_path = clips_cache_dir / f"{clip_id}.mp4"
+
+        if not video_path.exists():
+            logger.warning(
+                f"Video file not found for local clip {clip_id}: {video_path}"
+            )
+            return
 
         try:
-            blink_instance = ensure_blink_initialized()
-        except RuntimeError:
-            logger.warning(f"Blink not available for processing local clip {clip_id}")
+            # Generate thumbnail from local video file using FFmpeg
+            import subprocess
+
+            # Ensure thumbnail directory exists
+            thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Extract frame at 1 second mark
+            cmd = [
+                "ffmpeg",
+                "-i",
+                str(video_path),
+                "-ss",
+                "1",
+                "-vframes",
+                "1",
+                "-y",
+                str(thumbnail_path),
+            ]
+
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                logger.info(f"Generated thumbnail for local clip {clip_id}")
+            else:
+                logger.warning(
+                    f"Failed to generate thumbnail for {clip_id}: {result.stderr}"
+                )
+        except Exception as e:
+            logger.error(f"Error generating thumbnail for local clip {clip_id}: {e}")
             return
 
-        if not blink_instance.available:
-            logger.warning(f"Blink not available for processing local clip {clip_id}")
+    except Exception as e:
+        logger.error(f"Error in process_local_clip_background for {clip_id}: {e}")
+        import traceback
+
+        logger.debug(f"Traceback: {traceback.format_exc()}")
+
+        # Get blink instance to access sync modules
+        from blinkapp.services.blink_service import get_blink_instance
+
+        blink_instance = get_blink_instance()
+        if not blink_instance or not blink_instance.sync:
+            logger.error(f"Blink instance not available for clip {clip_id}")
             return
 
-        # Get sync module
-        sync_dict = blink_instance.sync
-        if sync_name not in sync_dict:
+        if sync_name not in blink_instance.sync:
             logger.error(f"Sync module '{sync_name}' not found for clip {clip_id}")
             return
 
-        sync_module = sync_dict[sync_name]
+        sync_module = blink_instance.sync[sync_name]
         if not sync_module.local_storage:
             logger.warning(f"Local storage not available for clip {clip_id}")
             return
 
+        clips_cache_dir = get_clips_cache_dir()
         clips_cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Download clip if not cached
@@ -229,6 +313,7 @@ def process_local_clip_background(
                     generate_local_clip_thumbnail,
                 )
 
+                thumbnail_path = get_thumbnail_path(clip_id)
                 generate_local_clip_thumbnail(clip_id, video_path, thumbnail_path)
                 logger.info(
                     f"Successfully generated thumbnail for local clip {clip_id} from cached video"
@@ -260,11 +345,10 @@ def process_local_clip_background(
                 filepath=clip_path,
                 thumbnail=thumbnail_path if thumbnail_path.exists() else None,
             )
-        except Exception as e:
-            logger.error(f"Error updating cache for local clip {clip_id}: {e}")
-
-    except Exception as e:
-        logger.error(f"Error in process_local_clip_background for {clip_id}: {e}")
+        except Exception as cache_error:
+            logger.error(
+                f"Error updating cache for local clip {clip_id}: {cache_error}"
+            )
 
 
 def download_and_cache_cloud_thumbnail(
@@ -305,18 +389,57 @@ def download_and_cache_cloud_thumbnail(
 
         # Download thumbnail if not cached
         if not thumbnail_path.exists():
-            try:
-                response = requests.get(thumbnail_url, timeout=Config.HTTP_TIMEOUT)
-                response.raise_for_status()
+            from blinkapp.services.blink_service import (
+                ensure_blink_connection_initialized,
+            )
+            from blinkapp.utils.safe_download import safe_download
 
-                with open(thumbnail_path, "wb") as f:
-                    f.write(response.content)
+            def download_thumbnail(temp_path: Path) -> bool:
+                """Download thumbnail to temporary path using authenticated connection.
 
-                logger.debug(f"Downloaded thumbnail for clip {clip_id}")
+                Args:
+                    temp_path: Path to write downloaded thumbnail data
 
-            except Exception as e:
-                logger.error(f"Error downloading thumbnail for clip {clip_id}: {e}")
+                Returns:
+                    bool: True if download succeeded, False otherwise
+                """
+                try:
+                    blink_connection = ensure_blink_connection_initialized()
+
+                    async def download_with_auth() -> bytes | None:
+                        """Download thumbnail data using authenticated Blink connection.
+
+                        Returns:
+                            bytes | None: Downloaded thumbnail data or None if failed
+                        """
+                        import aiohttp
+
+                        blink = blink_connection.blink
+                        if not blink or not blink.auth.check_key_required:
+                            return None
+
+                        async with aiohttp.ClientSession() as session:
+                            headers = blink.auth.header
+                            timeout = aiohttp.ClientTimeout(total=Config.HTTP_TIMEOUT)
+                            async with session.get(
+                                thumbnail_url, headers=headers, timeout=timeout
+                            ) as response:
+                                response.raise_for_status()
+                                return await response.read()
+
+                    response_data = blink_connection.execute(download_with_auth())
+                    if response_data:
+                        temp_path.write_bytes(response_data)
+                        return True
+                    return False
+                except Exception as e:
+                    logger.error(f"Error downloading thumbnail for clip {clip_id}: {e}")
+                    return False
+
+            if not safe_download(thumbnail_path, download_thumbnail):
                 return None
+
+            logger.debug(f"Downloaded thumbnail for clip {clip_id}")
 
         return thumbnail_path
 

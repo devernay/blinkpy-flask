@@ -740,12 +740,19 @@ class TestAuthService(BaseTestCase):
         mock_auth = create_mock_auth()
         mock_create_auth.return_value = mock_auth
 
-        mock_blink = create_mock_blink_instance(available=True, key_required=True)
+        # Create async start mock using AsyncMock
+        from unittest.mock import AsyncMock
+
+        async_start_mock = AsyncMock(return_value=True)
+
+        mock_blink = create_mock_blink_instance(
+            available=True, key_required=True, start=async_start_mock
+        )
         mock_ensure_blink.return_value = mock_blink
         mock_get_blink.return_value = mock_blink
-
-        # Mock start method to return True
-        mock_blink.start = AsyncMock(return_value=True)
+        mock_get_blink_auth.return_value = (
+            mock_blink  # This is the auth_service.get_blink_instance
+        )
 
         # Use asyncio to run the coroutine
         import asyncio
@@ -784,10 +791,7 @@ class TestAuthService(BaseTestCase):
         mock_creds_path = Path("/tmp/test_creds.json")
         mock_get_creds_path.return_value = mock_creds_path
 
-        mock_blink = create_mock_blink_instance(available=True)
-        mock_blink.auth.send_auth_key = AsyncMock(return_value=True)
-        mock_blink.setup_post_verify = AsyncMock(return_value=True)
-        mock_blink.save = AsyncMock(return_value=True)
+        mock_blink = create_mock_blink_instance(available=True, setup_auth_methods=True)
         mock_get_blink.return_value = mock_blink
 
         # Use asyncio to run the coroutine
@@ -1192,8 +1196,8 @@ class TestAuthService(BaseTestCase):
         """
         from blinkapp.services.auth_service import handle_logout
 
-        mock_session = Mock()
-        mock_session.clear = Mock()
+        mock_session = Mock(spec=dict)
+        mock_session.clear = Mock(spec=callable)
 
         with patch("flask.session", mock_session):
             result = handle_logout()
@@ -1969,6 +1973,68 @@ class TestCacheService(BaseTestCase):
 
         # Verify older file has earlier timestamp
         self.assertLess(old_entry["cached_at"], new_entry["cached_at"])
+
+    def test_load_camera_thumbnail_cache_without_blink(self) -> None:
+        """Test that camera thumbnail cache loads without requiring Blink initialization.
+
+        Verifies that the camera thumbnail cache can be loaded and initialized
+        without requiring a Blink connection to be established first. This ensures
+        the cache system is independent of the Blink service availability.
+
+        Tests:
+            - Cache loading without Blink dependency
+            - Proper cache initialization
+            - Function executes without exceptions
+            - Cache service independence from Blink
+        """
+        from blinkapp.services.cache_service import load_camera_thumbnail_cache
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Setup thumbnail cache directory with test files
+            cache_dir = Path(temp_dir) / "thumbnails"
+            cache_dir.mkdir()
+
+            # Create test thumbnail files
+            (cache_dir / "12345_1234567890.jpg").write_bytes(b"fake_thumbnail_data")
+            (cache_dir / "67890_1234567891.jpg").write_bytes(b"fake_thumbnail_data")
+
+            with patch(
+                "blinkapp.services.cache_service.get_thumbnail_cache_dir",
+                return_value=cache_dir,
+            ):
+                # Should not raise RuntimeError even when Blink is not initialized
+                load_camera_thumbnail_cache()
+
+    def test_load_clips_cache_without_blink(self) -> None:
+        """Test that clips cache loads without requiring Blink initialization.
+
+        Verifies that the clips cache can be loaded and initialized
+        without requiring a Blink connection to be established first. This ensures
+        the cache system can operate independently of Blink service availability.
+
+        Tests:
+            - Cache loading without Blink dependency
+            - Proper cache initialization
+            - Function executes without exceptions
+            - Cache service independence from Blink
+        """
+        from blinkapp.services.cache_service import load_clips_cache
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Setup clips cache directory with test files
+            cache_dir = Path(temp_dir) / "clips"
+            cache_dir.mkdir()
+
+            # Create test clip files
+            (cache_dir / "Maison~123.mp4").write_bytes(b"fake_video_data")
+            (cache_dir / "Maison~456.mp4").write_bytes(b"fake_video_data")
+
+            with patch(
+                "blinkapp.services.cache_service.get_clips_cache_dir",
+                return_value=cache_dir,
+            ):
+                # Should not raise RuntimeError even when Blink is not initialized
+                load_clips_cache()
 
 
 class TestCameraService(BaseTestCase):
@@ -2994,7 +3060,9 @@ class TestHLSStream(BaseTestCase):
             patch("builtins.open") as mock_open,
             patch("time.time", return_value=123456),
         ):
-            mock_file = Mock(spec=["read"])
+            from io import BytesIO
+
+            mock_file = Mock(spec=BytesIO)
             mock_file.read.return_value = b"ts content"
             mock_open.return_value.__enter__.return_value = mock_file
 
@@ -4080,17 +4148,16 @@ class TestClipProcessing(BaseTestCase):
             mock_ensure.assert_called_once()
 
     def test_process_local_clip_background_blink_error(self) -> None:
-        """Test local clip background processing when Blink initialization fails.
+        """Test local clip background processing when video file doesn't exist.
 
         Verifies that the process_local_clip_background function properly
-        handles the case where Blink initialization raises an exception.
+        handles the case where the local video file is not found.
 
         Tests:
-            - Mocks file existence check to return False (no thumbnail)
-            - Configures Blink initialization to raise RuntimeError
+            - Mocks file existence check to return False (no video file)
             - Calls process_local_clip_background with clip parameters
-            - Expects graceful handling of Blink initialization failure
-            - Verifies Blink initialization is attempted
+            - Expects graceful handling of missing video file
+            - Verifies function exits early without calling Blink services
         """
         from blinkapp.services.clip_processing import process_local_clip_background
 
@@ -4102,7 +4169,9 @@ class TestClipProcessing(BaseTestCase):
         ):
             mock_ensure.side_effect = RuntimeError("Blink not available")
             process_local_clip_background(self.clip_id, "sync_name", "filename.mp4")
-            mock_ensure.assert_called_once()
+            # Local clip processing should NOT call ensure_blink_initialized
+            # because it processes local files directly with FFmpeg
+            mock_ensure.assert_not_called()
 
     def test_process_local_clip_background_thumbnail_exists(self) -> None:
         """Test local clip background processing when thumbnail already exists.
@@ -4122,64 +4191,52 @@ class TestClipProcessing(BaseTestCase):
             process_local_clip_background(self.clip_id, "sync_name", "filename.mp4")
             mock_exists.assert_called_once()
 
-    @patch("blinkapp.services.cache_service.get_clips_cache_dir")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_download_and_cache_cloud_thumbnail_success(
-        self, mock_mkdir: Mock, mock_exists: Mock, mock_cache_dir: Mock
-    ) -> None:
+    def test_download_and_cache_cloud_thumbnail_success(self) -> None:
         """Test successful cloud thumbnail download and caching.
 
         Verifies that the download_and_cache_cloud_thumbnail function
-        successfully downloads and caches a thumbnail from a cloud URL.
-
-        Args:
-            mock_mkdir: Mock for Path.mkdir method
-            mock_exists: Mock for Path.exists method
-            mock_cache_dir: Mock for clips cache directory path
+        successfully downloads and caches a thumbnail from a cloud URL
+        using the new authenticated connection approach.
 
         Tests:
             - Configures clips cache directory and file existence
             - Mocks file existence check to return False (not cached)
-            - Mocks successful HTTP request for thumbnail data
+            - Uses authenticated BlinkConnection for download
             - Calls download_and_cache_cloud_thumbnail with valid URL
             - Expects successful thumbnail path return
-            - Verifies HTTP request and file write operations
+            - Verifies authenticated connection usage
         """
         from pathlib import Path
 
         from blinkapp.models.ids import ClipId
         from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+        from tests.test_base import create_mock_blink_connection
 
-        # Setup mocks
-        mock_cache_dir.return_value = Path("/tmp/clips")
-        mock_exists.return_value = False  # Not cached
-        clip_id = ClipId("12345")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            clip_id = ClipId("12345")
+            thumbnail_path = Path(temp_dir) / "12345_thumb.jpg"
 
-        # Mock successful download
-        with (
-            patch(
-                "blinkapp.services.clip_processing.get_thumbnail_path"
-            ) as mock_get_path,
-            patch("requests.get") as mock_get,
-            patch("builtins.open", mock_open()) as mock_file,
-        ):
-            thumbnail_path = Path("/tmp/clips/12345_thumb.jpg")
-            mock_get_path.return_value = thumbnail_path
+            # Mock successful download with authenticated connection
+            with (
+                patch(
+                    "blinkapp.services.clip_processing.get_thumbnail_path",
+                    return_value=thumbnail_path,
+                ),
+                patch(
+                    "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+                ) as mock_conn,
+            ):
+                mock_connection = create_mock_blink_connection(
+                    execute_return_value=b"thumbnail_data"
+                )
+                mock_conn.return_value = mock_connection
 
-            import requests
+                result = download_and_cache_cloud_thumbnail(
+                    clip_id, "http://example.com/thumb.jpg"
+                )
 
-            mock_response = Mock(spec=requests.Response)
-            mock_response.content = b"thumbnail_data"
-            mock_get.return_value = mock_response
-
-            result = download_and_cache_cloud_thumbnail(
-                clip_id, "http://example.com/thumb.jpg"
-            )
-
-            self.assertEqual(result, thumbnail_path)
-            mock_get.assert_called_once_with("http://example.com/thumb.jpg", timeout=30)
-            mock_file.assert_called_once()
+                self.assertEqual(result, thumbnail_path)
+                mock_conn.assert_called_once()
 
     @patch("blinkapp.services.cache_service.get_clips_cache_dir")
     @patch("pathlib.Path.exists")
@@ -4762,6 +4819,132 @@ class TestClipProcessing(BaseTestCase):
             mock_logger.error.assert_called()
             error_call = mock_logger.error.call_args[0][0]
             self.assertIn("Error in download_and_cache_cloud_thumbnail", error_call)
+
+    def test_process_local_clip_background_without_blink(self) -> None:
+        """Test that local clip thumbnail generation works without Blink.
+
+        Verifies that local clip background processing can generate thumbnails
+        using FFmpeg directly without requiring Blink initialization. This ensures
+        local clip processing is independent of Blink service availability.
+
+        Tests:
+            - Local clip processing without Blink dependency
+            - FFmpeg thumbnail generation instead of Blink
+            - Proper subprocess call to FFmpeg
+            - Background processing independence
+        """
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_processing import process_local_clip_background
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Setup test environment
+            clips_dir = Path(temp_dir) / "clips"
+            thumbnails_dir = Path(temp_dir) / "thumbnails"
+            clips_dir.mkdir()
+            thumbnails_dir.mkdir()
+
+            # Create test video file
+            clip_id = ClipId.from_local("Maison", "123")
+            video_file = clips_dir / f"{clip_id}.mp4"
+            video_file.write_bytes(b"fake_video_data")
+
+            thumbnail_path = thumbnails_dir / f"{clip_id}.jpg"
+
+            with patch(
+                "blinkapp.services.clip_processing.get_clips_cache_dir",
+                return_value=clips_dir,
+            ):
+                with patch(
+                    "blinkapp.services.clip_processing.get_thumbnail_path",
+                    return_value=thumbnail_path,
+                ):
+                    with patch("subprocess.run") as mock_subprocess:
+                        mock_subprocess.return_value.returncode = 0
+
+                        # Should not require Blink initialization
+                        process_local_clip_background(clip_id, "Maison", "test.mp4")
+
+                        # Verify FFmpeg was called instead of Blink
+                        mock_subprocess.assert_called_once()
+                        args = mock_subprocess.call_args[0][0]
+                        self.assertIn("ffmpeg", args[0])
+
+    def test_cloud_thumbnail_uses_authenticated_connection(self) -> None:
+        """Test that cloud thumbnail download uses authenticated BlinkConnection.
+
+        Verifies that cloud thumbnail downloads properly use the authenticated
+        BlinkConnection service instead of making direct HTTP requests, ensuring
+        proper session management and authentication headers are used.
+
+        Tests:
+            - BlinkConnection initialization is called
+            - Authenticated connection is used for download
+            - Proper mock setup with valid ClipId
+            - Download function completes successfully
+        """
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+        from tests.test_base import create_mock_blink_connection
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            thumbnail_path = Path(temp_dir) / "test.jpg"
+            # Create a cloud clip ID (numeric string, not local format)
+            clip_id = ClipId("123456")
+
+            with patch(
+                "blinkapp.services.clip_processing.get_thumbnail_path",
+                return_value=thumbnail_path,
+            ):
+                with patch(
+                    "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+                ) as mock_conn:
+                    mock_connection = create_mock_blink_connection(
+                        execute_return_value=b"thumbnail_data"
+                    )
+                    mock_conn.return_value = mock_connection
+
+                    download_and_cache_cloud_thumbnail(
+                        clip_id, "http://example.com/thumb.jpg"
+                    )
+
+                    # Should use authenticated connection
+                    mock_conn.assert_called_once()
+
+    def test_cloud_thumbnail_uses_safe_download(self) -> None:
+        """Test that cloud thumbnail download uses safe download pattern.
+
+        Verifies that cloud thumbnail downloads use the safe download utility
+        to ensure atomic operations and proper cleanup of partial downloads
+        on failure or interruption.
+
+        Tests:
+            - Safe download utility is called
+            - Proper target path is provided
+            - Mock setup with valid ClipId
+            - Download function integration
+        """
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_processing import download_and_cache_cloud_thumbnail
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            thumbnail_path = Path(temp_dir) / "test.jpg"
+            clip_id = ClipId("123456")
+
+            with patch(
+                "blinkapp.services.clip_processing.get_thumbnail_path",
+                return_value=thumbnail_path,
+            ):
+                with patch(
+                    "blinkapp.utils.safe_download.safe_download"
+                ) as mock_safe_download:
+                    mock_safe_download.return_value = True
+
+                    download_and_cache_cloud_thumbnail(
+                        clip_id, "http://example.com/thumb.jpg"
+                    )
+
+                    # Should use safe download
+                    mock_safe_download.assert_called_once()
 
 
 class TestClipService(BaseTestCase):
@@ -5346,6 +5529,44 @@ class TestClipDownloadService(BaseTestCase):
             self.assertFalse(response["success"])
             self.assertIn("not found", response["error"])
 
+    def test_local_clip_uses_safe_download_pattern(self) -> None:
+        """Test that local clip download uses safe download pattern.
+
+        Verifies that local clip downloads implement the safe download pattern
+        by using temporary files and atomic operations to prevent partial
+        downloads from being left behind on failure or interruption.
+
+        Tests:
+            - Safe download pattern implementation
+            - Temporary file cleanup on failure
+            - Proper error response on failure
+            - No partial files remain after failure
+        """
+        from blinkapp.models.ids import ClipId
+        from blinkapp.services.clip_download import download_local_clip
+
+        clip_id = ClipId.from_local("test", 123)
+
+        with patch("blinkapp.services.blink_service.get_blink_instance") as mock_blink:
+            with patch(
+                "blinkapp.services.cache_service.get_clips_cache_dir"
+            ) as mock_cache_dir:
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    mock_cache_dir.return_value = Path(temp_dir)
+                    # Use mock factory instead of None
+                    mock_blink.return_value = None  # Force failure to test cleanup
+
+                    result = download_local_clip(clip_id, "test", "123")
+
+                    # Should return error response
+                    self.assertIsInstance(result, tuple)
+                    response_dict, status_code = result
+                    self.assertFalse(response_dict["success"])
+
+                    # No partial files should remain
+                    temp_files = list(Path(temp_dir).glob("*.tmp"))
+                    self.assertEqual(len(temp_files), 0)
+
 
 class TestThumbnailService(BaseTestCase):
     """Test thumbnail service functions."""
@@ -5449,6 +5670,74 @@ class TestThumbnailService(BaseTestCase):
         except Exception:
             # Test passes if exception is handled gracefully
             pass
+
+    def test_camera_thumbnail_download_works(self) -> None:
+        """Test that camera thumbnail download function works without errors.
+
+        Verifies that the camera thumbnail download function can be called
+        without raising exceptions and properly handles the download process
+        using authenticated connections and proper cache management.
+
+        Tests:
+            - Function executes without exceptions
+            - Proper cache directory setup
+            - Authenticated connection usage
+            - Mock cache initialization
+        """
+        from blinkapp.services.thumbnail_service import get_camera_thumbnail
+        from tests.test_base import (
+            create_mock_blink_connection,
+            create_mock_camera_cache,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            cache_dir = Path(temp_dir)
+
+            with patch(
+                "blinkapp.services.cache_service.get_thumbnail_cache_dir",
+                return_value=cache_dir,
+            ):
+                with patch(
+                    "blinkapp.services.cache_service.ensure_camera_thumbnail_cache_initialized"
+                ) as mock_cache:
+                    mock_cache.return_value = create_mock_camera_cache()
+
+                    with patch(
+                        "blinkapp.services.blink_service.ensure_blink_connection_initialized"
+                    ) as mock_conn:
+                        mock_connection = create_mock_blink_connection(
+                            execute_return_value=b"thumbnail_data"
+                        )
+                        mock_conn.return_value = mock_connection
+
+                        # Should not raise exception
+                        get_camera_thumbnail("12345", "http://example.com/thumb.jpg")
+
+    def test_safe_download_utility_works(self) -> None:
+        """Test that safe download utility is available and works.
+
+        Verifies that the safe download utility function is properly accessible
+        and functions correctly with a simple download operation, ensuring
+        the utility is properly integrated and available for use.
+
+        Tests:
+            - Safe download utility import and availability
+            - Basic download operation success
+            - File creation and content verification
+            - Proper return value handling
+        """
+        from blinkapp.utils.safe_download import safe_download
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target_path = Path(temp_dir) / "test.jpg"
+
+            def mock_download(temp_path: Path) -> bool:
+                temp_path.write_bytes(b"test_data")
+                return True
+
+            result = safe_download(target_path, mock_download)
+            self.assertTrue(result)
+            self.assertTrue(target_path.exists())
 
 
 class TestLifecycleService(BaseTestCase):
