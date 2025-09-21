@@ -475,23 +475,29 @@ async function processDownloadQueue() {
 
     isDownloading = true;
     const config = window.App.getConfig();
+    let errorCount = 0;
+    let successCount = 0;
 
     // Process clips sequentially to avoid overwhelming server
     while (downloadQueue.length > 0) {
         const clip = downloadQueue.shift();
 
         try {
-            // Trigger server-side processing (download + thumbnail generation)
-            const response = await fetch(`/api/clips/${clip.id}/thumbnail`, {
-                method: 'POST'
-            });
+            // First download the clip (which triggers thumbnail generation)
+            const downloadResponse = await fetch(`/api/clips/${clip.id}/download`);
 
-            if (response.ok) {
-                // Wait for thumbnail to be generated before continuing
+            if (downloadResponse.ok) {
+                // Wait for thumbnail to be generated
                 await waitForThumbnail(clip.id);
+                successCount++;
+            } else {
+                const errorData = await downloadResponse.json().catch(() => ({}));
+                console.error(`Failed to download clip ${clip.id}:`, errorData.error || 'Unknown error');
+                errorCount++;
             }
         } catch (error) {
             console.error(`Error processing clip ${clip.id}:`, error);
+            errorCount++;
         }
 
         // Update button text
@@ -500,24 +506,51 @@ async function processDownloadQueue() {
             if (downloadQueue.length > 0) {
                 btn.textContent = `Updating ${downloadQueue.length} clips...`;
             } else {
-                // Recalculate missing clips count
-                let missingCount = 0;
-                document.querySelectorAll('.clip-item').forEach(clipItem => {
-                    const thumbnail = clipItem.querySelector('.clip-thumbnail');
-                    const clipId = thumbnail?.getAttribute('data-clip-id');
-                    if (clipId && clipId.includes('~') && thumbnail?.classList.contains('clip-placeholder')) {
-                        missingCount++;
-                    }
-                });
-
-                if (missingCount > 0) {
-                    btn.textContent = `Update ${missingCount} Clip${missingCount !== 1 ? 's' : ''}`;
+                // Show completion status
+                if (errorCount > 0) {
+                    btn.textContent = `Updated ${successCount}, ${errorCount} failed`;
+                    btn.style.background = '#FF6B6B';
+                    setTimeout(() => {
+                        btn.style.background = '#007AFF';
+                        updateButtonState(btn);
+                    }, 3000);
                 } else {
-                    btn.style.display = 'none';
+                    btn.textContent = `Updated ${successCount} clips`;
+                    btn.style.background = '#28A745';
+                    setTimeout(() => {
+                        btn.style.background = '#007AFF';
+                        updateButtonState(btn);
+                    }, 2000);
                 }
                 btn.disabled = false;
             }
         }
+    }
+
+    isDownloading = false;
+}
+
+/**
+ * Update button state based on remaining clips
+ */
+function updateButtonState(btn) {
+    // Recalculate missing clips count
+    let missingCount = 0;
+    document.querySelectorAll('.clip-item').forEach(clipItem => {
+        const thumbnail = clipItem.querySelector('.clip-thumbnail');
+        const clipId = thumbnail?.getAttribute('data-clip-id');
+        if (clipId && clipId.includes('~') && thumbnail?.classList.contains('clip-placeholder')) {
+            missingCount++;
+        }
+    });
+
+    if (missingCount > 0) {
+        btn.textContent = `Update ${missingCount} Clip${missingCount !== 1 ? 's' : ''}`;
+        btn.style.display = 'block';
+    } else {
+        btn.style.display = 'none';
+    }
+}
     }
 
     isDownloading = false;
@@ -584,5 +617,6 @@ window.Clips = {
     formatClipDate,
     downloadAllLocalClips,
     processDownloadQueue,
+    updateButtonState,
     waitForThumbnail
 };
