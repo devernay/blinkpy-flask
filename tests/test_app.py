@@ -2886,7 +2886,7 @@ class TestClipProcessing(BaseTestCase):
             # Verify processing was called
             mock_process.assert_called_once()
 
-        # Test case 2: Invalid clip ID format
+        # Test case 2: Invalid clip ID format (too many parts)
         response = self.client.post(
             "/api/clips/invalid~format~too~many~parts/thumbnail"
         )
