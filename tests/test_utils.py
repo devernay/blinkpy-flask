@@ -267,8 +267,8 @@ class TestFormatters(BaseTestCase):
 
         result = format_clips_by_day(clips)
         self.assertEqual(len(result), 1)
-        # The function formats dates as "January 01, 2024"
-        self.assertEqual(result[0]["date"], "January 01, 2024")
+        # The function formats dates with day of week
+        self.assertEqual(result[0]["date"], "Monday, January 01, 2024")
         self.assertEqual(len(result[0]["clips"]), 1)
 
     def test_format_time_duration_seconds(self) -> None:
