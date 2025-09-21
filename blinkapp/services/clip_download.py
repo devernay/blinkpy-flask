@@ -300,6 +300,17 @@ def download_local_clip(
             )
 
         if filepath and filepath.exists():
+            # Update clips cache with filepath
+            from blinkapp.services.cache_service import ensure_clips_cache_initialized
+
+            clips_cache = ensure_clips_cache_initialized()
+            if clip_id in clips_cache:
+                clips_cache[clip_id]["filepath"] = filepath
+            else:
+                from blinkapp.models.cache import ClipCacheEntry
+
+                clips_cache[clip_id] = ClipCacheEntry(filepath=filepath)
+
             # Trigger background thumbnail generation for newly downloaded local clip
             import threading
 
