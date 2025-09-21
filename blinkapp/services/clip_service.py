@@ -162,7 +162,7 @@ def process_cloud_clips(
             # Create day group if it doesn't exist
             if day_key not in clips_by_day:
                 clips_by_day[day_key] = {
-                    "date": created_at.strftime("%B %d, %Y"),
+                    "date": day_key,  # Use simple date key, formatter will handle display
                     "clips": [],
                 }
 
@@ -305,7 +305,7 @@ def process_local_clips(
                         # Create day group if it doesn't exist
                         if day_key not in clips_by_day:
                             clips_by_day[day_key] = {
-                                "date": created_at.strftime("%B %d, %Y"),
+                                "date": day_key,  # Use simple date key, formatter will handle display
                                 "clips": [],
                             }
 

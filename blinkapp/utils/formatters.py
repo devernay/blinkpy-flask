@@ -39,11 +39,22 @@ def format_clips_by_day(clips: list[ClipData]) -> list[ClipDayGroup]:
                     str(clip["created_at"]).replace("Z", "+00:00")
                 )
                 date_key = dt.strftime("%Y-%m-%d")
-                date_display = dt.strftime("%B %d, %Y")
+
+                # Format date with day of week and conditional year
+                current_year = datetime.now(UTC).year
+                if dt.year == current_year:
+                    date_display = dt.strftime("%A, %B %d")  # "Monday, January 15"
+                else:
+                    date_display = dt.strftime(
+                        "%A, %B %d, %Y"
+                    )  # "Monday, January 15, 2024"
             else:
                 dt = datetime.now(UTC)
                 date_key = dt.strftime("%Y-%m-%d")
-                date_display = dt.strftime("%B %d, %Y")
+
+                # Format date with day of week and conditional year
+                current_year = dt.year
+                date_display = dt.strftime("%A, %B %d")  # Current date, no year needed
 
             if date_key not in days:
                 days[date_key] = {"date": date_display, "clips": []}
