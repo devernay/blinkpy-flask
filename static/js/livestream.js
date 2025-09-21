@@ -22,18 +22,21 @@ async function showLiveView(cameraId, cameraName) {
 
         if (response.ok && data.success) {
             // Store current stream info for cleanup
+            // Fix: Use correct property names from API response
+            const hlsUrl = data.data.playlist_url || data.data.stream_url || data.data.hls_url;
+
             currentLiveStream = {
                 cameraId: cameraId,
                 streamId: data.data.stream_id,
                 tcpUrl: data.data.tcp_url,
-                hlsUrl: data.data.hls_url
+                hlsUrl: hlsUrl
             };
 
             // Show live view
             document.getElementById('live-view-title').textContent = `${cameraName} Live View`;
             const video = document.getElementById('live-video');
 
-            console.log('HLS URL:', data.data.hls_url);
+            console.log('HLS URL:', hlsUrl);
             console.log('TCP URL:', data.data.tcp_url);
 
             window.showView('live');
@@ -44,10 +47,10 @@ async function showLiveView(cameraId, cameraName) {
             const checkStream = async () => {
                 attempts++;
                 try {
-                    const streamResponse = await fetch(data.data.hls_url);
+                    const streamResponse = await fetch(hlsUrl);
                     if (streamResponse.ok) {
                         console.log('HLS playlist ready, loading video');
-                        video.src = data.data.hls_url;
+                        video.src = hlsUrl;
                         video.load();
                     } else if (attempts < maxAttempts) {
                         console.log(`HLS playlist not ready (attempt ${attempts}/${maxAttempts}), retrying...`);
