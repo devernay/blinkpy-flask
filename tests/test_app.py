@@ -3873,7 +3873,7 @@ class TestClipDownloadOperations(BaseTestCase):
                     self.assertEqual(response.status_code, 200)
 
     @with_blink_auth
-    def test_process_clip_thumbnail_generation(self, mock_cache: Mock) -> None:
+    def test_process_clip_thumbnail_generation(self) -> None:
         """Test clip processing for thumbnail generation.
 
         Verifies that clip processing properly generates thumbnails
@@ -3885,22 +3885,27 @@ class TestClipDownloadOperations(BaseTestCase):
             - Cache integration for clip processing
             - Thumbnail generation workflow
         """
-        # Mock cached clip
-        mock_cache.get.return_value = {
-            "file_path": "/tmp/test_clip.mp4",
-            "thumbnail_path": "/tmp/test_thumb.jpg",
-        }
+        with patch(
+            "blinkapp.services.cache_service.ensure_clips_cache_initialized"
+        ) as mock_cache:
+            # Mock cached clip
+            mock_cache.return_value = {
+                "test_clip": {
+                    "file_path": "/tmp/test_clip.mp4",
+                    "thumbnail_path": "/tmp/test_thumb.jpg",
+                }
+            }
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("subprocess.run") as mock_subprocess:
-                mock_subprocess.return_value = Mock(
-                    spec=subprocess.CompletedProcess, returncode=0
-                )
+            with patch("pathlib.Path.exists", return_value=True):
+                with patch("subprocess.run") as mock_subprocess:
+                    mock_subprocess.return_value = Mock(
+                        spec=subprocess.CompletedProcess, returncode=0
+                    )
 
-                response = self.client.post("/api/clips/test_clip/thumbnail")  # type: TestResponse
+                    response = self.client.post("/api/clips/test_clip/thumbnail")  # type: TestResponse
 
-                # Should successfully generate thumbnail
-                self.assertEqual(response.status_code, 200)
+                    # Should successfully generate thumbnail
+                    self.assertEqual(response.status_code, 200)
 
 
 class TestLocalClipOperations(BaseTestCase):
