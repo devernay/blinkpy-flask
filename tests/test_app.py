@@ -867,11 +867,8 @@ class TestFlaskApp(FlaskTestCase):
         self.assertEqual(len(data["data"]["systems"]), 1)
         self.assertEqual(data["data"]["systems"][0]["name"], "Test System")
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_devices_invalid_network_id(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_api_devices_invalid_network_id(self, mock_ensure_blink: Mock) -> None:
         """Test devices API endpoint with invalid network ID format.
 
         Verifies that the devices API properly handles and rejects
@@ -879,7 +876,6 @@ class TestFlaskApp(FlaskTestCase):
 
         Args:
             mock_ensure_blink: Mock for Blink connection ensuring
-            mock_get_instance: Mock for Blink instance retrieval
 
         Tests:
             - Invalid network ID format rejection and validation
@@ -891,7 +887,6 @@ class TestFlaskApp(FlaskTestCase):
         # Mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         mock_blink_instance = create_mock_blink_instance(
             available=True,

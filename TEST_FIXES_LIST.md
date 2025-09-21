@@ -11,6 +11,7 @@
 
 ### get_blink_instance patches
 - [✓] test_api_systems_success - DONE: Removed redundant get_blink_instance patch
+- [✓] test_api_devices_invalid_network_id - DONE: Removed redundant get_blink_instance patch
 - [ ] test_get_systems_success
 - [ ] test_get_systems_with_devices_success
 - [ ] test_get_system_details_success
