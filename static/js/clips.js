@@ -483,16 +483,18 @@ async function processDownloadQueue() {
         const clip = downloadQueue.shift();
 
         try {
-            // First download the clip (which triggers thumbnail generation)
-            const downloadResponse = await fetch(`/api/clips/${clip.id}/download`);
+            // Trigger server-side processing (download + thumbnail generation)
+            const response = await fetch(`/api/clips/${clip.id}/thumbnail`, {
+                method: 'POST'
+            });
 
-            if (downloadResponse.ok) {
+            if (response.ok) {
                 // Wait for thumbnail to be generated
                 await waitForThumbnail(clip.id);
                 successCount++;
             } else {
-                const errorData = await downloadResponse.json().catch(() => ({}));
-                console.error(`Failed to download clip ${clip.id}:`, errorData.error || 'Unknown error');
+                const errorData = await response.json().catch(() => ({}));
+                console.error(`Failed to process clip ${clip.id}:`, errorData.error || 'Unknown error');
                 errorCount++;
             }
         } catch (error) {

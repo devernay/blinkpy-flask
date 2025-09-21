@@ -194,10 +194,30 @@ def process_local_clip_background(
         video_path = clips_cache_dir / f"{clip_id}.mp4"
 
         if not video_path.exists():
-            logger.warning(
-                f"Video file not found for local clip {clip_id}: {video_path}"
+            logger.info(
+                f"Video file not found for local clip {clip_id}, downloading first..."
             )
-            return
+
+            # Download the clip first
+            from ..services.clip_download import download_local_clip
+
+            try:
+                # Extract sync_name and item_id from clip_id
+                sync_name_extracted, item_id = clip_id.get_local_parts()
+
+                # Download the clip (this will cache it)
+                result = download_local_clip(clip_id, sync_name_extracted, str(item_id))
+
+                # Check if download was successful by checking if file now exists
+                if not video_path.exists():
+                    logger.error(f"Failed to download local clip {clip_id}")
+                    return
+
+                logger.info(f"Successfully downloaded local clip {clip_id}")
+
+            except Exception as e:
+                logger.error(f"Error downloading local clip {clip_id}: {e}")
+                return
 
         try:
             # Generate thumbnail from local video file using FFmpeg
