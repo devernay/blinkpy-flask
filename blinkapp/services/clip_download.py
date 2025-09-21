@@ -300,6 +300,21 @@ def download_local_clip(
             )
 
         if filepath and filepath.exists():
+            # Trigger background thumbnail generation for newly downloaded local clip
+            import threading
+
+            from blinkapp.services.clip_processing import process_local_clip_background
+
+            logger.info(
+                f"Triggering background thumbnail generation for downloaded local clip {clip_id}"
+            )
+            thread = threading.Thread(
+                target=process_local_clip_background,
+                args=(clip_id, sync_name or "unknown", item_id or "unknown"),
+            )
+            thread.daemon = True
+            thread.start()
+
             return flask.send_file(
                 filepath,
                 as_attachment=True,
