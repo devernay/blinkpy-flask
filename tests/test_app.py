@@ -828,12 +828,10 @@ class TestFlaskApp(FlaskTestCase):
         self.assertIn("Unable to connect to your Blink system", data["error"])
 
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_api_systems_success(
         self,
         mock_ensure_blink: Mock,
-        mock_get_instance: Mock,
         mock_ensure_connection: Mock,
     ) -> None:
         """Test successful systems API endpoint with complete mock setup.
@@ -843,7 +841,6 @@ class TestFlaskApp(FlaskTestCase):
 
         Args:
             mock_ensure_blink: Mock for Blink service initialization
-            mock_get_instance: Mock for Blink instance retrieval
             mock_ensure_connection: Mock for Blink connection initialization
 
         Tests:
@@ -861,7 +858,6 @@ class TestFlaskApp(FlaskTestCase):
         )
 
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         response = self.client.get("/api/systems")  # type: TestResponse
 

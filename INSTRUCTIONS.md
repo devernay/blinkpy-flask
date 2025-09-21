@@ -42,11 +42,16 @@ The thumbnail endpoint is returning "Thumbnail not found" even though the file e
 
 I clicked "Update 4 clips" in the UI, and saw that in the console: "WARNING: Video file not found for local clip Maison~3647673306: /Users/deverf/Documents/third_party/blinkpy-flask/cache/clips/Maison~3647673306.mp4". The UI is never updated and no error message is shown. 1. Could the UI display a message when an action fails, rather than giving no feedback? Check that all other UI actions display a proper error message in case of failure. 2. fix the "Update xx clips" functionality, which should download all local-storage clips that are not in the cache and generate thumbnail, and update the thumbnails in the list as soon as they are available.
 
-TODO:
 Is strict patching still enabled? Make a note in the code to NEVER disable it permanently. Let us keep the test quality bar high!
 
 Why is ensure_blink_connection_initialized in blink_service and not blink_connection? Maybe it's the right place, but do you have an explanation?
 
 Shouldn't we use create_mock_blink_connection each time we patch ensure_blink_connection_initialized or get_blink_connection, and create_mock_blink_instance each time we patch ensure_blink_initialized or get_blink_instance? Can you check on existing passing tests if it breaks them or makes them better to systematically use mock factories?
+
+what about when we patch get_blink_connection or get_blink_instance? shouldn't we patch ensure_blink_connection_initialized and ensure_blink_initialized instead?
+
+Start systematically updating these tests to use the correct ensure_* function patches. But start by making a list of tests to fix. Each time you start fixing a test, first check that it passes, then fix it, then check that it passes after fixing, then mark it as done in the list and commit. If the test does't pass before fixing, mark it as "broken", and git commit. If the fixed test does't pass after fixing, revert the change, mark it as "breaking", and git commit. Then go to the next test. Be careful that some test may actually test when get_blink_connection or get_blink_instance return None.
+
+TODO:
 
 When I am on the "Clips" or "Settings" tab, I would like the URL to change so that I stay on the same tab when reloading the page. This could be done either by adding "#clips" or "#settings" to the page URL, or by using a different base URL (and thus a separate flask route and connexion handler). Which solution do you recommend?
