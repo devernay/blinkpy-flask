@@ -465,14 +465,18 @@ def init_camera_stream(
         # Initialize livestream on camera to get TCP stream
         camera_stream_result = connection.execute(camera.init_livestream())
         if camera_stream_result is None:
-            logger.error(f"Failed to initialize livestream for camera {camera_id}")
+            logger.error(
+                f"Failed to initialize livestream for camera {camera_id} - camera may not support live streaming"
+            )
             return None, None
 
         # Type assertion: we know init_livestream returns BlinkLiveStream
         from blinkpy.livestream import BlinkLiveStream
 
         if not isinstance(camera_stream_result, BlinkLiveStream):
-            logger.error(f"Unexpected stream type: {type(camera_stream_result)}")
+            logger.error(
+                f"Unexpected stream type for camera {camera_id}: {type(camera_stream_result)}"
+            )
             return None, None
 
         camera_stream = camera_stream_result
