@@ -1117,6 +1117,66 @@
           }
         }
       }
+    },
+    "/api/log": {
+      "x-openapi-router-controller": "blinkapp.connexion_handlers.logs",
+      "get": {
+        "summary": "Get application logs with filtering",
+        "operationId": "get_logs",
+        "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+              "default": "DEBUG"
+            },
+            "description": "Minimum log level to show"
+          },
+          {
+            "name": "module",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "*"
+            },
+            "description": "Module name to filter by, or '*' for all modules"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Log entries and available modules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {"type": "string"},
+                          "module": {"type": "string"},
+                          "level": {"type": "string"},
+                          "message": {"type": "string"}
+                        }
+                      }
+                    },
+                    "modules": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

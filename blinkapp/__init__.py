@@ -46,6 +46,7 @@ from blinkapp.routes.admin import setup_admin_routes
 from blinkapp.routes.auth import setup_auth_routes
 from blinkapp.routes.camera import setup_camera_routes
 from blinkapp.routes.clips import setup_clips_routes
+from blinkapp.routes.logs import setup_logs_routes
 from blinkapp.routes.settings import setup_settings_routes
 from blinkapp.routes.streaming import setup_streaming_routes
 from blinkapp.routes.system import setup_system_routes
@@ -109,6 +110,9 @@ setup_system_routes(app)
 
 # Set up settings routes
 setup_settings_routes(app)
+
+# Set up logs routes
+setup_logs_routes(app)
 
 # Set up admin routes
 setup_admin_routes(app)

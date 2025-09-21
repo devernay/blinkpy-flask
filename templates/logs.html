@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Logs - Blink Camera</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .log-container {
+            height: 600px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            padding: 10px;
+            background: #2c3e50;
+            color: #ecf0f1;
+        }
+        .log-entry {
+            margin-bottom: 2px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-DEBUG { color: #95a5a6; }
+        .log-INFO { color: #3498db; }
+        .log-WARNING { color: #f39c12; }
+        .log-ERROR { color: #e74c3c; }
+        .log-CRITICAL { color: #c0392b; font-weight: bold; }
+        .timestamp { color: #7f8c8d; }
+        .module { color: #9b59b6; }
+        .controls {
+            padding: 15px;
+            background: #ecf0f1;
+            border-top: 1px solid #bdc3c7;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        select, button {
+            padding: 8px 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Application Logs</h1>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <div class="loading">Loading logs...</div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="levelFilter">Level:</label>
+                <select id="levelFilter">
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="moduleFilter">Module:</label>
+                <select id="moduleFilter">
+                    <option value="*">* (All)</option>
+                </select>
+            </div>
+
+            <button id="updateBtn">Update</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLogs = [];
+        let availableModules = [];
+
+        function loadLogs() {
+            const level = document.getElementById('levelFilter').value;
+            const module = document.getElementById('moduleFilter').value;
+
+            const params = new URLSearchParams({ level, module });
+
+            fetch(`/api/log?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('logContainer').innerHTML =
+                            `<div class="error">Error: ${data.error}</div>`;
+                        return;
+                    }
+
+                    currentLogs = data.logs;
+                    availableModules = data.modules;
+                    updateModuleFilter();
+                    displayLogs();
+                })
+                .catch(error => {
+                    document.getElementById('logContainer').innerHTML =
+                        `<div class="error">Failed to load logs: ${error.message}</div>`;
+                });
+        }
+
+        function updateModuleFilter() {
+            const moduleSelect = document.getElementById('moduleFilter');
+            const currentValue = moduleSelect.value;
+
+            moduleSelect.innerHTML = '<option value="*">* (All)</option>';
+
+            availableModules.forEach(module => {
+                const option = document.createElement('option');
+                option.value = module;
+                option.textContent = module;
+                moduleSelect.appendChild(option);
+            });
+
+            if (availableModules.includes(currentValue) || currentValue === '*') {
+                moduleSelect.value = currentValue;
+            }
+        }
+
+        function displayLogs() {
+            const container = document.getElementById('logContainer');
+
+            if (currentLogs.length === 0) {
+                container.innerHTML = '<div class="loading">No log entries found.</div>';
+                return;
+            }
+
+            const logHtml = currentLogs.map(entry => {
+                const levelClass = `log-${entry.level}`;
+                return `<div class="log-entry ${levelClass}">` +
+                    `<span class="timestamp">${entry.timestamp}</span> - ` +
+                    `<span class="module">${entry.module}</span> - ` +
+                    `<span class="level">${entry.level}</span> - ` +
+                    `${escapeHtml(entry.message)}` +
+                    `</div>`;
+            }).join('');
+
+            container.innerHTML = logHtml;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('updateBtn').addEventListener('click', () => location.reload());
+        document.getElementById('levelFilter').addEventListener('change', loadLogs);
+        document.getElementById('moduleFilter').addEventListener('change', loadLogs);
+
+        loadLogs();
+    </script>
+</body>
+</html>

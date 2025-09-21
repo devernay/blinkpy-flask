@@ -92,7 +92,18 @@ class Config:
     LOG_FILE = "blink_app.log"  # Application log file (relative to cache dir)
     LOG_BACKUP_COUNT = 10  # Number of rotated log files to keep (total)
     LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB log file size limit before rotation
-    SECRET_KEY = "your-secret-key-here"  # Flask session secret (override in production)
+
+    @classmethod
+    def get_log_file_path(cls) -> str:
+        """Get the full path to the application log file.
+
+        Returns:
+            str: Full path to the log file
+        """
+        from pathlib import Path
+
+        cache_dir = Path(cls.DEFAULT_CACHE_DIR)
+        return str(cache_dir / cls.LOG_FILE)
 
     # ========================================================================
     # Network and HTTP Configuration

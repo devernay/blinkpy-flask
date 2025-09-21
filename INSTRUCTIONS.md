@@ -31,9 +31,9 @@ Maybe there's a safe way to do that at the system level: create file, download, 
 
 Now answer the question: If the app exists before a clip was completely downloaded, or if clip download fails in the middle, is the partial clip download deleted properly?
 
-TODO=
-All tests you created recently must have a full Google-style docstring like the other tests. Also make sure you don't use unspec'ed mocks and use the mock factories from test_app.py.
-
-Factorize the safe-download behaviors.
-
-In the web app, in the settings panel, there should be a button to view the log file, which should open it in a new tab or window. The log file viewer should have its own URL, so that we can reload it. The log file should have a scrollable text area showing the latest application log.
+In the web app, in the settings panel, there should be a button to view the log file, which should open it in a new tab or window. The log file viewer should have its own URL, so that we can reload it. The log file should have a scrollable text area showing the latest application log. The log file viewer should by default show the end of the log.
+At the bottom, there should be:
+- a "Update" button, which reloads the log (a simple implementation would be to just reload the log viewer page)
+- a "Level:" pulldown which allows to filter messages which have a level higher (or equal to) than the selected logging level (see logging levels from the logging module) - default is DEBUG
+- a "Module:" pulldown with the list of loggers names sorted alphabetically, which allows filtering only the selected component. Default is "*", meaning all components.
+The API entry point should be /api/log. The flask route should be a thin wrapper over a connexion handler, just like the other routes. Also add the new API entry points to api.json, with the proper operationId, and add unit tests for both the flask route and the connexion handler.
