@@ -26,7 +26,11 @@ def setup_logs_routes(app: Flask) -> None:
     # Add API route for logs
     @app.route("/api/log")
     def api_log_route() -> dict | tuple[dict, int]:
-        """API endpoint for log data."""
+        """API endpoint for log data.
+
+        Returns:
+            dict | tuple[dict, int]: Log data response or error response with status code.
+        """
         from flask import request
 
         from ..connexion_handlers.logs import get_logs
