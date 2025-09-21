@@ -22,3 +22,16 @@ def setup_logs_routes(app: Flask) -> None:
         app: Flask application instance to register routes with.
     """
     app.register_blueprint(logs_bp)
+
+    # Add API route for logs
+    @app.route("/api/log")
+    def api_log_route() -> dict | tuple[dict, int]:
+        """API endpoint for log data."""
+        from flask import request
+
+        from ..connexion_handlers.logs import get_logs
+
+        level = request.args.get("level", "DEBUG")
+        module = request.args.get("module", "*")
+
+        return get_logs(level=level, module=module)
