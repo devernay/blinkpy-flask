@@ -67,6 +67,14 @@ def safe_download_bytes(target_path: Path, data: bytes) -> bool:
     """
 
     def write_bytes(temp_path: Path) -> bool:
+        """Write bytes data to temporary path.
+
+        Args:
+            temp_path: Path to write bytes data to
+
+        Returns:
+            bool: Always returns True on successful write
+        """
         temp_path.write_bytes(data)
         return True
 

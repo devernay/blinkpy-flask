@@ -340,6 +340,7 @@ test_connexion_schema.py::TestConnexionSchemaValidation::test_streaming_endpoint
 test_connexion_schema.py::TestConnexionSchemaValidation::test_system_endpoints_response_schema
 test_connexion_schema.py::TestConnexionSchemaValidation::test_thumbnails_endpoints_response_schema
 test_docstrings.py::TestDocstrings::test_all_functions_have_complete_docstrings
+test_docstrings.py::TestDocstrings::test_all_test_functions_have_tests_section
 test_docstrings.py::TestDocstrings::test_docstring_examples
 test_models.py::TestBaseId::test_base_id_get_pattern_not_implemented
 test_models.py::TestBaseId::test_base_id_get_type_name_not_implemented
@@ -540,7 +541,7 @@ test_services.py::TestAuthService::test_validate_credentials_valid_expansion
 test_services.py::TestAuthService::test_validate_credentials_whitespace_only
 test_services.py::TestAuthService::test_verify_2fa_and_save_success
 test_services.py::TestBlinkService::test_blink_connection_access
-test_services.py::TestBlinkService::test_initialize_blink_2fa_required
+test_services.py::TestBlinkService::test_initialize_blink_2fa_required_alt
 test_services.py::TestBlinkService::test_initialize_blink_success
 test_services.py::TestCacheService::test_cache_instance_access
 test_services.py::TestCacheService::test_cache_service_stats
@@ -551,14 +552,19 @@ test_services.py::TestCacheService::test_ensure_cache_directory
 test_services.py::TestCacheService::test_ensure_cache_paths_cache_dir_none
 test_services.py::TestCacheService::test_ensure_cache_paths_clips_dir_none
 test_services.py::TestCacheService::test_ensure_cache_paths_credentials_file_none
+test_services.py::TestCacheService::test_ensure_cache_paths_not_initialized_raises_error
 test_services.py::TestCacheService::test_ensure_cache_paths_thumbnail_dir_none
 test_services.py::TestCacheService::test_ensure_camera_thumbnail_cache_initialized_after_init
 test_services.py::TestCacheService::test_ensure_clips_cache_initialized_after_init
 test_services.py::TestCacheService::test_initialize_caches
+test_services.py::TestCacheService::test_load_camera_thumbnail_cache_without_blink
+test_services.py::TestCacheService::test_load_clips_cache_preserves_file_timestamps
+test_services.py::TestCacheService::test_load_clips_cache_without_blink
 test_services.py::TestCacheService::test_validate_cache_directory
 test_services.py::TestCameraService::test_find_camera_by_id_blink_unavailable
 test_services.py::TestCameraService::test_find_camera_by_id_not_found
 test_services.py::TestCameraService::test_find_camera_by_id_success
+test_services.py::TestClipDownload::test_clip_and_thumbnail_matching_basenames
 test_services.py::TestClipDownload::test_download_clip_common_exception
 test_services.py::TestClipDownload::test_download_clip_common_file_not_found
 test_services.py::TestClipDownload::test_download_clip_common_success
@@ -585,6 +591,9 @@ test_services.py::TestClipDownloadService::test_download_cloud_clip_failure
 test_services.py::TestClipDownloadService::test_download_cloud_clip_success
 test_services.py::TestClipDownloadService::test_download_local_clip_not_found
 test_services.py::TestClipDownloadService::test_download_local_clip_success
+test_services.py::TestClipDownloadService::test_local_clip_uses_safe_download_pattern
+test_services.py::TestClipProcessing::test_cloud_thumbnail_uses_authenticated_connection
+test_services.py::TestClipProcessing::test_cloud_thumbnail_uses_safe_download
 test_services.py::TestClipProcessing::test_download_and_cache_cloud_thumbnail_already_cached
 test_services.py::TestClipProcessing::test_download_and_cache_cloud_thumbnail_exception_handling
 test_services.py::TestClipProcessing::test_download_and_cache_cloud_thumbnail_local_clip_error
@@ -608,6 +617,7 @@ test_services.py::TestClipProcessing::test_process_local_clip_background_no_loca
 test_services.py::TestClipProcessing::test_process_local_clip_background_not_implemented
 test_services.py::TestClipProcessing::test_process_local_clip_background_sync_not_found
 test_services.py::TestClipProcessing::test_process_local_clip_background_thumbnail_exists
+test_services.py::TestClipProcessing::test_process_local_clip_background_without_blink
 test_services.py::TestConnectionService::test_connection_service_basic
 test_services.py::TestConnectionService::test_ensure_executor_initialized
 test_services.py::TestConnectionService::test_ensure_http_session_initialized
@@ -652,6 +662,8 @@ test_services.py::TestLifecycleService::test_cleanup_resources_exception
 test_services.py::TestLifecycleService::test_cleanup_resources_success
 test_services.py::TestLifecycleService::test_startup_exception
 test_services.py::TestLifecycleService::test_startup_success
+test_services.py::TestStreamService::test_ensure_stream_manager_not_initialized_coverage
+test_services.py::TestStreamService::test_ensure_stream_manager_not_initialized_raises_error
 test_services.py::TestStreamService::test_initialize_stream_manager
 test_services.py::TestStreamService::test_is_stream_active_coverage
 test_services.py::TestStreamService::test_is_stream_active_false
@@ -665,6 +677,8 @@ test_services.py::TestSystemService::test_get_systems_with_data
 test_services.py::TestSystemService::test_initialize_cache_paths_default
 test_services.py::TestSystemService::test_initialize_cache_paths_with_config
 test_services.py::TestSystemService::test_thumbnail_file_cleanup
+test_services.py::TestThumbnailService::test_camera_thumbnail_download_works
+test_services.py::TestThumbnailService::test_safe_download_utility_works
 test_services.py::TestThumbnailService::test_thumbnail_file_cleanup
 test_services.py::TestThumbnailService::test_update_camera_camera_thumbnail_cache
 test_services.py::TestTimeService::test_seconds_since_now_from_datetime
@@ -673,6 +687,13 @@ test_services.py::TestTimeService::test_time_formatting_days
 test_services.py::TestTimeService::test_time_formatting_hours
 test_services_no_isolation.py::TestCacheServiceNoIsolation::test_initialize_cache_paths_calls_pathlib
 test_services_no_isolation.py::TestCacheServiceNoIsolation::test_initialize_cache_paths_with_config
+test_testing_mode.py::test_blink_instance_requires_mocking
+test_testing_mode.py::test_blink_instance_works_with_proper_mock
+test_testing_mode.py::test_ensure_blink_initialized_requires_mocking
+test_testing_mode.py::test_ensure_blink_initialized_works_with_proper_mock
+test_testing_mode.py::test_network_guard_blocks_aiohttp
+test_testing_mode.py::test_network_guard_blocks_connections
+test_testing_mode.py::test_testing_mode_enabled
 test_utils.py::TestDecorators::test_decorators_basic_usage
 test_utils.py::TestDecorators::test_safe_execute_exception_no_default
 test_utils.py::TestDecorators::test_safe_execute_exception_with_default
@@ -704,6 +725,9 @@ test_utils.py::TestRouteDecorators::test_get_operation_name_with_module
 test_utils.py::TestRouteDecorators::test_is_error_response_invalid_format
 test_utils.py::TestRouteDecorators::test_is_error_response_success_response
 test_utils.py::TestRouteDecorators::test_is_error_response_true
+test_utils.py::TestSafeDownload::test_safe_download_exception_cleanup
+test_utils.py::TestSafeDownload::test_safe_download_failure_cleanup
+test_utils.py::TestSafeDownload::test_safe_download_success
 test_utils.py::TestValidationHelpers::test_validate_camera_id_valid_minimal
 test_utils.py::TestValidationHelpers::test_validate_clip_id_valid_minimal
 test_utils.py::TestValidators::test_credential_validation_comprehensive

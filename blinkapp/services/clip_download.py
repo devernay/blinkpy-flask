@@ -266,7 +266,14 @@ def download_local_clip(
                 from blinkapp.utils.safe_download import safe_download_async
 
                 async def download_local_clip_to_temp(temp_path: Path) -> bool:
-                    """Download local clip to temporary path."""
+                    """Download local clip to temporary path.
+
+                    Args:
+                        temp_path: Path to write downloaded clip data
+
+                    Returns:
+                        bool: True if download succeeded, False otherwise
+                    """
                     return await local_item.download_video(
                         blink_instance, str(temp_path)
                     )

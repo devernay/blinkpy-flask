@@ -22,6 +22,13 @@ class NetworkGuard:
             def blocked_socket(*args: Any, **kwargs: Any) -> Never:
                 """Block socket connections in testing mode.
 
+                Args:
+                    *args: Socket arguments (ignored)
+                    **kwargs: Socket keyword arguments (ignored)
+
+                Returns:
+                    Never: This function always raises an exception
+
                 Raises:
                     RuntimeError: Always raised to prevent socket connections
                 """
@@ -32,6 +39,13 @@ class NetworkGuard:
 
             def blocked_aiohttp_request(*args: Any, **kwargs: Any) -> Never:
                 """Block aiohttp requests in testing mode.
+
+                Args:
+                    *args: Request arguments (ignored)
+                    **kwargs: Request keyword arguments (ignored)
+
+                Returns:
+                    Never: This function always raises an exception
 
                 Raises:
                     RuntimeError: Always raised to prevent HTTP requests
