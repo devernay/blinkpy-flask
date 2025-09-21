@@ -14,6 +14,15 @@
 - [✓] test_api_devices_invalid_network_id - DONE: Removed redundant get_blink_instance patch
 - [✓] test_api_devices_network_not_found - DONE: Removed redundant get_blink_instance patch
 - [✓] test_api_camera_thumbnail_not_found - DONE: Removed redundant get_blink_instance patch
+- [✓] test_api_clear_cache_success - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_get_systems_success - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_get_devices_no_network - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_arm_system_invalid_network - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_arm_system_missing_data - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_get_camera_thumbnail_not_found - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_get_clips_invalid_storage - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_get_liveview_no_camera - DONE: Batch fixed redundant get_blink_instance patch
+- [✓] test_get_camera_thumbnail_timestamp_success - DONE: Batch fixed redundant get_blink_instance patch
 - [ ] test_get_systems_success
 - [ ] test_get_systems_with_devices_success
 - [ ] test_get_system_details_success

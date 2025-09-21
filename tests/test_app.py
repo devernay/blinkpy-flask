@@ -1024,11 +1024,8 @@ class TestAdditionalEndpoints(FlaskTestCase):
         data = json.loads(response.data)
         self.assertFalse(data["success"])
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_api_clear_cache_success(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_api_clear_cache_success(self, mock_ensure_blink: Mock) -> None:
         """Test successful cache clearing through API endpoint.
 
         Verifies that the cache clearing API endpoint successfully
@@ -1051,7 +1048,6 @@ class TestAdditionalEndpoints(FlaskTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         response = self.client.delete("/api/cache")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
@@ -2150,11 +2146,8 @@ if __name__ == "__main__":
 class TestAPIEndpoints(FlaskTestCase):
     """Test API endpoints for better coverage."""
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_systems_success(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_get_systems_success(self, mock_ensure_blink: Mock) -> None:
         """Test successful get_systems call.
 
         Verifies that the get_systems function returns properly formatted
@@ -2182,7 +2175,6 @@ class TestAPIEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {"Test Network": mock_sync}
 
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         response = self.client.get("/api/systems")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
@@ -2191,11 +2183,8 @@ class TestAPIEndpoints(FlaskTestCase):
         self.assertTrue(data["success"])
         self.assertIsInstance(data["data"]["systems"], list)
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_devices_no_network(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_get_devices_no_network(self, mock_ensure_blink: Mock) -> None:
         """Test get_devices with invalid network ID.
 
         Verifies that the get_devices function properly handles requests
@@ -2216,17 +2205,13 @@ class TestAPIEndpoints(FlaskTestCase):
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         mock_blink_instance.networks = {}
         response = self.client.get("/api/systems/99999/devices")  # type: TestResponse
         self.assert_api_error(response, 404)
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_arm_system_invalid_network(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_arm_system_invalid_network(self, mock_ensure_blink: Mock) -> None:
         """Test arm_system with invalid network ID.
 
         Verifies that the arm_system function properly handles requests
@@ -2247,17 +2232,13 @@ class TestAPIEndpoints(FlaskTestCase):
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         mock_blink_instance.networks = {}
         response = self.client.put("/api/systems/99999", json={"armed": True})  # type: TestResponse
         self.assert_api_error(response, 404)
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_arm_system_missing_data(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_arm_system_missing_data(self, mock_ensure_blink: Mock) -> None:
         """Test arm_system with missing armed parameter.
 
         Verifies that the arm_system function properly validates request
@@ -2279,18 +2260,14 @@ class TestAPIEndpoints(FlaskTestCase):
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         mock_blink_instance.networks = {"12345": mock_network}
 
         response = self.client.put("/api/systems/12345", json={})  # type: TestResponse
         self.assertEqual(response.status_code, 400)
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_camera_thumbnail_not_found(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_get_camera_thumbnail_not_found(self, mock_ensure_blink: Mock) -> None:
         """Test get_camera_thumbnail with invalid camera ID handling.
 
         Verifies that camera thumbnail retrieval properly handles
@@ -2317,7 +2294,6 @@ class TestAPIEndpoints(FlaskTestCase):
         mock_blink_instance.sync = {}  # Empty sync to ensure no cameras found
 
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         with (
             patch(
@@ -2547,11 +2523,8 @@ class TestClipManagement(BaseTestCase):
         self.assertTrue(data["success"])
         self.assertEqual(data["data"]["clips"], [])
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_clips_invalid_storage(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_get_clips_invalid_storage(self, mock_ensure_blink: Mock) -> None:
         """Test get_clips with invalid storage parameter.
 
         Verifies that the clips endpoint properly validates storage
@@ -2577,11 +2550,8 @@ class TestClipManagement(BaseTestCase):
 class TestStreamingEndpoints(FlaskTestCase):
     """Test streaming-related endpoints."""
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
-    def test_get_liveview_no_camera(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
-    ) -> None:
+    def test_get_liveview_no_camera(self, mock_ensure_blink: Mock) -> None:
         """Test get_liveview with invalid camera ID.
 
         Verifies that the liveview endpoint properly handles requests
@@ -2602,7 +2572,6 @@ class TestStreamingEndpoints(FlaskTestCase):
         # Use proper mock blink instance
         mock_blink_instance = create_mock_blink_instance()
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         mock_blink_instance.cameras = {}
 
@@ -2613,10 +2582,9 @@ class TestStreamingEndpoints(FlaskTestCase):
 class TestThumbnailManagement(FlaskTestCase):
     """Test thumbnail management and caching functionality."""
 
-    @patch("blinkapp.services.blink_service.get_blink_instance")
     @patch("blinkapp.services.blink_service.ensure_blink_initialized")
     def test_get_camera_thumbnail_timestamp_success(
-        self, mock_ensure_blink: Mock, mock_get_instance: Mock
+        self, mock_ensure_blink: Mock
     ) -> None:
         """Test get_camera_thumbnail_timestamp endpoint.
 
@@ -2650,7 +2618,6 @@ class TestThumbnailManagement(FlaskTestCase):
         mock_blink_instance.available = True
 
         mock_ensure_blink.return_value = mock_blink_instance
-        mock_get_instance.return_value = mock_blink_instance
 
         response = self.client.get("/api/cameras/12345/thumbnail?timestamp=true")  # type: TestResponse
         self.assertEqual(response.status_code, 200)
