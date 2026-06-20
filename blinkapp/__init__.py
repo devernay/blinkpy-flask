@@ -33,6 +33,7 @@ from flask import (
     Flask,
     Response,
 )
+from werkzeug.wrappers import Response as WerkzeugResponse
 
 # Authentication and session management
 # Caching system for camera thumbnails, clips, and metadata
@@ -101,6 +102,50 @@ def favicon() -> "Response":
     if static_folder is None:
         raise RuntimeError("Static folder not configured")
     return send_from_directory(static_folder, "favicon.ico")
+
+
+# Endpoints reachable without authentication (login/2FA pages, favicon, static).
+_PUBLIC_ENDPOINTS = frozenset(
+    {"login_page_route", "twofa_page_route", "favicon", "static"}
+)
+
+
+@app.before_request
+def _require_authentication() -> "WerkzeugResponse | tuple[Response, int] | None":
+    """Require an authenticated session for protected endpoints.
+
+    The web UI signs in via the login/2FA pages, which set
+    ``session['authenticated']``. Everything else is protected:
+    unauthenticated requests to ``/api/*`` receive a 401 JSON response, while
+    other unauthenticated requests are redirected to the login page. This
+    prevents the API and pages from being reachable without logging in, even
+    when the server is bound to all interfaces.
+
+    Returns:
+        None to allow the request, or a 401/redirect response to block it.
+    """
+    from flask import jsonify, redirect, request, session, url_for
+
+    # Allow disabling the guard (the existing test suite exercises API
+    # endpoints directly, as an already-logged-in user would).
+    if not app.config.get("REQUIRE_AUTH", True):
+        return None
+
+    # Let unmatched routes fall through to Flask's normal 404 handling.
+    if request.endpoint is None:
+        return None
+
+    # Always-public endpoints and static assets.
+    if request.endpoint in _PUBLIC_ENDPOINTS or request.path.startswith("/static/"):
+        return None
+
+    if session.get("authenticated"):
+        return None
+
+    # Not authenticated: JSON 401 for API, redirect to login for pages.
+    if request.path.startswith("/api/"):
+        return jsonify({"success": False, "error": "Authentication required"}), 401
+    return redirect(url_for("login_page_route"))
 
 
 # Set up authentication routes

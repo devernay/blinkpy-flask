@@ -131,6 +131,13 @@ def initialize_stream_manager(
         idle_timeout=Config.STREAM_IDLE_TIMEOUT,
     )
     stream_manager = manager_factory(stream_config)
+    # Start the background idle-stream sweeper (app-level startup only, so
+    # unit tests that construct StreamManager directly don't spawn threads).
+    try:
+        stream_manager.start_idle_sweeper()
+    except AttributeError:
+        # Custom/mock factories may return objects without a sweeper.
+        pass
 
 
 def create_stream_manager(config: HLSStreamConfig | None = None) -> StreamManager:
@@ -306,6 +313,34 @@ class StreamManager:
             str, concurrent.futures.Future[None]
         ] = {}  # Store feed() tasks for cleanup
         self.lock = threading.Lock()
+        # Background idle-stream sweeper (started via start_idle_sweeper()).
+        self._sweeper_stop = threading.Event()
+        self._sweeper_thread: threading.Thread | None = None
+
+    def start_idle_sweeper(self) -> None:
+        """Start a background thread that periodically reaps idle streams.
+
+        Idempotent: a second call while a sweeper is running is a no-op. The
+        sweeper runs as a daemon thread and exits when shutdown() is called.
+        """
+        if self._sweeper_thread is not None and self._sweeper_thread.is_alive():
+            return
+        self._sweeper_stop.clear()
+        self._sweeper_thread = threading.Thread(
+            target=self._sweep_loop, name="hls-idle-sweeper", daemon=True
+        )
+        self._sweeper_thread.start()
+
+    def _sweep_loop(self) -> None:
+        """Periodically clean up idle streams until asked to stop."""
+        from blinkapp.config import Config
+
+        interval = Config.STREAM_CLEANUP_INTERVAL
+        while not self._sweeper_stop.wait(interval):
+            try:
+                self.cleanup_inactive_streams()
+            except Exception as e:
+                logger.warning(f"Idle stream sweep error: {e}")
 
     def start_stream(
         self,
@@ -325,22 +360,54 @@ class StreamManager:
         Returns:
             Tuple of (hls_url, error_message)
         """
+        # Stop any existing stream for this camera first (hold the lock only
+        # briefly to detach it from the registry).
         with self.lock:
-            # Stop existing stream if any
-            if camera_id in self.streams:
-                self.streams[camera_id].stop()
+            existing = self.streams.pop(camera_id, None)
+        if existing is not None:
+            existing.stop()
+            with self.lock:
+                self._release_camera_stream(camera_id)
 
-            # Create new stream
-            stream = HLSStream(camera_id, tcp_url, self.config, record_path)
-            hls_url, error = stream.start()
+        # Create and start the new stream WITHOUT holding the manager lock, so
+        # the ~2s FFmpeg warm-up does not block stream operations for other
+        # cameras (get_hls_file/is_stream_active/stop on the whole manager).
+        stream = HLSStream(camera_id, tcp_url, self.config, record_path)
+        hls_url, error = stream.start()
 
-            if hls_url:
+        if hls_url:
+            with self.lock:
                 self.streams[camera_id] = stream
-                # Store camera stream and feed task for cleanup if provided
+                # Store camera stream for cleanup if provided
                 if camera_stream:
                     self.camera_streams[camera_id] = camera_stream
-                return hls_url, None
-            return None, error
+            return hls_url, None
+        return None, error
+
+    def _release_camera_stream(self, camera_id: str) -> None:
+        """Stop the Blink camera stream and cancel its feed task.
+
+        Must be called with self.lock held. Safe to call when nothing is
+        registered for the camera.
+
+        Args:
+            camera_id: Camera identifier whose resources to release.
+        """
+        # Cancel the asyncio feed() task so it doesn't leak.
+        feed_task = self.feed_tasks.pop(camera_id, None)
+        if feed_task is not None:
+            try:
+                feed_task.cancel()
+            except Exception as e:
+                logger.warning(f"Error cancelling feed task for {camera_id}: {e}")
+
+        # Stop the Blink camera (TCP proxy) stream.
+        camera_stream = self.camera_streams.pop(camera_id, None)
+        if camera_stream is not None:
+            try:
+                camera_stream.stop()
+            except Exception as e:
+                logger.warning(f"Error stopping camera stream for {camera_id}: {e}")
 
     def stop_stream(self, camera_id: str) -> None:
         """Stop stream for camera.
@@ -354,11 +421,8 @@ class StreamManager:
                 self.streams[camera_id].stop()
                 del self.streams[camera_id]
 
-            # Stop Blink camera stream (feed task)
-            if camera_id in self.camera_streams:
-                camera_stream = self.camera_streams[camera_id]
-                camera_stream.stop()  # Type-safe: BlinkLiveStream always has stop()
-                del self.camera_streams[camera_id]
+            # Stop Blink camera stream and cancel its feed task
+            self._release_camera_stream(camera_id)
 
     def is_stream_active(self, camera_id: str) -> bool:
         """Check if stream is active for camera.
@@ -399,7 +463,7 @@ class StreamManager:
             return self.streams[camera_id].get_file(filename)
 
     def cleanup_inactive_streams(self) -> None:
-        """Clean up inactive streams."""
+        """Clean up inactive streams and their camera/feed resources."""
         with self.lock:
             inactive_cameras: list[str] = []
             for camera_id, stream in self.streams.items():
@@ -407,14 +471,22 @@ class StreamManager:
                     inactive_cameras.append(camera_id)
 
             for camera_id in inactive_cameras:
+                self.streams[camera_id].stop()
                 del self.streams[camera_id]
+                self._release_camera_stream(camera_id)
 
     def shutdown(self) -> None:
-        """Shutdown all streams."""
+        """Shutdown all streams and release all camera/feed resources."""
+        # Stop the idle sweeper first so it doesn't race with teardown.
+        self._sweeper_stop.set()
         with self.lock:
             for stream in self.streams.values():
                 stream.stop()
             self.streams.clear()
+
+            # Cancel any feed tasks and stop any camera streams still tracked.
+            for camera_id in list(self.camera_streams.keys() | self.feed_tasks.keys()):
+                self._release_camera_stream(camera_id)
 
 
 # Testability improvement functions - these provide injectable dependencies

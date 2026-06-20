@@ -75,6 +75,7 @@ class Config:
     HLS_SEGMENT_TIME = 2  # HLS segment duration in seconds (balance latency/stability)
     HLS_LIST_SIZE = 3  # Number of segments in HLS playlist (stable buffering)
     STREAM_IDLE_TIMEOUT = 300  # 5 minutes before idle stream cleanup
+    STREAM_CLEANUP_INTERVAL = 60  # How often the idle-stream sweeper runs (seconds)
 
     # ========================================================================
     # Process Management

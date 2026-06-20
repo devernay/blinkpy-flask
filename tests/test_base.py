@@ -1245,6 +1245,9 @@ class FlaskTestCase(BaseTestCase):
         self.app = app
         self.app.config["TESTING"] = True
         self.app.config["SECRET_KEY"] = "test-secret-key"
+        # Existing endpoint tests call the API directly (as a logged-in user
+        # would). Disable the auth guard here; it is covered by dedicated tests.
+        self.app.config["REQUIRE_AUTH"] = False
         self.app.config["CACHE_DIR"] = tempfile.mkdtemp()
         self.client = self.app.test_client()
 

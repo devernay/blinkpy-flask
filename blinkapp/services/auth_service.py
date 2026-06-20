@@ -139,6 +139,21 @@ def _create_blink_session(
     return session_factory()
 
 
+async def _close_session_quietly(session_obj: ClientSession | None) -> None:
+    """Close an aiohttp ClientSession, ignoring any errors.
+
+    Args:
+        session_obj: The session to close (no-op if None or already closed).
+    """
+    if session_obj is None:
+        return
+    try:
+        if not session_obj.closed:
+            await session_obj.close()
+    except Exception as e:  # closing must never mask the original error
+        logger.debug(f"Error closing aiohttp session: {e}")
+
+
 def _create_auth_object(
     username: str,
     password: str,
@@ -216,6 +231,11 @@ async def initialize_blink(
         except BlinkTwoFARequiredError:
             logger.info("2FA key required - check your email or SMS")
             return "2fa_required"
+        except Exception:
+            # Authentication failed: close the aiohttp session we opened so it
+            # does not leak (each failed attempt/retry creates a new session).
+            await _close_session_quietly(session_obj)
+            raise
 
         logger.info("Blink system initialized successfully")
 
