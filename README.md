@@ -51,8 +51,18 @@ sudo apt install ffmpeg
 
 2. **Install Python dependencies:**
 ```bash
+# Installs the app and its runtime + dev dependencies (declared in pyproject.toml)
+pip install -e ".[dev]"
+
+# Or, equivalently, via requirements.txt (which points at pyproject)
 pip install -r requirements.txt
+
+# Runtime only (no test/lint tooling)
+pip install -e .
 ```
+
+blinkpy is pinned to the released **0.25.6** on PyPI — no manual checkout or
+submodule is required.
 
 3. **Install type stubs (optional, for better type checking):**
 ```bash
@@ -66,9 +76,6 @@ python -m blinkapp
 
 # Or with custom options
 python -m blinkapp --host 127.0.0.1 --port 8080 --debug
-
-# Or use the helper script with blinkpy path
-./run_with_blinkpy.sh python -m blinkapp
 ```
 
 **Command line options:**
@@ -123,15 +130,18 @@ All API endpoints return standardized JSON responses:
 - `POST /api/cameras/<camera_id>/record` - Start recording
 
 **Live Streaming Implementation:**
-Live streaming uses blinkpy PR [#1078](https://github.com/fronzbot/blinkpy/pull/1078) with MPEG-TS to HLS transcoding via FFmpeg. The camera's `init_livestream()` method creates a local TCP proxy server that streams MPEG-TS data, which is then transcoded to HLS segments for web browser compatibility.
+Live streaming performs MPEG-TS to HLS transcoding via FFmpeg. The camera's
+`init_livestream()` method (blinkpy) creates a local TCP proxy server that
+streams MPEG-TS data, which is then transcoded to HLS segments for web browser
+compatibility.
 
-If you need to checkout the code for this PR from the blinkpy repo:
-```
-git clone https://github.com/fronzbot/blinkpy blinkpy-source
-cd blinkpy-source
-git fetch origin pull/1078/head:pr-1078
-git checkout pr-1078
-```
+This capability originated in blinkpy PR
+[#1078](https://github.com/fronzbot/blinkpy/pull/1078), which was **merged and
+released in blinkpy 0.25.0**. This project pins the released **0.25.6**, which
+also includes the liveview endpoint fix
+([#1227](https://github.com/fronzbot/blinkpy/pull/1227)) and the livestream
+auth-header fix ([#1167](https://github.com/fronzbot/blinkpy/pull/1167)). No
+manual PR checkout is required.
 
 ### Clip Management
 - `GET /api/clips?storage=cloud|local` - List clips by storage type
@@ -197,7 +207,8 @@ blinkpy-flask/
 │   │   ├── formatters.py          # Data formatting utilities
 │   │   └── ...                    # Additional utilities
 │   └── models/        # Data models and type definitions
-├── requirements.txt    # Python dependencies
+├── pyproject.toml      # Project metadata, dependencies, and tool config
+├── requirements.txt    # Thin wrapper: installs the project via pyproject
 ├── templates/          # HTML templates
 │   ├── base.html      # Base template with responsive CSS
 │   ├── index.html     # Main SPA with clips, settings, live view
@@ -208,7 +219,6 @@ blinkpy-flask/
 │   ├── blink_app.log  # Application logs (rotated)
 │   ├── thumbnails/    # Camera thumbnail cache with timestamps
 │   └── clips/         # Downloaded clips cache with thumbnails
-├── blinkpy/           # Blink Python package (submodule)
 └── README.md          # This file
 ```
 
@@ -329,7 +339,7 @@ The project has undergone a comprehensive **Phase 2 reorganization** to improve 
 ## Testing
 
 ### Test Suite Overview
-The project includes a comprehensive test suite with **69% code coverage** and **608 passing tests** across multiple test files.
+The project includes a comprehensive test suite with **73% code coverage** and **777 passing tests** across multiple test files.
 
 ### Complete Test Isolation
 Tests run in **complete isolation** with automatic file system protection:
@@ -454,9 +464,9 @@ pytest --disable-warnings                 # Suppress warnings
 ```
 
 ### Test Coverage Status
-- **Coverage**: 69% (990/3175 lines)
-- **Passing Tests**: 608
-- **Total Tests**: 608 (all passing)
+- **Coverage**: 73% (2763/3786 lines)
+- **Passing Tests**: 777
+- **Total Tests**: 777 (all passing)
 - **Test Files**: 12 comprehensive test suites
 
 ### Test Architecture
