@@ -206,10 +206,14 @@ async def initialize_blink(
         # Attempt to start Blink system and authenticate
         blink_instance = get_blink_instance()
         assert blink_instance is not None, "Blink instance must be initialized"
-        await blink_instance.start()
 
-        # Check if 2FA is required before proceeding
-        if blink_instance.key_required:
+        # blinkpy >=0.25 raises BlinkTwoFARequiredError from start() when 2FA
+        # is required (this replaces the removed blink.key_required attribute).
+        from blinkpy.auth import BlinkTwoFARequiredError
+
+        try:
+            await blink_instance.start()
+        except BlinkTwoFARequiredError:
             logger.info("2FA key required - check your email or SMS")
             return "2fa_required"
 
@@ -258,11 +262,13 @@ async def verify_2fa_and_save(username: str, password: str, tfa_key: str) -> boo
         assert blink_instance is not None, (
             "Blink instance must be initialized before 2FA verification"
         )
-        await blink_instance.auth.send_auth_key(blink_instance, tfa_key)
-
-        # Complete the post-verification setup process
-        logger.debug("Setting up post verification...")
-        await blink_instance.setup_post_verify()
+        # blinkpy >=0.25: send_2fa_code() completes the OAuth 2FA flow and runs
+        # setup_post_verify() internally (replaces the removed
+        # auth.send_auth_key() + separate setup_post_verify() sequence).
+        success = await blink_instance.send_2fa_code(tfa_key)
+        if not success:
+            logger.error("2FA verification failed")
+            return False
 
         # Save encrypted credentials to disk for future sessions
         logger.debug("Saving credentials...")

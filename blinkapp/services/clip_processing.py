@@ -111,7 +111,7 @@ def process_cloud_clip_background(clip_id: ClipId) -> None:
                             import aiohttp
 
                             blink = blink_connection.blink
-                            if not blink or not blink.auth.check_key_required:
+                            if not blink or not blink.available:
                                 return None
 
                             async with aiohttp.ClientSession() as session:
@@ -431,7 +431,7 @@ def download_and_cache_cloud_thumbnail(
                         import aiohttp
 
                         blink = blink_connection.blink
-                        if not blink or not blink.auth.check_key_required:
+                        if not blink or not blink.available:
                             return None
 
                         async with aiohttp.ClientSession() as session:

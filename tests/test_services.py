@@ -743,11 +743,12 @@ class TestAuthService(BaseTestCase):
         # Create async start mock using AsyncMock
         from unittest.mock import AsyncMock
 
-        async_start_mock = AsyncMock(return_value=True)
+        # blinkpy >=0.25 signals 2FA by raising BlinkTwoFARequiredError from start()
+        from blinkpy.auth import BlinkTwoFARequiredError
 
-        mock_blink = create_mock_blink_instance(
-            available=True, key_required=True, start=async_start_mock
-        )
+        async_start_mock = AsyncMock(side_effect=BlinkTwoFARequiredError())
+
+        mock_blink = create_mock_blink_instance(available=True, start=async_start_mock)
         mock_ensure_blink.return_value = mock_blink
         mock_get_blink.return_value = mock_blink
         mock_get_blink_auth.return_value = (
@@ -802,8 +803,7 @@ class TestAuthService(BaseTestCase):
         )
 
         self.assertTrue(result)
-        mock_blink.auth.send_auth_key.assert_called_once_with(mock_blink, "123456")
-        mock_blink.setup_post_verify.assert_called_once()
+        mock_blink.send_2fa_code.assert_called_once_with("123456")
         mock_blink.save.assert_called_once_with(str(mock_creds_path))
 
     @patch("blinkapp.services.auth_service.get_credentials_file_path")
@@ -2578,6 +2578,8 @@ class TestFFmpegHelpers(BaseTestCase):
 
         expected = [
             "ffmpeg",
+            "-loglevel",
+            "warning",
             "-i",
             tcp_url,
             "-c",
@@ -2968,7 +2970,7 @@ class TestHLSStream(BaseTestCase):
         stream.temp_dir.name = "/tmp/test"
 
         url = stream.get_hls_url()
-        expected = f"/api/cameras/{self.camera_id}/hls/stream.m3u8"
+        expected = f"/api/cameras/{self.camera_id}/streams/stream.m3u8"
 
         self.assertEqual(url, expected)
 

@@ -478,7 +478,7 @@ def create_mock_blink_instance(
     if setup_auth_methods:
         from unittest.mock import AsyncMock
 
-        mock_blink.auth.send_auth_key = AsyncMock(return_value=True)
+        mock_blink.send_2fa_code = AsyncMock(return_value=True)
         mock_blink.setup_post_verify = AsyncMock(return_value=True)
         mock_blink.save = AsyncMock(return_value=True)
 
