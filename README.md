@@ -99,14 +99,16 @@ python -m blinkapp --dump-system  # Show system info and exit
 1. Navigate to `http://localhost:5001`
 2. Enter your Blink credentials (email/password)
 3. Complete 2FA verification if required
-4. A signed session cookie keeps you logged in for that browser session
+4. A signed session cookie keeps you logged in across browser and server restarts
 
-**Sessions are cookie-based.** Logging in sets a signed session cookie; the
-server does **not** auto-authenticate clients just because Blink credentials
-are cached on disk. The cookie is signed with `SECRET_KEY`, which is persisted
-in the **OS keychain** (macOS Keychain / Windows Credential Locker / Linux
-Secret Service) so **sessions survive a server restart**. On headless systems
-with no keychain, the key is stored in a `0600` key file in the data directory
+**Sessions are cookie-based and persistent.** Logging in sets a signed,
+persistent session cookie with a 90-day sliding lifetime (refreshed on each
+request), so you stay logged in across browser restarts. The server does
+**not** auto-authenticate clients just because Blink credentials are cached on
+disk. The cookie is signed with `SECRET_KEY`, which is persisted in the **OS
+keychain** (macOS Keychain / Windows Credential Locker / Linux Secret Service)
+so the cookie also survives a **server** restart. On headless systems with no
+keychain, the key is stored in a `0600` key file in the data directory
 instead; if neither is available it falls back to an ephemeral key (sessions
 reset on restart). Set the `SECRET_KEY` environment variable to override the
 persisted key with a fixed value.
