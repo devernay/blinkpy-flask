@@ -79,8 +79,8 @@ def finalize_session(session: RecordingSession, save: bool) -> bool:
     """Finish a recording session: keep it if saved, else discard.
 
     When kept, the working MPEG-TS file is remuxed to MP4, a thumbnail is
-    generated into the thumbnail cache, and a JSON sidecar with clip metadata
-    is written so the recording appears in the clip list.
+    generated into the recordings directory, and a JSON sidecar with clip
+    metadata is written so the recording appears in the clip list.
 
     Args:
         session: The session to finalize.

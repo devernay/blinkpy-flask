@@ -179,18 +179,21 @@ manual PR checkout is required.
 # Flask session signing key. If unset, an ephemeral random key is generated
 # (sessions reset on each restart); set it to keep sessions stable.
 SECRET_KEY=your-secret-key-here
-CACHE_DIR=cache  # Default cache directory
-# Authentication guard (default: on). Set to false for local/dev only.
-REQUIRE_AUTH=true
 ```
+
+`SECRET_KEY` is the only setting read from the environment. The cache
+directory is set with the `--cache` CLI option (default `cache`), and the
+authentication guard is controlled by the `REQUIRE_AUTH` app config flag
+(default on) — see below.
 
 ### Authentication guard
 All routes require an authenticated session except the login/2FA pages, the
-favicon, and static assets. Unauthenticated API calls return HTTP 401 with
-`{"success": false, "error": "Authentication required"}`; unauthenticated page
-requests redirect to `/login`. The guard is controlled by the `REQUIRE_AUTH`
-config flag (default on); it should only be disabled in trusted dev/test
-environments.
+favicon, and static assets (the root `/` is also reachable but immediately
+redirects unauthenticated users to `/login`). Unauthenticated API calls return
+HTTP 401 with `{"success": false, "error": "Authentication required"}`;
+unauthenticated page requests redirect to `/login`. The guard is controlled by
+the `REQUIRE_AUTH` config flag (default on); it should only be disabled in
+trusted dev/test environments.
 
 ### User Settings (Persistent)
 - **Theme**: System (follows OS) / Light / Dark
@@ -369,7 +372,7 @@ The project has undergone a comprehensive **Phase 2 reorganization** to improve 
 ## Testing
 
 ### Test Suite Overview
-The project includes a comprehensive test suite with **~72% code coverage** and **796 passing tests** across multiple test files.
+The project includes a comprehensive test suite with **~72% code coverage** and **797 passing tests** across multiple test files.
 
 ### Complete Test Isolation
 Tests run in **complete isolation** with automatic file system protection:
@@ -411,9 +414,9 @@ python check_test_baseline.py
 ```
 
 This will:
-- ✅ **Pass**: No regressions detected
-- ⚠️ **Warn**: New tests added (update baseline needed)
-- ❌ **Fail**: Regressions detected (tests that were passing now fail)
+- **Pass**: No regressions detected
+- **Warn**: New tests added (update baseline needed)
+- **Fail**: Regressions detected (tests that were passing now fail)
 
 #### Updating Test Baseline
 When you add new tests or expect test changes:
@@ -435,7 +438,6 @@ python update_test_baseline.py
 
 ✅ NO CHANGES: All tests match baseline
 ```
-
 #### Integration with CI/CD
 Add to your CI pipeline:
 ```bash
@@ -481,7 +483,7 @@ pytest --disable-warnings                 # Suppress warnings
 
 ### Test Coverage Status
 - **Coverage**: ~72% of statements
-- **Passing Tests**: 796 (all passing)
+- **Passing Tests**: 797 (all passing)
 
 ### Test Architecture
 - **Complete Isolation**: `conftest.py` with `autouse=True` fixture provides automatic file system isolation

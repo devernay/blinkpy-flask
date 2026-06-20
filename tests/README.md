@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the test suite for the Blink Camera Flask Web Interface with **73% code coverage** and **777 passing tests**.
+This directory contains the test suite for the Blink Camera Flask Web Interface with **~72% code coverage** and **797 passing tests**.
 
 ## Test Files
 
@@ -66,12 +66,8 @@ python run_tests.py --html            # Generate HTML report
 python run_tests.py --fast            # Core tests only
 python run_tests.py --verbose         # Verbose output
 
-# Specific test suites
+# Specific test suite
 python run_tests.py --specific core      # test_app.py only
-python run_tests.py --specific critical  # test_critical_coverage.py only
-python run_tests.py --specific boost     # test_coverage_boost.py only
-python run_tests.py --specific advanced  # Experimental tests
-python run_tests.py --specific all       # All tests including experimental
 
 # Additional options
 python run_tests.py --no-warnings     # Suppress warnings
@@ -80,9 +76,9 @@ python run_tests.py --no-warnings     # Suppress warnings
 ## Test Coverage
 
 ### Current Status
-- **Coverage**: 73% (2763/3786 lines)
-- **Passing Tests**: 777
-- **Total Tests**: 777 (all passing)
+- **Coverage**: ~72% of statements
+- **Passing Tests**: 797
+- **Total Tests**: 797 (all passing)
 
 ### Coverage by Area
 
@@ -207,7 +203,7 @@ pip install pytest-html pytest-xdist pytest-mock
 2. **Focused Testing**
    ```bash
    # Run specific test file
-   pytest test_coverage_boost.py
+   pytest test_app.py
    # Run tests matching pattern
    pytest -k "test_cache"
    ```

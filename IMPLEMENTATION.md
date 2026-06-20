@@ -51,7 +51,7 @@ When the app is launched, it scans the thumbnail cache directory for existing th
 Clicking on the the "play" button in the middle of a thumbnail opens the "Live View" page for that camera.
 On the top-left of the Live View page, there is a "Back" button (back arrow), that goes back to the "Home" view.
 On the top-right of the Live View page, there is a "Mute" button ("speaker" icon) to mute the sound of the live view.
-At the bottom of the Live View page, there is a "Save" toggle (💾 icon). The live view is recorded server-side for the entire session; the Save toggle (which starts pressed when "Save all Live Views" is enabled) controls whether the recording is kept when the session ends, via `PUT /api/cameras/{camera_id}/streams/save` with `{"saved": true|false}`. Kept recordings are remuxed to MP4, stored in a `recordings/` directory separate from the cache, and appear in the clip list as "Live View" clips.
+At the bottom of the Live View page, there is a "Save" toggle (a checkmark that fills in when active). The live view is recorded server-side for the entire session; the Save toggle (which starts pressed when "Save all Live Views" is enabled) controls whether the recording is kept when the session ends, via `PUT /api/cameras/{camera_id}/streams/save` with `{"saved": true|false}`. Kept recordings are remuxed to MP4, stored in a `recordings/` directory separate from the cache, and appear in the clip list as "Live View" clips.
 
 #### Live streaming MPEG-TS livestreaming via local TCP proxy server
 
@@ -319,7 +319,7 @@ The live streaming functionality should include advanced stream management:
 - **RESTful API**: JSON endpoints covering all specifications
 - **OpenAPI Documentation**: Complete API specification with request/response schemas
 - **Type Safety**: Full type hints throughout codebase with pyright validation
-- **Testing**: 777 passing tests with 73% code coverage and complete isolation
+- **Testing**: 797 passing tests with ~72% code coverage and complete isolation
 - **Code Quality**: Pre-commit hooks, ruff formatting, automated linting
 
 ### Advanced Features
@@ -366,7 +366,7 @@ The application demonstrates excellent conformance to specifications with all ma
 - Comprehensive API with JSON endpoints and full documentation
 - Mobile-responsive design with modern development practices
 - Robust caching and performance optimization
-- Extensive test coverage (777 tests, 73% coverage) with bulletproof isolation
+- Extensive test coverage (797 tests, ~72% coverage) with bulletproof isolation
 - Complete HLS streaming implementation with FFmpeg transcoding
 
 **Minor Gaps:**
