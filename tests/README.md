@@ -15,6 +15,8 @@ This directory contains the test suite for the Blink Camera Flask Web Interface 
 | `test_models.py` | Data models, IDs, cache structures |
 | `test_utils.py` | Utility/helper functions and validators |
 | `test_logs.py` | Log viewer and `/api/log` endpoint |
+| `test_auth_guard.py` | `/api/*` authentication guard (401 vs login redirect) |
+| `test_liveview_recording.py` | Live-view recording lifecycle and clip-list integration |
 | `test_docstrings.py` | Docstring presence/quality checks |
 | `test_testing_mode.py` | Test-isolation behaviour |
 | `test_services_no_isolation.py` | Service tests that opt out of fs isolation |
@@ -84,20 +86,19 @@ python run_tests.py --no-warnings     # Suppress warnings
 
 ### Coverage by Area
 
-#### ✅ Well Covered (50%)
+#### Well covered
 - Core API endpoints (authentication, camera operations, clip management)
 - Data validation classes (CameraId, ClipId, BaseId methods)
 - Cache operations (LRU cache, ThreadSafeCache)
 - Configuration management (Config class, constants)
 - Utility functions (API response creation, error handling)
-- Import statements and module initialization
-- Basic Flask operations (routing, request handling)
+- The `/api/*` authentication guard
+- Live-view recording lifecycle (ClipId, finalize/discard, listing, teardown)
 
-#### 🔄 Needs Coverage (50%)
+#### Less covered (improvement targets)
 - Deep system integration (Blink API, network protocols)
 - Advanced video processing (FFmpeg operations, HLS transcoding)
 - Complex streaming operations (TCP to HLS conversion)
-- Enterprise features (advanced caching, monitoring)
 - Rare error conditions (network failures, cascading failures)
 - Background processing (thumbnail updates, clip processing)
 - File system operations (complex I/O, cleanup procedures)
@@ -239,6 +240,6 @@ pip install pytest-html pytest-xdist pytest-mock
 5. **Contract testing** for API compatibility
 
 ### Coverage Goals
-- **Target**: 60-70% coverage for production readiness
+- **Target**: maintain >= 72% coverage; raise streaming/video-processing and error-path coverage over time
 - **Focus areas**: Video processing, streaming operations, error handling
 - **Advanced scenarios**: Network failures, concurrent operations, resource exhaustion

@@ -17,10 +17,12 @@ A professional-grade Flask web application providing comprehensive access to Bli
 
 ### Web Interface
 - **Responsive design** - Mobile-optimized compact layout
+- **Theme** - Light, Dark, or System (follows OS), selectable in Settings
 - **System management** - Arm/disarm, device status with real-time updates
 - **Camera controls** - Thumbnail refresh with polling, motion detection toggle
 - **Clip browser** - Organized by date with auto-updating thumbnails and batch processing
 - **Live view** - Real-time camera streaming with HLS support
+- **Live-view recording** - Optionally keep a live-view session; saved recordings appear in the clip browser as "Live View" clips
 - **Configurable thumbnails** - Small/Medium/Large sizing options
 
 ### Security & Performance
@@ -127,7 +129,15 @@ All API endpoints return standardized JSON responses:
 - `POST /api/cameras/<camera_id>/streams` - Start live stream
 - `DELETE /api/cameras/<camera_id>/streams` - Stop live stream
 - `GET /api/cameras/<camera_id>/streams/<filename>` - Get HLS stream segments
+- `PUT /api/cameras/<camera_id>/streams/save` - Toggle whether the current live view is kept on stop (`{"saved": true|false}`)
 - `POST /api/cameras/<camera_id>/record` - Start recording
+
+**Live-view recording:** A live view is recorded server-side for the whole
+session. The Save toggle (which starts pressed when "Save all Live Views" is
+enabled) decides whether the recording is kept when the session ends. Kept
+recordings are remuxed to MP4, stored in a `recordings/` directory (separate
+from the cache), and appear in the clip list as **Live View** clips
+(downloadable/deletable via the clip endpoints).
 
 **Live Streaming Implementation:**
 Live streaming performs MPEG-TS to HLS transcoding via FFmpeg. The camera's
@@ -166,15 +176,29 @@ manual PR checkout is required.
 
 ### Environment Variables
 ```bash
+# Flask session signing key. If unset, an ephemeral random key is generated
+# (sessions reset on each restart); set it to keep sessions stable.
 SECRET_KEY=your-secret-key-here
 CACHE_DIR=cache  # Default cache directory
+# Authentication guard (default: on). Set to false for local/dev only.
+REQUIRE_AUTH=true
 ```
 
+### Authentication guard
+All routes require an authenticated session except the login/2FA pages, the
+favicon, and static assets. Unauthenticated API calls return HTTP 401 with
+`{"success": false, "error": "Authentication required"}`; unauthenticated page
+requests redirect to `/login`. The guard is controlled by the `REQUIRE_AUTH`
+config flag (default on); it should only be disabled in trusted dev/test
+environments.
+
 ### User Settings (Persistent)
+- **Theme**: System (follows OS) / Light / Dark
 - **Temperature Units**: Celsius/Fahrenheit
 - **Cloud Clip Retention**: 3-60 days auto-deletion
 - **Local Clip Retention**: Never or 3-60 days auto-deletion
 - **Clip Thumbnail Size**: Small/Medium/Large display options
+- **Save all Live Views**: When on, new live views start with Save enabled
 
 ### Cache Settings
 - **Clips cache**: 100 items (configurable)
@@ -225,6 +249,7 @@ blinkpy-flask/
 │   ├── blink_app.log  # Application logs (rotated)
 │   ├── thumbnails/    # Camera thumbnail cache with timestamps
 │   └── clips/         # Downloaded clips cache with thumbnails
+├── recordings/        # Saved live-view recordings (MP4 + JSON sidecar + thumbnail), separate from cache
 └── README.md          # This file
 ```
 
@@ -304,13 +329,12 @@ This provides type checking for blinkpy in any Python project without conflicts.
 - **Intelligent caching**: fewer repeated API calls via timestamp tracking
 - **Background processing**: Sequential clip processing with thumbnail generation
 - **FIFO management**: Automatic cache cleanup with configurable retention
-- **Connection pooling**: Efficient HTTP requests with proper cleanup
+- **Stream cleanup**: Live streams stop their FFmpeg process and remove HLS segments on stop, client disconnect, idle timeout, and shutdown, so transcoding processes and temp files are not leaked
 - **Mobile optimization**: Compact UI with reduced spacing and font sizes
 
 ### Error Handling
 - Comprehensive input validation
 - Graceful degradation on failures
-- Automatic retry mechanisms
 - Detailed error logging
 
 ## Development
@@ -345,7 +369,7 @@ The project has undergone a comprehensive **Phase 2 reorganization** to improve 
 ## Testing
 
 ### Test Suite Overview
-The project includes a comprehensive test suite with **73% code coverage** and **777 passing tests** across multiple test files.
+The project includes a comprehensive test suite with **~72% code coverage** and **796 passing tests** across multiple test files.
 
 ### Complete Test Isolation
 Tests run in **complete isolation** with automatic file system protection:
@@ -364,13 +388,12 @@ pytest --cov=blinkapp --cov-report=html
 
 # Run specific test suites by marker
 pytest -m core                             # Core application tests
-pytest -m critical                         # Critical coverage tests
-pytest -m boost                            # Coverage boost tests
 
 # Run specific test files
-pytest tests/test_app.py                    # Core application tests
-pytest tests/test_critical_coverage.py     # Critical coverage tests
-pytest tests/test_coverage_boost.py        # Coverage boost tests
+pytest tests/test_app.py                    # Core application + API endpoints
+pytest tests/test_services.py               # Service-layer logic
+pytest tests/test_auth_guard.py             # /api authentication guard
+pytest tests/test_liveview_recording.py     # Live-view recording
 
 # Run with verbose output
 pytest -v
@@ -407,8 +430,8 @@ python update_test_baseline.py
 ```bash
 🔍 Checking test results against baseline...
 
-📊 Current: 411 passing tests
-📊 Baseline: 411 tests
+📊 Current: <N> passing tests
+📊 Baseline: <N> tests
 
 ✅ NO CHANGES: All tests match baseline
 ```
@@ -438,15 +461,6 @@ pytest --cov=blinkapp --cov-report=term-missing
 pytest --cov=blinkapp --cov-report=html --cov-report=term
 ```
 
-# Run specific test file
-cd tests
-pytest test_app.py
-
-# Generate HTML coverage report
-cd tests
-pytest --cov=blinkapp --cov-report=html --cov-report=term
-```
-
 ### Test Options
 ```bash
 # Basic usage
@@ -455,32 +469,26 @@ pytest --cov=blinkapp --cov-report=html   # With HTML coverage
 pytest -v                                 # Verbose output
 pytest -q                                 # Quiet output
 
-# Specific test suites by marker (fast)
-pytest -m core                             # Core application tests (12 tests)
-pytest -m critical                        # Critical path tests
-pytest -m boost                           # Coverage boost tests
-
-# Specific test suites by file (comprehensive)
-pytest tests/test_app.py                   # Core application tests (288 tests)
-pytest tests/test_critical_coverage.py    # Critical path tests
-pytest tests/test_coverage_boost.py       # Coverage boost tests
+# Specific test files
+pytest tests/test_app.py                   # Core application + API endpoints
+pytest tests/test_services.py              # Service-layer logic
+pytest tests/test_auth_guard.py            # /api authentication guard
+pytest tests/test_liveview_recording.py    # Live-view recording
 
 # Additional options
 pytest --disable-warnings                 # Suppress warnings
 ```
 
 ### Test Coverage Status
-- **Coverage**: 73% (2763/3786 lines)
-- **Passing Tests**: 777
-- **Total Tests**: 777 (all passing)
-- **Test Files**: 12 comprehensive test suites
+- **Coverage**: ~72% of statements
+- **Passing Tests**: 796 (all passing)
 
 ### Test Architecture
 - **Complete Isolation**: `conftest.py` with `autouse=True` fixture provides automatic file system isolation
 - **Core Tests** (`test_app.py`): Main application functionality, API endpoints, authentication
-- **Critical Coverage** (`test_critical_coverage.py`): High-impact untested code paths
-- **Coverage Boost** (`test_coverage_boost.py`): Targeted line coverage improvements
-- **Advanced Tests**: Video processing, streaming, and complex operations
+- **Service Tests** (`test_services.py`): Service-layer logic (auth, streaming, clips, cache)
+- **Auth Guard** (`test_auth_guard.py`): `/api/*` authentication guard behavior
+- **Live-View Recording** (`test_liveview_recording.py`): recording lifecycle and clip-list integration
 
 For detailed testing documentation, see [`tests/README.md`](tests/README.md).
 

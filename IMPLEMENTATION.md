@@ -51,7 +51,7 @@ When the app is launched, it scans the thumbnail cache directory for existing th
 Clicking on the the "play" button in the middle of a thumbnail opens the "Live View" page for that camera.
 On the top-left of the Live View page, there is a "Back" button (back arrow), that goes back to the "Home" view.
 On the top-right of the Live View page, there is a "Mute" button ("speaker" icon) to mute the sound of the live view.
-At the bottom of the Live View page, there is a "Save" button (💾 icon) that triggers recording a clip on the camera being viewed by calling the `/api/cameras/{camera_id}/record` API endpoint.
+At the bottom of the Live View page, there is a "Save" toggle (💾 icon). The live view is recorded server-side for the entire session; the Save toggle (which starts pressed when "Save all Live Views" is enabled) controls whether the recording is kept when the session ends, via `PUT /api/cameras/{camera_id}/streams/save` with `{"saved": true|false}`. Kept recordings are remuxed to MP4, stored in a `recordings/` directory separate from the cache, and appear in the clip list as "Live View" clips.
 
 #### Live streaming MPEG-TS livestreaming via local TCP proxy server
 
