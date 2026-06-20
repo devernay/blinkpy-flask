@@ -1126,7 +1126,8 @@ class TestAuthService(BaseTestCase):
             self.assertEqual(result, expected)
             self.assertTrue(mock_session["pending_2fa"])
             self.assertEqual(mock_session["temp_username"], "user@example.com")
-            self.assertEqual(mock_session["temp_password"], "password")
+            # Password must NOT be stored in the session cookie.
+            self.assertNotIn("temp_password", mock_session)
 
     @patch("blinkapp.services.auth_service.validate_credentials")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
@@ -1236,7 +1237,6 @@ class TestAuthService(BaseTestCase):
             "flask.session",
             {
                 "temp_username": "user@example.com",
-                "temp_password": "password",
                 "pending_2fa": True,
             },
         ) as mock_session:
@@ -1246,7 +1246,6 @@ class TestAuthService(BaseTestCase):
             self.assertEqual(result, expected)
             self.assertNotIn("pending_2fa", mock_session)
             self.assertNotIn("temp_username", mock_session)
-            self.assertNotIn("temp_password", mock_session)
             self.assertTrue(mock_session["authenticated"])
 
     @patch("flask.session", {})

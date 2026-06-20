@@ -71,7 +71,20 @@ __all__ = [
 
 # Create Flask app instance with secure configuration
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
-app.secret_key = os.environ.get("SECRET_KEY", "dev-key-change-in-production")
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key:
+    # No hardcoded fallback: a shared, well-known key would let anyone forge
+    # signed session cookies. Generate an ephemeral random key instead. This
+    # invalidates existing sessions on restart; set SECRET_KEY in the
+    # environment to keep sessions stable across restarts.
+    import secrets
+
+    _secret_key = secrets.token_hex(32)
+    logging.getLogger(__name__).warning(
+        "SECRET_KEY not set; using a random ephemeral key."
+        + " Set SECRET_KEY in the environment for stable sessions."
+    )
+app.secret_key = _secret_key
 
 
 # Favicon route

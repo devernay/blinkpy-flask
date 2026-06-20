@@ -6,6 +6,7 @@ converting TCP streams to HLS format.
 """
 
 import logging
+import re
 import subprocess
 import tempfile
 import threading
@@ -93,10 +94,14 @@ def _create_ffmpeg_process(
         process_factory = subprocess.Popen
 
     try:
+        # A live stream runs indefinitely and we read HLS output from files,
+        # not from the process pipes. Leaving stdout/stderr as PIPE would let
+        # the OS pipe buffers fill (FFmpeg emits periodic warnings), blocking
+        # FFmpeg on write and stalling the stream. Discard them instead.
         return process_factory(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             stdin=subprocess.DEVNULL,
         )
     except (OSError, subprocess.SubprocessError):
@@ -281,6 +286,11 @@ class HLSStream:
         """
         with self.lock:
             if not self.temp_dir or not self._active:
+                return None, None
+
+            # Guard against path traversal: only allow plain HLS segment and
+            # playlist names (no separators, no "..") inside the temp dir.
+            if not re.fullmatch(r"[A-Za-z0-9_-]+\.(m3u8|ts)", filename):
                 return None, None
 
             try:

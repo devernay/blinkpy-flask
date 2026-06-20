@@ -428,7 +428,10 @@ def handle_login(username: str, password: str) -> SimpleJsonDict:
 
             session["pending_2fa"] = True
             session["temp_username"] = username
-            session["temp_password"] = password
+            # NOTE: the password is deliberately NOT stored in the session.
+            # Flask sessions are signed but not encrypted, so the cookie is
+            # readable client-side. 2FA completion uses the in-memory Blink
+            # instance, so the password is not needed here.
             return {"success": False, "requires_2fa": True}
         return {"success": False, "error": "Authentication failed"}
 
@@ -464,9 +467,8 @@ def handle_2fa_verification(code: str) -> SimpleJsonDict:
         from flask import session
 
         username = session.get("temp_username")
-        password = session.get("temp_password")
 
-        if not username or not password:
+        if not username:
             return {"success": False, "error": "Session expired. Please login again."}
 
         # Use blink_connection for 2FA verification
@@ -479,13 +481,14 @@ def handle_2fa_verification(code: str) -> SimpleJsonDict:
         except RuntimeError:
             return {"success": False, "error": "System not ready. Please try again."}
 
-        result = blink_conn.execute(verify_2fa_and_save(username, password, code))
+        # Password is not stored in the session; verify_2fa_and_save completes
+        # 2FA using the in-memory Blink instance, so it is not required here.
+        result = blink_conn.execute(verify_2fa_and_save(username, "", code))
 
         if result:
             # Clear temporary session data
             session.pop("pending_2fa", None)
             session.pop("temp_username", None)
-            session.pop("temp_password", None)
             session["authenticated"] = True
             return {"success": True}
         return {"success": False, "error": "Invalid 2FA code"}
