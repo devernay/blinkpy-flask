@@ -212,23 +212,63 @@ def stop_camera_stream(camera_id: CameraId) -> bool:
         if stream_manager.is_stream_active(str(camera_id)):
             stream_manager.stop_stream(str(camera_id))
             logger.info(f"Stream stopped for camera {camera_id}")
-        _finalize_recording_session(camera_id)
+        # stop_stream finalizes via the manager; this is a fallback for the
+        # already-stopped case (idempotent if the session was already taken).
+        _schedule_finalize(camera_id)
         return True
     except Exception as e:
         logger.error(f"Failed to stop stream for camera {camera_id}: {e}")
-        _finalize_recording_session(camera_id)
+        _schedule_finalize(camera_id)
         return False
 
 
-def _finalize_recording_session(camera_id: CameraId) -> None:
-    """Keep or discard the live-view recording for a stopped session."""
+def _schedule_finalize(camera_id: CameraId | str, wait: bool = False) -> None:
+    """Finalize (keep or discard) the live-view recording for a camera.
+
+    Pops the active recording session and finalizes it according to its save
+    flag. By default this runs on a background daemon thread so the blocking
+    FFmpeg remux/thumbnail work never stalls the caller (e.g. an HTTP request
+    or a lock-holding teardown path). Pass wait=True to run synchronously
+    (used on shutdown so recordings are persisted before exit).
+
+    Args:
+        camera_id: Camera whose recording session to finalize.
+        wait: If True, finalize synchronously instead of on a thread.
+    """
+    with _recording_lock:
+        session = _recording_sessions.pop(str(camera_id), None)
+    if session is None:
+        return
+
+    from blinkapp.services.liveview_recording import finalize_session
+
+    if wait:
+        finalize_session(session, session.save)
+        return
+    threading.Thread(
+        target=finalize_session,
+        args=(session, session.save),
+        name=f"finalize-recording-{camera_id}",
+        daemon=True,
+    ).start()
+
+
+def _discard_recording_session(camera_id: CameraId | str) -> None:
+    """Drop a recording session and delete its (empty) working file.
+
+    Used when a live view fails to start, so a registered session and its
+    partial working file are not left behind.
+
+    Args:
+        camera_id: Camera whose pending recording session to discard.
+    """
     with _recording_lock:
         session = _recording_sessions.pop(str(camera_id), None)
     if session is None:
         return
     from blinkapp.services.liveview_recording import finalize_session
 
-    finalize_session(session, session.save)
+    finalize_session(session, save=False)
 
 
 def is_stream_active(camera_id: CameraId) -> bool:
@@ -424,6 +464,21 @@ class StreamManager:
             # Stop Blink camera stream and cancel its feed task
             self._release_camera_stream(camera_id)
 
+        # Keep or discard the live-view recording (non-blocking).
+        _schedule_finalize(camera_id)
+
+    def register_feed_task(
+        self, camera_id: str, feed_task: concurrent.futures.Future[None]
+    ) -> None:
+        """Register a camera's feed() task under the manager lock.
+
+        Args:
+            camera_id: Camera identifier the feed task belongs to.
+            feed_task: The scheduled feed() future to track for cleanup.
+        """
+        with self.lock:
+            self.feed_tasks[camera_id] = feed_task
+
     def is_stream_active(self, camera_id: str) -> bool:
         """Check if stream is active for camera.
 
@@ -439,10 +494,17 @@ class StreamManager:
 
             stream = self.streams[camera_id]
             if not stream.is_active():
+                stream.stop()
                 del self.streams[camera_id]
-                return False
-
-            return True
+                self._release_camera_stream(camera_id)
+                finalize = True
+            else:
+                finalize = False
+        if finalize:
+            # Idle/dead stream removed: finalize its recording (non-blocking).
+            _schedule_finalize(camera_id)
+            return False
+        return True
 
     def get_hls_file(
         self, camera_id: str, filename: str
@@ -475,6 +537,10 @@ class StreamManager:
                 del self.streams[camera_id]
                 self._release_camera_stream(camera_id)
 
+        # Finalize recordings for the reaped cameras (non-blocking, no lock).
+        for camera_id in inactive_cameras:
+            _schedule_finalize(camera_id)
+
     def shutdown(self) -> None:
         """Shutdown all streams and release all camera/feed resources."""
         # Stop the idle sweeper first so it doesn't race with teardown.
@@ -485,8 +551,14 @@ class StreamManager:
             self.streams.clear()
 
             # Cancel any feed tasks and stop any camera streams still tracked.
-            for camera_id in list(self.camera_streams.keys() | self.feed_tasks.keys()):
+            cameras = list(self.camera_streams.keys() | self.feed_tasks.keys())
+            for camera_id in cameras:
                 self._release_camera_stream(camera_id)
+
+        # Finalize any in-progress recordings synchronously so saved live views
+        # are persisted before the process exits.
+        for camera_id in set(cameras) | set(_recording_sessions.keys()):
+            _schedule_finalize(camera_id, wait=True)
 
 
 # Testability improvement functions - these provide injectable dependencies
@@ -617,6 +689,11 @@ def init_camera_stream(
         # Initialize stream manager first
         stream_manager = ensure_stream_manager_initialized()
 
+        # Cleanly end any prior live view for this camera (stops its stream and
+        # finalizes its recording) before starting a new one, so a previous
+        # session is never silently orphaned.
+        stream_manager.stop_stream(str(camera_id))
+
         # Create a live-view recording session. Recording always starts with the
         # live view; whether it is kept is decided by the Save state at stop time.
         from blinkapp.services.liveview_recording import create_session
@@ -629,26 +706,34 @@ def init_camera_stream(
         with _recording_lock:
             _recording_sessions[str(camera_id)] = session
 
-        # Schedule feed() to run asynchronously and store task
-        import asyncio
+        try:
+            # Schedule feed() to run asynchronously and store task (under the
+            # manager lock so it doesn't race with teardown iterations).
+            import asyncio
 
-        if connection.loop:
-            feed_task = asyncio.run_coroutine_threadsafe(
-                camera_stream.feed(), connection.loop
+            if connection.loop:
+                feed_task = asyncio.run_coroutine_threadsafe(
+                    camera_stream.feed(), connection.loop
+                )
+                stream_manager.register_feed_task(str(camera_id), feed_task)
+
+            # Start HLS transcoding (with parallel recording) and store camera stream
+            hls_url, error = stream_manager.start_stream(
+                str(camera_id), tcp_url, camera_stream, record_path=session.working_path
             )
-            # Store feed task in stream manager for proper cleanup
-            stream_manager.feed_tasks[str(camera_id)] = feed_task
+        except Exception:
+            # Anything failing after the session was registered must not leave
+            # the session, feed task, or working file behind.
+            stream_manager.stop_stream(str(camera_id))
+            _discard_recording_session(camera_id)
+            raise
 
-        # Start HLS transcoding (with parallel recording) and store camera stream
-        hls_url, error = stream_manager.start_stream(
-            str(camera_id), tcp_url, camera_stream, record_path=session.working_path
-        )
         if hls_url is not None:
             logger.info(f"Started live stream for camera {camera_id}: {hls_url}")
             return camera_stream, hls_url
-        # Stream failed to start: drop the unused recording session.
-        with _recording_lock:
-            _recording_sessions.pop(str(camera_id), None)
+        # Stream failed to start: drop the unused recording session + feed task.
+        stream_manager.stop_stream(str(camera_id))
+        _discard_recording_session(camera_id)
         logger.error(f"Failed to start stream for camera {camera_id}: {error}")
         return None, None
 

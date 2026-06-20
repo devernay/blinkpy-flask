@@ -251,3 +251,66 @@ class TestFinalizeDiscard:
         kept = finalize_session(session, save=False)
         assert kept is False
         assert not working.exists()
+
+
+class TestFinalizeOnTeardown:
+    """Recording sessions are finalized on every teardown path, not just stop."""
+
+    def _register_session(self, camera_id: str, working: Path) -> None:
+        """Register an unsaved recording session for a camera.
+
+        Args:
+            camera_id: Camera id to register the session under.
+            working: Working .ts path that should be removed on discard.
+        """
+        from blinkapp.services import stream_service
+        from blinkapp.services.liveview_recording import RecordingSession
+
+        working.write_bytes(b"data")
+        stream_service._recording_sessions[camera_id] = RecordingSession(
+            clip_id=ClipId.from_liveview(camera_id, 1718880000),
+            camera_id=camera_id,
+            camera_name="Front",
+            started_at=datetime.now(UTC),
+            working_path=working,
+            save=False,
+        )
+
+    def test_schedule_finalize_wait_pops_and_discards(self, tmp_path: Path) -> None:
+        """Synchronous finalize pops the session and discards the working file.
+
+        Tests:
+            - _schedule_finalize(wait=True) removes the session from the registry
+            - The unsaved working file is deleted
+        """
+        from blinkapp.services import stream_service
+
+        working = tmp_path / "rec.ts"
+        self._register_session("777", working)
+        try:
+            stream_service._schedule_finalize("777", wait=True)
+            assert "777" not in stream_service._recording_sessions
+            assert not working.exists()
+        finally:
+            stream_service._recording_sessions.pop("777", None)
+
+    def test_shutdown_finalizes_registered_session(self, tmp_path: Path) -> None:
+        """StreamManager.shutdown finalizes any in-progress recording session.
+
+        Tests:
+            - A session registered with no active stream is finalized on
+              shutdown (removed from the registry; working file discarded)
+        """
+        from blinkapp.services import stream_service
+        from blinkapp.services.hls_service import HLSStreamConfig
+        from blinkapp.services.stream_service import StreamManager
+
+        working = tmp_path / "rec.ts"
+        self._register_session("778", working)
+        try:
+            manager = StreamManager(HLSStreamConfig())
+            manager.shutdown()
+            assert "778" not in stream_service._recording_sessions
+            assert not working.exists()
+        finally:
+            stream_service._recording_sessions.pop("778", None)

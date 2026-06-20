@@ -31,6 +31,7 @@ __all__ = [
     "finalize_session",
     "get_recording_file",
     "list_recording_clips",
+    "recording_thumbnail_path",
 ]
 
 
@@ -145,7 +146,6 @@ def list_recording_clips() -> list[JsonDict]:
         A list of clip dicts (same shape the UI expects) with event_type
         "Live View".
     """
-    from blinkapp.services.cache_service import get_thumbnail_path
     from blinkapp.utils.formatters import format_clip_time
 
     recordings_dir = _recordings_dir()
@@ -158,7 +158,7 @@ def list_recording_clips() -> list[JsonDict]:
             meta = json.loads(meta_file.read_text())
             clip_id_str = str(meta["id"])
             created_at = datetime.fromisoformat(meta["created_at"])
-            thumbnail_exists = get_thumbnail_path(ClipId(clip_id_str)).exists()
+            thumbnail_exists = recording_thumbnail_path(ClipId(clip_id_str)).exists()
             clips.append(
                 {
                     "id": clip_id_str,
@@ -202,8 +202,6 @@ def delete_recording(clip_id: ClipId) -> bool:
     Returns:
         True if a recording file or metadata was removed.
     """
-    from blinkapp.services.cache_service import get_thumbnail_path
-
     recordings_dir = _recordings_dir()
     removed = False
     for suffix in (".mp4", ".json"):
@@ -211,7 +209,7 @@ def delete_recording(clip_id: ClipId) -> bool:
         if target.exists():
             target.unlink()
             removed = True
-    thumbnail = get_thumbnail_path(clip_id)
+    thumbnail = recording_thumbnail_path(clip_id)
     if thumbnail.exists():
         thumbnail.unlink()
     return removed
@@ -223,11 +221,24 @@ def _recordings_dir() -> Path:
     return get_recordings_dir()
 
 
-def _generate_thumbnail(clip_id: ClipId, mp4_path: Path) -> None:
-    """Extract a thumbnail frame into the thumbnail cache."""
-    from blinkapp.services.cache_service import get_thumbnail_path
+def recording_thumbnail_path(clip_id: ClipId) -> Path:
+    """Path to a live-view recording's thumbnail (stored with the recording).
 
-    thumbnail_path = get_thumbnail_path(clip_id)
+    Kept in the recordings directory (not the cache) so clearing the clip
+    cache does not delete recording thumbnails.
+
+    Args:
+        clip_id: The live-view clip identifier.
+
+    Returns:
+        Path to the recording's JPEG thumbnail.
+    """
+    return _recordings_dir() / f"{clip_id}.jpg"
+
+
+def _generate_thumbnail(clip_id: ClipId, mp4_path: Path) -> None:
+    """Extract a thumbnail frame into the recordings directory."""
+    thumbnail_path = recording_thumbnail_path(clip_id)
     thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
         [

@@ -112,6 +112,19 @@ def get_clip_thumbnail(
     try:
         clip_id_obj = ClipId(clip_id)
 
+        # Live-view recording thumbnails live with the recording (outside the
+        # cache), so serve them directly rather than via the clip cache.
+        if clip_id_obj.is_liveview():
+            from ..services.liveview_recording import recording_thumbnail_path
+
+            thumb = recording_thumbnail_path(clip_id_obj)
+            exists = thumb.exists()
+            if check:
+                return {"success": True, "exists": exists, "available": exists}
+            if exists:
+                return send_file(thumb, mimetype="image/jpeg")
+            return {"success": False, "error": "Thumbnail not found"}, 404
+
         # Sync thumbnail from disk to cache if it exists
         thumbnail_synced = sync_thumbnail_to_cache(clip_id_obj)
 

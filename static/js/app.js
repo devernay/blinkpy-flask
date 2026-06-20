@@ -78,10 +78,18 @@ function setupEventListeners() {
     // Cleanup livestream when page is unloaded
     window.addEventListener('beforeunload', function() {
         if (window.LiveStream && window.LiveStream.getCurrentStream()) {
-            // Use sendBeacon for reliable cleanup during page unload
             const currentStream = window.LiveStream.getCurrentStream();
-            navigator.sendBeacon(`/api/cameras/${currentStream.cameraId}/liveview`);
-
+            // fetch(..., keepalive) lets us hit the real DELETE stop endpoint
+            // during unload (sendBeacon can only POST). Stopping the stream
+            // finalizes the recording (kept/discarded per the Save state).
+            try {
+                fetch(`/api/cameras/${currentStream.cameraId}/streams`, {
+                    method: 'DELETE',
+                    keepalive: true
+                });
+            } catch (e) {
+                /* best-effort during unload */
+            }
         }
     });
 
