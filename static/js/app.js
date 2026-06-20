@@ -388,6 +388,25 @@ async function toggleArm() {
 }
 
 /**
+ * Apply a theme ("system" | "light" | "dark") to the document and remember it.
+ * "system" removes the override so the OS preference (prefers-color-scheme) wins.
+ */
+function applyTheme(theme) {
+    const root = document.documentElement;
+    if (theme === 'dark' || theme === 'light') {
+        root.setAttribute('data-theme', theme);
+    } else {
+        theme = 'system';
+        root.removeAttribute('data-theme');
+    }
+    try {
+        localStorage.setItem('theme', theme);
+    } catch (e) {
+        /* localStorage unavailable; theme still applied for this session */
+    }
+}
+
+/**
  * Load user settings
  */
 async function loadSettings() {
@@ -397,6 +416,10 @@ async function loadSettings() {
             const data = await response.json();
             if (data.success) {
                 const settings = data.data;
+                const theme = settings.theme || 'system';
+                const themeSelect = document.getElementById('theme-select');
+                if (themeSelect) themeSelect.value = theme;
+                applyTheme(theme);
                 document.getElementById('temperature-units').value = settings.temperatureUnits || 'C';
                 document.getElementById('cloud-clip-retention').value = settings.cloudClipRetention || '30';
                 document.getElementById('local-clip-retention').value = settings.localClipRetention || 'never';
@@ -413,6 +436,10 @@ async function loadSettings() {
  * Save a user setting
  */
 async function saveSetting(key, value) {
+    // Apply theme immediately for an instant, flicker-free switch.
+    if (key === 'theme') {
+        applyTheme(value);
+    }
     try {
         const response = await fetch('/api/settings', {
             method: 'PUT',
