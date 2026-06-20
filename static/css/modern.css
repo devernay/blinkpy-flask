@@ -1,0 +1,102 @@
+/*
+ * modern.css - additive usability, accessibility, and responsive layer.
+ *
+ * Loaded AFTER the inline base styles in base.html, so these rules win on
+ * conflict. Kept deliberately additive (no rewrite of the existing layout)
+ * to modernise desktop/mobile usability with minimal risk.
+ */
+
+/* ---------------------------------------------------------------------------
+ * 1) Keyboard accessibility: a visible focus ring for interactive elements.
+ *    :focus-visible only shows for keyboard/AT users, not mouse clicks.
+ * ------------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.nav-button:focus-visible,
+.camera-card:focus-visible,
+.clip-item:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2) Touch ergonomics: ensure tappable controls meet the ~44px WCAG target
+ *    size, but only on touch ("coarse" pointer) devices so the desktop
+ *    mouse UI is unchanged.
+ * ------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .nav-button,
+  .action-btn,
+  .clip-action-btn,
+  .kebab-btn,
+  .storage-btn,
+  .arm-btn,
+  .save-btn,
+  .login-btn,
+  .close-btn,
+  .add-device-btn,
+  .back-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 3) Small phones: a little breathing room and tighter nav spacing.
+ *    Conservative tweaks only; the base layout is already a fluid,
+ *    full-width column below its 800px max.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .nav-buttons {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .login-form {
+    margin: 48px auto;
+    padding: 24px;
+  }
+
+  .modal-content {
+    margin: 24px auto;
+    width: 94%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 4) Larger screens: keep the readable phone-style column but let modals use
+ *    a touch more width.
+ * ------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .modal-content {
+    max-width: 460px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 5) Respect users who prefer reduced motion (e.g. the loading spinner).
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 6) Prevent accidental horizontal scrolling on narrow viewports.
+ * ------------------------------------------------------------------------- */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}

@@ -738,6 +738,8 @@
             background: #f44336;
         }
     </style>
+    <!-- Additive modern/accessibility/responsive layer (loaded after base styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
     <!-- HLS.js for cross-browser HLS support -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 </head>
