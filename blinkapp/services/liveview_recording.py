@@ -61,7 +61,9 @@ def create_session(camera_id: str, camera_name: str, save: bool) -> RecordingSes
     from blinkapp.services.cache_service import get_recordings_working_dir
 
     now = datetime.now(UTC)
-    clip_id = ClipId.from_liveview(str(camera_id), int(now.timestamp()))
+    # Microsecond precision so two live views of the same camera started in
+    # quick succession cannot collide on clip id / working file / output paths.
+    clip_id = ClipId.from_liveview(str(camera_id), int(now.timestamp() * 1_000_000))
     working_path = get_recordings_working_dir() / f"{clip_id}.ts"
     return RecordingSession(
         clip_id=clip_id,

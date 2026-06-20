@@ -314,3 +314,33 @@ class TestFinalizeOnTeardown:
             assert not working.exists()
         finally:
             stream_service._recording_sessions.pop("778", None)
+
+    def test_failed_start_discards_even_when_save_enabled(self, tmp_path: Path) -> None:
+        """A failed live-view start never keeps the recording, even if save=True.
+
+        Tests:
+            - _abort_failed_stream discards a save=True session (forces no-save)
+            - The working file is removed and the session deregistered
+        """
+        from unittest.mock import Mock
+
+        from blinkapp.models.ids import CameraId
+        from blinkapp.services import stream_service
+        from blinkapp.services.liveview_recording import RecordingSession
+
+        working = tmp_path / "rec.ts"
+        working.write_bytes(b"partial")
+        stream_service._recording_sessions["779"] = RecordingSession(
+            clip_id=ClipId.from_liveview("779", 1718880000),
+            camera_id="779",
+            camera_name="Front",
+            started_at=datetime.now(UTC),
+            working_path=working,
+            save=True,  # "Save all Live Views" was enabled
+        )
+        try:
+            stream_service._abort_failed_stream(Mock(), CameraId("779"), Mock())
+            assert "779" not in stream_service._recording_sessions
+            assert not working.exists()
+        finally:
+            stream_service._recording_sessions.pop("779", None)
