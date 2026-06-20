@@ -235,7 +235,7 @@ class ClipId(BaseId):
 
         Args:
             camera_id: Camera the live view was recorded from
-            epoch: Unix timestamp (seconds) the recording started
+            epoch: Unix timestamp (microseconds) when the recording started
 
         Returns:
             ClipId instance of the form 'liveview-<camera_id>-<epoch>'
@@ -262,7 +262,7 @@ class ClipId(BaseId):
         """Get camera id and start epoch for a live-view recording.
 
         Returns:
-            Tuple of (camera_id, epoch_seconds)
+            Tuple of (camera_id, epoch_microseconds)
 
         Raises:
             ValueError: If this is not a live-view recording

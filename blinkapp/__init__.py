@@ -105,11 +105,8 @@ def favicon() -> "Response":
 
 
 # Endpoints reachable without authentication (login/2FA pages, favicon, static).
-# main_page_route ("/") is included so it can run its own auth logic, including
-# auto-authenticating when credentials were loaded at startup; it redirects to
-# the login page itself when no session and no startup credentials exist.
 _PUBLIC_ENDPOINTS = frozenset(
-    {"main_page_route", "login_page_route", "twofa_page_route", "favicon", "static"}
+    {"login_page_route", "twofa_page_route", "favicon", "static"}
 )
 
 

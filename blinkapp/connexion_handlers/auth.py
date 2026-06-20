@@ -14,17 +14,17 @@ ResponseReturnValue = Union[str, tuple[str, int], "FlaskResponse", "WerkzeugResp
 def main_page() -> ResponseReturnValue:
     """Main application interface.
 
+    Access requires an authenticated web session (the cookie set during
+    login/2FA). Having credentials cached on the server does NOT grant web
+    access on its own — every client must authenticate to obtain the session.
+
     Returns:
         Redirect to login page if not authenticated, otherwise renders main interface.
     """
-    from flask import current_app, redirect, render_template, session, url_for
+    from flask import redirect, render_template, session, url_for
 
     if not session.get("authenticated"):
-        # Check if credentials were loaded at startup and auto-authenticate
-        if current_app.config.get("CREDENTIALS_LOADED_AT_STARTUP"):  # type: ignore[misc]  # Flask config typing limitation
-            session["authenticated"] = True
-        else:
-            return redirect(url_for("login_page_route"))
+        return redirect(url_for("login_page_route"))
 
     return render_template("index.html")
 

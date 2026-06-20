@@ -1,7 +1,7 @@
 """Tests for live-view recording behavior."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from blinkapp.models.ids import ClipId
@@ -221,6 +221,111 @@ class TestRecordingListingAndDelete:
         assert delete_recording(clip_id) is True
         assert not (get_recordings_dir() / f"{clip_id}.mp4").exists()
         assert not (get_recordings_dir() / f"{clip_id}.json").exists()
+
+
+class TestRecordingRetention:
+    """Retention cleanup for saved recordings and stray working files."""
+
+    def _write_recording_with_age(self, clip_id: ClipId, days_old: int) -> None:
+        """Write a recording whose sidecar created_at is N days in the past.
+
+        Args:
+            clip_id: Live-view clip id to create.
+            days_old: How many days old the recording's created_at should be.
+        """
+        from blinkapp.services.cache_service import get_recordings_dir
+
+        rec_dir = get_recordings_dir()
+        rec_dir.mkdir(parents=True, exist_ok=True)
+        (rec_dir / f"{clip_id}.mp4").write_bytes(b"fake")
+        created = datetime.now(UTC) - timedelta(days=days_old)
+        (rec_dir / f"{clip_id}.json").write_text(
+            json.dumps(
+                {
+                    "id": str(clip_id),
+                    "camera_id": "400658",
+                    "camera_name": "Front",
+                    "created_at": created.isoformat(),
+                    "event_type": "Live View",
+                }
+            )
+        )
+
+    def _set_retention(self, tmp_path: Path, value: str) -> None:
+        """Write a settings file with the given localClipRetention value.
+
+        Args:
+            tmp_path: Per-test temp dir (where settings.json is patched to live).
+            value: The localClipRetention value to persist.
+        """
+        (tmp_path / "settings.json").write_text(
+            json.dumps({"localClipRetention": value})
+        )
+
+    def test_never_keeps_all(self, tmp_path: Path) -> None:
+        """localClipRetention 'never' keeps recordings regardless of age.
+
+        Tests:
+            - cleanup_recordings removes nothing when retention is 'never'
+        """
+        from blinkapp.services.cache_service import get_recordings_dir
+        from blinkapp.services.liveview_recording import cleanup_recordings
+
+        self._set_retention(tmp_path, "never")
+        old = ClipId.from_liveview("400658", 1)
+        self._write_recording_with_age(old, days_old=100)
+        assert cleanup_recordings() == 0
+        assert (get_recordings_dir() / f"{old}.mp4").exists()
+
+    def test_deletes_old_keeps_recent(self, tmp_path: Path) -> None:
+        """A day-based retention deletes old recordings and keeps recent ones.
+
+        Tests:
+            - With retention '7', a 30-day-old recording is removed
+            - A 1-day-old recording is kept
+        """
+        from blinkapp.services.cache_service import get_recordings_dir
+        from blinkapp.services.liveview_recording import cleanup_recordings
+
+        self._set_retention(tmp_path, "7")
+        old = ClipId.from_liveview("400658", 111)
+        recent = ClipId.from_liveview("400658", 222)
+        self._write_recording_with_age(old, days_old=30)
+        self._write_recording_with_age(recent, days_old=1)
+
+        removed = cleanup_recordings()
+        assert removed == 1
+        rec_dir = get_recordings_dir()
+        assert not (rec_dir / f"{old}.mp4").exists()
+        assert not (rec_dir / f"{old}.json").exists()
+        assert (rec_dir / f"{recent}.mp4").exists()
+
+    def test_sweeps_stray_working_files(self, tmp_path: Path) -> None:
+        """Orphaned working .ts files older than the threshold are removed.
+
+        Tests:
+            - An old .working/*.ts file is deleted by cleanup_recordings
+            - A fresh working file is retained
+        """
+        import os
+        import time
+
+        from blinkapp.services.cache_service import get_recordings_working_dir
+        from blinkapp.services.liveview_recording import cleanup_recordings
+
+        self._set_retention(tmp_path, "never")
+        working = get_recordings_working_dir()
+        working.mkdir(parents=True, exist_ok=True)
+        old_ts = working / "old.ts"
+        fresh_ts = working / "fresh.ts"
+        old_ts.write_bytes(b"x")
+        fresh_ts.write_bytes(b"x")
+        old_mtime = time.time() - 7 * 3600  # 7 hours old (> 6h threshold)
+        os.utime(old_ts, (old_mtime, old_mtime))
+
+        cleanup_recordings()
+        assert not old_ts.exists()
+        assert fresh_ts.exists()
 
 
 class TestFinalizeDiscard:

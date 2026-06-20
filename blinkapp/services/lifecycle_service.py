@@ -101,6 +101,14 @@ def startup() -> None:
             }
         )
 
+        # Enforce live-view recording retention (and sweep stray working files).
+        try:
+            from blinkapp.services.liveview_recording import cleanup_recordings
+
+            cleanup_recordings()
+        except Exception as e:
+            logger.warning(f"Recording retention cleanup at startup failed: {e}")
+
         # Restore cached thumbnails from previous sessions
         # Start the async Blink connection thread
         from blinkapp.services.blink_service import ensure_blink_connection_initialized

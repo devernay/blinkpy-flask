@@ -166,9 +166,6 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     "core: Core application tests (test_app.py)",
-    "critical: Critical coverage tests (test_critical_coverage.py)",
-    "boost: Coverage boost tests (test_coverage_boost.py)",
-    "advanced: Advanced coverage tests"
 ]
 filterwarnings = [
     'ignore:configuration option "asyncio_default_fixture_loop_scope" is unset',

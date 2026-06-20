@@ -404,15 +404,31 @@ class StreamManager:
         self._sweeper_thread.start()
 
     def _sweep_loop(self) -> None:
-        """Periodically clean up idle streams until asked to stop."""
+        """Periodically clean up idle streams until asked to stop.
+
+        Also enforces live-view recording retention at most hourly, so a
+        long-running server prunes old recordings even between restarts.
+        """
+        import time
+
         from blinkapp.config import Config
 
         interval = Config.STREAM_CLEANUP_INTERVAL
+        last_recording_cleanup = 0.0
         while not self._sweeper_stop.wait(interval):
             try:
                 self.cleanup_inactive_streams()
             except Exception as e:
                 logger.warning(f"Idle stream sweep error: {e}")
+            now = time.time()
+            if now - last_recording_cleanup >= 3600:
+                last_recording_cleanup = now
+                try:
+                    from blinkapp.services.liveview_recording import cleanup_recordings
+
+                    cleanup_recordings()
+                except Exception as e:
+                    logger.warning(f"Recording retention sweep error: {e}")
 
     def start_stream(
         self,

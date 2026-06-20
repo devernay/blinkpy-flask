@@ -15,7 +15,7 @@ import json
 import logging
 import subprocess
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from blinkapp.config import Config
@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "RecordingSession",
+    "cleanup_recordings",
     "create_session",
     "delete_recording",
     "finalize_session",
@@ -133,6 +134,11 @@ def finalize_session(session: RecordingSession, save: bool) -> bool:
         _generate_thumbnail(session.clip_id, mp4_path)
         _write_metadata(session)
         logger.info("Saved live-view recording %s", session.clip_id)
+        # Enforce retention now that a new recording exists.
+        try:
+            cleanup_recordings()
+        except Exception as e:
+            logger.warning("Recording retention cleanup failed: %s", e)
         return True
     except Exception as e:  # never let cleanup failures break stream teardown
         logger.error("Error finalizing live-view recording %s: %s", session.clip_id, e)
@@ -180,6 +186,83 @@ def list_recording_clips() -> list[JsonDict]:
         except Exception as e:
             logger.warning("Skipping invalid recording metadata %s: %s", meta_file, e)
     return clips
+
+
+def cleanup_recordings() -> int:
+    """Delete saved recordings older than the configured retention period.
+
+    Uses the same retention rule as other server-stored clips
+    (the ``localClipRetention`` setting: ``"never"`` keeps recordings, otherwise
+    a number of days). Also sweeps stray working ``.ts`` files left behind by
+    interrupted sessions.
+
+    Returns:
+        The number of saved recordings removed.
+    """
+    from blinkapp.services.settings_service import get_user_settings
+
+    _cleanup_working_files()
+
+    retention = get_user_settings().get("localClipRetention", "never")
+    if not isinstance(retention, str) or retention in ("", "never"):
+        return 0
+    try:
+        days = int(retention)
+    except ValueError:
+        logger.warning("Invalid localClipRetention value: %r", retention)
+        return 0
+
+    cutoff = datetime.now(UTC) - timedelta(days=days)
+    recordings_dir = _recordings_dir()
+    if not recordings_dir.exists():
+        return 0
+
+    removed = 0
+    for meta_file in list(recordings_dir.glob("*.json")):
+        try:
+            meta = json.loads(meta_file.read_text())
+            created = datetime.fromisoformat(meta["created_at"])
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=UTC)
+            if created < cutoff:
+                if delete_recording(ClipId(str(meta["id"]))):
+                    removed += 1
+        except Exception as e:
+            logger.warning(
+                "Error during recording retention cleanup of %s: %s", meta_file, e
+            )
+    if removed:
+        logger.info(
+            "Recording retention removed %d recording(s) older than %d days",
+            removed,
+            days,
+        )
+    return removed
+
+
+def _cleanup_working_files(max_age_hours: int = 6) -> None:
+    """Remove orphaned in-progress recording files older than a safe threshold.
+
+    Working files belong to active recordings while a live view runs; anything
+    older than ``max_age_hours`` is from an interrupted session and is removed.
+
+    Args:
+        max_age_hours: Age beyond which a working file is considered orphaned.
+    """
+    import time
+
+    from blinkapp.services.cache_service import get_recordings_working_dir
+
+    working_dir = get_recordings_working_dir()
+    if not working_dir.exists():
+        return
+    cutoff = time.time() - max_age_hours * 3600
+    for working_file in list(working_dir.glob("*.ts")):
+        try:
+            if working_file.stat().st_mtime < cutoff:
+                working_file.unlink(missing_ok=True)
+        except OSError as e:
+            logger.warning("Error removing stray working file %s: %s", working_file, e)
 
 
 def get_recording_file(clip_id: ClipId) -> Path | None:
