@@ -72,20 +72,84 @@ __all__ = [
 
 # Create Flask app instance with secure configuration
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
-_secret_key = os.environ.get("SECRET_KEY")
-if not _secret_key:
-    # No hardcoded fallback: a shared, well-known key would let anyone forge
-    # signed session cookies. Generate an ephemeral random key instead. This
-    # invalidates existing sessions on restart; set SECRET_KEY in the
-    # environment to keep sessions stable across restarts.
+
+
+def _secret_key_file_path() -> Path:
+    """Fallback location for a persisted SECRET_KEY when no keychain exists."""
+    return Path(Config.DEFAULT_CACHE_DIR) / ".secret_key"
+
+
+def _load_or_create_persistent_secret_key() -> str:
+    """Return a SECRET_KEY that is stable across restarts.
+
+    Tries the OS keychain first (macOS Keychain / Windows Credential Locker /
+    Linux Secret Service via the ``keyring`` package), falling back to a
+    0600 key file in the data directory for headless environments, and finally
+    to an ephemeral key if neither can be persisted.
+    """
     import secrets
 
-    _secret_key = secrets.token_hex(32)
-    logging.getLogger(__name__).warning(
-        "SECRET_KEY not set; using a random ephemeral key."
-        + " Set SECRET_KEY in the environment for stable sessions."
-    )
-app.secret_key = _secret_key
+    log = logging.getLogger(__name__)
+
+    # 1) OS keychain (preferred): survives restarts, no plaintext on disk.
+    try:
+        import keyring
+
+        existing = keyring.get_password("blinkapp", "flask-secret-key")
+        if existing:
+            return existing
+        new_key = secrets.token_hex(32)
+        keyring.set_password("blinkapp", "flask-secret-key", new_key)
+        log.info(
+            "Stored a new Flask SECRET_KEY in the OS keychain; "
+            "sessions now persist across restarts."
+        )
+        return new_key
+    except Exception as e:
+        log.warning("Keychain unavailable for SECRET_KEY (%s); trying a key file.", e)
+
+    # 2) Key file fallback (headless): persists across restarts.
+    try:
+        key_path = _secret_key_file_path()
+        if key_path.exists():
+            stored = key_path.read_text().strip()
+            if stored:
+                return stored
+        new_key = secrets.token_hex(32)
+        key_path.parent.mkdir(parents=True, exist_ok=True)
+        key_path.write_text(new_key)
+        try:
+            os.chmod(key_path, 0o600)
+        except OSError:
+            pass
+        log.info("Stored a new Flask SECRET_KEY in %s.", key_path)
+        return new_key
+    except Exception as e:
+        log.warning(
+            "Could not persist SECRET_KEY (%s); using an ephemeral key "
+            "(sessions reset on restart).",
+            e,
+        )
+
+    # 3) Ephemeral last resort.
+    return secrets.token_hex(32)
+
+
+def _resolve_secret_key() -> str:
+    """Resolve the Flask SECRET_KEY: env override, else a persistent key."""
+    import secrets
+    import sys
+
+    env_key = os.environ.get("SECRET_KEY")
+    if env_key:
+        return env_key
+    # Never touch the OS keychain / key file during the test suite.
+    if "pytest" in sys.modules:
+        return secrets.token_hex(32)
+    return _load_or_create_persistent_secret_key()
+
+
+app.secret_key = _resolve_secret_key()
 
 
 # Favicon route

@@ -103,10 +103,13 @@ python -m blinkapp --dump-system  # Show system info and exit
 
 **Sessions are cookie-based.** Logging in sets a signed session cookie; the
 server does **not** auto-authenticate clients just because Blink credentials
-are cached on disk. By default the session signing key (`SECRET_KEY`) is a
-random ephemeral key, so **sessions do not survive a server restart** (you'll
-log in again). Set the `SECRET_KEY` environment variable to a fixed value to
-keep sessions valid across restarts.
+are cached on disk. The cookie is signed with `SECRET_KEY`, which is persisted
+in the **OS keychain** (macOS Keychain / Windows Credential Locker / Linux
+Secret Service) so **sessions survive a server restart**. On headless systems
+with no keychain, the key is stored in a `0600` key file in the data directory
+instead; if neither is available it falls back to an ephemeral key (sessions
+reset on restart). Set the `SECRET_KEY` environment variable to override the
+persisted key with a fixed value.
 
 ### API Access
 All API endpoints return standardized JSON responses:
@@ -183,8 +186,9 @@ manual PR checkout is required.
 
 ### Environment Variables
 ```bash
-# Flask session signing key. If unset, an ephemeral random key is generated
-# (sessions reset on each restart); set it to keep sessions stable.
+# Flask session signing key. If unset, a persistent key is created and stored
+# in the OS keychain (or a 0600 key file on headless systems), so sessions
+# survive restarts. Set this to override the persisted key with a fixed value.
 SECRET_KEY=your-secret-key-here
 ```
 
