@@ -10,9 +10,9 @@ A professional-grade Flask web application providing comprehensive access to Bli
 - **Live streaming** - TCP to HLS transcoding with FFmpeg using Blink's init_livestream() (see note on live streaming below)
 - **Clip management** - Download and view cloud/local storage clips with thumbnail generation
 - **2FA authentication** - Full two-factor authentication support with unified login flow
-- **RESTful API** - 20+ endpoints for programmatic access
+- **RESTful API** - JSON endpoints for programmatic access
 - **Thread-safe operations** - Concurrent request handling with background processing
-- **Intelligent caching** - 80% performance improvement with configurable retention
+- **Intelligent caching** - reduces repeated Blink API calls with configurable retention
 - **Settings management** - Persistent user preferences (temperature units, clip retention, thumbnail sizes)
 
 ### Web Interface
@@ -158,6 +158,8 @@ manual PR checkout is required.
 - `DELETE /api/cache` - Clear all caches
 - `DELETE /api/cache/thumbnails` - Clear thumbnail cache only
 - `DELETE /api/cache/clips` - Clear clips cache only
+- `GET /api/log` - Retrieve recent application log entries
+- `GET /logs` - Log viewer page
 - `POST /logout` - Logout and clear credentials
 
 ## Configuration
@@ -185,7 +187,7 @@ CACHE_DIR=cache  # Default cache directory
 blinkpy-flask/
 ├── blinkapp/           # Main Flask application package
 │   ├── __main__.py    # CLI entry point
-│   ├── __init__.py    # Flask app factory (811 lines)
+│   ├── __init__.py    # Flask app instance and route registration
 │   ├── config.py      # Configuration management
 │   ├── services/      # Business logic services (Phase 2 reorganized)
 │   │   ├── auth_service.py        # Authentication and 2FA handling
@@ -197,10 +199,14 @@ blinkpy-flask/
 │   │   ├── stream_service.py      # Live streaming coordination
 │   │   ├── hls_service.py         # HLS transcoding with FFmpeg
 │   │   └── ...                    # Additional specialized services
-│   ├── routes/        # Flask route handlers
+│   ├── routes/        # Flask route handlers (thin wrappers over connexion_handlers)
 │   │   ├── auth.py    # Authentication routes
-│   │   ├── api.py     # RESTful API endpoints
-│   │   └── ...        # Additional route modules
+│   │   ├── camera.py  # Camera + thumbnail + streaming routes
+│   │   ├── clips.py   # Clip listing/download routes
+│   │   ├── system.py  # System (arm/disarm) routes
+│   │   ├── settings.py, admin.py, logs.py, thumbnails.py, streaming.py
+│   │   └── ...        # (no single api.py; endpoints are split by domain)
+│   ├── connexion_handlers/  # Business-logic handlers the routes delegate to
 │   ├── utils/         # Utility functions and helpers
 │   │   ├── decorators.py          # Function decorators
 │   │   ├── validators.py          # Input validation
@@ -214,7 +220,7 @@ blinkpy-flask/
 │   ├── index.html     # Main SPA with clips, settings, live view
 │   └── auth.html      # Unified login/2FA authentication
 ├── cache/             # Application cache (auto-created)
-│   ├── blink.json     # Encrypted credentials
+│   ├── blink.json     # Cached Blink auth tokens (plaintext JSON via blinkpy)
 │   ├── settings.json  # User preferences (persistent)
 │   ├── blink_app.log  # Application logs (rotated)
 │   ├── thumbnails/    # Camera thumbnail cache with timestamps
@@ -276,7 +282,7 @@ This provides type checking for blinkpy in any Python project without conflicts.
 ### Common Issues
 - **FFmpeg not found**: Install FFmpeg and ensure it's in PATH
 - **2FA timeout**: Check email/SMS and enter code quickly
-- **Cache full**: Use `/api/clear-cache` endpoint or clear cache in Settings
+- **Cache full**: Use the `DELETE /api/cache` endpoint or clear cache in Settings
 - **Stream fails**: Check camera connectivity and TCP stream availability
 - **Local clips not loading**: Ensure USB storage is connected and accessible
 - **Thumbnails not updating**: Use "Update All" button for local clips
@@ -295,7 +301,7 @@ This provides type checking for blinkpy in any Python project without conflicts.
 - Resource cleanup on shutdown
 
 ### Performance Features
-- **Intelligent caching**: 80% reduction in API calls with timestamp tracking
+- **Intelligent caching**: fewer repeated API calls via timestamp tracking
 - **Background processing**: Sequential clip processing with thumbnail generation
 - **FIFO management**: Automatic cache cleanup with configurable retention
 - **Connection pooling**: Efficient HTTP requests with proper cleanup
@@ -498,8 +504,6 @@ python -m blinkapp --debug
 # Test API endpoints
 curl http://localhost:5001/api/systems
 ```
-
-## License
 
 ## License
 

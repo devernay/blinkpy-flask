@@ -2,27 +2,23 @@
 
 ## Overview
 
-This directory contains a comprehensive test suite for the Blink Camera Flask Web Interface with **50% code coverage** and **266 passing tests**.
+This directory contains the test suite for the Blink Camera Flask Web Interface with **73% code coverage** and **777 passing tests**.
 
 ## Test Files
 
-### Core Test Suites
-
-| File | Purpose | Tests | Coverage Focus |
-|------|---------|-------|----------------|
-| `test_app.py` | Main application testing | 190+ | API endpoints, authentication, core functionality |
-| `test_critical_coverage.py` | Critical path testing | 29 | Logging, Blink initialization, cache operations |
-| `test_coverage_boost.py` | Targeted line coverage | 34 | BaseId methods, validation, utility functions |
-| `test_final_push.py` | Additional coverage | 25 | ThreadSafeCache, error handling, Flask helpers |
-
-### Experimental Test Suites
-
-| File | Purpose | Status | Notes |
-|------|---------|--------|-------|
-| `test_advanced_coverage.py` | Video processing, streaming | Experimental | Complex operations, mostly failing |
-| `test_targeted_fixes.py` | Functional API testing | Experimental | Route accessibility, functional approach |
-| `test_coverage_fixes.py` | Test repair utilities | Utility | Helper functions for test fixes |
-| `test_final_coverage_push.py` | Basic operations | Experimental | Language constructs, basic patterns |
+| File | Focus |
+|------|-------|
+| `test_app.py` | Core application, API endpoints, authentication |
+| `test_services.py` | Service-layer logic (auth, streaming, clips, cache) |
+| `test_routes.py` | Flask route registration and wiring |
+| `test_connexion.py`, `test_connexion_handlers.py`, `test_connexion_schema.py` | Connexion handlers and schema |
+| `test_models.py` | Data models, IDs, cache structures |
+| `test_utils.py` | Utility/helper functions and validators |
+| `test_logs.py` | Log viewer and `/api/log` endpoint |
+| `test_docstrings.py` | Docstring presence/quality checks |
+| `test_testing_mode.py` | Test-isolation behaviour |
+| `test_services_no_isolation.py` | Service tests that opt out of fs isolation |
+| `test_base.py` | Shared mock builders and base test case |
 
 ## Running Tests
 
@@ -47,13 +43,13 @@ python run_tests.py --html
 pytest
 
 # Run with coverage
-pytest --cov=app --cov-report=term-missing
+pytest --cov=blinkapp --cov-report=term-missing
 
 # Run specific test file
 pytest test_app.py
 
 # Run with HTML coverage report
-pytest --cov=app --cov-report=html --cov-report=term
+pytest --cov=blinkapp --cov-report=html --cov-report=term
 ```
 
 ### Test Runner Options
@@ -82,9 +78,9 @@ python run_tests.py --no-warnings     # Suppress warnings
 ## Test Coverage
 
 ### Current Status
-- **Coverage**: 50% (732/1459 lines)
-- **Passing Tests**: 266
-- **Total Tests**: 394 (266 passed + 128 failed)
+- **Coverage**: 73% (2763/3786 lines)
+- **Passing Tests**: 777
+- **Total Tests**: 777 (all passing)
 
 ### Coverage by Area
 
@@ -186,7 +182,7 @@ pip install pytest-html pytest-xdist pytest-mock
    # Install coverage tools
    pip install coverage pytest-cov
    # Run with explicit coverage
-   python -m pytest --cov=app --cov-report=term-missing
+   python -m pytest --cov=blinkapp --cov-report=term-missing
    ```
 
 3. **Tests Failing**

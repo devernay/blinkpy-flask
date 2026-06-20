@@ -55,7 +55,7 @@ At the bottom of the Live View page, there is a "Save" button (💾 icon) that t
 
 #### Live streaming MPEG-TS livestreaming via local TCP proxy server
 
-Live streaming is based on PR [#1079](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. The `requirements.txt` file installs this version of blinkpy.
+Live streaming is based on blinkpy PR [#1078](https://github.com/fronzbot/blinkpy/pull/1078), which uses a local TCP proxy server to stream the camera as MPEG-TS. This PR was merged and released in blinkpy 0.25.0; the project pins the released `blinkpy==0.25.6` (declared in `pyproject.toml`).
 
 Here is sample code that uses this functionality:
 ```python
@@ -316,10 +316,10 @@ The live streaming functionality should include advanced stream management:
 - **Persistent Storage**: Settings saved to `settings.json` in cache directory
 
 ### API and Development
-- **RESTful API**: 51+ endpoints with comprehensive functionality covering all specifications
+- **RESTful API**: JSON endpoints covering all specifications
 - **OpenAPI Documentation**: Complete API specification with request/response schemas
 - **Type Safety**: Full type hints throughout codebase with pyright validation
-- **Testing**: 733 passing tests with 80% code coverage and complete isolation
+- **Testing**: 777 passing tests with 73% code coverage and complete isolation
 - **Code Quality**: Pre-commit hooks, ruff formatting, automated linting
 
 ### Advanced Features
@@ -363,10 +363,10 @@ The application demonstrates excellent conformance to specifications with all ma
 **Key Achievements:**
 - Complete specification compliance for all core features
 - Thread-safe blinkpy integration with dedicated connection management
-- Comprehensive API with 51+ endpoints and full documentation
+- Comprehensive API with JSON endpoints and full documentation
 - Mobile-responsive design with modern development practices
 - Robust caching and performance optimization
-- Extensive test coverage (733 tests, 80% coverage) with bulletproof isolation
+- Extensive test coverage (777 tests, 73% coverage) with bulletproof isolation
 - Complete HLS streaming implementation with FFmpeg transcoding
 
 **Minor Gaps:**

@@ -36,21 +36,21 @@ else
     exit 1
 fi
 
-# Run setup test
+# Verify installation by running the test suite
 echo ""
 echo "Testing installation..."
-python3 test_setup.py
+python3 -m pytest -q
 
 if [ $? -eq 0 ]; then
     echo ""
-    echo "🎉 Installation completed successfully!"
+    echo "Installation completed successfully!"
     echo ""
     echo "To start the application:"
-    echo "  python3 run.py"
+    echo "  python3 -m blinkapp"
     echo ""
-    echo "Then open your browser to: http://localhost:5000"
+    echo "Then open your browser to: http://localhost:5001"
 else
     echo ""
-    echo "❌ Installation test failed. Please check the error messages above."
+    echo "Installation test failed. Please check the error messages above."
     exit 1
 fi

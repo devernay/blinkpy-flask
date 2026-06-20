@@ -20,7 +20,7 @@ The stubs will be automatically discovered by type checkers like mypy, pyright, 
 
 ## Compatibility
 
-- Compatible with blinkpy 0.24.0+
+- Compatible with blinkpy 0.25.x (stubs track the pinned 0.25.6 release)
 - Requires Python 3.12+
 
 ## Development
