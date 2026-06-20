@@ -136,6 +136,17 @@ class TestTimeService(BaseTestCase):
         self.assertEqual(expected, "2d ago")
 
 
+class MockSession(dict):
+    """A dict that also supports attribute access, like Flask's session.
+
+    Flask's session object supports ``session.permanent = True`` in addition to
+    item access; a plain dict does not, so tests that exercise login paths
+    (which set ``session.permanent``) use this instead.
+    """
+
+    permanent = False
+
+
 class TestAuthService(BaseTestCase):
     """Test authentication service functions."""
 
@@ -1057,7 +1068,7 @@ class TestAuthService(BaseTestCase):
 
     @patch("blinkapp.services.auth_service.validate_credentials")
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
-    @patch("flask.session", {})
+    @patch("flask.session", MockSession())
     def test_handle_login_success(
         self, mock_ensure_conn: Mock, mock_validate: Mock
     ) -> None:
@@ -1209,7 +1220,7 @@ class TestAuthService(BaseTestCase):
 
     @patch(
         "flask.session",
-        {"temp_username": "user@example.com", "temp_password": "password"},
+        MockSession({"temp_username": "user@example.com"}),
     )
     @patch("blinkapp.services.blink_service.ensure_blink_connection_initialized")
     def test_handle_2fa_verification_success(self, mock_ensure_conn: Mock) -> None:
@@ -1235,10 +1246,12 @@ class TestAuthService(BaseTestCase):
 
         with patch(
             "flask.session",
-            {
-                "temp_username": "user@example.com",
-                "pending_2fa": True,
-            },
+            MockSession(
+                {
+                    "temp_username": "user@example.com",
+                    "pending_2fa": True,
+                }
+            ),
         ) as mock_session:
             result = handle_2fa_verification("123456")
 
@@ -1247,6 +1260,7 @@ class TestAuthService(BaseTestCase):
             self.assertNotIn("pending_2fa", mock_session)
             self.assertNotIn("temp_username", mock_session)
             self.assertTrue(mock_session["authenticated"])
+            self.assertTrue(mock_session.permanent)
 
     @patch("flask.session", {})
     def test_handle_2fa_verification_no_session(self) -> None:

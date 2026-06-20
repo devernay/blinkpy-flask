@@ -76,6 +76,7 @@ class Config:
     HLS_LIST_SIZE = 3  # Number of segments in HLS playlist (stable buffering)
     STREAM_IDLE_TIMEOUT = 300  # 5 minutes before idle stream cleanup
     STREAM_CLEANUP_INTERVAL = 60  # How often the idle-stream sweeper runs (seconds)
+    SESSION_LIFETIME_DAYS = 90  # Persistent login-cookie lifetime (days)
 
     # ========================================================================
     # Process Management

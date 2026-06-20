@@ -23,6 +23,7 @@ License: MIT
 
 import logging
 import os
+from datetime import timedelta
 from pathlib import Path
 
 # Live streaming management
@@ -150,6 +151,10 @@ def _resolve_secret_key() -> str:
 
 
 app.secret_key = _resolve_secret_key()
+
+# Persistent login cookie: sessions marked permanent last this long (a sliding
+# window, refreshed on each request) and survive browser restarts.
+app.permanent_session_lifetime = timedelta(days=Config.SESSION_LIFETIME_DAYS)
 
 
 # Favicon route

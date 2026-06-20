@@ -441,6 +441,12 @@ def handle_login(username: str, password: str) -> SimpleJsonDict:
         result = blink_conn.execute(initialize_blink(username, password))
 
         if result is True:
+            # Logged in without 2FA: mark the session authenticated and make it
+            # a persistent (90-day) cookie so it survives browser restarts.
+            from flask import session
+
+            session.permanent = True
+            session["authenticated"] = True
             return {"success": True}
         if result == "2fa_required":
             # Store credentials in Flask session for 2FA verification
@@ -509,6 +515,7 @@ def handle_2fa_verification(code: str) -> SimpleJsonDict:
             # Clear temporary session data
             session.pop("pending_2fa", None)
             session.pop("temp_username", None)
+            session.permanent = True
             session["authenticated"] = True
             return {"success": True}
         return {"success": False, "error": "Invalid 2FA code"}
