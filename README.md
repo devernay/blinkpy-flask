@@ -99,7 +99,14 @@ python -m blinkapp --dump-system  # Show system info and exit
 1. Navigate to `http://localhost:5001`
 2. Enter your Blink credentials (email/password)
 3. Complete 2FA verification if required
-4. Credentials are securely cached for future sessions
+4. A signed session cookie keeps you logged in for that browser session
+
+**Sessions are cookie-based.** Logging in sets a signed session cookie; the
+server does **not** auto-authenticate clients just because Blink credentials
+are cached on disk. By default the session signing key (`SECRET_KEY`) is a
+random ephemeral key, so **sessions do not survive a server restart** (you'll
+log in again). Set the `SECRET_KEY` environment variable to a fixed value to
+keep sessions valid across restarts.
 
 ### API Access
 All API endpoints return standardized JSON responses:
@@ -199,7 +206,7 @@ trusted dev/test environments.
 - **Theme**: System (follows OS) / Light / Dark
 - **Temperature Units**: Celsius/Fahrenheit
 - **Cloud Clip Retention**: 3-60 days auto-deletion
-- **Local Clip Retention**: Never or 3-60 days auto-deletion
+- **Local Clip Retention**: Never or 3-60 days auto-deletion (also applies to saved live-view recordings)
 - **Clip Thumbnail Size**: Small/Medium/Large display options
 - **Save all Live Views**: When on, new live views start with Save enabled
 
