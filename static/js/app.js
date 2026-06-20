@@ -424,6 +424,10 @@ async function loadSettings() {
                 document.getElementById('cloud-clip-retention').value = settings.cloudClipRetention || '30';
                 document.getElementById('local-clip-retention').value = settings.localClipRetention || 'never';
                 document.getElementById('clip-thumbnail-size').value = settings.clipThumbnailSize || 'medium';
+                const saveAllSelect = document.getElementById('save-all-live-views');
+                if (saveAllSelect) {
+                    saveAllSelect.value = (settings.saveAllLiveViews === true || settings.saveAllLiveViews === 'true') ? 'true' : 'false';
+                }
                 window.Clips.applyThumbnailSize(settings.clipThumbnailSize || 'medium');
             }
         }

@@ -354,10 +354,15 @@ def initialize_cache_paths() -> None:
     ).resolve()
     blinkapp._SETTINGS_FILE_PATH = (cache_dir / Config.SETTINGS_FILENAME).resolve()
 
+    # Live-view recordings live alongside the cache (not inside it), since they
+    # are user-owned media rather than cached copies of Blink-server items.
+    blinkapp._RECORDINGS_DIR_PATH = pathlib.Path(Config.RECORDINGS_DIRNAME).resolve()
+
     # Create directories
     blinkapp._THUMBNAIL_CACHE_DIR_PATH.mkdir(parents=True, exist_ok=True)
     blinkapp._CLIPS_CACHE_DIR_PATH.mkdir(parents=True, exist_ok=True)
     blinkapp._HLS_OUTPUT_DIR_PATH.mkdir(parents=True, exist_ok=True)
+    blinkapp._RECORDINGS_DIR_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def clear_all_caches() -> dict[str, str]:
@@ -662,6 +667,34 @@ def get_clips_cache_dir() -> Path:
         "Cache paths not initialized. Call initialize_cache_paths() first."
     )
     return blinkapp._CLIPS_CACHE_DIR_PATH
+
+
+def get_recordings_dir() -> Path:
+    """Get the live-view recordings directory path.
+
+    Live-view recordings are stored here (separate from the cache) since they
+    are user-owned media rather than cached copies of Blink-server items.
+
+    Returns:
+        Path: Resolved path to the recordings directory.
+    """
+    import blinkapp
+
+    assert blinkapp._RECORDINGS_DIR_PATH is not None, (
+        "Cache paths not initialized. Call initialize_cache_paths() first."
+    )
+    return blinkapp._RECORDINGS_DIR_PATH
+
+
+def get_recordings_working_dir() -> Path:
+    """Get the directory for in-progress live-view recordings.
+
+    Returns:
+        Path: Resolved path to the recordings working subdirectory.
+    """
+    working = get_recordings_dir() / ".working"
+    working.mkdir(parents=True, exist_ok=True)
+    return working
 
 
 def get_thumbnail_cache_dir() -> Path:

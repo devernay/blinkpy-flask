@@ -143,7 +143,7 @@ function renderClips(clipsData) {
                 <div class="clip-info">
                     <div class="clip-camera">${clip.camera_name}</div>
                     <div class="clip-system">${clip.system_name}</div>
-                    <div class="clip-time">${clip.time}</div>
+                    <div class="clip-time"><span class="clip-event-icon" title="${clip.event_type}">${clip.event_type === 'Live View' ? '📹' : '🏃'}</span> ${clip.time}</div>
                     <div class="clip-event">${clip.event_type}</div>
                 </div>
             `;

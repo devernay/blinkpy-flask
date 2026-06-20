@@ -115,6 +115,14 @@ def mock_cache_paths_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
         lambda: tmp_path / "thumbnails",
     )
     monkeypatch.setattr(
+        "blinkapp.services.cache_service.get_recordings_dir",
+        lambda: tmp_path / "recordings",
+    )
+    monkeypatch.setattr(
+        "blinkapp.services.cache_service.get_recordings_working_dir",
+        lambda: tmp_path / "recordings" / ".working",
+    )
+    monkeypatch.setattr(
         "blinkapp.services.hls_service.get_hls_output_dir", lambda: tmp_path / "hls"
     )
     monkeypatch.setattr(

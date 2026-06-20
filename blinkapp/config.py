@@ -63,6 +63,10 @@ class Config:
     THUMBNAILS_SUBDIR = "thumbnails"  # Camera thumbnail cache subdirectory
     CLIPS_SUBDIR = "clips"  # Downloaded clips cache subdirectory
 
+    # Live-view recordings are user-owned media (not cached Blink-server items),
+    # so they live in their own directory alongside (not inside) the cache.
+    RECORDINGS_DIRNAME = "recordings"  # Live-view recordings directory name
+
     # ========================================================================
     # Media Processing Configuration (FFmpeg)
     # ========================================================================

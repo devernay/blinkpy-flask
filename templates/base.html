@@ -721,22 +721,53 @@
         }
 
         .save-btn {
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+        .save-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 16px 8px 8px;
+            border-radius: 999px;
             font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+        /* Circular check indicator: outlined when unpressed. */
+        .save-btn .save-check {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            color: transparent;
+            font-size: 15px;
+            line-height: 1;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        /* Pressed = saving: blue filled circle with a white check mark. */
+        .save-btn[aria-pressed="true"] {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .save-btn[aria-pressed="true"] .save-check {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--on-accent);
         }
 
         .save-btn:hover {
-            background: var(--success);
+            border-color: var(--accent);
         }
 
         .save-btn:disabled {
-            background: var(--text-muted);
+            opacity: 0.6;
             cursor: not-allowed;
         }
 

@@ -143,6 +143,7 @@ _THUMBNAIL_CACHE_DIR_PATH: Path | None = None
 _HLS_OUTPUT_DIR_PATH: Path | None = None
 _CREDENTIALS_FILE_PATH: Path | None = None
 _SETTINGS_FILE_PATH: Path | None = None
+_RECORDINGS_DIR_PATH: Path | None = None
 
 # ============================================================================
 # Error Handling and API Response Utilities

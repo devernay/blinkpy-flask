@@ -28,8 +28,13 @@ async function showLiveView(cameraId, cameraName) {
             currentLiveStream = {
                 cameraId: cameraId,
                 streamId: data.data.stream_id,
-                hlsUrl: hlsUrl
+                hlsUrl: hlsUrl,
+                saveActive: data.data.save_active === true
             };
+
+            // Initialize the Save toggle from the server (reflects the
+            // "Save all Live Views" setting for a freshly started session).
+            updateSaveButton(currentLiveStream.saveActive);
 
             // Show live view
             document.getElementById('live-view-title').textContent = `${cameraName} Live View`;
@@ -187,50 +192,54 @@ function getStreamStatus() {
 }
 
 /**
- * Record a clip from the current live stream
+ * Update the Save button's pressed/unpressed appearance.
  */
-async function recordClip() {
+function updateSaveButton(saved) {
+    const saveBtn = document.getElementById('live-save-btn');
+    if (!saveBtn) return;
+    saveBtn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+    const label = saveBtn.querySelector('.save-label');
+    if (label) label.textContent = saved ? 'Saving' : 'Save';
+}
+
+/**
+ * Toggle whether the current live view will be saved when it ends.
+ * Recording is always running; this only controls keep-vs-discard at stop.
+ */
+async function toggleSaveLiveView() {
     const currentStream = getCurrentStream();
     if (!currentStream) {
-        alert('No active live stream to record');
+        alert('No active live stream');
         return;
     }
 
-    const saveBtn = document.querySelector('.save-btn');
-    if (!saveBtn) return;
-
-    // Disable button and show loading state
-    saveBtn.disabled = true;
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = '💾 Recording...';
+    const newSaved = !currentStream.saveActive;
+    // Optimistically reflect the change; revert if the request fails.
+    updateSaveButton(newSaved);
 
     try {
-        const response = await fetch(`/api/cameras/${currentStream.cameraId}/record`, {
-            method: 'POST'
+        const response = await fetch(`/api/cameras/${currentStream.cameraId}/streams/save`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ saved: newSaved })
         });
 
         if (response.ok) {
-            const result = await response.json();
-            saveBtn.textContent = '✅ Saved!';
-            setTimeout(() => {
-                saveBtn.textContent = originalText;
-                saveBtn.disabled = false;
-            }, 2000);
+            currentStream.saveActive = newSaved;
         } else {
-            throw new Error(`Recording failed: ${response.status}`);
+            updateSaveButton(currentStream.saveActive); // revert
+            console.warn('Failed to update save state:', response.status);
         }
     } catch (error) {
-        console.error('Error recording clip:', error);
-        alert('Failed to start recording. Please try again.');
-        saveBtn.textContent = originalText;
-        saveBtn.disabled = false;
+        updateSaveButton(currentStream.saveActive); // revert
+        console.error('Error updating save state:', error);
     }
 }
 
 // Export functions for global access
 window.showLiveView = showLiveView;
 window.toggleMute = toggleMute;
-window.recordClip = recordClip;
+window.toggleSaveLiveView = toggleSaveLiveView;
 
 // Export module
 window.LiveStream = {

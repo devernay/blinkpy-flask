@@ -23,7 +23,11 @@ def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int
         ensure_blink_connection_initialized,
         ensure_blink_initialized,
     )
-    from ..services.clip_service import process_cloud_clips, process_local_clips
+    from ..services.clip_service import (
+        merge_liveview_clips,
+        process_cloud_clips,
+        process_local_clips,
+    )
     from ..utils.decorators import error_context
 
     if storage is None:
@@ -46,8 +50,8 @@ def get_clips(storage: str | None = None) -> ClipsResponse | tuple[JsonDict, int
                 )
             else:
                 videos_metadata = []
-            return {"clips": process_cloud_clips(videos_metadata)}
-        return {"clips": process_local_clips()}
+            return {"clips": merge_liveview_clips(process_cloud_clips(videos_metadata))}
+        return {"clips": merge_liveview_clips(process_local_clips())}
 
 
 def delete_clip(clip_id: str) -> JsonDict | tuple[JsonDict, int]:

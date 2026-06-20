@@ -109,22 +109,28 @@ def _create_ffmpeg_process(
 
 
 def _build_ffmpeg_command(
-    tcp_url: str, output_path: Path, config: HLSStreamConfig
+    tcp_url: str,
+    output_path: Path,
+    config: HLSStreamConfig,
+    record_path: Path | None = None,
 ) -> list[str]:
     """Build FFmpeg command for TCP to HLS transcoding.
 
     Creates FFmpeg command to convert MPEG-TS stream from TCP source
-    into HLS segments suitable for web browser playback.
+    into HLS segments suitable for web browser playback. When ``record_path``
+    is provided, a second MPEG-TS output is added so the full live-view
+    session is recorded to disk in parallel with the HLS playback stream.
 
     Args:
         tcp_url: Source TCP stream URL (e.g., "tcp://127.0.0.1:8080")
         output_path: Output path for HLS playlist file
         config: HLS configuration with segment timing
+        record_path: Optional path to also record the full session (MPEG-TS)
 
     Returns:
         List of FFmpeg command arguments
     """
-    return [
+    command = [
         "ffmpeg",
         "-loglevel",
         "warning",  # Show warnings but reduce verbose info
@@ -143,21 +149,42 @@ def _build_ffmpeg_command(
         str(output_path),  # Output playlist file
     ]
 
+    if record_path is not None:
+        # Second output: record the full session as MPEG-TS (robust to abrupt
+        # termination; remuxed to MP4 later only if the user keeps it).
+        command += [
+            "-c",
+            "copy",
+            "-f",
+            "mpegts",
+            str(record_path),
+        ]
+
+    return command
+
 
 class HLSStream:
     """Manages a single HLS stream from TCP source."""
 
-    def __init__(self, camera_id: str, tcp_url: str, config: HLSStreamConfig) -> None:
+    def __init__(
+        self,
+        camera_id: str,
+        tcp_url: str,
+        config: HLSStreamConfig,
+        record_path: Path | None = None,
+    ) -> None:
         """Initialize HLS stream.
 
         Args:
             camera_id: Unique identifier for the camera
             tcp_url: TCP stream URL from Blink camera
             config: Stream configuration
+            record_path: Optional path to also record the full session
         """
         self.camera_id = camera_id
         self.tcp_url = tcp_url
         self.config = config
+        self.record_path = record_path
         self.process: subprocess.Popen[bytes] | None = None
         self.temp_dir: tempfile.TemporaryDirectory[str] | None = None
         self.last_access = time.time()
@@ -181,8 +208,10 @@ class HLSStream:
                 )
                 output_path = Path(self.temp_dir.name) / "stream.m3u8"
 
-                # FFmpeg command for TCP to HLS transcoding
-                cmd = _build_ffmpeg_command(self.tcp_url, output_path, self.config)
+                # FFmpeg command for TCP to HLS transcoding (plus optional recording)
+                cmd = _build_ffmpeg_command(
+                    self.tcp_url, output_path, self.config, self.record_path
+                )
 
                 # Start FFmpeg process
                 self.process = _create_ffmpeg_process(cmd)

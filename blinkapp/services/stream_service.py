@@ -43,10 +43,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableType
+    from pathlib import Path
 
     from blinkpy.camera import BlinkCamera
 
     from blinkapp.models.ids import CameraId
+    from blinkapp.services.liveview_recording import RecordingSession
 
 
 if TYPE_CHECKING:
@@ -56,6 +58,44 @@ logger = logging.getLogger(__name__)
 
 # Global stream manager instance
 stream_manager: StreamManager | None = None
+
+# Active live-view recording sessions, keyed by camera id (str). Populated when a
+# live view starts and consumed (kept or discarded) when it stops.
+_recording_sessions: dict[str, RecordingSession] = {}
+_recording_lock = threading.Lock()
+
+
+def set_live_view_save_state(camera_id: CameraId, saved: bool) -> bool:
+    """Toggle whether the active live-view recording will be kept on stop.
+
+    Args:
+        camera_id: Camera whose live-view session to update.
+        saved: True to keep the recording when the session ends, False to discard.
+
+    Returns:
+        True if there is an active session that was updated, else False.
+    """
+    with _recording_lock:
+        session = _recording_sessions.get(str(camera_id))
+        if session is None:
+            return False
+        session.save = saved
+        return True
+
+
+def get_live_view_save_state(camera_id: CameraId) -> bool:
+    """Return the current save state of the active live-view session.
+
+    Args:
+        camera_id: Camera whose live-view session to query.
+
+    Returns:
+        True if the active session will be kept on stop, else False (also
+        False when there is no active session).
+    """
+    with _recording_lock:
+        session = _recording_sessions.get(str(camera_id))
+        return bool(session.save) if session is not None else False
 
 
 def initialize_stream_manager(
@@ -165,11 +205,23 @@ def stop_camera_stream(camera_id: CameraId) -> bool:
         if stream_manager.is_stream_active(str(camera_id)):
             stream_manager.stop_stream(str(camera_id))
             logger.info(f"Stream stopped for camera {camera_id}")
-            return True
-        return True  # Already stopped
+        _finalize_recording_session(camera_id)
+        return True
     except Exception as e:
         logger.error(f"Failed to stop stream for camera {camera_id}: {e}")
+        _finalize_recording_session(camera_id)
         return False
+
+
+def _finalize_recording_session(camera_id: CameraId) -> None:
+    """Keep or discard the live-view recording for a stopped session."""
+    with _recording_lock:
+        session = _recording_sessions.pop(str(camera_id), None)
+    if session is None:
+        return
+    from blinkapp.services.liveview_recording import finalize_session
+
+    finalize_session(session, session.save)
 
 
 def is_stream_active(camera_id: CameraId) -> bool:
@@ -256,7 +308,11 @@ class StreamManager:
         self.lock = threading.Lock()
 
     def start_stream(
-        self, camera_id: str, tcp_url: str, camera_stream: BlinkLiveStream | None = None
+        self,
+        camera_id: str,
+        tcp_url: str,
+        camera_stream: BlinkLiveStream | None = None,
+        record_path: Path | None = None,
     ) -> tuple[str | None, str | None]:
         """Start HLS stream for camera.
 
@@ -264,6 +320,7 @@ class StreamManager:
             camera_id: Camera identifier
             tcp_url: TCP stream URL
             camera_stream: Optional Blink camera stream for cleanup
+            record_path: Optional path to also record the full session
 
         Returns:
             Tuple of (hls_url, error_message)
@@ -274,7 +331,7 @@ class StreamManager:
                 self.streams[camera_id].stop()
 
             # Create new stream
-            stream = HLSStream(camera_id, tcp_url, self.config)
+            stream = HLSStream(camera_id, tcp_url, self.config, record_path)
             hls_url, error = stream.start()
 
             if hls_url:
@@ -488,6 +545,18 @@ def init_camera_stream(
         # Initialize stream manager first
         stream_manager = ensure_stream_manager_initialized()
 
+        # Create a live-view recording session. Recording always starts with the
+        # live view; whether it is kept is decided by the Save state at stop time.
+        from blinkapp.services.liveview_recording import create_session
+        from blinkapp.services.settings_service import get_save_all_live_views
+
+        camera_name = getattr(camera, "name", str(camera_id))
+        session = create_session(
+            str(camera_id), camera_name, save=get_save_all_live_views()
+        )
+        with _recording_lock:
+            _recording_sessions[str(camera_id)] = session
+
         # Schedule feed() to run asynchronously and store task
         import asyncio
 
@@ -498,13 +567,16 @@ def init_camera_stream(
             # Store feed task in stream manager for proper cleanup
             stream_manager.feed_tasks[str(camera_id)] = feed_task
 
-        # Start HLS transcoding and store camera stream for cleanup
+        # Start HLS transcoding (with parallel recording) and store camera stream
         hls_url, error = stream_manager.start_stream(
-            str(camera_id), tcp_url, camera_stream
+            str(camera_id), tcp_url, camera_stream, record_path=session.working_path
         )
         if hls_url is not None:
             logger.info(f"Started live stream for camera {camera_id}: {hls_url}")
             return camera_stream, hls_url
+        # Stream failed to start: drop the unused recording session.
+        with _recording_lock:
+            _recording_sessions.pop(str(camera_id), None)
         logger.error(f"Failed to start stream for camera {camera_id}: {error}")
         return None, None
 

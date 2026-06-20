@@ -62,6 +62,31 @@ def setup_streaming_routes(app: Flask) -> None:
 
         return stop_live_stream(str(camera_id))
 
+    @app.route("/api/cameras/<camera_id_str>/streams/save", methods=["PUT"])
+    @ensure_blink_available
+    @api_route_with_validation(
+        "set live view save state",
+        validate_params={"camera_id_str": validate_camera_id},
+    )
+    def set_live_view_save_state_route(
+        camera_id: CameraId,
+    ) -> JsonDict | tuple[JsonDict, int]:
+        """Set whether the active live-view recording will be kept on stop.
+
+        Args:
+            camera_id: CameraId object for the active live-view session.
+
+        Returns:
+            JsonDict | tuple[JsonDict, int]: Success response or error response.
+        """
+        from flask import request
+
+        from ..connexion_handlers.streaming import set_live_view_save
+
+        # NOTE: pyright doesn't recognize Flask's request.get_json() method properly
+        body = request.get_json(silent=True) or {}  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        return set_live_view_save(str(camera_id), bool(body.get("saved", False)))
+
     @app.route("/api/cameras/<camera_id_str>/streams/<path:filename>")
     @ensure_blink_available
     @api_route_with_validation(

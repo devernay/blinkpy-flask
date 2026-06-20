@@ -78,6 +78,15 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
         download_local_clip,
     )
 
+    # Live-view recordings are stored on our server (separate from the cache).
+    if clip_id.is_liveview():
+        from ..services.liveview_recording import get_recording_file
+
+        recording_path = get_recording_file(clip_id)
+        if recording_path is None:
+            return {"success": False, "error": "Recording not found"}, 404
+        return download_clip_common(recording_path, clip_id)
+
     # Check if clip exists in cache first
     clips_cache = ensure_clips_cache_initialized()
     if clip_id in clips_cache:
@@ -114,6 +123,34 @@ def download_clip(clip_id: ClipId) -> Response | tuple[JsonDict, int]:
         return download_local_clip(clip_id, sync_name, str(item_id))
     # Cloud clip
     return download_cloud_clip(clip_id)
+
+
+def merge_liveview_clips(groups: list[ClipDayGroup]) -> list[ClipDayGroup]:
+    """Merge saved live-view recordings into day-grouped clip listings.
+
+    Re-flattens the provided day groups together with live-view recordings and
+    re-groups them, so live views appear in the clip list interleaved by date
+    with motion clips. Live-view clips carry event_type "Live View".
+
+    Args:
+        groups: Day-grouped clips from cloud or local processing.
+
+    Returns:
+        Day-grouped clips including any saved live-view recordings.
+    """
+    from blinkapp.services.liveview_recording import list_recording_clips
+
+    liveview_clips = list_recording_clips()
+    if not liveview_clips:
+        return groups
+
+    flat: list[ClipApiData] = []
+    for group in groups:
+        clips = group.get("clips")
+        if isinstance(clips, list):
+            flat.extend(clips)
+    flat.extend(liveview_clips)  # pyright: ignore[reportArgumentType]
+    return format_clips_by_day(flat)
 
 
 def process_cloud_clips(
@@ -383,6 +420,17 @@ async def delete_clip(clip_id: ClipId) -> tuple[JsonDict, int]:
     from blinkapp.models.responses import create_api_response
     from blinkapp.services.blink_service import ensure_blink_connection_initialized
     from blinkapp.services.cache_service import ensure_clips_cache_initialized
+
+    # Live-view recordings live on our server, not in the Blink system.
+    if clip_id.is_liveview():
+        from blinkapp.services.liveview_recording import delete_recording
+
+        removed = delete_recording(clip_id)
+        if removed:
+            return create_api_response(data={"message": f"Recording {clip_id} deleted"})
+        return create_api_response(
+            success=False, error="Recording not found", status_code=404
+        )
 
     try:
         # Use shared BlinkConnection to access Blink system

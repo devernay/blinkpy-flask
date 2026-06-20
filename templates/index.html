@@ -99,6 +99,13 @@
                     <option value="large">Large</option>
                 </select>
             </div>
+            <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Save all Live Views</span>
+                <select id="save-all-live-views" onchange="saveSetting('saveAllLiveViews', this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border);">
+                    <option value="false">Off</option>
+                    <option value="true">On</option>
+                </select>
+            </div>
             <button class="settings-item" onclick="clearCache()">Clear Cache</button>
             <button class="settings-item" onclick="window.open('/logs', '_blank')">View Logs</button>
             <button class="settings-item danger" onclick="confirmLogout()">Log Out</button>
@@ -118,7 +125,10 @@
             </video>
         </div>
         <div class="live-view-controls">
-            <button class="save-btn" onclick="recordClip()" title="Save recording">💾 Save</button>
+            <button class="save-btn" id="live-save-btn" onclick="toggleSaveLiveView()" aria-pressed="false" title="Save this live view">
+                <span class="save-check">✓</span>
+                <span class="save-label">Save</span>
+            </button>
         </div>
     </div>
 </div>

@@ -102,6 +102,7 @@ def get_user_settings() -> JsonDict:
         "cloudClipRetention": "30",
         "localClipRetention": "never",
         "clipThumbnailSize": "medium",
+        "saveAllLiveViews": False,
     }
     logger.debug("Using default settings")
     return default_settings
@@ -123,6 +124,22 @@ def get_temperature_unit() -> Literal["C", "F"]:
         raise ValueError(f"Invalid temperature unit '{unit}', must be 'C' or 'F'")
 
     return unit
+
+
+def get_save_all_live_views() -> bool:
+    """Whether new live-view sessions should start with saving enabled.
+
+    Accepts either a real boolean or a string ("true"/"false") since the
+    settings UI persists the value from a <select>.
+
+    Returns:
+        True if the user enabled "Save all Live Views", otherwise False.
+    """
+    settings = get_user_settings()
+    value = settings.get("saveAllLiveViews", False)
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value)
 
 
 def get_settings_file_path() -> Path:

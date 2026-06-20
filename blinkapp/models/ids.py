@@ -227,6 +227,21 @@ class ClipId(BaseId):
         """
         return cls(f"{sync_name}~{item_id}")
 
+    LIVEVIEW_PREFIX = "liveview-"
+
+    @classmethod
+    def from_liveview(cls, camera_id: str, epoch: int) -> "ClipId":
+        """Create ClipId for a server-side live-view recording.
+
+        Args:
+            camera_id: Camera the live view was recorded from
+            epoch: Unix timestamp (seconds) the recording started
+
+        Returns:
+            ClipId instance of the form 'liveview-<camera_id>-<epoch>'
+        """
+        return cls(f"{cls.LIVEVIEW_PREFIX}{camera_id}-{epoch}")
+
     def is_local(self) -> bool:
         """Check if this is a local storage clip.
 
@@ -234,6 +249,29 @@ class ClipId(BaseId):
             True if local storage clip, False if cloud clip
         """
         return "~" in self.value
+
+    def is_liveview(self) -> bool:
+        """Check if this is a server-side live-view recording.
+
+        Returns:
+            True if this ID refers to a live-view recording.
+        """
+        return self.value.startswith(self.LIVEVIEW_PREFIX)
+
+    def get_liveview_parts(self) -> tuple[str, int]:
+        """Get camera id and start epoch for a live-view recording.
+
+        Returns:
+            Tuple of (camera_id, epoch_seconds)
+
+        Raises:
+            ValueError: If this is not a live-view recording
+        """
+        if not self.is_liveview():
+            raise ValueError("Not a live-view recording")
+        rest = self.value[len(self.LIVEVIEW_PREFIX) :]
+        camera_id, epoch_str = rest.rsplit("-", 1)
+        return camera_id, int(epoch_str)
 
     def get_local_parts(self) -> tuple[str, int]:
         """Get sync name and item ID for local clips.
