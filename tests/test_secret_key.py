@@ -70,3 +70,67 @@ class TestSecretKeyResolution(unittest.TestCase):
             second = blinkapp._load_or_create_persistent_secret_key()
         self.assertEqual(first, second)
         self.assertTrue(keyfile.exists())
+
+
+class TestSessionLifetimeSetting(unittest.TestCase):
+    """The configurable login-session lifetime preference."""
+
+    def _write_settings(self, value: str) -> None:
+        """Persist a settings file containing sessionLifetimeDays.
+
+        Args:
+            value: The sessionLifetimeDays value to store.
+        """
+        import json
+
+        from blinkapp.services.settings_service import get_settings_file_path
+
+        get_settings_file_path().write_text(json.dumps({"sessionLifetimeDays": value}))
+
+    def test_getter_parses_value(self) -> None:
+        """A valid stored value is parsed to an int.
+
+        Tests:
+            - get_session_lifetime_days returns the configured day count
+        """
+        from blinkapp.services import settings_service
+
+        self._write_settings("30")
+        self.assertEqual(settings_service.get_session_lifetime_days(), 30)
+
+    def test_getter_invalid_falls_back_to_default(self) -> None:
+        """An invalid or non-positive value falls back to the default.
+
+        Tests:
+            - A non-numeric value returns Config.SESSION_LIFETIME_DAYS
+        """
+        from blinkapp.config import Config
+        from blinkapp.services import settings_service
+
+        self._write_settings("not-a-number")
+        self.assertEqual(
+            settings_service.get_session_lifetime_days(), Config.SESSION_LIFETIME_DAYS
+        )
+
+    def test_refresh_applies_to_app(self) -> None:
+        """Refreshing applies the setting to the app's session lifetime.
+
+        Tests:
+            - refresh_session_lifetime sets app.permanent_session_lifetime
+              to the configured number of days
+        """
+        from datetime import timedelta
+
+        from blinkapp import app
+        from blinkapp.config import Config
+        from blinkapp.services.auth_service import refresh_session_lifetime
+
+        previous = app.permanent_session_lifetime
+        try:
+            self._write_settings("7")
+            refresh_session_lifetime()
+            self.assertEqual(app.permanent_session_lifetime, timedelta(days=7))
+        finally:
+            app.permanent_session_lifetime = previous or timedelta(
+                days=Config.SESSION_LIFETIME_DAYS
+            )

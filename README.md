@@ -102,7 +102,8 @@ python -m blinkapp --dump-system  # Show system info and exit
 4. A signed session cookie keeps you logged in across browser and server restarts
 
 **Sessions are cookie-based and persistent.** Logging in sets a signed,
-persistent session cookie with a 90-day sliding lifetime (refreshed on each
+persistent session cookie with a configurable sliding lifetime (default 90
+days, set via **Keep me signed in for** in Settings; refreshed on each
 request), so you stay logged in across browser restarts. The server does
 **not** auto-authenticate clients just because Blink credentials are cached on
 disk. The cookie is signed with `SECRET_KEY`, which is persisted in the **OS
@@ -215,6 +216,7 @@ trusted dev/test environments.
 - **Local Clip Retention**: Never or 3-60 days auto-deletion (also applies to saved live-view recordings)
 - **Clip Thumbnail Size**: Small/Medium/Large display options
 - **Save all Live Views**: When on, new live views start with Save enabled
+- **Keep me signed in for**: Login session lifetime (7 / 30 / 90 / 365 days)
 
 ### Cache Settings
 - **Clips cache**: 100 items (configurable)

@@ -436,6 +436,10 @@ async function loadSettings() {
                 if (saveAllSelect) {
                     saveAllSelect.value = (settings.saveAllLiveViews === true || settings.saveAllLiveViews === 'true') ? 'true' : 'false';
                 }
+                const sessionLifetime = document.getElementById('session-lifetime');
+                if (sessionLifetime) {
+                    sessionLifetime.value = String(settings.sessionLifetimeDays || '90');
+                }
                 window.Clips.applyThumbnailSize(settings.clipThumbnailSize || 'medium');
             }
         }

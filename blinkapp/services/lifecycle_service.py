@@ -109,6 +109,14 @@ def startup() -> None:
         except Exception as e:
             logger.warning(f"Recording retention cleanup at startup failed: {e}")
 
+        # Apply the configured login-session lifetime.
+        try:
+            from blinkapp.services.auth_service import refresh_session_lifetime
+
+            refresh_session_lifetime()
+        except Exception as e:
+            logger.warning(f"Could not apply session lifetime at startup: {e}")
+
         # Restore cached thumbnails from previous sessions
         # Start the async Blink connection thread
         from blinkapp.services.blink_service import ensure_blink_connection_initialized

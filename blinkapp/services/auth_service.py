@@ -480,6 +480,21 @@ def handle_logout() -> dict[str, bool]:
     return {"success": True}
 
 
+def refresh_session_lifetime() -> None:
+    """Apply the configured session lifetime to the Flask app.
+
+    Reads the ``sessionLifetimeDays`` user setting and updates the app's
+    permanent-session lifetime so the change takes effect on subsequent
+    responses (the cookie expiry is a sliding window, recomputed per request).
+    """
+    from datetime import timedelta
+
+    from blinkapp import app
+    from blinkapp.services.settings_service import get_session_lifetime_days
+
+    app.permanent_session_lifetime = timedelta(days=get_session_lifetime_days())
+
+
 def handle_2fa_verification(code: str) -> SimpleJsonDict:
     """Handle 2FA verification.
 

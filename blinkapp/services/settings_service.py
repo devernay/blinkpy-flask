@@ -103,6 +103,7 @@ def get_user_settings() -> JsonDict:
         "localClipRetention": "never",
         "clipThumbnailSize": "medium",
         "saveAllLiveViews": False,
+        "sessionLifetimeDays": str(Config.SESSION_LIFETIME_DAYS),
     }
     logger.debug("Using default settings")
     return default_settings
@@ -140,6 +141,24 @@ def get_save_all_live_views() -> bool:
     if isinstance(value, str):
         return value.strip().lower() in ("1", "true", "yes", "on")
     return bool(value)
+
+
+def get_session_lifetime_days() -> int:
+    """Return the configured login-session lifetime in days.
+
+    Falls back to the built-in default for missing or invalid values.
+
+    Returns:
+        A positive number of days for the persistent login cookie.
+    """
+    value = get_user_settings().get("sessionLifetimeDays", Config.SESSION_LIFETIME_DAYS)
+    if not isinstance(value, str | int) or isinstance(value, bool):
+        return Config.SESSION_LIFETIME_DAYS
+    try:
+        days = int(value)
+    except (TypeError, ValueError):
+        return Config.SESSION_LIFETIME_DAYS
+    return days if days > 0 else Config.SESSION_LIFETIME_DAYS
 
 
 def get_settings_file_path() -> Path:

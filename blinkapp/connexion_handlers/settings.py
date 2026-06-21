@@ -39,4 +39,12 @@ def update_user_settings(body: JsonDict) -> JsonDict | tuple[JsonDict, int]:
     if not body:
         return {"success": False, "error": "No settings data provided"}, 400
 
-    return update_settings(body)
+    result = update_settings(body)
+
+    # If the session lifetime changed, apply it immediately.
+    if "sessionLifetimeDays" in body:
+        from ..services.auth_service import refresh_session_lifetime
+
+        refresh_session_lifetime()
+
+    return result

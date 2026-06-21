@@ -106,6 +106,15 @@
                     <option value="true">On</option>
                 </select>
             </div>
+            <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Keep me signed in for</span>
+                <select id="session-lifetime" onchange="saveSetting('sessionLifetimeDays', this.value)" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border);">
+                    <option value="7">7 days</option>
+                    <option value="30">30 days</option>
+                    <option value="90">90 days</option>
+                    <option value="365">365 days</option>
+                </select>
+            </div>
             <button class="settings-item" onclick="clearCache()">Clear Cache</button>
             <button class="settings-item" onclick="window.open('/logs', '_blank')">View Logs</button>
             <button class="settings-item danger" onclick="confirmLogout()">Log Out</button>
